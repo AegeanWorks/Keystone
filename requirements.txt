@@ -1,0 +1,5 @@
+# Runtime (GPU renderer + test runner). Pinned for reproducible check gates.
+numpy==2.5.3
+PyOpenGL==3.1.10
+glfw==2.11.0
+pytest==9.1.1

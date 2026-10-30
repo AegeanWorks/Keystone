@@ -6,7 +6,8 @@ A performance-first 3D game engine in Python with an OpenGL 3.3 renderer, scene 
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
-- **Runtime Prerequisites**: <FILL: each runtime this project needs and its minimum version>
+- **Runtime Prerequisites**: Python 3.10+ with the pinned `requirements.txt` stack (numpy 2.5.3, PyOpenGL 3.1.10, glfw 2.11.0, pytest 9.1.1) and an OpenGL 3.3-capable GPU driver.
+- **Install**: `python -m pip install -r requirements.txt`
 - **Canonical Regression Shield Gate**:
   ```bash
   python -m pytest -q
@@ -24,6 +25,13 @@ A performance-first 3D game engine in Python with an OpenGL 3.3 renderer, scene 
 
 ```text
 keystone/
+├── keystone/
+│   ├── __init__.py           <- package surface and version
+│   └── math3d.py             <- Vec3, Mat4, Quat (column-major, OpenGL-ready)
+├── tests/
+│   └── test_math3d.py        <- unit tests for the math core
+├── requirements.txt          <- pinned runtime and test dependencies
+├── pyproject.toml            <- package metadata and pytest configuration
 ├── .gitignore                <- transient AIKit state excluded
 ├── LICENSE                   <- Aegean License 1.1 (AL-1.1): free personal use
 ├── COMMERCIAL.md             <- Commercial licensing terms
