@@ -115,3 +115,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The user rejected the game mechanics as engine core and directed a game-agnostic engine with the prototypes removed. ADR-012 described the split; this ADR executes it.
 - **Decision**: Delete the expedition, combat, light-lock, weave, network, space and showcase modules, their tests and screenshots. Keep a game-agnostic core with a five-operation `GameModule` protocol, a generic `Engine`, `ActionState`/`InputMap`, `FixedStepClock`, collision primitives, `CommandLog`/`stable_hash`, atomic JSON persistence and the `CubeDemo` smoke test. External games load through `--game package.module:Factory`.
 - **Consequences**: v0.8.0 is much smaller and contains no genre rules. The deleted prototypes remain in git history but are not part of the package. The engine now has a real core API to extend; physics, assets, audio, ECS and tooling remain roadmap items.
+
+### ADR-014: Add a no-OpenGL simulation path and machine-readable frame reports
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: AIKit, CI and AI model tooling need to drive and inspect the engine without a desktop window or GPU. A PNG alone is not enough for a model to reason about scene layout, and creating an OpenGL context on every test host is fragile.
+- **Decision**: Add `keystone.headless.run_simulation()` and `load_actions()` to apply JSON action scripts directly to a `GameModule` with no GL context. Add `keystone.analysis.analyze_frame()` and `Engine.capture()` to emit a schema-1 JSON report beside a PNG: image hashes, mean/luminance statistics, content bounding box, dominant colors, an 8×8 luminance grid, projected screen positions and mesh bounding boxes for every scene node. CLI gains `--simulate`, `--actions`, `--trace`, and `--report`.
+- **Consequences**: CI and AI tests can run game logic on GPU-less hosts through `--simulate`; rendered reports still require OpenGL. The report schema is versioned (`schema: 1`) and stable action/snapshot hashes make model-driven regressions reproducible. Pixel statistics are descriptive, not a visual-quality metric.

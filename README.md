@@ -24,6 +24,14 @@ Games plug in through one five-operation contract. Keystone ships a **cube demo*
   ```bash
   python -m keystone --headless --frames 1 --size 1280x720 --out frame.png
   ```
+- **Simulate without OpenGL**:
+  ```bash
+  python -m keystone --simulate --frames 120 --trace
+  ```
+- **Emit a model-readable frame report**:
+  ```bash
+  python -m keystone --headless --frames 1 --size 1280x720 --out frame.png --report frame.json
+  ```
 - **Run an external game module**:
   ```bash
   python -m keystone --game my_game:MyGame
@@ -94,7 +102,49 @@ The bundled `CubeDemo` uses the generic action map:
 - **Physics primitives**: rays, AABBs and spheres with ray queries, overlap tests and sphere/AABB resolution.
 - **Replay and persistence**: `ActionState` command logs, stable hashes and atomic JSON writes with a `.bak` snapshot.
 - **Plugin loading**: `load_game("package.module:Factory")` validates the five-operation contract before the engine starts.
+- **No-GL simulation**: `run_simulation()` and `--simulate` drive `GameModule.update()` directly, with JSON action scripts and deterministic hashes, no window or driver required.
+- **Frame reports for AI analysis**: `--report` writes a schema-1 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data and projected screen bounds for every scene node.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
+
+## 🤖 AI Testing & Frame Analysis
+
+### Simulate without a GPU
+
+`--simulate` imports the game and applies actions in fixed 1/60 s steps. It never creates an `Engine`, GLFW window or OpenGL context.
+
+```bash
+python -m keystone --simulate --frames 3 --actions actions.json --trace
+```
+
+`actions.json` is a list of `ActionState` objects (one per frame, or fewer repeated):
+
+```json
+[
+  {"forward": 1.0, "look_yaw": 0.1},
+  {"forward": 0.0, "pressed": ["toggle_capture"]}
+]
+```
+
+The JSON result includes the game name, frames, step, actions used, final snapshot and a stable hash. `--trace` adds one snapshot per frame. `--out run.json` writes the result atomically.
+
+### Analyze a rendered frame
+
+`--report` writes a versioned JSON report next to the PNG:
+
+```bash
+python -m keystone --headless --frames 1 --size 1280x720 \
+  --out frame.png --report frame.json
+```
+
+The report contains:
+
+- `schema` and a stable report `hash`;
+- image path, dimensions, PNG and RGBA SHA-256;
+- mean RGB/luminance, content pixels/ratio, content bounding box, dominant colors and an 8×8 luminance grid;
+- camera parameters;
+- every scene node's world position, visibility, triangle count and projected screen center/bounding box.
+
+This lets an AI model compare a frame, a scene graph and a deterministic simulation without guessing from pixels alone. It does not claim to measure visual quality.
 
 ## 📦 What's Inside
 
@@ -109,6 +159,8 @@ keystone/
 │   ├── plugin.py             <- GameModule protocol and loader
 │   ├── replay.py             <- command log and stable hash
 │   ├── serialization.py      <- atomic JSON persistence
+│   ├── headless.py           <- no-GL simulation and JSON action scripts
+│   ├── analysis.py           <- frame statistics and projected scene report
 │   ├── physics.py            <- rays, AABB, sphere queries and pushout
 │   ├── math3d.py             <- Vec3, Mat4, Quat (column-major, OpenGL-ready)
 │   ├── camera.py             <- perspective camera
@@ -127,7 +179,8 @@ keystone/
 │       └── renderer.py       <- forward renderer, sky, lights, readback
 ├── assets/
 │   ├── octahedron.obj        <- generic sample OBJ
-│   └── engine.png            <- sample frame
+│   ├── engine.png            <- sample frame
+│   └── engine.json           <- schema-1 sample frame report
 ├── docs/
 │   └── ARCHITECTURE.md       <- core layers, contract and roadmap
 ├── tests/
@@ -142,9 +195,11 @@ keystone/
 │   ├── test_plugin.py        <- GameModule contract and loader
 │   ├── test_replay.py        <- command log and hashes
 │   ├── test_serialization.py <- atomic JSON persistence
+│   ├── test_headless.py      <- no-GL simulation and action scripts
+│   ├── test_analysis.py      <- frame statistics and scene projection
 │   ├── test_samples.py       <- CubeDemo smoke test
 │   ├── test_boundary.py      <- core has no game modules/imports
-│   └── test_app.py           <- engine loop and CLI
+│   └── test_app.py           <- engine loop, CLI, simulate and reports
 ├── requirements.txt          <- pinned runtime and test dependencies
 ├── pyproject.toml            <- package metadata, pytest and ruff configuration
 ├── .gitignore                <- transient AIKit state excluded
@@ -187,6 +242,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the dependency rules, mod
 5. Input rebinding, audio mixer and buses.
 6. Scene/save schema versioning and replay/undo tooling.
 7. Editor/inspector, asset browser and profiler.
+8. AI observation/action adapters that consume the frame report and command log.
 
 Games are external modules; they are not added to this repository.
 
@@ -194,6 +250,7 @@ Games are external modules; they are not added to this repository.
 
 ```bash
 python -m pytest -q
+python -m keystone --simulate --frames 1
 python -m keystone --headless --frames 1 --size 64x48
 python aikit.py check keystone --strict
 ```

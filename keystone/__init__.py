@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from keystone.input import ActionState
 from keystone.math3d import Mat4, Quat, Vec3
 from keystone.plugin import GameModule
 from keystone.scene import Node, Scene, Transform
 
-__version__ = "0.8.0"
-__all__ = ["Engine", "GameModule", "Mat4", "Node", "Quat", "Scene", "Transform", "Vec3"]
+__version__ = "0.9.0"
+__all__ = ["ActionState", "Engine", "GameModule", "Mat4", "Node", "Quat", "Scene", "Transform", "Vec3"]
 
 
 def __getattr__(name: str):

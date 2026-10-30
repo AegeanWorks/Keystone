@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `37`
-- **Total Classes**: `52`
-- **Total Top-Level Functions**: `31`
-- **Total Class Methods**: `256`
-- **Total Source Lines**: `3363`
+- **Total Python Modules**: `41`
+- **Total Classes**: `54`
+- **Total Top-Level Functions**: `38`
+- **Total Class Methods**: `269`
+- **Total Source Lines**: `3783`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `18` lines (`522` bytes)
+**Size**: `19` lines (`576` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `91` lines (`3269` bytes)
+**Size**: `117` lines (`4896` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -38,10 +38,24 @@
 
 ---
 
+### [`keystone/analysis.py`](keystone/analysis.py)
+> *Machine-readable frame reports for AI and headless UI analysis.*
+
+**Size**: `164` lines (`6287` bytes)
+
+**Functions:**
+- `def _rows(pixels, width, height, flip)`
+- `def _stats(pixels, width, height, background, flip)`
+- `def _node_report(scene, width, height)`
+- `def analyze_frame(scene, pixels, width, height, image_path)`
+- `def write_report(path, report)`
+
+---
+
 ### [`keystone/app.py`](keystone/app.py)
 > *Game-agnostic engine runtime: window, fixed step, input, render and capture.*
 
-**Size**: `120` lines (`4210` bytes)
+**Size**: `138` lines (`4873` bytes)
 
 **Classes:**
 - `class Engine` - *Owns the runtime around one external GameModule.*
@@ -50,6 +64,7 @@
   - Method `.__exit__(*exc_info)`
   - Method `._handle_system_actions(actions)`
   - Method `.run(max_frames)` - *Run until the window closes or max_frames (0 = unlimited) is reached.*
+  - Method `.capture(image_path, report_path)`
   - Method `.screenshot(path)`
   - Method `.close()`
 
@@ -189,6 +204,17 @@
   - Method `.set_vec3(name, vector)`
   - Method `.set_float(name, value)`
   - Method `.release()`
+
+---
+
+### [`keystone/headless.py`](keystone/headless.py)
+> *Simulation without a window: JSON action scripts and deterministic traces.*
+
+**Size**: `60` lines (`1959` bytes)
+
+**Functions:**
+- `def load_actions(path)`
+- `def run_simulation(game, frames, actions, step, trace)` - *Advance a game without creating a window or OpenGL context.*
 
 ---
 
@@ -431,10 +457,24 @@
 
 ---
 
+### [`tests/test_analysis.py`](tests/test_analysis.py)
+> *Tests for the machine-readable frame report.*
+
+**Size**: `68` lines (`2427` bytes)
+
+**Classes:**
+- `class AnalysisTest`
+  - Method `.test_pixel_stats_and_content_bbox()`
+  - Method `.test_scene_nodes_have_projected_screen_bounds()`
+  - Method `.test_png_hash_and_atomic_report()`
+  - Method `.test_rejects_bad_pixel_count()`
+
+---
+
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `47` lines (`1688` bytes)
+**Size**: `83` lines (`3401` bytes)
 
 **Classes:**
 - `class EngineTest`
@@ -442,6 +482,9 @@
   - Method `.test_bad_size_is_a_usage_error()`
   - Method `.test_out_requires_headless()`
   - Method `.test_bad_game_spec_reports_why_and_fix()`
+  - Method `.test_simulate_cli_prints_json_without_opening_a_window()`
+  - Method `.test_simulate_cli_reads_actions_and_writes_output()`
+  - Method `.test_capture_report_and_png()`
 
 ---
 
@@ -506,6 +549,21 @@
   - Method `.test_defaults_are_valid()`
   - Method `.test_rejects_negative_specular()`
   - Method `.test_rejects_negative_checker_scale()`
+
+---
+
+### [`tests/test_headless.py`](tests/test_headless.py)
+> *Tests for no-OpenGL simulation and action scripts.*
+
+**Size**: `47` lines (`1839` bytes)
+
+**Classes:**
+- `class HeadlessTest`
+  - Method `.test_simulation_advances_without_a_window()`
+  - Method `.test_same_script_is_deterministic()`
+  - Method `.test_trace_contains_each_frame()`
+  - Method `.test_load_actions_accepts_list_and_object()`
+  - Method `.test_invalid_frames_and_step()`
 
 ---
 

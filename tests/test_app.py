@@ -2,6 +2,7 @@
 
 import contextlib
 import io
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -41,6 +42,41 @@ class EngineTest(unittest.TestCase):
         message = stderr.getvalue()
         self.assertIn("Why:", message)
         self.assertIn("Fix:", message)
+
+    def test_simulate_cli_prints_json_without_opening_a_window(self):
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            self.assertEqual(main(["--simulate", "--frames", "2"]), 0)
+        payload = json.loads(buffer.getvalue())
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["frames"], 2)
+        self.assertIn("hash", payload)
+
+    def test_simulate_cli_reads_actions_and_writes_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            actions = Path(directory) / "actions.json"
+            out = Path(directory) / "run.json"
+            actions.write_text(json.dumps([{"forward": 1.0}]), encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(
+                    main(["--simulate", "--frames", "2", "--actions", str(actions), "--out", str(out)]),
+                    0,
+                )
+            self.assertEqual(json.loads(out.read_text(encoding="utf-8"))["frames"], 2)
+
+    def test_capture_report_and_png(self):
+        game = CubeDemo()
+        engine = Engine(game, 32, 24, visible=False)
+        self.addCleanup(engine.close)
+        with tempfile.TemporaryDirectory() as directory:
+            image = Path(directory) / "frame.png"
+            report = Path(directory) / "report.json"
+            engine.capture(image, report)
+            self.assertTrue(image.exists())
+            payload = json.loads(report.read_text(encoding="utf-8"))
+            self.assertEqual(payload["schema"], 1)
+            self.assertEqual(payload["image"]["path"], Path(image).as_posix())
+            self.assertGreater(payload["stats"]["mean_luma"], 0.0)
 
 
 if __name__ == "__main__":

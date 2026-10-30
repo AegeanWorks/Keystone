@@ -30,6 +30,8 @@ keystone/
 ├── clock.py          FixedStepClock
 ├── replay.py         CommandLog + stable_hash()
 ├── serialization.py  atomic JSON with .bak
+├── headless.py       no-GL action simulation
+├── analysis.py       frame statistics and projected scene report
 ├── physics.py        Ray, AABB, Sphere, queries and pushout
 ├── scene.py          Node, Transform, Scene, DirectionalLight, PointLight
 ├── camera.py         PerspectiveCamera
@@ -84,6 +86,14 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 
 `ActionState` is a frozen DTO and serializes to JSON. `CommandLog` records action frames with a seed and step size; `stable_hash()` canonically hashes snapshots. The engine does not silently use wall-clock time for simulation.
 
+### AI and headless contracts
+
+- `headless.run_simulation(game, frames, actions, step, trace)` calls `build_scene()` and then `update()` in fixed steps without importing the renderer or creating a GL context.
+- `load_actions()` accepts a JSON list or an object with `actions`; every item is an `ActionState`.
+- `analysis.analyze_frame(scene, pixels, width, height, image_path)` returns schema-1 JSON: image hashes, pixel statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data and projected node bounds. `Engine.capture(image, report)` writes both artifacts.
+- `--simulate` requires no GPU; `--headless` renders off-screen; `--report` documents a rendered frame.
+- These are core APIs, not a game harness: they never import a game module or know a genre.
+
 ## 4. Dependency Rules
 
 1. `keystone.*` imports only the standard library, declared dependencies and other core modules.
@@ -107,6 +117,8 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Plugin | Implemented | GameModule + loader |
 | Replay | Implemented (basic) | action log, stable hash |
 | Persistence | Implemented (basic) | atomic JSON with backup |
+| Headless | Implemented | no-GL simulation and action scripts |
+| Frame report | Implemented | image statistics and projected scene nodes |
 | Physics | Implemented (queries) | rays, AABB, sphere overlap/pushout |
 | Audio | Missing | future core module |
 | ECS | Optional/missing | evaluate after a real workload |
@@ -127,7 +139,9 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 ## 7. Acceptance
 
 - `python -m pytest -q` passes.
+- `python -m keystone --simulate --frames 1` runs without OpenGL.
 - `python -m keystone --headless --frames 1 --size 64x48` renders the sample.
+- `python -m keystone --headless --frames 1 --out frame.png --report frame.json` writes both artifacts.
 - `python -m keystone --game missing.module:Factory` exits 1 with `Why:`/`Fix:`.
 - `keystone/` contains no game rules and imports no external game.
 - `GameModule` is the only game-facing runtime contract.

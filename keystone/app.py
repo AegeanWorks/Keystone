@@ -108,9 +108,27 @@ class Engine:
                 fps_frames = 0
         return frames
 
-    def screenshot(self, path: str | Path) -> None:
+    def capture(self, image_path: str | Path | None, report_path: str | Path | None = None) -> None:
         self.renderer.render(self.scene)
-        self.renderer.save_png(path)
+        pixels = self.renderer.read_pixels()
+        if image_path is not None:
+            from keystone.png import write_png
+
+            write_png(image_path, self.renderer.width, self.renderer.height, pixels)
+        if report_path is not None:
+            from keystone.analysis import analyze_frame, write_report
+
+            report = analyze_frame(
+                self.scene,
+                pixels,
+                self.renderer.width,
+                self.renderer.height,
+                image_path,
+            )
+            write_report(report_path, report)
+
+    def screenshot(self, path: str | Path) -> None:
+        self.capture(path)
 
     def close(self) -> None:
         if self._closed:
