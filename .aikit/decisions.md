@@ -123,3 +123,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: AIKit, CI and AI model tooling need to drive and inspect the engine without a desktop window or GPU. A PNG alone is not enough for a model to reason about scene layout, and creating an OpenGL context on every test host is fragile.
 - **Decision**: Add `keystone.headless.run_simulation()` and `load_actions()` to apply JSON action scripts directly to a `GameModule` with no GL context. Add `keystone.analysis.analyze_frame()` and `Engine.capture()` to emit a schema-1 JSON report beside a PNG: image hashes, mean/luminance statistics, content bounding box, dominant colors, an 8×8 luminance grid, projected screen positions and mesh bounding boxes for every scene node. CLI gains `--simulate`, `--actions`, `--trace`, and `--report`.
 - **Consequences**: CI and AI tests can run game logic on GPU-less hosts through `--simulate`; rendered reports still require OpenGL. The report schema is versioned (`schema: 1`) and stable action/snapshot hashes make model-driven regressions reproducible. Pixel statistics are descriptive, not a visual-quality metric.
+
+### ADR-015: Add discovery, deterministic test helpers and report comparison
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: A headless command and a single frame report are not enough for an AI client: it must discover the action/snapshot contract, assert a scenario is deterministic, and compare a baseline against a new frame. Without a stable contract those steps become ad-hoc scripts.
+- **Decision**: Add `describe_game()` and `--describe` for capability/action/snapshot discovery; `keystone.testing.run_script()`, `verify_determinism()` and `assert_deterministic()` for deterministic scenarios; and `analysis.compare_reports()` for image/report/stat/node diffs. All are core, GL-free where possible, and versioned separately from a game's own actions.
+- **Consequences**: AI clients have a discovery → simulate → verify → render → compare loop with JSON evidence. Reports remain descriptive rather than aesthetic judgments, and games still own their action semantics.

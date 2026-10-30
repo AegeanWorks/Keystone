@@ -2,7 +2,7 @@
 
 import unittest
 
-from keystone.plugin import GameModule, load_game
+from keystone.plugin import GameModule, describe_game, load_game
 from keystone.samples import CubeDemo
 
 
@@ -12,6 +12,14 @@ class PluginTest(unittest.TestCase):
         self.assertIsInstance(game, CubeDemo)
         self.assertIsInstance(game, GameModule)
         self.assertEqual(game.name, "cube-demo")
+
+    def test_describe_exposes_capabilities_actions_and_snapshot(self):
+        payload = describe_game(CubeDemo())
+        self.assertEqual(payload["schema"], 1)
+        self.assertEqual(payload["game"], "cube-demo")
+        self.assertTrue(payload["capabilities"]["simulate"])
+        self.assertIn("axes", payload["actions"])
+        self.assertIn("time", payload["snapshot"])
 
     def test_invalid_specs_are_rejected(self):
         for spec in ("keystone.samples", "missing.module:Factory", "keystone.samples:Missing"):

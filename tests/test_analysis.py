@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from keystone.analysis import analyze_frame, write_report
+from keystone.analysis import analyze_frame, compare_reports, write_report
 from keystone.math3d import Vec3
 from keystone.png import write_png
 from keystone.samples import CubeDemo
@@ -57,6 +57,19 @@ class AnalysisTest(unittest.TestCase):
             out = Path(directory) / "report.json"
             write_report(out, report)
             self.assertTrue(out.exists())
+
+    def test_compare_reports_detects_image_and_stats_changes(self):
+        first = analyze_frame(CubeDemo().build_scene(), bytes((0, 0, 0, 255)) * 4, 2, 2)
+        second = analyze_frame(CubeDemo().build_scene(), bytes((255, 0, 0, 255)) * 4, 2, 2)
+        diff = compare_reports(first, second)
+        self.assertFalse(diff["same_image"])
+        self.assertTrue(diff["same_image"] is False)
+        self.assertNotEqual(diff["mean_luma_delta"], 0.0)
+        self.assertIn("changed_nodes", diff)
+
+    def test_compare_reports_rejects_unknown_schema(self):
+        with self.assertRaises(ValueError):
+            compare_reports({}, {})
 
     def test_rejects_bad_pixel_count(self):
         game = CubeDemo()

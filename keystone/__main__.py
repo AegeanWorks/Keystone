@@ -35,6 +35,7 @@ def main(argv: list[str] | None = None) -> int:
         description="Run a Keystone game module from 'package.module:Factory'.",
     )
     parser.add_argument("--game", default="keystone.samples:CubeDemo", help="game factory spec")
+    parser.add_argument("--describe", action="store_true", help="print the game capability/action/snapshot schema")
     parser.add_argument("--headless", action="store_true", help="render without opening a window")
     parser.add_argument("--simulate", action="store_true", help="advance the game without OpenGL")
     parser.add_argument("--actions", type=Path, default=None, help="JSON action list for --simulate")
@@ -44,6 +45,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=None, help="PNG for rendering; JSON report for --simulate")
     parser.add_argument("--report", type=Path, default=None, help="machine-readable frame report (requires --headless)")
     args = parser.parse_args(argv)
+    if args.describe and (args.headless or args.simulate or args.out or args.report or args.actions or args.trace):
+        parser.error("--describe is a standalone discovery command")
     if args.headless and args.simulate:
         parser.error("--headless and --simulate are mutually exclusive")
     if args.simulate and args.report:
@@ -57,11 +60,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.trace and not args.simulate:
         parser.error("--trace requires --simulate")
 
-    from keystone.plugin import load_game
+    from keystone.plugin import describe_game, load_game
 
     engine = None
     try:
         game = load_game(args.game)
+        if args.describe:
+            print(json.dumps(describe_game(game), indent=2, sort_keys=True))
+            return 0
         if args.simulate:
             from keystone.headless import load_actions, run_simulation
             from keystone.serialization import write_json_atomic

@@ -43,6 +43,14 @@ class EngineTest(unittest.TestCase):
         self.assertIn("Why:", message)
         self.assertIn("Fix:", message)
 
+    def test_describe_cli_prints_capabilities_without_opening_a_window(self):
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            self.assertEqual(main(["--describe"]), 0)
+        payload = json.loads(buffer.getvalue())
+        self.assertEqual(payload["game"], "cube-demo")
+        self.assertTrue(payload["capabilities"]["simulate"])
+
     def test_simulate_cli_prints_json_without_opening_a_window(self):
         buffer = io.StringIO()
         with contextlib.redirect_stdout(buffer):

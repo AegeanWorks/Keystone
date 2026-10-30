@@ -35,6 +35,7 @@
       "keystone/serialization.py",
       "keystone/headless.py",
       "keystone/analysis.py",
+      "keystone/testing.py",
       "keystone/gpu/renderer.py"
     ],
     "test": "python -m keystone --simulate --frames 1"

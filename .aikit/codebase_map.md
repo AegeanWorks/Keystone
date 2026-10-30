@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `41`
-- **Total Classes**: `54`
-- **Total Top-Level Functions**: `38`
-- **Total Class Methods**: `269`
-- **Total Source Lines**: `3783`
+- **Total Python Modules**: `43`
+- **Total Classes**: `55`
+- **Total Top-Level Functions**: `43`
+- **Total Class Methods**: `277`
+- **Total Source Lines**: `3947`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `19` lines (`576` bytes)
+**Size**: `19` lines (`577` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `117` lines (`4896` bytes)
+**Size**: `123` lines (`5336` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -41,13 +41,14 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `164` lines (`6287` bytes)
+**Size**: `195` lines (`7818` bytes)
 
 **Functions:**
 - `def _rows(pixels, width, height, flip)`
 - `def _stats(pixels, width, height, background, flip)`
 - `def _node_report(scene, width, height)`
 - `def analyze_frame(scene, pixels, width, height, image_path)`
+- `def compare_reports(before, after)` - *Compare two schema-1 frame reports for AI-driven visual regression.*
 - `def write_report(path, report)`
 
 ---
@@ -343,7 +344,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `44` lines (`1580` bytes)
+**Size**: `59` lines (`2002` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -354,6 +355,7 @@
   - Method `.status()`
 
 **Functions:**
+- `def describe_game(game)` - *Return a machine-readable capability/action/snapshot description.*
 - `def load_game(spec)` - *Load an external game from 'package.module:Factory'.*
 
 ---
@@ -457,16 +459,30 @@
 
 ---
 
+### [`keystone/testing.py`](keystone/testing.py)
+> *Deterministic scenario helpers for AI and CI tests.*
+
+**Size**: `52` lines (`1567` bytes)
+
+**Functions:**
+- `def run_script(game, actions, frames, step, trace)`
+- `def verify_determinism(factory, actions, frames, step)` - *Run one scenario twice from a factory and compare final hashes.*
+- `def assert_deterministic(factory, actions, frames, step)`
+
+---
+
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
-**Size**: `68` lines (`2427` bytes)
+**Size**: `81` lines (`3081` bytes)
 
 **Classes:**
 - `class AnalysisTest`
   - Method `.test_pixel_stats_and_content_bbox()`
   - Method `.test_scene_nodes_have_projected_screen_bounds()`
   - Method `.test_png_hash_and_atomic_report()`
+  - Method `.test_compare_reports_detects_image_and_stats_changes()`
+  - Method `.test_compare_reports_rejects_unknown_schema()`
   - Method `.test_rejects_bad_pixel_count()`
 
 ---
@@ -474,7 +490,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `83` lines (`3401` bytes)
+**Size**: `91` lines (`3778` bytes)
 
 **Classes:**
 - `class EngineTest`
@@ -482,6 +498,7 @@
   - Method `.test_bad_size_is_a_usage_error()`
   - Method `.test_out_requires_headless()`
   - Method `.test_bad_game_spec_reports_why_and_fix()`
+  - Method `.test_describe_cli_prints_capabilities_without_opening_a_window()`
   - Method `.test_simulate_cli_prints_json_without_opening_a_window()`
   - Method `.test_simulate_cli_reads_actions_and_writes_output()`
   - Method `.test_capture_report_and_png()`
@@ -635,11 +652,12 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `34` lines (`975` bytes)
+**Size**: `42` lines (`1370` bytes)
 
 **Classes:**
 - `class PluginTest`
   - Method `.test_sample_loads_and_implements_the_contract()`
+  - Method `.test_describe_exposes_capabilities_actions_and_snapshot()`
   - Method `.test_invalid_specs_are_rejected()`
   - Method `.test_missing_methods_are_rejected()`
 - `class IncompleteGame`
@@ -755,5 +773,19 @@
 - `class SerializationTest`
   - Method `.test_round_trip_and_backup()`
   - Method `.test_missing_file_raises()`
+
+---
+
+### [`tests/test_testing.py`](tests/test_testing.py)
+> *Tests for deterministic AI/CI scenario helpers.*
+
+**Size**: `31` lines (`1174` bytes)
+
+**Classes:**
+- `class TestingHelpersTest`
+  - Method `.test_run_script_uses_action_count_by_default()`
+  - Method `.test_verify_determinism_passes_for_the_sample()`
+  - Method `.test_assert_deterministic_returns_evidence()`
+  - Method `.test_trace_mode_is_available()`
 
 ---

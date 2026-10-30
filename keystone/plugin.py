@@ -22,6 +22,21 @@ class GameModule(Protocol):
     def status(self) -> str: ...
 
 
+def describe_game(game: GameModule) -> dict[str, object]:
+    """Return a machine-readable capability/action/snapshot description."""
+    return {
+        "schema": 1,
+        "game": getattr(game, "name", "game"),
+        "actions": game.actions(),
+        "snapshot": game.snapshot(),
+        "capabilities": {
+            "simulate": True,
+            "render": True,
+            "report_schema": 1,
+        },
+    }
+
+
 def load_game(spec: str) -> GameModule:
     """Load an external game from 'package.module:Factory'."""
     if ":" not in spec:

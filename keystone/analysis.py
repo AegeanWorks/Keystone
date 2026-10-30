@@ -160,5 +160,36 @@ def analyze_frame(
     return report
 
 
+def compare_reports(before: dict, after: dict) -> dict:
+    """Compare two schema-1 frame reports for AI-driven visual regression."""
+    if before.get("schema") != 1 or after.get("schema") != 1:
+        raise ValueError("both reports must use schema 1")
+    first_stats = before["stats"]
+    second_stats = after["stats"]
+    first_nodes = {node["name"]: node for node in before["scene"]["nodes"]}
+    second_nodes = {node["name"]: node for node in after["scene"]["nodes"]}
+    changed = []
+    for name in sorted(set(first_nodes) | set(second_nodes)):
+        old = first_nodes.get(name)
+        new = second_nodes.get(name)
+        if old is None or new is None or (old.get("screen"), old.get("bbox"), old.get("visible")) != (
+            new.get("screen"),
+            new.get("bbox"),
+            new.get("visible"),
+        ):
+            changed.append(name)
+    return {
+        "schema": 1,
+        "same_image": before["image"]["rgba_sha256"] == after["image"]["rgba_sha256"],
+        "same_report": before.get("hash") == after.get("hash"),
+        "mean_luma_delta": round(second_stats["mean_luma"] - first_stats["mean_luma"], 3),
+        "content_ratio_delta": round(second_stats["content_ratio"] - first_stats["content_ratio"], 4),
+        "content_bbox": {"before": first_stats["content_bbox"], "after": second_stats["content_bbox"]},
+        "changed_nodes": changed,
+        "added_nodes": sorted(set(second_nodes) - set(first_nodes)),
+        "removed_nodes": sorted(set(first_nodes) - set(second_nodes)),
+    }
+
+
 def write_report(path: str | Path, report: dict) -> None:
     write_json_atomic(path, report, backup=False)

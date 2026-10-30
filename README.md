@@ -24,6 +24,10 @@ Games plug in through one five-operation contract. Keystone ships a **cube demo*
   ```bash
   python -m keystone --headless --frames 1 --size 1280x720 --out frame.png
   ```
+- **Discover a game from an AI client**:
+  ```bash
+  python -m keystone --describe
+  ```
 - **Simulate without OpenGL**:
   ```bash
   python -m keystone --simulate --frames 120 --trace
@@ -103,10 +107,19 @@ The bundled `CubeDemo` uses the generic action map:
 - **Replay and persistence**: `ActionState` command logs, stable hashes and atomic JSON writes with a `.bak` snapshot.
 - **Plugin loading**: `load_game("package.module:Factory")` validates the five-operation contract before the engine starts.
 - **No-GL simulation**: `run_simulation()` and `--simulate` drive `GameModule.update()` directly, with JSON action scripts and deterministic hashes, no window or driver required.
+- **AI discovery and testing**: `--describe`/`describe_game()` expose actions, capabilities and the current snapshot; `keystone.testing` runs a script twice and returns deterministic evidence; `compare_reports()` diffs two frame reports.
 - **Frame reports for AI analysis**: `--report` writes a schema-1 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data and projected screen bounds for every scene node.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
 
 ## 🤖 AI Testing & Frame Analysis
+
+### Discover the game contract
+
+```bash
+python -m keystone --describe
+```
+
+The JSON response contains the game name, `actions()` schema, current `snapshot()` and capabilities (`simulate`, `render`, `report_schema`). It is the first call an AI client should make.
 
 ### Simulate without a GPU
 
@@ -127,6 +140,17 @@ python -m keystone --simulate --frames 3 --actions actions.json --trace
 
 The JSON result includes the game name, frames, step, actions used, final snapshot and a stable hash. `--trace` adds one snapshot per frame. `--out run.json` writes the result atomically.
 
+For assertions in Python, use `keystone.testing`:
+
+```python
+from keystone.input import ActionState
+from keystone.samples import CubeDemo
+from keystone.testing import assert_deterministic, run_script
+
+result = run_script(CubeDemo(), [ActionState(forward=1.0)], frames=120)
+assert_deterministic(lambda: CubeDemo(), [ActionState(forward=1.0)], frames=120)
+```
+
 ### Analyze a rendered frame
 
 `--report` writes a versioned JSON report next to the PNG:
@@ -144,7 +168,7 @@ The report contains:
 - camera parameters;
 - every scene node's world position, visibility, triangle count and projected screen center/bounding box.
 
-This lets an AI model compare a frame, a scene graph and a deterministic simulation without guessing from pixels alone. It does not claim to measure visual quality.
+This lets an AI model compare a frame, a scene graph and a deterministic simulation without guessing from pixels alone. `keystone.analysis.compare_reports(before, after)` returns image/report equality, luminance and content-ratio deltas, bbox changes, and added/removed/changed nodes. It does not claim to measure visual quality.
 
 ## 📦 What's Inside
 
@@ -160,7 +184,8 @@ keystone/
 │   ├── replay.py             <- command log and stable hash
 │   ├── serialization.py      <- atomic JSON persistence
 │   ├── headless.py           <- no-GL simulation and JSON action scripts
-│   ├── analysis.py           <- frame statistics and projected scene report
+│   ├── analysis.py           <- frame statistics, projected scene and report diff
+│   ├── testing.py            <- deterministic AI/CI scenario helpers
 │   ├── physics.py            <- rays, AABB, sphere queries and pushout
 │   ├── math3d.py             <- Vec3, Mat4, Quat (column-major, OpenGL-ready)
 │   ├── camera.py             <- perspective camera
@@ -196,7 +221,8 @@ keystone/
 │   ├── test_replay.py        <- command log and hashes
 │   ├── test_serialization.py <- atomic JSON persistence
 │   ├── test_headless.py      <- no-GL simulation and action scripts
-│   ├── test_analysis.py      <- frame statistics and scene projection
+│   ├── test_analysis.py      <- frame statistics, projection and report diff
+│   ├── test_testing.py       <- deterministic scenario helpers
 │   ├── test_samples.py       <- CubeDemo smoke test
 │   ├── test_boundary.py      <- core has no game modules/imports
 │   └── test_app.py           <- engine loop, CLI, simulate and reports
