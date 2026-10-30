@@ -103,14 +103,16 @@ The bundled `CubeDemo` uses the generic action map; the overlay shows it at runt
 | `W` / `S` | Forward / back |
 | `A` / `D` | Left / right |
 | `E` / `Q` | Up / down |
-| Mouse | Look |
+| Mouse | Look; click menu items while paused |
 | Arrow keys | Keyboard look |
-| `P` | Pause / resume gameplay |
+| `P` | Pause / resume; opens the menu and releases the cursor |
+| `W` / `S` or `↑` / `↓` | Move the pause-menu selection |
+| `Enter` | Confirm the selected pause-menu item |
 | `H` | Hide / show the HUD and help |
 | `F1` | Release / recapture the mouse |
 | `Esc` | Quit |
 
-Pausing stops `GameModule.update()` while the window, renderer and overlay stay responsive. The overlay is presentation-only: it never mutates game state.
+Pausing stops `GameModule.update()` while the window, renderer and overlay stay responsive. The pause menu offers `Resume`, `Hide HUD` and `Quit`; the cursor is released while it is open so items can be clicked, and recaptured on resume. The overlay is presentation-only: it never mutates game state.
 
 ## 🖥️ Human UI
 
@@ -125,9 +127,10 @@ The overlay contains:
 
 - game name, game status, FPS, frame number, elapsed simulation time and resolution;
 - a controls panel (`P` pause, `H` hide, `F1` cursor, `Esc` quit);
+- an interactive pause menu with `Resume`, `Hide HUD` and `Quit`, navigable by keyboard or mouse;
 - a centered pause banner.
 
-`keystone.ui` is split into an embedded 5×7 font, a clipped screen-space `Canvas`, and `HumanOverlay`; `keystone.gpu.ui_renderer` uploads the canvas as one alpha-blended draw call. A headless report that includes `--ui` measures the same pixels a person sees.
+`keystone.ui` is split into an embedded 5×7 font, a clipped screen-space `Canvas`, small panel/button widgets, a pure `PauseMenu` state machine and `HumanOverlay`; `keystone.gpu.ui_renderer` uploads the canvas as one alpha-blended draw call. A headless report that includes `--ui` measures the same pixels a person sees.
 
 ## 🚀 Features
 
@@ -144,7 +147,7 @@ The overlay contains:
 - **Visual regression gate**: `--compare-baseline baseline.json` renders a new report, compares image/report hashes, stats and projected nodes, prints the diff and exits non-zero on image change. `--diff-out diff.png` writes a changed-pixel diff image.
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip image loading, changed-pixel counts, bbox and a visual diff without third-party imaging libraries.
 - **Frame reports for AI analysis**: `--report` writes a schema-1 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data and projected screen bounds for every scene node.
-- **Human overlay**: a game-agnostic HUD with game/status, FPS, frame, elapsed time and resolution, plus controls help and a pause banner; drawn with an embedded 5×7 bitmap font, no font asset or imaging library.
+- **Human overlay**: a game-agnostic HUD with game/status, FPS, frame, elapsed time and resolution, plus controls help and an interactive pause menu; drawn with an embedded 5×7 bitmap font, no font asset or imaging library.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
 
 ## 🤖 AI Testing & Frame Analysis
@@ -248,7 +251,9 @@ keystone/
 │   │   ├── __init__.py       <- UI package exports
 │   │   ├── font.py           <- embedded 5x7 bitmap font
 │   │   ├── canvas.py         <- clipped screen-space quads and text
-│   │   └── overlay.py        <- HUD, controls help and pause banner
+│   │   ├── widgets.py        <- panels and menu buttons
+│   │   ├── menu.py           <- pure pause-menu selection state
+│   │   └── overlay.py        <- HUD, controls help and pause menu
 │   └── gpu/
 │       ├── __init__.py       <- GPU adapter package marker
 │       ├── context.py        <- GLFW window and OpenGL 3.3 context
@@ -268,7 +273,7 @@ keystone/
 │   ├── test_scene.py         <- hierarchy, camera and lights
 │   ├── test_geometry.py      <- meshes, primitives, builder and OBJ
 │   ├── test_png.py           <- PNG writer and reader
-│   ├── test_ui.py            <- font, canvas and overlay
+│   ├── test_ui.py            <- font, canvas, menu and overlay
 │   ├── test_renderer.py      <- headless OpenGL integration
 │   ├── test_input.py         <- action mapping and ActionState
 │   ├── test_clock.py         <- fixed-step clock

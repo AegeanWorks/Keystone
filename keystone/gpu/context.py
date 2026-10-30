@@ -27,6 +27,7 @@ _KEYS = {
     "right": glfw.KEY_RIGHT,
     "h": glfw.KEY_H,
     "p": glfw.KEY_P,
+    "enter": glfw.KEY_ENTER,
     "escape": glfw.KEY_ESCAPE,
     "f1": glfw.KEY_F1,
 }
@@ -124,6 +125,11 @@ class GLContext:
 
     def cursor_position(self) -> tuple[float, float]:
         return glfw.get_cursor_pos(self._window)
+
+    def mouse_down(self, button: str = "left") -> bool:
+        if button != "left":
+            raise ValueError(f"unknown mouse button '{button}'; only 'left' is mapped")
+        return glfw.get_mouse_button(self._window, glfw.MOUSE_BUTTON_LEFT) == glfw.PRESS
 
     def set_cursor_captured(self, captured: bool) -> None:
         mode = glfw.CURSOR_DISABLED if captured else glfw.CURSOR_NORMAL

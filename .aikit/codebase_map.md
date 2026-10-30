@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `49`
-- **Total Classes**: `62`
-- **Total Top-Level Functions**: `51`
-- **Total Class Methods**: `315`
-- **Total Source Lines**: `4813`
+- **Total Python Modules**: `51`
+- **Total Classes**: `65`
+- **Total Top-Level Functions**: `54`
+- **Total Class Methods**: `327`
+- **Total Source Lines**: `5032`
 
 ---
 
@@ -58,15 +58,17 @@
 ### [`keystone/app.py`](keystone/app.py)
 > *Game-agnostic engine runtime: window, fixed step, input, render and capture.*
 
-**Size**: `184` lines (`6596` bytes)
+**Size**: `220` lines (`8032` bytes)
 
 **Classes:**
 - `class Engine` - *Owns the runtime around one external GameModule.*
   - Method `.__init__(game, width, height, visible, msaa, title, ui)`
   - Method `.__enter__()`
   - Method `.__exit__(*exc_info)`
+  - Method `._set_capture(captured)`
   - Method `._handle_system_actions(actions)`
-  - Method `.toggle_pause()` - *Pause or resume gameplay while keeping rendering and UI responsive.*
+  - Method `.toggle_pause()` - *Pause or resume gameplay; release the cursor while the menu is open.*
+  - Method `.apply_ui_action(action)` - *Run a named UI action; returns False when the action is unknown.*
   - Method `._draw_ui()`
   - Method `.run(max_frames)` - *Run until the window closes or max_frames (0 = unlimited) is reached.*
   - Method `.capture(image_path, report_path)`
@@ -133,7 +135,7 @@
 ### [`keystone/gpu/context.py`](keystone/gpu/context.py)
 > *GLFW window and OpenGL 3.3 context lifecycle with deterministic teardown.*
 
-**Size**: `145` lines (`4932` bytes)
+**Size**: `151` lines (`5224` bytes)
 
 **Classes:**
 - `class GLContext` - *A hidden or visible GLFW window owning one OpenGL 3.3 core context.*
@@ -149,6 +151,7 @@
   - Method `.time()`
   - Method `.key_down(name)`
   - Method `.cursor_position()`
+  - Method `.mouse_down(button)`
   - Method `.set_cursor_captured(captured)`
   - Method `.set_title(title)`
   - Method `.framebuffer_size()`
@@ -240,7 +243,7 @@
 ### [`keystone/input.py`](keystone/input.py)
 > *Generic input mapping: named actions, axes and pointer look.*
 
-**Size**: `119` lines (`3993` bytes)
+**Size**: `128` lines (`4378` bytes)
 
 **Classes:**
 - `class ActionState` - *One sampled input frame; games translate names into their own rules.*
@@ -362,7 +365,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `62` lines (`2135` bytes)
+**Size**: `62` lines (`2176` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -494,7 +497,7 @@
 ### [`keystone/ui/__init__.py`](keystone/ui/__init__.py)
 > *Dependency-free human UI: bitmap font, canvas and HUD overlay.*
 
-**Size**: `6` lines (`213` bytes)
+**Size**: `7` lines (`287` bytes)
 
 ---
 
@@ -517,28 +520,54 @@
 ### [`keystone/ui/font.py`](keystone/ui/font.py)
 > *Embedded 5x7 bitmap font for the dependency-free human overlay.*
 
-**Size**: `80` lines (`4634` bytes)
+**Size**: `88` lines (`4940` bytes)
 
 **Functions:**
 - `def glyph(character)` - *Return the 7x5 rows for one character; lowercase maps to uppercase.*
 - `def text_width(text, scale)` - *Return the pixel width of text, excluding trailing tracking.*
 - `def line_height(scale)` - *Return the pixel height of one uppercase text line.*
+- `def truncate_text(text, width, scale)` - *Trim text so it fits width pixels, leaving room for an ellipsis-free cut.*
+
+---
+
+### [`keystone/ui/menu.py`](keystone/ui/menu.py)
+> *Game-agnostic pause menu state: items, selection and activation.*
+
+**Size**: `39` lines (`1044` bytes)
+
+**Classes:**
+- `class MenuItem` - *One labelled action the human can choose.*
+- `class PauseMenu` - *Wraps selection over a fixed item list; contains no rendering or input.*
+  - Method `.__init__(items)`
+  - Method `.move(delta)` - *Move the selection by delta, wrapping at both ends.*
+  - Method `.action()` - *Return the action of the selected item.*
 
 ---
 
 ### [`keystone/ui/overlay.py`](keystone/ui/overlay.py)
-> *Game-agnostic human overlay: HUD, controls help and pause banner.*
+> *Game-agnostic human overlay: HUD, controls help and pause menu.*
 
-**Size**: `123` lines (`4662` bytes)
+**Size**: `129` lines (`5529` bytes)
 
 **Classes:**
 - `class HudState` - *Presentation-only snapshot the overlay needs for one frame.*
-- `class HumanOverlay` - *Builds the pixel UI and tracks whether the person hid it.*
+- `class HumanOverlay` - *Builds the pixel UI, pause menu and button hitboxes.*
   - Method `.__init__()`
   - Method `.toggle()`
-  - Method `._panel(canvas, x, y, width, height, color)`
-  - Method `._truncate(text, width, scale)`
+  - Method `.hit_test(x, y)` - *Return the action of the button under the pointer, if any.*
+  - Method `._menu(canvas, state, scale, line)`
   - Method `.build(state)`
+
+---
+
+### [`keystone/ui/widgets.py`](keystone/ui/widgets.py)
+> *Small immediate-mode UI widgets: panels and labelled buttons.*
+
+**Size**: `43` lines (`1436` bytes)
+
+**Functions:**
+- `def panel(canvas, x, y, width, height, color)` - *Draw a background panel; non-positive sizes are ignored.*
+- `def button(canvas, x, y, width, height, label, scale, selected, hovered)` - *Draw one menu button with selected and pointer-hover states.*
 
 ---
 
@@ -563,13 +592,14 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `187` lines (`8442` bytes)
+**Size**: `203` lines (`9253` bytes)
 
 **Classes:**
 - `class EngineTest`
   - Method `.test_headless_engine_runs_fixed_steps_and_saves_a_png()`
   - Method `.test_ui_overlay_changes_the_captured_frame()`
   - Method `.test_pause_stops_updates_but_keeps_rendering()`
+  - Method `.test_ui_actions_are_drivable_without_real_input()`
   - Method `.test_bad_size_is_a_usage_error()`
   - Method `.test_out_requires_headless()`
   - Method `.test_ui_flags_are_limited_to_rendered_runs()`
@@ -668,18 +698,20 @@
 ### [`tests/test_input.py`](tests/test_input.py)
 > *Tests for input sampling and action state.*
 
-**Size**: `63` lines (`2082` bytes)
+**Size**: `86` lines (`2836` bytes)
 
 **Classes:**
 - `class FakeContext`
   - Method `.__init__()`
   - Method `.key_down(key)`
   - Method `.cursor_position()`
+  - Method `.mouse_down(button)`
 - `class InputMapTest`
   - Method `.test_axes_and_pressed_edges()`
   - Method `.test_custom_binding()`
   - Method `.test_mouse_delta_feeds_look()`
   - Method `.test_disabled_mouse_ignores_pointer()`
+  - Method `.test_mouse_click_is_a_single_frame_edge()`
   - Method `.test_action_state_round_trip_and_clear()`
 
 ---
@@ -733,7 +765,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `44` lines (`1523` bytes)
+**Size**: `45` lines (`1600` bytes)
 
 **Classes:**
 - `class PluginTest`
@@ -876,7 +908,7 @@
 ### [`tests/test_ui.py`](tests/test_ui.py)
 > *Tests for the dependency-free human UI primitives and overlay.*
 
-**Size**: `87` lines (`3318` bytes)
+**Size**: `118` lines (`4609` bytes)
 
 **Classes:**
 - `class FontTest`
@@ -886,9 +918,13 @@
   - Method `.test_rect_is_clipped_to_canvas_bounds()`
   - Method `.test_text_records_labels_and_stays_inside_the_canvas()`
   - Method `.test_invalid_geometry_is_rejected()`
+- `class MenuTest`
+  - Method `.test_selection_wraps_and_returns_actions()`
+  - Method `.test_custom_items_and_empty_menu()`
 - `class OverlayTest`
   - Method `.test_overlay_shows_game_status_and_metrics()`
   - Method `.test_pause_banner_and_hidden_overlay()`
+  - Method `.test_pause_menu_buttons_are_hit_testable()`
   - Method `.test_compact_layout_uses_smaller_text()`
   - Method `.test_tiny_canvas_is_clipped_without_errors()`
 

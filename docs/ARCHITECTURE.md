@@ -1,6 +1,6 @@
 # Keystone Architecture
 
-**Status:** implemented in v0.14.0 — core-only engine with human UI  
+**Status:** implemented in v0.15.0 — core-only engine with human UI  
 **Boundary:** `keystone/` is game-agnostic; games are external modules.
 
 ## 1. What Keystone Is
@@ -44,7 +44,7 @@ keystone/
 ├── png.py            PNG writer and reader
 ├── math3d.py         Vec3, Mat4, Quat
 ├── samples.py        CubeDemo smoke test
-├── ui/               bitmap font, screen canvas, human overlay
+├── ui/               bitmap font, canvas, widgets, pause menu and overlay
 └── gpu/              GLFW context, GLSL, buffers, 3D and UI renderers
 ```
 
@@ -77,14 +77,14 @@ The engine owns the runtime; the game owns its state and rules. The engine never
 Engine.run
   -> poll events / resize
   -> sample InputMap -> ActionState
-  -> handle quit / mouse capture / HUD / pause
+  -> handle quit / mouse capture / HUD / pause menu input
   -> for each fixed step: GameModule.update(dt, actions) unless paused
   -> Renderer.render(GameModule scene)
   -> UiRenderer.draw(HumanOverlay.build(HudState))
   -> swap and update the title
 ```
 
-Headless runs advance exactly one fixed step per rendered frame. Visible runs use `FixedStepClock` with a 0.25 s catch-up cap. Pausing stops gameplay updates but keeps rendering, input and the overlay alive.
+Headless runs advance exactly one fixed step per rendered frame. Visible runs use `FixedStepClock` with a 0.25 s catch-up cap. Pausing stops gameplay updates but keeps rendering, input and the overlay alive. The pause menu releases the cursor, supports keyboard selection (`W`/`S` or arrows, `Enter`) and mouse clicks, and `Engine.apply_ui_action()` exposes the same actions to scripted tests.
 
 ### Determinism
 
@@ -98,6 +98,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 - `analysis.compare_reports(before, after)` returns image/report equality, luminance/content-ratio deltas, bbox changes and added/removed/changed nodes.
 - `analysis.diff_images(before, after, output)` reads PNGs, writes a visual diff and returns changed-pixel count/ratio, bbox and mean/max delta; `png.read_png()` is the dependency-free reader.
 - `describe_game()` exposes `name`, `actions()`, `snapshot()`, capabilities (`simulate`, `render`, `human_ui`) and the versioned report schema; `--describe` prints it without a window.
+- `ActionState` includes `mouse_clicked` as a one-frame edge so games and menus can react without importing GLFW.
 - `testing.run_script()`, `verify_determinism()` and `assert_deterministic()` turn an action script into test evidence; `--verify-determinism` exposes the two-run check to agents; `--expect-hash` pins a final result.
 - `--simulate` requires no GPU; `--headless` renders off-screen; `--ui` adds the human overlay to a capture; `--no-ui` disables it; `--report` documents a rendered frame; `--compare-baseline` gates visual changes; `--describe` discovers the contract.
 - `docs/AI_GUIDE.md` is the end-to-end workflow reference.
@@ -130,7 +131,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | AI discovery | Implemented | describe_game/--describe contract introspection |
 | AI testing | Implemented | deterministic scenario helpers |
 | Frame report | Implemented | image statistics, projected nodes and report diff |
-| Human UI | Implemented | bitmap font, canvas, HUD/help, pause banner |
+| Human UI | Implemented | bitmap font, canvas, HUD/help, interactive pause menu |
 | Physics | Implemented (queries) | rays, AABB, sphere overlap/pushout |
 | Audio | Missing | future core module |
 | ECS | Optional/missing | evaluate after a real workload |
@@ -158,6 +159,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - `--headless --frames 1 --size 64x48` renders the sample.
 - `--headless --frames 1 --ui --report hud.json` captures the human overlay.
 - `--no-ui` keeps windowed and headless captures free of overlay pixels.
+- Pausing opens a hit-testable Resume/Hide HUD/Quit menu and releases the cursor.
 - `python -m keystone --headless --frames 1 --out frame.png --report frame.json` writes both artifacts.
 - `--compare-baseline baseline.json` exits non-zero on image change.
 - `--diff-out diff.png` writes a visual pixel diff.

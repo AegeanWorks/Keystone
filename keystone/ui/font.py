@@ -78,3 +78,11 @@ def text_width(text: str, scale: int = 1) -> int:
 def line_height(scale: int = 1) -> int:
     """Return the pixel height of one uppercase text line."""
     return GLYPH_HEIGHT * scale
+
+
+def truncate_text(text: str, width: int, scale: int = 1) -> str:
+    """Trim text so it fits width pixels, leaving room for an ellipsis-free cut."""
+    if text_width(text, scale) <= width:
+        return text
+    limit = max(0, (width // ((GLYPH_WIDTH + TRACKING) * scale)) - 1)
+    return text[:limit]

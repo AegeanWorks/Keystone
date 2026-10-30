@@ -21,7 +21,7 @@ The JSON response contains:
 python -m keystone --simulate --frames 120 --actions actions.json --out run.json
 ```
 
-Actions are a JSON list of `ActionState` objects. If the list is shorter than `frames`, the last action repeats. The result includes:
+Actions are a JSON list of `ActionState` objects. If the list is shorter than `frames`, the last action repeats. Each object may set movement axes, `pressed`, `held`, `pointer` and `mouse_clicked`. The result includes:
 
 - `ok`, `game`, `frames`, `step`;
 - actions used, final snapshot and `hash`;
@@ -73,7 +73,16 @@ python -m keystone --headless --frames 1 --size 960x540 --ui \
   --out hud.png --report hud.json
 ```
 
-The overlay reports game/status, FPS, frame, elapsed time, resolution, controls and pause state. It is presentation-only: `--simulate` and `--verify-determinism` stay GPU-free, and `--no-ui` keeps captures pixel-identical to the pre-overlay behavior.
+The overlay reports game/status, FPS, frame, elapsed time, resolution, controls and pause state. `P` opens an interactive `Resume` / `Hide HUD` / `Quit` menu; the cursor is released while it is open. The overlay is presentation-only: `--simulate` and `--verify-determinism` stay GPU-free, and `--no-ui` keeps captures pixel-identical to the pre-overlay behavior.
+
+UI actions can also be driven directly, which is useful for scripted tests:
+
+```python
+engine.apply_ui_action("pause")     # open the menu
+engine.apply_ui_action("resume")    # close it
+engine.apply_ui_action("toggle_ui") # hide/show the HUD
+engine.apply_ui_action("quit")      # request window close
+```
 
 ## Python helpers
 

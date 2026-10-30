@@ -163,3 +163,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The engine had become excellent for AI clients but a person launching the window had no in-engine HUD, control reference or pause feedback; the title bar was the only status surface.
 - **Decision**: Add `keystone.ui` (embedded 5×7 bitmap font, clipped `Canvas`, `HumanOverlay`/`HudState`) and `gpu.ui_renderer.UiRenderer` for one alpha-blended screen-space draw. The Engine draws the overlay after the 3D scene, toggles it with `H`, pauses gameplay with `P` without stopping rendering, and exposes `--ui`/`--no-ui`. Windowed runs default to UI on; headless captures default to off so existing report hashes and baselines stay stable.
 - **Consequences**: People get a readable HUD, controls help and pause banner with no font/asset dependency. The overlay is presentation-only and never mutates game state. UI pixels are included in `--ui` reports, so UI screenshots can be reviewed by the same report/diff workflow; `--no-ui` preserves clean scene captures.
+
+### ADR-020: Make the pause menu interactive with mouse and keyboard
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: The human overlay displayed a pause banner but offered no actions; a person still had to remember `P` to resume and `Esc` to quit, and there was no clickable UI or reusable menu state for games.
+- **Decision**: Add a pure `PauseMenu` (Resume / Hide HUD / Quit), draw hit-testable buttons with selected and hover states, add a one-frame `ActionState.mouse_clicked` edge, bind `Enter` to `confirm`, release the cursor while paused, and expose `Engine.apply_ui_action()` for scripted use. `W`/`S` or arrows move the selection.
+- **Consequences**: Pausing now opens a real menu that works by mouse or keyboard; resuming recaptures the cursor. `mouse_clicked` defaults to false so existing action scripts stay valid. Menu selection and hitboxes are presentation state only; games remain unaware of the overlay.

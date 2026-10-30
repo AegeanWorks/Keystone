@@ -4,6 +4,7 @@ import unittest
 
 from keystone.ui.canvas import Canvas
 from keystone.ui.font import GLYPH_HEIGHT, GLYPH_WIDTH, glyph, line_height, text_width
+from keystone.ui.menu import MenuItem, PauseMenu
 from keystone.ui.overlay import HudState, HumanOverlay
 
 
@@ -58,6 +59,22 @@ def state(**overrides):
     return HudState(**values)
 
 
+class MenuTest(unittest.TestCase):
+    def test_selection_wraps_and_returns_actions(self):
+        menu = PauseMenu()
+        self.assertEqual(menu.action(), "resume")
+        self.assertEqual(menu.move(-1), 2)
+        self.assertEqual(menu.action(), "quit")
+        self.assertEqual(menu.move(1), 0)
+
+    def test_custom_items_and_empty_menu(self):
+        menu = PauseMenu((MenuItem("BACK", "resume"),))
+        self.assertEqual(menu.items[0].label, "BACK")
+        self.assertEqual(menu.move(4), 0)
+        with self.assertRaises(ValueError):
+            PauseMenu(())
+
+
 class OverlayTest(unittest.TestCase):
     def test_overlay_shows_game_status_and_metrics(self):
         canvas = HumanOverlay().build(state())
@@ -75,6 +92,20 @@ class OverlayTest(unittest.TestCase):
         overlay.toggle()
         self.assertFalse(overlay.visible)
         self.assertEqual(overlay.build(state()).quads, [])
+
+    def test_pause_menu_buttons_are_hit_testable(self):
+        overlay = HumanOverlay()
+        canvas = overlay.build(state(paused=True))
+        for label in ("RESUME", "HIDE HUD", "QUIT"):
+            self.assertIn(label, canvas.labels)
+        self.assertEqual(len(overlay.hits), 3)
+        left, top, width, height, action = overlay.hits[0]
+        self.assertEqual(action, "resume")
+        self.assertEqual(overlay.hit_test(left + width / 2, top + height / 2), "resume")
+        self.assertIsNone(overlay.hit_test(0, 0))
+        overlay.toggle()
+        self.assertEqual(overlay.build(state(paused=True)).quads, [])
+        self.assertEqual(overlay.hits, [])
 
     def test_compact_layout_uses_smaller_text(self):
         canvas = HumanOverlay().build(state(width=400, height=240))

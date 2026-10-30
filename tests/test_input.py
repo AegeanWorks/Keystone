@@ -9,12 +9,16 @@ class FakeContext:
     def __init__(self) -> None:
         self.keys: set[str] = set()
         self.pointer = (0.0, 0.0)
+        self.mouse = False
 
     def key_down(self, key: str) -> bool:
         return key in self.keys
 
     def cursor_position(self) -> tuple[float, float]:
         return self.pointer
+
+    def mouse_down(self, button: str = "left") -> bool:
+        return self.mouse
 
 
 class InputMapTest(unittest.TestCase):
@@ -52,11 +56,30 @@ class InputMapTest(unittest.TestCase):
         state = mapping.sample(context)
         self.assertEqual((state.look_yaw, state.look_pitch), (0.0, 0.0))
 
+    def test_mouse_click_is_a_single_frame_edge(self):
+        context = FakeContext()
+        mapping = InputMap()
+        self.assertFalse(mapping.sample(context).mouse_clicked)
+        context.mouse = True
+        self.assertTrue(mapping.sample(context).mouse_clicked)
+        self.assertFalse(mapping.sample(context).mouse_clicked)
+        context.mouse = False
+        mapping.sample(context)
+        context.mouse = True
+        self.assertTrue(mapping.sample(context).mouse_clicked)
+
     def test_action_state_round_trip_and_clear(self):
-        state = ActionState(forward=1.0, pressed=frozenset({"jump"}), held=frozenset({"jump"}))
+        state = ActionState(
+            forward=1.0,
+            pressed=frozenset({"jump"}),
+            held=frozenset({"jump"}),
+            mouse_clicked=True,
+        )
         restored = ActionState.from_dict(state.to_dict())
         self.assertEqual(restored, state)
-        self.assertEqual(restored.without_pressed().pressed, frozenset())
+        cleared = restored.without_pressed()
+        self.assertEqual(cleared.pressed, frozenset())
+        self.assertFalse(cleared.mouse_clicked)
 
 
 if __name__ == "__main__":

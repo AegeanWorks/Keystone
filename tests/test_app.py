@@ -30,6 +30,7 @@ class EngineTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             plain_path = Path(directory) / "plain.png"
             ui_path = Path(directory) / "ui.png"
+            paused_path = Path(directory) / "paused.png"
             plain = Engine(CubeDemo(), 160, 120, visible=False)
             plain.run(max_frames=1)
             plain.screenshot(plain_path)
@@ -38,7 +39,10 @@ class EngineTest(unittest.TestCase):
             self.addCleanup(overlay.close)
             overlay.run(max_frames=1)
             overlay.screenshot(ui_path)
+            overlay.toggle_pause()
+            overlay.screenshot(paused_path)
             self.assertNotEqual(plain_path.read_bytes(), ui_path.read_bytes())
+            self.assertNotEqual(ui_path.read_bytes(), paused_path.read_bytes())
 
     def test_pause_stops_updates_but_keeps_rendering(self):
         game = CubeDemo()
@@ -52,6 +56,18 @@ class EngineTest(unittest.TestCase):
         engine.toggle_pause()
         engine.run(max_frames=1)
         self.assertGreater(game.snapshot()["time"], paused_at)
+
+    def test_ui_actions_are_drivable_without_real_input(self):
+        engine = Engine(CubeDemo(), 48, 32, visible=False, ui=True)
+        self.addCleanup(engine.close)
+        self.assertTrue(engine.apply_ui_action("pause"))
+        self.assertTrue(engine.paused)
+        self.assertTrue(engine.apply_ui_action("toggle_ui"))
+        self.assertFalse(engine.overlay.visible)
+        self.assertTrue(engine.apply_ui_action("toggle_ui"))
+        self.assertTrue(engine.apply_ui_action("resume"))
+        self.assertFalse(engine.paused)
+        self.assertFalse(engine.apply_ui_action("missing"))
 
     def test_bad_size_is_a_usage_error(self):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:

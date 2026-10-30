@@ -23,6 +23,7 @@ DEFAULT_BINDINGS = {
     "toggle_capture": "f1",
     "toggle_ui": "h",
     "pause": "p",
+    "confirm": "enter",
     "quit": "escape",
 }
 
@@ -39,9 +40,10 @@ class ActionState:
     pressed: frozenset[str] = frozenset()
     held: frozenset[str] = frozenset()
     pointer: tuple[float, float] = (0.0, 0.0)
+    mouse_clicked: bool = False
 
     def without_pressed(self) -> ActionState:
-        return replace(self, pressed=frozenset())
+        return replace(self, pressed=frozenset(), mouse_clicked=False)
 
     def to_dict(self) -> dict:
         return {
@@ -53,6 +55,7 @@ class ActionState:
             "pressed": sorted(self.pressed),
             "held": sorted(self.held),
             "pointer": list(self.pointer),
+            "mouse_clicked": self.mouse_clicked,
         }
 
     @classmethod
@@ -66,6 +69,7 @@ class ActionState:
             pressed=frozenset(data.get("pressed", ())),
             held=frozenset(data.get("held", ())),
             pointer=tuple(data.get("pointer", (0.0, 0.0))),
+            mouse_clicked=bool(data.get("mouse_clicked", False)),
         )
 
 
@@ -81,6 +85,7 @@ class InputMap:
         self.mouse_enabled = True
         self._held: frozenset[str] = frozenset()
         self._last_pointer: tuple[float, float] | None = None
+        self._mouse_held = False
 
     def bind(self, action: str, key: str) -> None:
         self.bindings[action] = key
@@ -93,6 +98,9 @@ class InputMap:
         held = frozenset(action for action, key in self.bindings.items() if context.key_down(key))
         pressed = held - self._held
         self._held = held
+        mouse = context.mouse_down("left")
+        clicked = mouse and not self._mouse_held
+        self._mouse_held = mouse
         x, y = context.cursor_position()
         if self._last_pointer is None or not self.mouse_enabled:
             dx = dy = 0.0
@@ -116,4 +124,5 @@ class InputMap:
             pressed=pressed,
             held=held,
             pointer=(x, y),
+            mouse_clicked=clicked,
         )

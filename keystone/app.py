@@ -58,6 +58,7 @@ class Engine:
         self._frames = 0
         self._elapsed = 0.0
         self._fps = 0.0
+        self._pointer: tuple[float, float] = (0.0, 0.0)
         self._visible = visible
         self._closed = False
         self._captured = visible
@@ -72,21 +73,54 @@ class Engine:
     def __exit__(self, *exc_info: object) -> None:
         self.close()
 
+    def _set_capture(self, captured: bool) -> None:
+        self._captured = captured
+        self.context.set_cursor_captured(captured)
+        self.input.set_mouse_enabled(captured)
+
     def _handle_system_actions(self, actions: ActionState) -> None:
         if "quit" in actions.pressed:
             self.context.request_close()
-        if "toggle_capture" in actions.pressed:
-            self._captured = not self._captured
-            self.context.set_cursor_captured(self._captured)
-            self.input.set_mouse_enabled(self._captured)
+        if "toggle_capture" in actions.pressed and not self.paused:
+            self._set_capture(not self._captured)
         if "toggle_ui" in actions.pressed and self.overlay is not None:
             self.overlay.toggle()
         if "pause" in actions.pressed:
             self.toggle_pause()
+        if self.paused and self.overlay is not None and self.overlay.visible:
+            menu = self.overlay.menu
+            if actions.pressed & {"look_up", "forward"}:
+                menu.move(-1)
+            elif actions.pressed & {"look_down", "back"}:
+                menu.move(1)
+            if "confirm" in actions.pressed:
+                self.apply_ui_action(menu.action())
+            if actions.mouse_clicked:
+                action = self.overlay.hit_test(*actions.pointer)
+                if action is not None:
+                    self.apply_ui_action(action)
 
     def toggle_pause(self) -> None:
-        """Pause or resume gameplay while keeping rendering and UI responsive."""
+        """Pause or resume gameplay; release the cursor while the menu is open."""
         self.paused = not self.paused
+        self._set_capture(self._visible and not self.paused)
+
+    def apply_ui_action(self, action: str) -> bool:
+        """Run a named UI action; returns False when the action is unknown."""
+        if action == "pause":
+            self.toggle_pause()
+            return True
+        if action == "resume":
+            if self.paused:
+                self.toggle_pause()
+            return True
+        if action == "toggle_ui" and self.overlay is not None:
+            self.overlay.toggle()
+            return True
+        if action == "quit":
+            self.context.request_close()
+            return True
+        return False
 
     def _draw_ui(self) -> None:
         if self.overlay is None or self.ui_renderer is None:
@@ -100,6 +134,7 @@ class Engine:
             width=self.renderer.width,
             height=self.renderer.height,
             paused=self.paused,
+            pointer=self._pointer,
         )
         self.ui_renderer.draw(self.overlay.build(state))
 
@@ -127,6 +162,7 @@ class Engine:
                 frame_dt = self.clock.step
             last = now
             actions = self.input.sample(self.context, frame_dt)
+            self._pointer = actions.pointer
             self._handle_system_actions(actions)
             if self.context.should_close():
                 break
