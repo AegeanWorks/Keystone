@@ -81,6 +81,7 @@ def main(argv: list[str] | None = None) -> int:
             update=experience.update,
             max_frames=max_frames,
             controls=controls,
+            status=getattr(experience, "status", None),
         )
         if args.out:
             engine.screenshot(args.out)

@@ -11,6 +11,7 @@ from keystone.scene import Scene
 
 Update = Callable[[float], None]
 Controls = Callable[[float, GLContext], None]
+Status = Callable[[], str]
 
 
 class Engine:
@@ -76,6 +77,7 @@ class Engine:
         update: Update | None = None,
         max_frames: int = 0,
         controls: Controls | None = None,
+        status: Status | None = None,
     ) -> int:
         """Render until the window closes or max_frames (0 = unlimited) is reached."""
         if max_frames < 0:
@@ -110,8 +112,9 @@ class Engine:
             fps_frames += 1
             if self._visible and now - fps_start >= 0.5:
                 fps = fps_frames / max(now - fps_start, 1e-6)
+                detail = f" | {status()}" if status is not None else ""
                 self.context.set_title(
-                    f"Keystone | {fps:.0f} FPS | {self.renderer.width}x{self.renderer.height}"
+                    f"Keystone{detail} | {fps:.0f} FPS | {self.renderer.width}x{self.renderer.height}"
                 )
                 fps_start = now
                 fps_frames = 0

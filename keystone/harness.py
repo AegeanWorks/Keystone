@@ -35,13 +35,14 @@ def catalog() -> dict[str, Any]:
         },
         "state_keys": [
             "seed", "time", "day_fraction", "mode", "player", "terrain", "dungeon",
-            "near_entrance", "near_exit", "events",
+            "near_entrance", "near_exit", "combat", "events",
         ],
         "limits": {"actions": MAX_ACTIONS, "seconds": MAX_SECONDS, "step": FIXED_STEP},
         "notes": [
             "Each run starts from one integer seed; identical seed and actions reproduce the same hash.",
             "Positions are world coordinates; mode is 'overworld' or 'dungeon'.",
             "Use interact near the portal to enter the crypt and near the exit rune to leave.",
+            "Combat auto-fires at the nearest enemy; move to avoid contact damage and watch the wave.",
         ],
     }
 

@@ -59,3 +59,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Several sibling games contributed proven algorithms, but they are AGL-1.1 projects while Keystone is AL-1.1 software.
 - **Decision**: Reimplement the useful algorithms as new modular Python (FBM/heightfield/atmosphere from Aldervale, room/corridor/FOV/BFS and harness shape from Crypt-Crawler, collision ideas from Dustline). Do not copy AGL source files or assets. Credit the sources in the README and record any future direct reuse in a new ADR after a license review.
 - **Consequences**: Provenance is explicit and the engine stays under AL-1.1. Direct code or asset reuse remains a deliberate, reviewed action rather than an accident of porting.
+
+### ADR-007: Combat is a deterministic core mechanic, not a separate mode
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: The seeded expedition had exploration and collision but no threat, fail state or reason to move. Dustline already proves an archetype/wave/boss model that suits the existing auto-render loop.
+- **Decision**: Add `keystone.combat.Combat` to `World`: seeded enemy spawns, six archetypes, contact damage, split-on-death, bomber detonation, auto-fire hitscan, escalating waves, a Warlord every fifth wave, player death and safe-point respawn. Combat is GL-free and included in `World.snapshot()` and `state_hash()`. Enemies are rendered as primitive nodes; HP/wave/kills appear in the window title.
+- **Consequences**: The core loop gains a fail state and combat state becomes part of replay hashes. Balance edits that change spawns or damage change hashes and need the harness selftest updated. No HUD yet, and only one weapon; weapons, upgrades, affixes and loot remain future work.

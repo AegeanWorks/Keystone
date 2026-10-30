@@ -6,6 +6,7 @@ import math
 import random
 
 from keystone.atmosphere import Atmosphere, apply_atmosphere
+from keystone.combat import ENEMY_TYPES
 from keystone.geometry import Material, MeshData
 from keystone.gpu.context import GLContext
 from keystone.math3d import Quat, Vec3
@@ -39,6 +40,19 @@ class Expedition:
         self._water_mesh = plane(self.world.terrain.size)
         self._tree_trunks, self._tree_crowns, self._rocks, self._path = self._build_scenery_meshes()
         self._dungeon_floor, self._dungeon_walls, self._dungeon_ceiling = self._build_dungeon_meshes()
+        self._enemy_meshes = {
+            "crawler": cone(1.0, 2.0, segments=7),
+            "stalker": sphere(1.0, segments=9, rings=6),
+            "bulwark": cube(2.0),
+            "splitter": sphere(1.0, segments=9, rings=6),
+            "bomber": sphere(1.0, segments=9, rings=6),
+            "warlord": cube(2.0),
+        }
+        self._enemy_materials = {
+            key: Material(color=Vec3(*spec.color), specular=0.45, shininess=48.0)
+            for key, spec in ENEMY_TYPES.items()
+        }
+        self._enemy_nodes: dict[int, Node] = {}
         self._rebuild()
 
     def _build_scenery_meshes(self) -> tuple[MeshData, MeshData, MeshData, MeshData]:
@@ -174,12 +188,14 @@ class Expedition:
         return floor.build(), walls.build(), ceiling.build()
 
     def _rebuild(self) -> None:
+        self._enemy_nodes = {}
         self.scene.root = Node()
         if self.world.mode == "overworld":
             self._build_overworld()
         else:
             self._build_dungeon()
         self._apply_visuals()
+        self._sync_enemies()
 
     def _build_overworld(self) -> None:
         self.scene.add(Node("terrain", mesh=self._terrain_mesh, material=TERRAIN))
@@ -302,6 +318,29 @@ class Expedition:
             self.scene.fog_density = 0.012
             self.scene.point_light = None
 
+    def _sync_enemies(self) -> None:
+        living = {id(enemy): enemy for enemy in self.world.combat.enemies if enemy.hp > 0}
+        for key in list(self._enemy_nodes):
+            if key not in living:
+                node = self._enemy_nodes.pop(key)
+                if node.parent is not None:
+                    node.parent.remove_child(node)
+        for key, enemy in living.items():
+            node = self._enemy_nodes.get(key)
+            if node is None:
+                node = Node(f"enemy-{key}", mesh=self._enemy_meshes[enemy.spec.key], material=self._enemy_materials[enemy.spec.key])
+                self.scene.add(node)
+                self._enemy_nodes[key] = node
+            height = self.world.terrain.height_at(enemy.x, enemy.z) if self.world.mode == "overworld" else 0.0
+            radius = enemy.spec.radius
+            node.transform = Transform(
+                position=Vec3(enemy.x, height + radius, enemy.z),
+                scale=Vec3(radius, radius, radius),
+            )
+
+    def status(self) -> str:
+        return f"{self.world.mode} | {self.world.combat.status()}"
+
     def step(self, dt: float, intent: MoveIntent | None = None) -> list[str]:
         events = self.world.step(dt, intent or MoveIntent())
         if self.world.mode != self._mode:
@@ -309,6 +348,7 @@ class Expedition:
             self._rebuild()
         else:
             self._apply_visuals()
+        self._sync_enemies()
         return events
 
     def update(self, dt: float) -> None:

@@ -32,6 +32,15 @@ class ExpeditionSceneTest(unittest.TestCase):
         self.assertEqual(camera.position, self.expedition.world.eye_position())
         self.assertEqual(camera.yaw, self.expedition.world.player.yaw)
 
+    def test_enemy_nodes_match_the_combat_state(self):
+        living = [enemy for enemy in self.expedition.world.combat.enemies if enemy.hp > 0]
+        nodes = [node for node in self.expedition.scene.traverse() if node.name.startswith("enemy-")]
+        self.assertEqual(len(nodes), len(living))
+        self.expedition.step(0.2)
+        living = [enemy for enemy in self.expedition.world.combat.enemies if enemy.hp > 0]
+        nodes = [node for node in self.expedition.scene.traverse() if node.name.startswith("enemy-")]
+        self.assertEqual(len(nodes), len(living))
+
     def test_step_advances_time_and_syncs_the_camera(self):
         before = self.expedition.scene.camera.position
         self.expedition.step(0.5, MoveIntent(forward=1.0))

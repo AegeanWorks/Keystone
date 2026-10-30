@@ -3,6 +3,7 @@
 import math
 import unittest
 
+from keystone.combat import ENEMY_TYPES, Enemy
 from keystone.math3d import Vec3
 from keystone.sim.world import MoveIntent, World
 
@@ -58,6 +59,16 @@ class WorldMovementTest(unittest.TestCase):
     def test_negative_dt_is_rejected(self):
         with self.assertRaises(ValueError):
             self.world.step(-0.1)
+
+    def test_death_respawns_at_the_safe_point(self):
+        self.world.combat.player_hp = 1.0
+        self.world.combat.enemies = [
+            Enemy(ENEMY_TYPES["crawler"], self.world.player.x + 0.2, self.world.player.z, 26.0, 26.0)
+        ]
+        self.world.step(1.0)
+        self.assertEqual(self.world.combat.player_hp, self.world.combat.max_hp)
+        self.assertFalse(self.world.combat.dead)
+        self.assertIn("fell", " ".join(self.world.messages))
 
 
 class WorldModeTest(unittest.TestCase):

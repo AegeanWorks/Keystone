@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `37`
-- **Total Classes**: `58`
-- **Total Top-Level Functions**: `39`
-- **Total Class Methods**: `307`
-- **Total Source Lines**: `4394`
+- **Total Python Modules**: `39`
+- **Total Classes**: `62`
+- **Total Top-Level Functions**: `40`
+- **Total Class Methods**: `331`
+- **Total Source Lines**: `4787`
 
 ---
 
@@ -26,7 +26,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the Keystone demo.*
 
-**Size**: `115` lines (`4218` bytes)
+**Size**: `116` lines (`4274` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -39,7 +39,7 @@
 ### [`keystone/app.py`](keystone/app.py)
 > *Engine runtime: window loop, fly controls and screenshot capture.*
 
-**Size**: `129` lines (`4731` bytes)
+**Size**: `132` lines (`4876` bytes)
 
 **Classes:**
 - `class Engine` - *Bind one scene to one OpenGL context and drive the frame loop.*
@@ -47,7 +47,7 @@
   - Method `.__enter__()`
   - Method `.__exit__(*exc_info)`
   - Method `._process_input(dt)`
-  - Method `.run(update, max_frames, controls)` - *Render until the window closes or max_frames (0 = unlimited) is reached.*
+  - Method `.run(update, max_frames, controls, status)` - *Render until the window closes or max_frames (0 = unlimited) is reached.*
   - Method `.screenshot(path)`
   - Method `.close()`
 
@@ -85,6 +85,29 @@
 
 ---
 
+### [`keystone/combat.py`](keystone/combat.py)
+> *Deterministic survivors-style combat: archetypes, waves, auto-fire and bosses.*
+
+**Size**: `234` lines (`8176` bytes)
+
+**Classes:**
+- `class EnemySpec`
+- `class Enemy`
+- `class Combat` - *Combat director owned by the world; no rendering, no wall clock.*
+  - Method `.__post_init__()`
+  - Method `.spawn_around(x, z, standable, facing)` - *Reset the arena around the player after a mode change or death.*
+  - Method `.update(dt, px, pz, standable)`
+  - Method `.revive(x, z, standable, facing)`
+  - Method `.snapshot()`
+  - Method `.status()`
+  - Method `._pick_type()`
+  - Method `._spawn_at_ring(x, z, standable, key, angle, radius)`
+  - Method `._attack(px, pz)`
+  - Method `._move_enemy(enemy, dx, dz, standable)`
+  - Method `._remove_dead()`
+
+---
+
 ### [`keystone/demo.py`](keystone/demo.py)
 > *Built-in demo scene: a lit platform, an orbiting ring and a spinning crystal.*
 
@@ -100,7 +123,7 @@
 ### [`keystone/expedition.py`](keystone/expedition.py)
 > *First-person expedition: procedural overworld, dungeon and scene assembly.*
 
-**Size**: `347` lines (`14427` bytes)
+**Size**: `387` lines (`16214` bytes)
 
 **Classes:**
 - `class Expedition` - *Owns one seeded World and the scene that renders its current mode.*
@@ -113,6 +136,8 @@
   - Method `._add_portal()`
   - Method `._build_dungeon()`
   - Method `._apply_visuals()`
+  - Method `._sync_enemies()`
+  - Method `.status()`
   - Method `.step(dt, intent)`
   - Method `.update(dt)`
   - Method `.handle_input(dt, context)`
@@ -228,7 +253,7 @@
 ### [`keystone/harness.py`](keystone/harness.py)
 > *Deterministic JSON harness for driving the expedition without a GPU.*
 
-**Size**: `237` lines (`8922` bytes)
+**Size**: `238` lines (`9036` bytes)
 
 **Functions:**
 - `def catalog()` - *Describe every action and the state an agent can observe.*
@@ -454,7 +479,7 @@
 ### [`keystone/sim/world.py`](keystone/sim/world.py)
 > *Seeded expedition state: player, terrain, dungeon, movement and replay hash.*
 
-**Size**: `192` lines (`7023` bytes)
+**Size**: `221` lines (`8508` bytes)
 
 **Classes:**
 - `class MoveIntent` - *One frame of player intent, in local forward/right and radians.*
@@ -469,7 +494,9 @@
   - Method `.interact()`
   - Method `._record(message)`
   - Method `._move(dx, dz)`
+  - Method `.is_standable(x, z)` - *Public walkability query shared by combat and future mechanics.*
   - Method `._free(x, z)`
+  - Method `._respawn()`
   - Method `._dungeon_free(x, z)`
   - Method `.snapshot()`
   - Method `.state_hash()`
@@ -493,6 +520,26 @@
   - Method `.test_bad_size_is_a_usage_error()`
   - Method `.test_out_requires_headless()`
   - Method `.test_bad_seed_is_a_usage_error()`
+
+---
+
+### [`tests/test_combat.py`](tests/test_combat.py)
+> *Tests for the deterministic combat director.*
+
+**Size**: `65` lines (`2185` bytes)
+
+**Classes:**
+- `class CombatTest`
+  - Method `.make(seed)`
+  - Method `.test_spawn_is_seeded_and_deterministic()`
+  - Method `.test_auto_fire_kills_a_nearby_enemy()`
+  - Method `.test_contact_damages_the_player()`
+  - Method `.test_wave_five_spawns_a_boss()`
+  - Method `.test_player_death_sets_the_flag()`
+  - Method `.test_snapshot_is_stable_after_the_same_steps()`
+
+**Functions:**
+- `def flat(x, z)`
 
 ---
 
@@ -521,7 +568,7 @@
 ### [`tests/test_expedition.py`](tests/test_expedition.py)
 > *Tests for scene assembly and the expedition controller.*
 
-**Size**: `68` lines (`3147` bytes)
+**Size**: `77` lines (`3723` bytes)
 
 **Classes:**
 - `class ExpeditionSceneTest`
@@ -529,6 +576,7 @@
   - Method `.test_overworld_scene_has_terrain_water_trees_and_a_portal()`
   - Method `.test_rocks_leave_the_portal_path_clear()`
   - Method `.test_camera_starts_at_the_player_eye()`
+  - Method `.test_enemy_nodes_match_the_combat_state()`
   - Method `.test_step_advances_time_and_syncs_the_camera()`
   - Method `.test_entering_the_portal_switches_to_a_dungeon_scene()`
   - Method `.test_atmosphere_reaches_the_scene()`
@@ -731,7 +779,7 @@
 ### [`tests/test_world.py`](tests/test_world.py)
 > *Tests for the deterministic expedition simulation core.*
 
-**Size**: `107` lines (`4300` bytes)
+**Size**: `118` lines (`4812` bytes)
 
 **Classes:**
 - `class WorldDeterminismTest`
@@ -745,6 +793,7 @@
   - Method `.test_pitch_is_clamped()`
   - Method `.test_day_fraction_advances_with_time()`
   - Method `.test_negative_dt_is_rejected()`
+  - Method `.test_death_respawns_at_the_safe_point()`
 - `class WorldModeTest`
   - Method `.setUp()`
   - Method `._stand_at_entrance()`

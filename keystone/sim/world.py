@@ -8,6 +8,7 @@ import math
 from collections import deque
 from dataclasses import dataclass
 
+from keystone.combat import Combat
 from keystone.math3d import Vec3
 from keystone.procedural.dungeon import Dungeon, DungeonGenerator
 from keystone.procedural.terrain import Terrain
@@ -53,6 +54,8 @@ class World:
         self.player.yaw = math.atan2(dx, -dz)
         self.messages: deque[str] = deque(maxlen=8)
         self.events: list[str] = []
+        self.combat = Combat(self.seed ^ 0xC0FFEE)
+        self.combat.spawn_around(self.player.x, self.player.z, self.is_standable, self.player.yaw)
 
     @property
     def day_fraction(self) -> float:
@@ -98,6 +101,11 @@ class World:
         )
         if intent.interact:
             self.interact()
+        self.combat.update(dt, self.player.x, self.player.z, self.is_standable)
+        if self.combat.dead:
+            self._respawn()
+        for event in self.combat.events:
+            self.messages.append(event)
         return list(self.events)
 
     def interact(self) -> None:
@@ -112,11 +120,13 @@ class World:
                 step[0] + 0.5 - self.player.x,
                 -(step[1] + 0.5 - self.player.z),
             )
+            self.combat.spawn_around(self.player.x, self.player.z, self.is_standable, self.player.yaw)
             self._record("Entered the sunken crypt.")
         elif self.mode == "dungeon" and self.near_exit:
             self.mode = "overworld"
             self.player.x = self.terrain.entrance[0]
             self.player.z = self.terrain.entrance[1] + 1.2
+            self.combat.spawn_around(self.player.x, self.player.z, self.is_standable, self.player.yaw)
             self._record("Returned to the vale.")
 
     def _record(self, message: str) -> None:
@@ -134,10 +144,28 @@ class World:
         elif self._free(self.player.x, self.player.z + dz):
             self.player.z += dz
 
+    def is_standable(self, x: float, z: float) -> bool:
+        """Public walkability query shared by combat and future mechanics."""
+        return self._free(x, z)
+
     def _free(self, x: float, z: float) -> bool:
         if self.mode == "dungeon":
             return self._dungeon_free(x, z)
         return self.terrain.is_walkable(x, z)
+
+    def _respawn(self) -> None:
+        if self.mode == "dungeon":
+            self.player.x = self.dungeon.spawn[0] + 0.5
+            self.player.z = self.dungeon.spawn[1] + 0.5
+            self.player.yaw = 0.0
+        else:
+            self.player.x, self.player.z = self.terrain.spawn
+            dx = self.terrain.entrance[0] - self.player.x
+            dz = self.terrain.entrance[1] - self.player.z
+            self.player.yaw = math.atan2(dx, -dz)
+        self.player.pitch = 0.0
+        self.combat.revive(self.player.x, self.player.z, self.is_standable, self.player.yaw)
+        self._record("You fell. The expedition restarts at the last safe point.")
 
     def _dungeon_free(self, x: float, z: float) -> bool:
         offsets = (
@@ -182,6 +210,7 @@ class World:
             },
             "near_entrance": self.near_entrance,
             "near_exit": self.near_exit,
+            "combat": self.combat.snapshot(),
             "events": list(self.events),
         }
 

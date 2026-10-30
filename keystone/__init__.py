@@ -2,5 +2,5 @@
 
 from keystone.math3d import Mat4, Quat, Vec3
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __all__ = ["Mat4", "Quat", "Vec3"]
