@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `45`
-- **Total Classes**: `70`
-- **Total Top-Level Functions**: `45`
-- **Total Class Methods**: `406`
-- **Total Source Lines**: `5749`
+- **Total Python Modules**: `53`
+- **Total Classes**: `80`
+- **Total Top-Level Functions**: `55`
+- **Total Class Methods**: `458`
+- **Total Source Lines**: `6606`
 
 ---
 
@@ -26,7 +26,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the Keystone demo.*
 
-**Size**: `124` lines (`4637` bytes)
+**Size**: `135` lines (`5287` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -196,7 +196,7 @@
 ### [`keystone/gpu/context.py`](keystone/gpu/context.py)
 > *GLFW window and OpenGL 3.3 context lifecycle with deterministic teardown.*
 
-**Size**: `140` lines (`4827` bytes)
+**Size**: `143` lines (`4890` bytes)
 
 **Classes:**
 - `class GLContext` - *A hidden or visible GLFW window owning one OpenGL 3.3 core context.*
@@ -469,6 +469,26 @@
 
 ---
 
+### [`keystone/procedural/space.py`](keystone/procedural/space.py)
+> *Seeded star systems, orbiting bodies and hyperlane connections.*
+
+**Size**: `130` lines (`4101` bytes)
+
+**Classes:**
+- `class Body`
+  - Method `.position(time)`
+- `class StarSystem`
+  - Property `.star`
+  - Method `.body(body_id)`
+- `class Galaxy`
+  - Method `.generate(seed, count)`
+  - Method `.system(system_id)`
+
+**Functions:**
+- `def body_snapshot(body, time)`
+
+---
+
 ### [`keystone/procedural/terrain.py`](keystone/procedural/terrain.py)
 > *Procedural island heightfield with per-vertex biome colors.*
 
@@ -550,7 +570,7 @@
 ### [`keystone/sim/world.py`](keystone/sim/world.py)
 > *Seeded expedition state: player, terrain, dungeon, movement and replay hash.*
 
-**Size**: `283` lines (`11344` bytes)
+**Size**: `286` lines (`11410` bytes)
 
 **Classes:**
 - `class MoveIntent` - *One frame of player intent, in local forward/right and radians.*
@@ -574,6 +594,66 @@
   - Method `._dungeon_free(x, z)`
   - Method `.snapshot()`
   - Method `.state_hash()`
+
+---
+
+### [`keystone/space.py`](keystone/space.py)
+> *Renderer-independent space flight, body surveys and hyperlane jumps.*
+
+**Size**: `142` lines (`5219` bytes)
+
+**Classes:**
+- `class Ship`
+  - Method `.forward()`
+- `class SpaceWorld`
+  - Method `.__init__(seed)`
+  - Property `.system`
+  - Property `.scanned_count`
+  - Property `.complete`
+  - Method `.step(dt, intent)`
+  - Method `.scan()`
+  - Method `.jump()`
+  - Method `._record(message)`
+  - Method `.snapshot()`
+  - Method `.state_hash()`
+  - Method `.status()`
+
+---
+
+### [`keystone/space_expedition.py`](keystone/space_expedition.py)
+> *First-person space scene and controls over the renderer-independent SpaceWorld.*
+
+**Size**: `164` lines (`6333` bytes)
+
+**Classes:**
+- `class SpaceExpedition` - *A free-flight ship, an orbiting system and a jump gate.*
+  - Method `.__init__(seed)`
+  - Method `._build_starfield(seed)`
+  - Method `._build_system()`
+  - Method `._add_gate()`
+  - Method `._sync()`
+  - Method `.step(dt, intent)`
+  - Method `.update(dt)`
+  - Method `.handle_input(dt, context)`
+  - Method `.status()`
+
+---
+
+### [`keystone/space_harness.py`](keystone/space_harness.py)
+> *Deterministic JSON harness for the space mode.*
+
+**Size**: `190` lines (`7182` bytes)
+
+**Functions:**
+- `def catalog()`
+- `def _number(action, key, default)`
+- `def _seconds(action)`
+- `def apply_action(world, action)`
+- `def run_actions(seed, actions)`
+- `def selftest()`
+- `def _read_actions(path)`
+- `def _write_json(path, payload)`
+- `def main(argv)`
 
 ---
 
@@ -892,6 +972,72 @@
   - Method `.test_scene_has_a_sky_color_distinct_from_the_horizon()`
   - Method `.test_point_light_validates_its_radius_and_intensity()`
   - Method `.test_directional_light_normalizes_lookup_direction()`
+
+---
+
+### [`tests/test_space.py`](tests/test_space.py)
+> *Tests for seeded star systems, orbits and hyperlanes.*
+
+**Size**: `50` lines (`2020` bytes)
+
+**Classes:**
+- `class GalaxyTest`
+  - Method `.setUp()`
+  - Method `.test_same_seed_is_deterministic()`
+  - Method `.test_every_system_has_a_star_and_planets()`
+  - Method `.test_hyperlanes_are_symmetric_and_connected()`
+  - Method `.test_orbits_move_over_time_and_stars_stay_put()`
+  - Method `.test_unknown_system_and_body_are_rejected()`
+  - Method `.test_rejects_tiny_galaxies()`
+
+---
+
+### [`tests/test_space_expedition.py`](tests/test_space_expedition.py)
+> *Tests for the space scene and controller.*
+
+**Size**: `47` lines (`1901` bytes)
+
+**Classes:**
+- `class SpaceExpeditionTest`
+  - Method `.setUp()`
+  - Method `.test_scene_has_starfield_bodies_and_a_gate()`
+  - Method `.test_camera_follows_the_ship()`
+  - Method `.test_scanning_a_body_updates_the_scene_and_status()`
+  - Method `.test_jump_rebuilds_the_system_scene()`
+
+---
+
+### [`tests/test_space_harness.py`](tests/test_space_harness.py)
+> *Tests for the space harness.*
+
+**Size**: `50` lines (`1933` bytes)
+
+**Classes:**
+- `class SpaceHarnessTest`
+  - Method `.test_catalog_exposes_flight_scan_and_jump()`
+  - Method `.test_actions_are_deterministic()`
+  - Method `.test_invalid_action_is_rejected()`
+  - Method `.test_selftest()`
+  - Method `.test_cli_catalog_and_run()`
+
+---
+
+### [`tests/test_space_world.py`](tests/test_space_world.py)
+> *Tests for space flight, scanning and hyperlane jumps.*
+
+**Size**: `67` lines (`2621` bytes)
+
+**Classes:**
+- `class SpaceWorldTest`
+  - Method `.setUp()`
+  - Method `.test_seeded_galaxy_and_hash()`
+  - Method `.test_forward_flight_moves_the_ship()`
+  - Method `.test_nearby_body_scan_adds_credits_and_progress()`
+  - Method `.test_scan_out_of_range_does_nothing()`
+  - Method `.test_survey_completion_reports_the_gate()`
+  - Method `.test_jump_requires_gate_and_changes_system()`
+  - Method `.test_negative_dt_is_rejected()`
+  - Method `.test_galaxy_is_connected()`
 
 ---
 

@@ -1,65 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-network-v1",
+    "task_id": "keystone-space-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793382302.6238437,
-    "owner": "opencode:keystone-network",
-    "started_by": "opencode:keystone-network",
+    "updated_at": 1793382810.85959,
+    "owner": "opencode:keystone-space",
+    "started_by": "opencode:keystone-space",
     "continuations": [],
-    "completed_at": 1793382315.3299153
+    "completed_at": 1793382817.243467
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/6] Geometry green: 56 unit tests pass; cube/plane/sphere, streaming OBJ with flat-normal synthesis, sample asset loads; check 4/4; checklist passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793377337.0619385,
-      "timestamp_str": "2026-10-30 19:22:17",
-      "agent": "opencode:keystone-v1",
-      "handoff": {
-        "state": "MeshData(positions,normals,uvs,indices), Material, primitives and OBJ API frozen",
-        "next": "OpenGL context, shader, GPU buffers, renderer",
-        "evidence": "pytest 56 passed"
-      }
-    },
-    {
-      "task_id": "keystone-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[4/6] GPU renderer green: 64 tests; headless 64x48 readback shows lit center pixel, PNG screenshot written, shader errors carry Why/Fix; check 4/4; checklist passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793377540.3076203,
-      "timestamp_str": "2026-10-30 19:25:40",
-      "agent": "opencode:keystone-v1",
-      "handoff": {
-        "state": "GLContext, ShaderProgram, GpuMesh, Renderer API frozen",
-        "next": "app loop, fly controls, demo scene, visual screenshot",
-        "evidence": "pytest 64 passed, renderer integration 5 passed"
-      }
-    },
-    {
-      "task_id": "keystone-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[6/6] Vertical slice complete: 72 tests, 6/6 gates (test, lint, mechanics, hygiene, guidelines, secrets), visible and headless demo verified, 120 frames/1280x720 in ~1.0s; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793378098.8496082,
-      "timestamp_str": "2026-10-30 19:34:58",
-      "agent": "opencode:keystone-v1",
-      "handoff": {
-        "state": "engine, demo, docs and mechanics contract complete",
-        "next": "review roadmap or request publish",
-        "evidence": "pytest 72 passed, aikit check 6/6, strict check pending clean commit"
-      }
-    },
     {
       "task_id": "keystone-v1",
       "phase": "completed",
@@ -295,6 +247,49 @@
       "timestamp": 1793382315.3299167,
       "timestamp_str": "2026-10-30 20:45:15",
       "agent": "opencode:keystone-network"
+    },
+    {
+      "task_id": "keystone-space-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/4] Plan: galaxy/system/orbit generation -> SpaceWorld flight, scanning and gate jumps -> SpaceExpedition scene, CLI --space and screenshot -> space harness, docs, ADR and gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793382478.023537,
+      "timestamp_str": "2026-10-30 20:47:58",
+      "agent": "opencode:keystone-space",
+      "impact_assessment": {
+        "why": "A second playable mode proves Keystone is an engine, not a dungeon demo, and uses Voidfarer's procedural systems and survey loop.",
+        "benefits": "Deterministic star systems, orbiting bodies, free-flight scanning and hyperlane travel, all renderer-independent and replayable.",
+        "risks": "contract: new SpaceWorld state/hash and CLI mode; dependency: stdlib only; concurrency: single-thread; state: orbit positions and jump/scanned state must stay deterministic.",
+        "mitigation": "Seeded generation tests, scan/jump boundary tests, headless harness, a visible dogfood run and a space screenshot."
+      }
+    },
+    {
+      "task_id": "keystone-space-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[4/4] Space survey complete: 203 tests, 6/6 gates, galaxy/orbit/scan/jump/harness coverage, 60-frame visible space dogfood, space screenshot; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793382810.85959,
+      "timestamp_str": "2026-10-30 20:53:30",
+      "agent": "opencode:keystone-space",
+      "handoff": {
+        "state": "SpaceWorld and --space mode frozen for v0.7.0",
+        "next": "space combat/trade or the next mechanic pack",
+        "evidence": "pytest 203 passed, space harness selftest green, aikit check 6/6"
+      }
+    },
+    {
+      "task_id": "keystone-space-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-space-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793382817.2434685,
+      "timestamp_str": "2026-10-30 20:53:37",
+      "agent": "opencode:keystone-space"
     }
   ]
 }

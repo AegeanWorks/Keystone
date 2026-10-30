@@ -4,9 +4,9 @@
 
 ![Keystone expedition](assets/expedition.png)
 
-A performance-first 3D game engine in Python with an OpenGL 3.3 renderer, deterministic procedural worlds, first-person collision, survivors-style combat, light-routing puzzles, cyber-network infiltration and a headless AI harness.
+A performance-first 3D game engine in Python with an OpenGL 3.3 renderer, deterministic procedural worlds, first-person collision, survivors-style combat, light-routing puzzles, cyber-network infiltration, a free-flight space survey mode and a headless AI harness.
 
-Keystone's core loop is a **seeded expedition**: one integer seed generates an island, a dungeon, a light lock and a cyber network. The player walks the terrain, fights escalating enemy waves, turns mirrors to open the crypt portal, hacks network terminals while avoiding NetWatch hunters, explores a generated room layout, and returns to the surface. The authoritative simulation is independent of OpenGL, so the same run can be rendered, replayed from JSON actions, or hashed for regression checks.
+Keystone's core loop is a **seeded expedition**: one integer seed generates an island, a dungeon, a light lock and a cyber network. The player walks the terrain, fights escalating enemy waves, turns mirrors to open the crypt portal, hacks network terminals while avoiding NetWatch hunters, explores a generated room layout, and returns to the surface. A second mode launches a free-flight ship into a seeded galaxy of orbiting bodies, scan surveys and hyperlane gates. The authoritative simulation is independent of OpenGL, so the same run can be rendered, replayed from JSON actions, or hashed for regression checks.
 
 | Overworld | Dungeon |
 |---|---|
@@ -31,6 +31,10 @@ Keystone's core loop is a **seeded expedition**: one integer seed generates an i
 - **Force a woven dungeon**:
   ```bash
   python -m keystone --seed 8 --layout weave
+  ```
+- **Launch the space survey mode**:
+  ```bash
+  python -m keystone --space
   ```
 - **Original showcase scene**:
   ```bash
@@ -70,6 +74,8 @@ The window captures the mouse on start.
 
 Weapons fire automatically at the nearest enemy in range. Keep moving to avoid contact damage; the window title shows HP, wave, kills and whether a boss is alive.
 
+Space mode uses free flight: `W`/`S` forward/back, `A`/`D` strafe, `R`/`F` up/down, mouse/arrows to look, `Shift` to boost, `E` to scan a nearby body and `J` at the gate to jump.
+
 ## 🧭 The Core Loop
 
 1. `World(seed)` generates the island heightfield, the dungeon layout and the combat director from the same seed.
@@ -94,6 +100,7 @@ The dungeon preview is generated from the same run: `assets/dungeon.png`.
 - **Light lock**: a seeded 2D beam circuit with additive red/green/blue color masks, `/` and `\` mirrors, a dye cell, a receiver, cycle-safe tracing and a portal gate. Mirrors rotate with `E`; the whole lock is renderer-independent and hashed.
 - **Weave layout**: Weft-style Hamiltonian room chains. The generator visits every room exactly once, cuts the route into three colored threads and colors the 7×7 room floors by thread; every room is reachable and the exit is the final room.
 - **Cyber network**: a seeded terminal graph in the dungeon with links, four-step hacks, rising alert, decaying heat, NetWatch hunter spawns at 50+ alert and a network-gated exit. Terminals and links are rendered in the scene and all state is hashed.
+- **Space survey**: a seeded six-system galaxy, orbiting planets, free-flight movement, body scanning with credits and completion, a visible jump gate and hyperlane jumps. The mode is renderer-independent and has its own JSON harness.
 - **GPU renderer**: OpenGL 3.3 core, GLSL 330, per-vertex colors, one directional light, an optional warm point light (the crypt torch), depth testing, culling, gradient sky and distance fog.
 - **Static batching**: terrain is one mesh; trees, crowns, rocks and the path are merged into four meshes, so the expedition renders in roughly ten draw calls.
 - **Day/night atmosphere**: sun elevation drives daylight, warm dawn tint, ambient light, sky/horizon colors and light intensity; the dungeon overrides with its own moody palette.
@@ -115,6 +122,20 @@ The director is seeded and lives in `keystone/combat.py`; it has no OpenGL depen
 `WeaveLayout` is a Weft-style Hamiltonian generator. It covers a 4×3 room grid exactly once, checks that the remaining cells stay connected while searching, then cuts the path into three colored threads. Each path cell becomes a 7×7 room, consecutive rooms are joined by corridors, and the room floor carries its thread color. The result is a guaranteed connected room chain from spawn to exit, with no unreachable room and no duplicate visit.
 
 Even seeds select the weave in `auto` mode; odd seeds keep the room-and-corridor crypt. Force either with `--layout crypt` or `--layout weave`.
+
+## 🚀 Space Survey
+
+![Space survey](assets/space.png)
+
+`--space` launches a second, self-contained mode: a six-system galaxy with orbiting stars, terrestrial/oceanic/desert/ice/gas-giant bodies, a starfield and a hyperlane gate. Fly with `WASD` + `R`/`F`, look with the mouse, and press `E` within sensor range of a body to survey it. Every survey awards credits and raises the system scan count; completing a system reports that the gate is ready. Fly within 12 units of the gate at `(0, 0, 60)` and press `J` to jump to a connected system. Scanned state persists across jumps.
+
+Space has its own deterministic harness:
+
+```bash
+python -m keystone.space_harness catalog
+python -m keystone.space_harness selftest
+python -m keystone.space_harness run --seed 7 --actions actions.json
+```
 
 ## 🕸️ Cyber Network
 
@@ -183,6 +204,9 @@ keystone/
 │   ├── beams.py              <- light-lock tracer, mirrors, dye and receiver
 │   ├── combat.py             <- archetypes, waves, auto-fire, boss, death
 │   ├── expedition.py         <- world-to-scene assembly and player controls
+│   ├── space.py              <- free-flight world, scans, survey and jumps
+│   ├── space_expedition.py   <- space scene, starfield and ship controls
+│   ├── space_harness.py      <- deterministic space JSON harness
 │   ├── harness.py            <- deterministic JSON action harness
 │   ├── app.py                <- engine loop, input and screenshot capture
 │   ├── demo.py               <- original showcase scene
@@ -192,7 +216,8 @@ keystone/
 │   │   ├── terrain.py        <- island heightfield, biome colors and mesh
 │   │   ├── dungeon.py        <- rooms, corridors, FOV and BFS
 │   │   ├── weave.py          <- Hamiltonian room chain and thread colors
-│   │   └── network.py        <- terminal graph, hacks and alert state
+│   │   ├── network.py        <- terminal graph, hacks and alert state
+│   │   └── space.py          <- galaxies, systems, orbits and hyperlanes
 │   ├── sim/
 │   │   ├── __init__.py
 │   │   └── world.py          <- deterministic state, collision, modes, hash
@@ -210,7 +235,8 @@ keystone/
 │   ├── combat.png            <- enemy pack capture
 │   ├── lightlock.png         <- portal light-lock capture
 │   ├── weave.png             <- woven room capture
-│   └── network.png           <- dungeon terminal capture
+│   ├── network.png           <- dungeon terminal capture
+│   └── space.png             <- space survey capture
 ├── tests/
 │   ├── test_math3d.py        <- math core
 │   ├── test_scene.py         <- hierarchy, camera and lights
@@ -222,6 +248,10 @@ keystone/
 │   ├── test_weave.py         <- Hamiltonian path, threads and dungeon
 │   ├── test_network.py       <- terminals, links, hacks and alert
 │   ├── test_beams.py         <- light lock, mirrors, dye and cycles
+│   ├── test_space.py         <- galaxy, systems and orbits
+│   ├── test_space_world.py   <- flight, scan, survey and jumps
+│   ├── test_space_expedition.py <- space scene and controls
+│   ├── test_space_harness.py <- space JSON harness
 │   ├── test_combat.py        <- archetypes, waves, damage and boss
 │   ├── test_world.py         <- deterministic state, movement and modes
 │   ├── test_expedition.py    <- scene assembly and scene transitions
@@ -290,6 +320,7 @@ Keystone's first implementation was built in this workspace. The seeded expediti
 - **Iris** — color-mask light routing, mirror reflection, cycle-safe beam tracing and receiver validation.
 - **Weft** — randomized Hamiltonian path with Warnsdorff ordering and connectivity checks, cut into colored thread segments and used as a guaranteed-coverage room chain.
 - **Cyberpulse** — seeded terminal graphs, hack progress, alert tiers, NetWatch hunter response and the network-gated exit.
+- **VoidFarer** — procedural star systems, orbiting celestial bodies, hyperlane connections and the scan/survey progression loop.
 
 These were reimplemented as modular Python; no AGL-licensed assets or source files were copied into this repository. See ADR-006 for the provenance decision. Keystone itself remains under the Aegean License 1.1 (AL-1.1).
 
@@ -302,12 +333,13 @@ These were reimplemented as modular Python; no AGL-licensed assets or source fil
 5. More light-lock chambers, lenses and movable emitters inside the crypt.
 6. Weave loops, branches and thread-route puzzles inside the room chain.
 7. Network puzzle variants (frequency/buffer/hash) and alert-driven terminal defenses.
-8. Save/load of the seed + action log, and a rewind/debug viewer.
-9. glTF/scene import and an editor with gizmos.
+8. Space combat, trade and multiple ships on top of the survey mode.
+9. Save/load of the seed + action log, and a rewind/debug viewer.
+10. glTF/scene import and an editor with gizmos.
 
 ## 🤖 AIKit Integration
 
-- `.aikit/project.json` declares `mechanics.core` (simulation, terrain, dungeon, weave, network, beams, combat, expedition, renderer, harness) and `mechanics.test` (`python -m keystone.harness selftest`), so an agent exercises the same headless core.
+- `.aikit/project.json` declares `mechanics.core` (simulation, terrain, dungeon, weave, network, beams, combat, expedition, space, renderer, harness) and `mechanics.test` (`python -m keystone.harness selftest`), so an agent exercises the same headless core.
 - `.aikit/task_ledger.json` records plans, checkpoints and handoff state; resume with `python aikit.py resume keystone`.
 - `.aikit/decisions.md` records ADR-001 through ADR-006.
 - `python aikit.py check keystone` is the Phase 4 gate: tests, lint, mechanics, hygiene, guidelines and secret scan. It never pushes; delivery is opt-in.

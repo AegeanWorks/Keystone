@@ -54,9 +54,14 @@ def main(argv: list[str] | None = None) -> int:
         help="dungeon layout: auto (seed parity), crypt rooms or woven room chain (default: auto)",
     )
     parser.add_argument("--demo", action="store_true", help="run the original showcase scene instead of the expedition")
+    parser.add_argument("--space", action="store_true", help="run the free-flight space survey mode")
     args = parser.parse_args(argv)
     if args.out and not args.headless:
         parser.error("--out requires --headless")
+    if args.demo and args.space:
+        parser.error("--demo and --space are mutually exclusive")
+    if args.space and args.layout != "auto":
+        parser.error("--layout applies to the expedition mode only")
 
     from keystone.app import Engine
 
@@ -68,6 +73,12 @@ def main(argv: list[str] | None = None) -> int:
             experience = Demo()
             controls = None
             title = "Keystone | Showcase"
+        elif args.space:
+            from keystone.space_expedition import SpaceExpedition
+
+            experience = SpaceExpedition(args.seed)
+            controls = experience.handle_input
+            title = f"Keystone | Space seed {args.seed} | {experience.world.system.name}"
         else:
             from keystone.expedition import Expedition
 
@@ -94,8 +105,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.headless:
             suffix = f" -> {args.out}" if args.out else ""
             world = getattr(experience, "world", None)
-            mode = getattr(world, "mode", "demo")
-            layout = getattr(world, "layout", "demo")
+            mode = getattr(world, "mode", "space" if args.space else "demo")
+            layout = getattr(world, "layout", "space" if args.space else "demo")
             seed = f" seed={args.seed}" if not args.demo else ""
             print(
                 f"Rendered {rendered} frame(s) at {args.size[0]}x{args.size[1]}"

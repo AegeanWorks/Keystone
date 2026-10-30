@@ -28,9 +28,12 @@ class MoveIntent:
 
     forward: float = 0.0
     right: float = 0.0
+    up: float = 0.0
     turn: float = 0.0
     pitch: float = 0.0
     interact: bool = False
+    scan: bool = False
+    jump: bool = False
     sprint: bool = False
 
 

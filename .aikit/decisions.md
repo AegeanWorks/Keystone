@@ -91,3 +91,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The dungeon exit opened unconditionally once the light lock was solved, so the crypt had no infiltration objective and Cyberpulse's network/living-alert model was unused.
 - **Decision**: Add `keystone.procedural.network.Network`: a seeded graph of four terminal rooms selected from reachable non-spawn/non-exit rooms, a deterministic link tree plus one extra link, four-step hacks, alert gain/decay and a hunter response at 50+ alert. The exit is sealed until every terminal is hacked. Terminals and links render in the dungeon; network state is included in `World.snapshot()` and `state_hash()`.
 - **Consequences**: A dungeon run now has an objective beyond survival and navigation; hacking creates risk and combat pressure. Terminal count/link topology changes hashes and screenshots. The current hack is a progress counter, not Cyberpulse's frequency/buffer/hash puzzle variants; those remain future work.
+
+### ADR-011: Add a free-flight space survey as the second playable mode
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: Keystone only had the ground expedition. VoidFarer already proves procedural systems, orbiting bodies, hyperlane connectivity and a scan/survey loop; a self-contained mode would prove the engine is not tied to one game.
+- **Decision**: Add `keystone.procedural.space` for deterministic six-system galaxies, `keystone.space.SpaceWorld` for free flight, body scans, survey completion and gate jumps, and `keystone.space_expedition.SpaceExpedition` for the starfield/planet/gate scene and controls. `--space` selects the mode; `keystone.space_harness` exposes catalog/run/selftest without a GPU.
+- **Consequences**: Keystone has two independent playable modes and two headless harnesses. Space has no combat, trade or multi-ship systems yet; those are future work. Orbit phases, scan state, ship position and system links are part of the space replay hash.
