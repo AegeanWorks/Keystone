@@ -139,6 +139,10 @@ class SceneTest(unittest.TestCase):
         scene.add(node)
         self.assertEqual([n.name for n in scene.traverse()], ["", "mesh"])
 
+    def test_scene_has_a_sky_color_distinct_from_the_horizon(self):
+        scene = Scene()
+        self.assertNotEqual(scene.sky, scene.background)
+
     def test_directional_light_normalizes_lookup_direction(self):
         light = DirectionalLight(direction=Vec3(0, -2, 0))
         self.assertAlmostEqual(light.unit_direction().y, -1.0)

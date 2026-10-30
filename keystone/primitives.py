@@ -6,6 +6,7 @@ import math
 
 from keystone.geometry import MeshData
 
+
 def _append_quad(
     positions: list,
     normals: list,

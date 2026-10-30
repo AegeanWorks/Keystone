@@ -42,6 +42,7 @@ uniform vec3 u_light_color;
 uniform vec3 u_ambient;
 uniform vec3 u_fog_color;
 uniform float u_fog_density;
+uniform float u_checker_scale;
 out vec4 frag_color;
 void main() {
     vec3 normal = normalize(v_normal);
@@ -53,8 +54,31 @@ void main() {
     vec3 halfway = normalize(light + view);
     float specular = pow(max(dot(normal, halfway), 0.0), u_shininess) * u_specular;
     vec3 color = u_color * (u_ambient + u_light_color * diffuse) + u_light_color * specular;
+    if (u_checker_scale > 0.0) {
+        float tile = mod(floor(v_world.x * u_checker_scale) + floor(v_world.z * u_checker_scale), 2.0);
+        color *= mix(0.62, 1.0, tile);
+    }
     float fog = 1.0 - exp(-u_fog_density * u_fog_density * distance * distance);
     frag_color = vec4(mix(color, u_fog_color, clamp(fog, 0.0, 1.0)), 1.0);
+}
+"""
+
+SKY_VERTEX_SHADER = """#version 330 core
+out vec2 v_uv;
+void main() {
+    vec2 corner = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
+    v_uv = corner;
+    gl_Position = vec4(corner * 2.0 - 1.0, 0.9999, 1.0);
+}
+"""
+
+SKY_FRAGMENT_SHADER = """#version 330 core
+in vec2 v_uv;
+uniform vec3 u_sky_top;
+uniform vec3 u_sky_bottom;
+out vec4 frag_color;
+void main() {
+    frag_color = vec4(mix(u_sky_bottom, u_sky_top, smoothstep(0.0, 1.0, v_uv.y)), 1.0);
 }
 """
 
@@ -78,6 +102,16 @@ class Renderer:
         self.width = width
         self.height = height
         self._program = ShaderProgram(VERTEX_SHADER, FRAGMENT_SHADER)
+        sky_program = None
+        try:
+            sky_program = ShaderProgram(SKY_VERTEX_SHADER, SKY_FRAGMENT_SHADER)
+            self._sky_vao = GL.glGenVertexArrays(1)
+        except Exception:
+            if sky_program is not None:
+                sky_program.release()
+            self._program.release()
+            raise
+        self._sky_program = sky_program
         self._meshes: dict[int, tuple[MeshData, GpuMesh]] = {}
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glDepthFunc(GL.GL_LESS)
@@ -99,11 +133,24 @@ class Renderer:
             self._meshes[id(mesh)] = cached
         return cached[1]
 
+    def _draw_sky(self, scene: Scene) -> None:
+        GL.glDisable(GL.GL_DEPTH_TEST)
+        GL.glDepthMask(GL.GL_FALSE)
+        self._sky_program.use()
+        self._sky_program.set_vec3("u_sky_top", scene.sky)
+        self._sky_program.set_vec3("u_sky_bottom", scene.background)
+        GL.glBindVertexArray(self._sky_vao)
+        GL.glDrawArrays(GL.GL_TRIANGLES, 0, 3)
+        GL.glBindVertexArray(0)
+        GL.glDepthMask(GL.GL_TRUE)
+        GL.glEnable(GL.GL_DEPTH_TEST)
+
     def render(self, scene: Scene) -> None:
         GL.glViewport(0, 0, self.width, self.height)
         background = scene.background
         GL.glClearColor(background.x, background.y, background.z, 1.0)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+        self._draw_sky(scene)
         camera = scene.camera
         view_projection = camera.view_projection(self.width / self.height)
         light = scene.light
@@ -128,6 +175,7 @@ class Renderer:
             self._program.set_vec3("u_color", material.color)
             self._program.set_float("u_specular", material.specular)
             self._program.set_float("u_shininess", material.shininess)
+            self._program.set_float("u_checker_scale", material.checker_scale)
             self._gpu_mesh(mesh).draw()
 
     def read_pixels(self) -> bytes:
@@ -141,4 +189,8 @@ class Renderer:
         for _, mesh in self._meshes.values():
             mesh.release()
         self._meshes.clear()
+        if self._sky_vao:
+            GL.glDeleteVertexArrays(1, [self._sky_vao])
+            self._sky_vao = 0
+        self._sky_program.release()
         self._program.release()

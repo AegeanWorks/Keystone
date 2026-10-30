@@ -18,3 +18,8 @@ include = ["keystone*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.ruff.lint]
+# Vec3/Quat are frozen and immutable, so sharing one default instance is safe and
+# cheaper than a default_factory. Self needs Python 3.11, while this project supports 3.10.
+ignore = ["RUF009", "PYI034"]

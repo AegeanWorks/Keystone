@@ -39,10 +39,21 @@ class RendererIntegrationTest(unittest.TestCase):
         pixels = self.renderer.read_pixels()
         self.assertEqual(len(pixels), 64 * 48 * 4)
         center = 24 * 64 * 4 + 32 * 4
-        red, green, blue, alpha = pixels[center : center + 4]
+        red, _green, blue, alpha = pixels[center : center + 4]
         self.assertEqual(alpha, 255)
         self.assertGreater(red, 60)
         self.assertGreater(red, blue)
+
+    def test_empty_scene_draws_a_vertical_sky_gradient(self):
+        scene = Scene()
+        scene.sky = Vec3(0.7, 0.1, 0.1)
+        scene.background = Vec3(0.05, 0.1, 0.3)
+        self.renderer.render(scene)
+        pixels = self.renderer.read_pixels()
+        bottom = pixels[0:4]
+        top = pixels[(47 * 64) * 4 : (47 * 64) * 4 + 4]
+        self.assertGreater(top[0], bottom[0])
+        self.assertGreater(bottom[2], top[2])
 
     def test_screenshot_is_a_real_png(self):
         self.renderer.render(build_scene())

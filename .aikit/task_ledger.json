@@ -3,12 +3,13 @@
   "active_task": {
     "task_id": "keystone-v1",
     "last_phase": "phase 4",
-    "active_phase": 4,
-    "status": "in_progress",
-    "updated_at": 1793377540.3076203,
+    "active_phase": 5,
+    "status": "completed",
+    "updated_at": 1793378098.8496082,
     "owner": "opencode:keystone-v1",
     "started_by": "opencode:keystone-v1",
-    "continuations": []
+    "continuations": [],
+    "completed_at": 1793378107.4027538
   },
   "checkpoints": [
     {
@@ -91,6 +92,32 @@
         "next": "app loop, fly controls, demo scene, visual screenshot",
         "evidence": "pytest 64 passed, renderer integration 5 passed"
       }
+    },
+    {
+      "task_id": "keystone-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[6/6] Vertical slice complete: 72 tests, 6/6 gates (test, lint, mechanics, hygiene, guidelines, secrets), visible and headless demo verified, 120 frames/1280x720 in ~1.0s; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793378098.8496082,
+      "timestamp_str": "2026-10-30 19:34:58",
+      "agent": "opencode:keystone-v1",
+      "handoff": {
+        "state": "engine, demo, docs and mechanics contract complete",
+        "next": "review roadmap or request publish",
+        "evidence": "pytest 72 passed, aikit check 6/6, strict check pending clean commit"
+      }
+    },
+    {
+      "task_id": "keystone-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793378107.402755,
+      "timestamp_str": "2026-10-30 19:35:07",
+      "agent": "opencode:keystone-v1"
     }
   ]
 }

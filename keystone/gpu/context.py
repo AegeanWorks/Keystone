@@ -100,6 +100,9 @@ class GLContext:
     def should_close(self) -> bool:
         return bool(glfw.window_should_close(self._window))
 
+    def request_close(self) -> None:
+        glfw.set_window_should_close(self._window, True)
+
     def poll_events(self) -> None:
         glfw.poll_events()
 

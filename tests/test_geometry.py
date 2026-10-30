@@ -102,9 +102,8 @@ class ObjLoaderTest(unittest.TestCase):
         self.assertEqual(mesh.indices, (0, 1, 2, 0, 2, 3))
 
     def test_missing_file_raises_file_not_found(self):
-        with tempfile.TemporaryDirectory() as directory:
-            with self.assertRaises(FileNotFoundError):
-                load_obj(Path(directory) / "missing.obj")
+        with tempfile.TemporaryDirectory() as directory, self.assertRaises(FileNotFoundError):
+            load_obj(Path(directory) / "missing.obj")
 
     def test_bad_index_raises_value_error(self):
         with self.assertRaises(ValueError):
@@ -121,10 +120,15 @@ class MaterialTest(unittest.TestCase):
     def test_defaults_are_valid(self):
         material = Material()
         self.assertGreater(material.shininess, 0.0)
+        self.assertEqual(material.checker_scale, 0.0)
 
     def test_rejects_negative_specular(self):
         with self.assertRaises(ValueError):
             Material(specular=-0.1)
+
+    def test_rejects_negative_checker_scale(self):
+        with self.assertRaises(ValueError):
+            Material(checker_scale=-1.0)
 
 
 if __name__ == "__main__":

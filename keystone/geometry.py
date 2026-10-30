@@ -14,12 +14,15 @@ class Material:
     color: Vec3 = Vec3(0.78, 0.78, 0.82)
     specular: float = 0.35
     shininess: float = 32.0
+    checker_scale: float = 0.0
 
     def __post_init__(self) -> None:
         if self.specular < 0.0:
             raise ValueError("specular must be non-negative")
         if self.shininess <= 0.0:
             raise ValueError("shininess must be positive")
+        if self.checker_scale < 0.0:
+            raise ValueError("checker_scale must be non-negative")
 
 
 @dataclass(frozen=True, slots=True)

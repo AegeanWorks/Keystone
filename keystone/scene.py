@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Iterator
 
 from keystone.camera import PerspectiveCamera
 from keystone.math3d import Mat4, Quat, Vec3
@@ -102,6 +102,7 @@ class Scene:
     light: DirectionalLight = field(default_factory=DirectionalLight)
     ambient: Vec3 = Vec3(0.16, 0.17, 0.2)
     background: Vec3 = Vec3(0.045, 0.055, 0.075)
+    sky: Vec3 = Vec3(0.01, 0.015, 0.04)
     fog_density: float = 0.012
 
     def add(self, node: Node) -> Node:

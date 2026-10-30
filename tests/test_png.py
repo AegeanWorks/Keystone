@@ -49,9 +49,8 @@ class PngTest(unittest.TestCase):
             )
 
     def test_rejects_wrong_pixel_count(self):
-        with tempfile.TemporaryDirectory() as directory:
-            with self.assertRaises(ValueError):
-                write_png(Path(directory) / "bad.png", 2, 2, b"\x00" * 8)
+        with tempfile.TemporaryDirectory() as directory, self.assertRaises(ValueError):
+            write_png(Path(directory) / "bad.png", 2, 2, b"\x00" * 8)
 
     def test_creates_missing_parent_directory(self):
         with tempfile.TemporaryDirectory() as directory:

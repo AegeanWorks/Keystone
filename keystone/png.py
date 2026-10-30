@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import struct
 import zlib
+from pathlib import Path
 
 SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
