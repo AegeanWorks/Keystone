@@ -32,13 +32,21 @@ keystone/
 │   ├── scene.py              <- hierarchy, transforms, light and scene root
 │   ├── geometry.py           <- indexed mesh data and Blinn-Phong material
 │   ├── primitives.py         <- cube, ground plane and UV sphere
-│   └── obj_loader.py         <- streaming Wavefront OBJ loader
+│   ├── obj_loader.py         <- streaming Wavefront OBJ loader
+│   ├── png.py                <- dependency-free PNG screenshot writer
+│   └── gpu/
+│       ├── context.py        <- GLFW window and OpenGL 3.3 context
+│       ├── shader.py         <- GLSL compilation and uniform upload
+│       ├── mesh_buffer.py    <- VAO/VBO/EBO upload and drawing
+│       └── renderer.py       <- forward renderer, depth, fog, readback
 ├── assets/
 │   └── octahedron.obj        <- sample OBJ asset
 ├── tests/
 │   ├── test_math3d.py        <- unit tests for the math core
 │   ├── test_scene.py         <- unit tests for hierarchy and camera
-│   └── test_geometry.py      <- unit tests for meshes, primitives and OBJ
+│   ├── test_geometry.py      <- unit tests for meshes, primitives and OBJ
+│   ├── test_png.py           <- unit tests for the PNG writer
+│   └── test_renderer.py      <- headless OpenGL integration tests
 ├── requirements.txt          <- pinned runtime and test dependencies
 ├── pyproject.toml            <- package metadata and pytest configuration
 ├── .gitignore                <- transient AIKit state excluded
