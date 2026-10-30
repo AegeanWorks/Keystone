@@ -7,6 +7,7 @@ from pathlib import Path
 
 from keystone.geometry import MeshData
 from keystone.math3d import Vec3
+from keystone.png import read_png, write_png
 from keystone.replay import stable_hash
 from keystone.scene import Scene
 from keystone.serialization import write_json_atomic
@@ -204,6 +205,49 @@ def compare_reports(before: dict, after: dict) -> dict:
         "changed_nodes": changed,
         "added_nodes": sorted(set(second_nodes) - set(first_nodes)),
         "removed_nodes": sorted(set(first_nodes) - set(second_nodes)),
+    }
+
+
+def diff_images(before: str | Path, after: str | Path, output: str | Path, threshold: int = 8) -> dict:
+    """Write a visual diff PNG and return changed-pixel statistics."""
+    first_width, first_height, first = read_png(before)
+    second_width, second_height, second = read_png(after)
+    if (first_width, first_height) != (second_width, second_height):
+        raise ValueError("images must have the same dimensions")
+    width, height = first_width, first_height
+    diff = bytearray(width * height * 4)
+    changed = 0
+    total_delta = 0
+    max_delta = 0
+    min_x, min_y, max_x, max_y = width, height, -1, -1
+    count = width * height
+    for pixel in range(count):
+        offset = pixel * 4
+        delta = max(
+            abs(first[offset + channel] - second[offset + channel])
+            for channel in range(3)
+        )
+        total_delta += delta
+        max_delta = max(max_delta, delta)
+        if delta > threshold:
+            changed += 1
+            x, y = pixel % width, pixel // width
+            min_x, min_y = min(min_x, x), min(min_y, y)
+            max_x, max_y = max(max_x, x), max(max_y, y)
+            diff[offset : offset + 4] = bytes((255, 0, 0, 255))
+        else:
+            gray = first[offset] // 3
+            diff[offset : offset + 4] = bytes((gray, gray, gray, 255))
+    write_png(output, width, height, bytes(diff), flip_vertical=False)
+    return {
+        "width": width,
+        "height": height,
+        "changed_pixels": changed,
+        "changed_ratio": round(changed / max(1, count), 4),
+        "mean_delta": round(total_delta / max(1, count), 3),
+        "max_delta": max_delta,
+        "bbox": [min_x, min_y, max_x, max_y] if max_x >= 0 else None,
+        "path": Path(output).as_posix(),
     }
 
 

@@ -93,18 +93,36 @@ class EngineTest(unittest.TestCase):
                 )
             self.assertEqual(json.loads(out.read_text(encoding="utf-8"))["frames"], 2)
 
-    def test_compare_baseline_cli_exits_zero_for_an_identical_frame(self):
+    def test_compare_baseline_cli_exits_zero_and_writes_diff(self):
         with tempfile.TemporaryDirectory() as directory:
             baseline = Path(directory) / "baseline.json"
             current = Path(directory) / "current.json"
+            baseline_png = Path(directory) / "baseline.png"
+            current_png = Path(directory) / "current.png"
+            diff_png = Path(directory) / "diff.png"
             common = ["--headless", "--frames", "1", "--size", "32x24"]
             with contextlib.redirect_stdout(io.StringIO()):
-                self.assertEqual(main([*common, "--report", str(baseline)]), 0)
+                self.assertEqual(main([*common, "--out", str(baseline_png), "--report", str(baseline)]), 0)
             buffer = io.StringIO()
             with contextlib.redirect_stdout(buffer):
-                code = main([*common, "--report", str(current), "--compare-baseline", str(baseline)])
+                code = main(
+                    [
+                        *common,
+                        "--out",
+                        str(current_png),
+                        "--report",
+                        str(current),
+                        "--compare-baseline",
+                        str(baseline),
+                        "--diff-out",
+                        str(diff_png),
+                    ]
+                )
             self.assertEqual(code, 0)
-            self.assertTrue(json.loads(buffer.getvalue())["diff"]["same_image"])
+            payload = json.loads(buffer.getvalue())
+            self.assertTrue(payload["diff"]["same_image"])
+            self.assertEqual(payload["pixel_diff"]["changed_pixels"], 0)
+            self.assertTrue(diff_png.exists())
 
     def test_capture_report_and_png(self):
         game = CubeDemo()

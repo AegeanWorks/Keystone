@@ -93,6 +93,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 - `load_actions()` accepts a JSON list or an object with `actions`; every item is an `ActionState`.
 - `analysis.analyze_frame(scene, pixels, width, height, image_path)` returns schema-1 JSON: image hashes, pixel statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data and projected node bounds. `Engine.capture(image, report)` writes both artifacts.
 - `analysis.compare_reports(before, after)` returns image/report equality, luminance/content-ratio deltas, bbox changes and added/removed/changed nodes.
+- `analysis.diff_images(before, after, output)` reads PNGs, writes a visual diff and returns changed-pixel count/ratio, bbox and mean/max delta; `png.read_png()` is the dependency-free reader.
 - `describe_game()` exposes `name`, `actions()`, `snapshot()`, capabilities and the versioned report schema; `--describe` prints it without a window.
 - `testing.run_script()`, `verify_determinism()` and `assert_deterministic()` turn an action script into test evidence; `--verify-determinism` exposes the two-run check to agents; `--expect-hash` pins a final result.
 - `--simulate` requires no GPU; `--headless` renders off-screen; `--report` documents a rendered frame; `--compare-baseline` gates visual changes; `--describe` discovers the contract.
@@ -153,6 +154,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - `python -m keystone --headless --frames 1 --size 64x48` renders the sample.
 - `python -m keystone --headless --frames 1 --out frame.png --report frame.json` writes both artifacts.
 - `--compare-baseline baseline.json` exits non-zero on image change.
+- `--diff-out diff.png` writes a visual pixel diff.
 - `compare_reports()` detects image, stat and projected-node changes.
 - `python -m keystone --game missing.module:Factory` exits 1 with `Why:`/`Fix:`.
 - `keystone/` contains no game rules and imports no external game.

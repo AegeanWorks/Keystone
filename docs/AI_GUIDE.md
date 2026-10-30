@@ -59,10 +59,10 @@ The schema-1 report contains:
 ```bash
 python -m keystone --headless --frames 1 --size 1280x720 \
   --out current.png --report current.json \
-  --compare-baseline baseline.json
+  --compare-baseline baseline.json --diff-out diff.png
 ```
 
-The diff reports image/report equality, luminance and content-ratio deltas, bbox changes, and added/removed/changed nodes. Exit code 0 means the image hash matched; 1 means it changed.
+The diff reports image/report equality, luminance and content-ratio deltas, bbox changes, and added/removed/changed nodes. `--diff-out` additionally writes a visual PNG and reports changed pixels, ratio, bbox, mean delta and max delta. Exit code 0 means the image hash matched; 1 means it changed.
 
 ## Python helpers
 

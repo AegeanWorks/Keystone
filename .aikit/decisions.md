@@ -147,3 +147,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Determinism was checkable by running twice, but an AI client also needs to pin a known-good result and fail on drift in one command. The workflow was spread across README sections.
 - **Decision**: Add `--expect-hash <32-hex>` to `--simulate` and `--verify-determinism`; mismatches return 1 and include `expected_hash`. Add `docs/AI_GUIDE.md` covering discovery, simulation, hash pinning, rendering, reports and baseline comparison.
 - **Consequences**: A model can gate a known outcome directly. Expected hashes are explicit operator input, never silently refreshed; changing game behavior requires updating the pin deliberately.
+
+### ADR-018: Add a dependency-free PNG reader and visual pixel diff
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: The report comparison could say that an image changed, but an AI or human reviewer had no pixel-level artifact or changed-region evidence.
+- **Decision**: Add `png.read_png()` for 8-bit RGBA non-interlaced PNGs (all PNG filters), and `analysis.diff_images()` to compare two PNGs, write a visual diff, and report changed pixels/ratio, bbox, mean/max channel delta. Wire `--diff-out` into `--compare-baseline`.
+- **Consequences**: Baseline checks now produce both JSON and a diff image without third-party imaging libraries. The reader intentionally supports only RGBA 8-bit non-interlaced files; other PNG variants fail with a clear error.

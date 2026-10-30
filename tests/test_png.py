@@ -6,7 +6,7 @@ import unittest
 import zlib
 from pathlib import Path
 
-from keystone.png import write_png
+from keystone.png import read_png, write_png
 
 SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
@@ -51,6 +51,25 @@ class PngTest(unittest.TestCase):
     def test_rejects_wrong_pixel_count(self):
         with tempfile.TemporaryDirectory() as directory, self.assertRaises(ValueError):
             write_png(Path(directory) / "bad.png", 2, 2, b"\x00" * 8)
+
+    def test_reader_round_trips_writer_pixels(self):
+        pixels = bytes((1, 2, 3, 255, 4, 5, 6, 255, 7, 8, 9, 255, 10, 11, 12, 255))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "roundtrip.png"
+            write_png(path, 2, 2, pixels)
+            width, height, restored = read_png(path)
+            self.assertEqual((width, height), (2, 2))
+            self.assertEqual(
+                restored,
+                bytes((7, 8, 9, 255, 10, 11, 12, 255, 1, 2, 3, 255, 4, 5, 6, 255)),
+            )
+
+    def test_reader_rejects_non_png(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "bad.png"
+            path.write_bytes(b"not a png")
+            with self.assertRaises(ValueError):
+                read_png(path)
 
     def test_creates_missing_parent_directory(self):
         with tempfile.TemporaryDirectory() as directory:

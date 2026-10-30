@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `43`
 - **Total Classes**: `55`
-- **Total Top-Level Functions**: `44`
-- **Total Class Methods**: `281`
-- **Total Source Lines**: `4056`
+- **Total Top-Level Functions**: `47`
+- **Total Class Methods**: `285`
+- **Total Source Lines**: `4243`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `179` lines (`8329` bytes)
+**Size**: `196` lines (`9509` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -42,7 +42,7 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `211` lines (`8539` bytes)
+**Size**: `255` lines (`10338` bytes)
 
 **Functions:**
 - `def _rows(pixels, width, height, flip)`
@@ -50,6 +50,7 @@
 - `def _node_report(scene, width, height)`
 - `def analyze_frame(scene, pixels, width, height, image_path)`
 - `def compare_reports(before, after)` - *Compare two schema-1 frame reports for AI-driven visual regression.*
+- `def diff_images(before, after, output, threshold)` - *Write a visual diff PNG and return changed-pixel statistics.*
 - `def write_report(path, report)`
 
 ---
@@ -364,10 +365,12 @@
 ### [`keystone/png.py`](keystone/png.py)
 > *Minimal dependency-free PNG writer for headless frame captures.*
 
-**Size**: `53` lines (`1739` bytes)
+**Size**: `119` lines (`4463` bytes)
 
 **Functions:**
 - `def _chunk(kind, payload)`
+- `def _paeth(a, b, c)`
+- `def read_png(path)` - *Read an 8-bit RGBA non-interlaced PNG and return top-down pixels.*
 - `def write_png(path, width, height, rgba, flip_vertical)` - *Write RGBA bytes (OpenGL order: bottom-up) as an 8-bit PNG.*
 
 ---
@@ -475,7 +478,7 @@
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
-**Size**: `81` lines (`3081` bytes)
+**Size**: `104` lines (`4293` bytes)
 
 **Classes:**
 - `class AnalysisTest`
@@ -484,6 +487,8 @@
   - Method `.test_png_hash_and_atomic_report()`
   - Method `.test_compare_reports_detects_image_and_stats_changes()`
   - Method `.test_compare_reports_rejects_unknown_schema()`
+  - Method `.test_pixel_diff_writes_an_artifact_and_stats()`
+  - Method `.test_pixel_diff_rejects_dimension_mismatch()`
   - Method `.test_rejects_bad_pixel_count()`
 
 ---
@@ -491,7 +496,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `125` lines (`5650` bytes)
+**Size**: `143` lines (`6324` bytes)
 
 **Classes:**
 - `class EngineTest`
@@ -505,7 +510,7 @@
   - Method `.test_invalid_expected_hash_is_a_usage_error()`
   - Method `.test_simulate_cli_prints_json_without_opening_a_window()`
   - Method `.test_simulate_cli_reads_actions_and_writes_output()`
-  - Method `.test_compare_baseline_cli_exits_zero_for_an_identical_frame()`
+  - Method `.test_compare_baseline_cli_exits_zero_and_writes_diff()`
   - Method `.test_capture_report_and_png()`
 
 ---
@@ -673,12 +678,14 @@
 ### [`tests/test_png.py`](tests/test_png.py)
 > *Unit tests for the stdlib PNG writer used by headless screenshots.*
 
-**Size**: `63` lines (`2071` bytes)
+**Size**: `82` lines (`2902` bytes)
 
 **Classes:**
 - `class PngTest`
   - Method `.test_round_trip_pixels_and_header()`
   - Method `.test_rejects_wrong_pixel_count()`
+  - Method `.test_reader_round_trips_writer_pixels()`
+  - Method `.test_reader_rejects_non_png()`
   - Method `.test_creates_missing_parent_directory()`
 
 **Functions:**

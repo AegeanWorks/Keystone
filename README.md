@@ -116,7 +116,8 @@ The bundled `CubeDemo` uses the generic action map:
 - **Plugin loading**: `load_game("package.module:Factory")` validates the five-operation contract before the engine starts.
 - **No-GL simulation**: `run_simulation()` and `--simulate` drive `GameModule.update()` directly, with JSON action scripts and deterministic hashes, no window or driver required.
 - **AI discovery and testing**: `--describe`/`describe_game()` expose actions, capabilities, report schema and the current snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; `keystone.testing` provides the same evidence as Python helpers; `compare_reports()` diffs two frame reports.
-- **Visual regression gate**: `--compare-baseline baseline.json` renders a new report, compares image/report hashes, stats and projected nodes, prints the diff and exits non-zero on image change.
+- **Visual regression gate**: `--compare-baseline baseline.json` renders a new report, compares image/report hashes, stats and projected nodes, prints the diff and exits non-zero on image change. `--diff-out diff.png` writes a changed-pixel diff image.
+- **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip image loading, changed-pixel counts, bbox and a visual diff without third-party imaging libraries.
 - **Frame reports for AI analysis**: `--report` writes a schema-1 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data and projected screen bounds for every scene node.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
 
@@ -138,7 +139,7 @@ python -m keystone --headless --frames 1 --size 1280x720 \
   --out frame.png --report current.json --compare-baseline baseline.json
 ```
 
-The first command runs the scenario twice and exits 0 only when both hashes match. The second renders, writes the current report, compares it with the baseline and exits non-zero when the image changed. The diff includes luminance/content deltas and changed/added/removed nodes. `--expect-hash <32-hex>` pins a known final hash for either simulation mode.
+The first command runs the scenario twice and exits 0 only when both hashes match. The second renders, writes the current report, compares it with the baseline and exits non-zero when the image changed. The diff includes luminance/content deltas and changed/added/removed nodes. Add `--diff-out diff.png` for a visual pixel diff with changed-pixel count, ratio, bbox and mean/max delta. `--expect-hash <32-hex>` pins a known final hash for either simulation mode.
 
 See [`docs/AI_GUIDE.md`](docs/AI_GUIDE.md) for the complete discover → simulate → verify → render → compare workflow.
 
@@ -184,7 +185,7 @@ python -m keystone --headless --frames 1 --size 1280x720 \
 The report contains:
 
 - `schema`, report field schema and a stable report `hash`;
-- image path, dimensions, PNG and RGBA SHA-256;
+- image path, dimensions, PNG and RGBA SHA-256, plus an optional pixel-diff summary;
 - mean RGB/luminance, content pixels/ratio, content bounding box, dominant colors and an 8×8 luminance grid;
 - camera parameters;
 - every scene node's world position, visibility, triangle count and projected screen center/bounding box.

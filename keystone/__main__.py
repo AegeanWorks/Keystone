@@ -48,6 +48,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--verify-determinism", action="store_true", help="run a scenario twice and compare hashes")
     parser.add_argument("--expect-hash", type=_hash, default=None, help="assert the final scenario hash")
     parser.add_argument("--compare-baseline", type=Path, default=None, help="compare the current report with a baseline report")
+    parser.add_argument("--diff-out", type=Path, default=None, help="write a visual pixel-diff PNG with --compare-baseline")
     parser.add_argument("--actions", type=Path, default=None, help="JSON action list for --simulate/--verify-determinism")
     parser.add_argument("--trace", action="store_true", help="include per-frame snapshots in simulation output")
     parser.add_argument("--frames", type=_frames, default=0, help="frame count (default: 1 headless, or until close)")
@@ -72,6 +73,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--report requires --headless")
     if args.compare_baseline and not (args.headless and args.report):
         parser.error("--compare-baseline requires --headless and --report")
+    if args.diff_out and not args.compare_baseline:
+        parser.error("--diff-out requires --compare-baseline")
     if args.out and not (args.headless or args.simulate or args.verify_determinism):
         parser.error("--out requires --headless, --simulate or --verify-determinism")
     if args.actions and not (args.simulate or args.verify_determinism):
@@ -130,12 +133,25 @@ def main(argv: list[str] | None = None) -> int:
         if args.out or args.report:
             engine.capture(args.out, args.report)
         if args.compare_baseline:
-            from keystone.analysis import compare_reports
+            from keystone.analysis import compare_reports, diff_images
             from keystone.serialization import read_json
 
             baseline = read_json(args.compare_baseline)
             current = read_json(args.report)
             diff = compare_reports(baseline, current)
+            pixel_diff = None
+            if args.diff_out:
+                baseline_image = baseline.get("image", {}).get("path")
+                current_image = current.get("image", {}).get("path")
+                if not baseline_image or not current_image:
+                    raise ValueError("baseline and current reports must both contain image paths for --diff-out")
+                baseline_png = Path(baseline_image)
+                if not baseline_png.is_absolute() and not baseline_png.exists():
+                    baseline_png = Path(args.compare_baseline).parent / baseline_png
+                current_png = Path(current_image)
+                if not current_png.is_absolute() and not current_png.exists():
+                    current_png = Path(args.report).parent / current_png
+                pixel_diff = diff_images(baseline_png, current_png, args.diff_out)
             print(
                 json.dumps(
                     {
@@ -143,6 +159,7 @@ def main(argv: list[str] | None = None) -> int:
                         "baseline": str(args.compare_baseline),
                         "current": str(args.report),
                         "diff": diff,
+                        "pixel_diff": pixel_diff,
                     },
                     indent=2,
                     sort_keys=True,
