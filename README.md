@@ -4,6 +4,8 @@
 
 ![Keystone expedition](assets/expedition.png)
 
+> **Architecture status (v0.7.0):** This is a playable vertical slice, not the final core boundary. Combat, light locks, weave layouts, networks and space are game examples, not engine mechanics. Genre feature work is frozen pending review of [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); the next work is the core/module split, not another game module.
+
 A performance-first 3D game engine in Python with an OpenGL 3.3 renderer, deterministic procedural worlds, first-person collision, survivors-style combat, light-routing puzzles, cyber-network infiltration, a free-flight space survey mode and a headless AI harness.
 
 Keystone's core loop is a **seeded expedition**: one integer seed generates an island, a dungeon, a light lock and a cyber network. The player walks the terrain, fights escalating enemy waves, turns mirrors to open the crypt portal, hacks network terminals while avoiding NetWatch hunters, explores a generated room layout, and returns to the surface. A second mode launches a free-flight ship into a seeded galaxy of orbiting bodies, scan surveys and hyperlane gates. The authoritative simulation is independent of OpenGL, so the same run can be rendered, replayed from JSON actions, or hashed for regression checks.
@@ -257,6 +259,8 @@ keystone/
 │   ├── test_expedition.py    <- scene assembly and scene transitions
 │   ├── test_harness.py       <- AI harness API and CLI
 │   └── test_app.py           <- engine loop, demo and CLI
+├── docs/
+│   └── ARCHITECTURE.md       <- core/module boundary, GameModule contract and refactor plan
 ├── requirements.txt          <- pinned runtime and test dependencies
 ├── pyproject.toml            <- package metadata, pytest and ruff configuration
 ├── .gitignore                <- transient AIKit state excluded

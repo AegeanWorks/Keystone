@@ -99,3 +99,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Keystone only had the ground expedition. VoidFarer already proves procedural systems, orbiting bodies, hyperlane connectivity and a scan/survey loop; a self-contained mode would prove the engine is not tied to one game.
 - **Decision**: Add `keystone.procedural.space` for deterministic six-system galaxies, `keystone.space.SpaceWorld` for free flight, body scans, survey completion and gate jumps, and `keystone.space_expedition.SpaceExpedition` for the starfield/planet/gate scene and controls. `--space` selects the mode; `keystone.space_harness` exposes catalog/run/selftest without a GPU.
 - **Consequences**: Keystone has two independent playable modes and two headless harnesses. Space has no combat, trade or multi-ship systems yet; those are future work. Orbit phases, scan state, ship position and system links are part of the space replay hash.
+
+### ADR-012: Separate the engine core from game modules and freeze genre work
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: Combat, light locks, weave layouts, cyber networks and the space survey were built beside the renderer and math but treated as engine mechanics. They are games built on the engine, and the core still lacks a game-agnostic module contract, generic input/replay, physics, assets, audio and serialization.
+- **Decision**: Freeze genre feature work. Define `keystone/` as core only and `games/` as optional examples/modules. Introduce a five-operation `GameModule` protocol, `ActionState`, a game registry and a game-agnostic `Engine`; core must never import `games.*`. Preserve the current features by moving them to `games/expedition`, `games/space` and `games/showcase` after this document is reviewed. The full boundary, inventory, dependency rules, module roadmap and staged refactor sequence are in `docs/ARCHITECTURE.md`.
+- **Consequences**: No new genre modules until the core split is accepted. The current v0.7.0 tree keeps running during review; the next work is the boundary refactor, then real core systems (physics, assets/serialization, scene/ECS, renderer, input/audio, tooling). Existing replay hashes and screenshots may change when modules move.
