@@ -9,8 +9,8 @@
 - **Total Python Modules**: `49`
 - **Total Classes**: `62`
 - **Total Top-Level Functions**: `51`
-- **Total Class Methods**: `314`
-- **Total Source Lines**: `4802`
+- **Total Class Methods**: `315`
+- **Total Source Lines**: `4813`
 
 ---
 
@@ -216,7 +216,7 @@
 ### [`keystone/gpu/ui_renderer.py`](keystone/gpu/ui_renderer.py)
 > *Screen-space OpenGL renderer for the human UI canvas.*
 
-**Size**: `94` lines (`3027` bytes)
+**Size**: `94` lines (`3055` bytes)
 
 **Classes:**
 - `class UiRenderer` - *Uploads one canvas per frame and draws it over the 3D scene.*
@@ -529,7 +529,7 @@
 ### [`keystone/ui/overlay.py`](keystone/ui/overlay.py)
 > *Game-agnostic human overlay: HUD, controls help and pause banner.*
 
-**Size**: `117` lines (`4540` bytes)
+**Size**: `123` lines (`4662` bytes)
 
 **Classes:**
 - `class HudState` - *Presentation-only snapshot the overlay needs for one frame.*
@@ -876,7 +876,7 @@
 ### [`tests/test_ui.py`](tests/test_ui.py)
 > *Tests for the dependency-free human UI primitives and overlay.*
 
-**Size**: `82` lines (`3023` bytes)
+**Size**: `87` lines (`3318` bytes)
 
 **Classes:**
 - `class FontTest`
@@ -890,6 +890,7 @@
   - Method `.test_overlay_shows_game_status_and_metrics()`
   - Method `.test_pause_banner_and_hidden_overlay()`
   - Method `.test_compact_layout_uses_smaller_text()`
+  - Method `.test_tiny_canvas_is_clipped_without_errors()`
 
 **Functions:**
 - `def state(**overrides)`

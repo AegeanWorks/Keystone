@@ -245,6 +245,7 @@ keystone/
 │   ├── png.py                <- dependency-free PNG writer and reader
 │   ├── samples.py            <- CubeDemo smoke test
 │   ├── ui/
+│   │   ├── __init__.py       <- UI package exports
 │   │   ├── font.py           <- embedded 5x7 bitmap font
 │   │   ├── canvas.py         <- clipped screen-space quads and text
 │   │   └── overlay.py        <- HUD, controls help and pause banner
