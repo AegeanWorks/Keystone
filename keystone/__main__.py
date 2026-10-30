@@ -27,6 +27,16 @@ def _frames(text: str) -> int:
     return value
 
 
+def _seed(text: str) -> int:
+    try:
+        value = int(text)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("seed must be an integer") from exc
+    if not 0 <= value <= 0xFFFFFFFF:
+        raise argparse.ArgumentTypeError("seed must be between 0 and 4294967295")
+    return value
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m keystone",
@@ -36,30 +46,52 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--frames", type=_frames, default=0, help="frames to render (0 = until the window closes)")
     parser.add_argument("--size", type=_size, default=(960, 540), metavar="WxH", help="framebuffer size, e.g. 1280x720")
     parser.add_argument("--out", default=None, help="write a PNG after a headless run")
+    parser.add_argument("--seed", type=_seed, default=7, help="expedition seed (default: 7)")
+    parser.add_argument("--demo", action="store_true", help="run the original showcase scene instead of the expedition")
     args = parser.parse_args(argv)
     if args.out and not args.headless:
         parser.error("--out requires --headless")
 
     from keystone.app import Engine
-    from keystone.demo import Demo
 
     engine = None
     try:
-        demo = Demo()
+        if args.demo:
+            from keystone.demo import Demo
+
+            experience = Demo()
+            controls = None
+            title = "Keystone | Showcase"
+        else:
+            from keystone.expedition import Expedition
+
+            experience = Expedition(args.seed)
+            controls = experience.handle_input
+            title = f"Keystone | Expedition seed {args.seed}"
         engine = Engine(
-            demo.scene,
+            experience.scene,
             args.size[0],
             args.size[1],
             visible=not args.headless,
             msaa=0 if args.headless else 4,
+            title=title,
         )
         max_frames = args.frames if args.frames else (1 if args.headless else 0)
-        rendered = engine.run(update=demo.update, max_frames=max_frames)
+        rendered = engine.run(
+            update=experience.update,
+            max_frames=max_frames,
+            controls=controls,
+        )
         if args.out:
             engine.screenshot(args.out)
         if args.headless:
             suffix = f" -> {args.out}" if args.out else ""
-            print(f"Rendered {rendered} frame(s) at {args.size[0]}x{args.size[1]}{suffix}")
+            mode = getattr(getattr(experience, "world", None), "mode", "demo")
+            seed = f" seed={args.seed}" if not args.demo else ""
+            print(
+                f"Rendered {rendered} frame(s) at {args.size[0]}x{args.size[1]}"
+                f"{seed} mode={mode}{suffix}"
+            )
         return 0
     except Exception as exc:  # noqa: BLE001 - a CLI must never leak a traceback (PRINCIPLE-011 R6)
         message = str(exc)

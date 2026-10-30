@@ -10,7 +10,7 @@ from keystone.gpu.renderer import Renderer
 from keystone.gpu.shader import ShaderProgram
 from keystone.math3d import Vec3
 from keystone.primitives import cube
-from keystone.scene import Node, Scene
+from keystone.scene import DirectionalLight, Node, PointLight, Scene
 
 
 def build_scene() -> Scene:
@@ -54,6 +54,25 @@ class RendererIntegrationTest(unittest.TestCase):
         top = pixels[(47 * 64) * 4 : (47 * 64) * 4 + 4]
         self.assertGreater(top[0], bottom[0])
         self.assertGreater(bottom[2], top[2])
+
+    def test_point_light_lights_a_surface_when_the_sun_is_off(self):
+        scene = Scene()
+        scene.ambient = Vec3(0.0, 0.0, 0.0)
+        scene.light = DirectionalLight(intensity=0.0)
+        scene.point_light = PointLight(
+            position=Vec3(0.0, 0.0, 3.0),
+            color=Vec3(1.0, 0.0, 0.0),
+            intensity=2.0,
+            radius=10.0,
+        )
+        scene.camera.position = Vec3(0.0, 0.0, 4.0)
+        scene.add(Node("cube", mesh=cube(1.5), material=Material(color=Vec3(1.0, 1.0, 1.0))))
+        self.renderer.render(scene)
+        pixels = self.renderer.read_pixels()
+        center = 24 * 64 * 4 + 32 * 4
+        red, _green, blue, _alpha = pixels[center : center + 4]
+        self.assertGreater(red, 80)
+        self.assertGreater(red, blue)
 
     def test_screenshot_is_a_real_png(self):
         self.renderer.render(build_scene())

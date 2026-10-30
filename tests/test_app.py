@@ -9,6 +9,7 @@ from pathlib import Path
 from keystone.__main__ import main
 from keystone.app import Engine
 from keystone.demo import Demo
+from keystone.expedition import Expedition
 
 
 class DemoTest(unittest.TestCase):
@@ -40,6 +41,19 @@ class EngineTest(unittest.TestCase):
             self.assertTrue(path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n"))
 
 
+class ExpeditionEngineTest(unittest.TestCase):
+    def test_headless_expedition_renders_and_saves_a_png(self):
+        expedition = Expedition(7, size=32)
+        engine = Engine(expedition.scene, 48, 32, visible=False)
+        self.addCleanup(engine.close)
+        frames = engine.run(update=expedition.update, max_frames=2)
+        self.assertEqual(frames, 2)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "expedition.png"
+            engine.screenshot(path)
+            self.assertTrue(path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n"))
+
+
 class CliTest(unittest.TestCase):
     def test_bad_size_is_a_usage_error(self):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
@@ -49,6 +63,11 @@ class CliTest(unittest.TestCase):
     def test_out_requires_headless(self):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
             main(["--out", "frame.png"])
+        self.assertEqual(caught.exception.code, 2)
+
+    def test_bad_seed_is_a_usage_error(self):
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+            main(["--seed", "not-a-number"])
         self.assertEqual(caught.exception.code, 2)
 
 

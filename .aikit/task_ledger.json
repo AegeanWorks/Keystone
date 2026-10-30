@@ -1,15 +1,15 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-v1",
+    "task_id": "keystone-expedition-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793378098.8496082,
-    "owner": "opencode:keystone-v1",
-    "started_by": "opencode:keystone-v1",
+    "updated_at": 1793380127.09091,
+    "owner": "opencode:keystone-expedition",
+    "started_by": "opencode:keystone-expedition",
     "continuations": [],
-    "completed_at": 1793378107.4027538
+    "completed_at": 1793380137.374722
   },
   "checkpoints": [
     {
@@ -118,6 +118,49 @@
       "timestamp": 1793378107.402755,
       "timestamp_str": "2026-10-30 19:35:07",
       "agent": "opencode:keystone-v1"
+    },
+    {
+      "task_id": "keystone-expedition-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/6] Plan: sim core -> procedural terrain -> dungeon generator -> expedition/collision -> vertex-color renderer + seed CLI -> AI harness, docs and gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793378712.124686,
+      "timestamp_str": "2026-10-30 19:45:12",
+      "agent": "opencode:keystone-expedition",
+      "impact_assessment": {
+        "why": "Make the extracted world/simulation capabilities the engine core, not demo packs: a seeded expedition loop proves deterministic generation, collision, first-person rendering and AI playability.",
+        "benefits": "One reproducible seed drives terrain, dungeon, player state and hash; the sim is renderer-independent and testable headlessly; Aldervale/Crypt-Crawler/Dustline algorithms become reusable engine systems.",
+        "risks": "contract: MeshData gains optional vertex colors and Engine.run gains a controls callback; dependency: stdlib only; concurrency: single-threaded fixed-step; state: seeded generation and replay hash must stay stable.",
+        "mitigation": "Fail-first tests for colors, determinism, collision and mode transitions; ADR for the core contract; renderer integration test and headless screenshot; ports are modular, no monolith pasted."
+      }
+    },
+    {
+      "task_id": "keystone-expedition-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[6/6] Seeded expedition core complete: 134 tests, 6/6 gates, visible 30-frame dogfood, harness selftest green (determinism, seed sensitivity, portal entry/exit), 120 frames at 1280x720 in ~4.0 s wall-clock; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793380127.09091,
+      "timestamp_str": "2026-10-30 20:08:47",
+      "agent": "opencode:keystone-expedition",
+      "handoff": {
+        "state": "world/dungeon/atmosphere/harness APIs frozen for v0.2.0",
+        "next": "review roadmap or request publish",
+        "evidence": "pytest 134 passed, aikit check 6/6, strict check pending clean commit"
+      }
+    },
+    {
+      "task_id": "keystone-expedition-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-expedition-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793380137.3747253,
+      "timestamp_str": "2026-10-30 20:08:57",
+      "agent": "opencode:keystone-expedition"
     }
   ]
 }

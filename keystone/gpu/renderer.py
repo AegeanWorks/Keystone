@@ -9,7 +9,7 @@ from OpenGL import GL
 from keystone.geometry import Material, MeshData
 from keystone.gpu.mesh_buffer import GpuMesh
 from keystone.gpu.shader import ShaderProgram
-from keystone.math3d import Mat4
+from keystone.math3d import Mat4, Vec3
 from keystone.png import write_png
 from keystone.scene import Scene
 
@@ -17,15 +17,18 @@ VERTEX_SHADER = """#version 330 core
 layout(location = 0) in vec3 a_position;
 layout(location = 1) in vec3 a_normal;
 layout(location = 2) in vec2 a_uv;
+layout(location = 3) in vec3 a_color;
 uniform mat4 u_model;
 uniform mat4 u_view_proj;
 uniform mat3 u_normal_matrix;
 out vec3 v_world;
 out vec3 v_normal;
+out vec3 v_color;
 void main() {
     vec4 world = u_model * vec4(a_position, 1.0);
     v_world = world.xyz;
     v_normal = normalize(u_normal_matrix * a_normal);
+    v_color = a_color;
     gl_Position = u_view_proj * world;
 }
 """
@@ -33,6 +36,7 @@ void main() {
 FRAGMENT_SHADER = """#version 330 core
 in vec3 v_world;
 in vec3 v_normal;
+in vec3 v_color;
 uniform vec3 u_color;
 uniform float u_specular;
 uniform float u_shininess;
@@ -43,6 +47,9 @@ uniform vec3 u_ambient;
 uniform vec3 u_fog_color;
 uniform float u_fog_density;
 uniform float u_checker_scale;
+uniform vec3 u_point_pos;
+uniform vec3 u_point_color;
+uniform float u_point_radius;
 out vec4 frag_color;
 void main() {
     vec3 normal = normalize(v_normal);
@@ -53,7 +60,15 @@ void main() {
     float diffuse = max(dot(normal, light), 0.0);
     vec3 halfway = normalize(light + view);
     float specular = pow(max(dot(normal, halfway), 0.0), u_shininess) * u_specular;
-    vec3 color = u_color * (u_ambient + u_light_color * diffuse) + u_light_color * specular;
+    vec3 base_color = u_color * v_color;
+    vec3 color = base_color * (u_ambient + u_light_color * diffuse) + u_light_color * specular;
+    if (u_point_radius > 0.0) {
+        vec3 to_point = u_point_pos - v_world;
+        float point_distance = length(to_point);
+        float attenuation = max(0.0, 1.0 - point_distance / u_point_radius);
+        float point_diffuse = max(dot(normal, normalize(to_point)), 0.0);
+        color += base_color * u_point_color * attenuation * attenuation * point_diffuse;
+    }
     if (u_checker_scale > 0.0) {
         float tile = mod(floor(v_world.x * u_checker_scale) + floor(v_world.z * u_checker_scale), 2.0);
         color *= mix(0.62, 1.0, tile);
@@ -162,6 +177,15 @@ class Renderer:
         self._program.set_vec3("u_ambient", scene.ambient)
         self._program.set_vec3("u_fog_color", background)
         self._program.set_float("u_fog_density", scene.fog_density)
+        point = scene.point_light
+        if point is None:
+            self._program.set_vec3("u_point_pos", Vec3())
+            self._program.set_vec3("u_point_color", Vec3())
+            self._program.set_float("u_point_radius", 0.0)
+        else:
+            self._program.set_vec3("u_point_pos", point.position)
+            self._program.set_vec3("u_point_color", point.color * point.intensity)
+            self._program.set_float("u_point_radius", point.radius)
         for node in scene.traverse():
             if node.mesh is None or not node.world_visible():
                 continue

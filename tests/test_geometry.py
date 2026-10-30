@@ -6,8 +6,9 @@ import unittest
 from pathlib import Path
 
 from keystone.geometry import Material, MeshData
+from keystone.mesh_builder import MeshBuilder
 from keystone.obj_loader import load_obj, parse_obj
-from keystone.primitives import cube, plane, sphere
+from keystone.primitives import cone, cube, cylinder, plane, sphere
 
 CUBE_OBJ = """\
 # a unit quad
@@ -48,9 +49,27 @@ class MeshDataTest(unittest.TestCase):
         self.assertEqual(low, (-1.0, -1.0, -1.0))
         self.assertEqual(high, (1.0, 1.0, 1.0))
 
-    def test_interleaved_has_eight_floats_per_vertex(self):
+    def test_interleaved_has_eleven_floats_per_vertex(self):
         stream = cube(1.0).interleaved()
-        self.assertEqual(len(stream), 24 * 8)
+        self.assertEqual(len(stream), 24 * 11)
+
+    def test_vertex_colors_follow_the_uvs(self):
+        mesh = MeshData(
+            positions=((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)),
+            normals=((0.0, 0.0, 1.0),) * 3,
+            colors=((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)),
+            indices=(0, 1, 2),
+        )
+        self.assertEqual(mesh.interleaved()[8:11], (1.0, 0.0, 0.0))
+
+    def test_rejects_mismatched_vertex_colors(self):
+        with self.assertRaises(ValueError):
+            MeshData(
+                positions=((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)),
+                normals=((0.0, 0.0, 1.0),) * 3,
+                colors=((1.0, 1.0, 1.0),),
+                indices=(0, 1, 2),
+            )
 
 
 class PrimitiveTest(unittest.TestCase):
@@ -80,6 +99,57 @@ class PrimitiveTest(unittest.TestCase):
             sphere(1.0, segments=2)
         with self.assertRaises(ValueError):
             plane(-1.0)
+
+    def test_cone_and_cylinder_are_unit_and_bounded(self):
+        for mesh in (cone(1.0, 2.0, segments=8), cylinder(1.0, 2.0, segments=8)):
+            for normal in mesh.normals:
+                self.assertAlmostEqual(math.sqrt(sum(c * c for c in normal)), 1.0)
+            low, high = mesh.bounds()
+            self.assertAlmostEqual(low[1], -1.0)
+            self.assertAlmostEqual(high[1], 1.0)
+
+
+class MeshBuilderTest(unittest.TestCase):
+    def test_box_has_24_vertices_and_36_indices(self):
+        mesh = MeshBuilder().add_box(0, 0, 0, 2, 4, 6).build()
+        self.assertEqual(mesh.vertex_count(), 24)
+        self.assertEqual(mesh.triangle_count(), 12)
+        self.assertEqual(len(mesh.colors), 24)
+        self.assertEqual(mesh.bounds(), ((-1.0, -2.0, -3.0), (1.0, 2.0, 3.0)))
+
+    def test_quad_normal_follows_winding(self):
+        mesh = (
+            MeshBuilder()
+            .add_quad(
+                (0.0, 0.0, 0.0),
+                (0.0, 0.0, 1.0),
+                (1.0, 0.0, 1.0),
+                (1.0, 0.0, 0.0),
+            )
+            .build()
+        )
+        self.assertEqual(mesh.normals[0], (0.0, 1.0, 0.0))
+
+    def test_degenerate_quad_is_rejected(self):
+        with self.assertRaises(ValueError):
+            MeshBuilder().add_quad(
+                (0.0, 0.0, 0.0),
+                (1.0, 0.0, 0.0),
+                (2.0, 0.0, 0.0),
+                (3.0, 0.0, 0.0),
+            )
+
+    def test_add_mesh_merges_counts_and_offsets(self):
+        builder = MeshBuilder()
+        builder.add_mesh(cube(1.0), offset=(5.0, 0.0, 0.0), scale=2.0, color=(0.5, 1.0, 0.5))
+        builder.add_mesh(cube(1.0), offset=(-5.0, 0.0, 0.0))
+        mesh = builder.build()
+        self.assertEqual(mesh.vertex_count(), 48)
+        self.assertEqual(mesh.triangle_count(), 24)
+        low, high = mesh.bounds()
+        self.assertEqual(low[0], -5.5)
+        self.assertEqual(high[0], 6.0)
+        self.assertEqual(mesh.colors[0], (0.5, 1.0, 0.5))
 
 
 class ObjLoaderTest(unittest.TestCase):

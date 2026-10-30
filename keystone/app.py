@@ -10,6 +10,7 @@ from keystone.gpu.renderer import Renderer
 from keystone.scene import Scene
 
 Update = Callable[[float], None]
+Controls = Callable[[float, GLContext], None]
 
 
 class Engine:
@@ -70,7 +71,12 @@ class Engine:
         if self._captured and (dx or dy):
             self.scene.camera.rotate(dx * 0.0025, -dy * 0.0025)
 
-    def run(self, update: Update | None = None, max_frames: int = 0) -> int:
+    def run(
+        self,
+        update: Update | None = None,
+        max_frames: int = 0,
+        controls: Controls | None = None,
+    ) -> int:
         """Render until the window closes or max_frames (0 = unlimited) is reached."""
         if max_frames < 0:
             raise ValueError("max_frames cannot be negative")
@@ -91,7 +97,10 @@ class Engine:
             if self._visible:
                 if self.context.key_down("escape"):
                     self.context.request_close()
-                self._process_input(dt)
+                if controls is None:
+                    self._process_input(dt)
+                else:
+                    controls(dt, self.context)
             if update is not None:
                 update(dt)
             self.renderer.render(self.scene)

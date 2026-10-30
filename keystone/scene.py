@@ -93,6 +93,22 @@ class DirectionalLight:
         return self.color * self.intensity
 
 
+@dataclass(frozen=True, slots=True)
+class PointLight:
+    """A local light with quadratic falloff, used for torches and lamps."""
+
+    position: Vec3 = Vec3(0.0, 0.0, 0.0)
+    color: Vec3 = Vec3(1.0, 0.8, 0.5)
+    intensity: float = 1.0
+    radius: float = 10.0
+
+    def __post_init__(self) -> None:
+        if self.radius <= 0.0:
+            raise ValueError("point light radius must be positive")
+        if self.intensity < 0.0:
+            raise ValueError("point light intensity must be non-negative")
+
+
 @dataclass
 class Scene:
     """Root node, active camera, one directional light and atmosphere settings."""
@@ -100,6 +116,7 @@ class Scene:
     root: Node = field(default_factory=Node)
     camera: PerspectiveCamera = field(default_factory=PerspectiveCamera)
     light: DirectionalLight = field(default_factory=DirectionalLight)
+    point_light: PointLight | None = None
     ambient: Vec3 = Vec3(0.16, 0.17, 0.2)
     background: Vec3 = Vec3(0.045, 0.055, 0.075)
     sky: Vec3 = Vec3(0.01, 0.015, 0.04)

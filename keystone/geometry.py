@@ -33,6 +33,7 @@ class MeshData:
     normals: tuple[tuple[float, float, float], ...]
     uvs: tuple[tuple[float, float], ...] = ()
     indices: tuple[int, ...] = ()
+    colors: tuple[tuple[float, float, float], ...] = ()
 
     def __post_init__(self) -> None:
         count = len(self.positions)
@@ -42,6 +43,8 @@ class MeshData:
             raise ValueError("every vertex needs exactly one normal")
         if self.uvs and len(self.uvs) != count:
             raise ValueError("UVs, when present, must match the vertex count")
+        if self.colors and len(self.colors) != count:
+            raise ValueError("vertex colors, when present, must match the vertex count")
         if not self.indices or len(self.indices) % 3 != 0:
             raise ValueError("indices must contain complete triangles")
         if any(index < 0 or index >= count for index in self.indices):
@@ -63,5 +66,6 @@ class MeshData:
         for index, position in enumerate(self.positions):
             normal = self.normals[index]
             uv = self.uvs[index] if self.uvs else (0.0, 0.0)
-            stream.extend((*position, *normal, *uv))
+            color = self.colors[index] if self.colors else (1.0, 1.0, 1.0)
+            stream.extend((*position, *normal, *uv, *color))
         return tuple(stream)

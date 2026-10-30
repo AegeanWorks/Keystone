@@ -5,7 +5,7 @@ import unittest
 
 from keystone.camera import PerspectiveCamera
 from keystone.math3d import Mat4, Quat, Vec3
-from keystone.scene import DirectionalLight, Node, Scene, Transform
+from keystone.scene import DirectionalLight, Node, PointLight, Scene, Transform
 
 
 class TransformTest(unittest.TestCase):
@@ -142,6 +142,12 @@ class SceneTest(unittest.TestCase):
     def test_scene_has_a_sky_color_distinct_from_the_horizon(self):
         scene = Scene()
         self.assertNotEqual(scene.sky, scene.background)
+
+    def test_point_light_validates_its_radius_and_intensity(self):
+        with self.assertRaises(ValueError):
+            PointLight(radius=0.0)
+        with self.assertRaises(ValueError):
+            PointLight(intensity=-1.0)
 
     def test_directional_light_normalizes_lookup_direction(self):
         light = DirectionalLight(direction=Vec3(0, -2, 0))

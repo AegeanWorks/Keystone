@@ -9,10 +9,11 @@ from OpenGL import GL
 
 from keystone.geometry import MeshData
 
-STRIDE = 8 * 4
+STRIDE = 11 * 4
 POSITION_OFFSET = 0
 NORMAL_OFFSET = 3 * 4
 UV_OFFSET = 6 * 4
+COLOR_OFFSET = 8 * 4
 
 
 class GpuMesh:
@@ -41,6 +42,8 @@ class GpuMesh:
             GL.glVertexAttribPointer(1, 3, GL.GL_FLOAT, GL.GL_FALSE, STRIDE, ctypes.c_void_p(NORMAL_OFFSET))
             GL.glEnableVertexAttribArray(2)
             GL.glVertexAttribPointer(2, 2, GL.GL_FLOAT, GL.GL_FALSE, STRIDE, ctypes.c_void_p(UV_OFFSET))
+            GL.glEnableVertexAttribArray(3)
+            GL.glVertexAttribPointer(3, 3, GL.GL_FLOAT, GL.GL_FALSE, STRIDE, ctypes.c_void_p(COLOR_OFFSET))
             GL.glBindVertexArray(0)
         except Exception:
             self.release()

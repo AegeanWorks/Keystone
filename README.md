@@ -2,11 +2,15 @@
 
 [![Built with AIKit](https://img.shields.io/badge/built%20with-AIKit-6f42c1)](https://github.com/AegeanWorks/AIKit)
 
-![Keystone demo scene](assets/screenshot.png)
+![Keystone expedition](assets/expedition.png)
 
-A performance-first 3D game engine in Python with an OpenGL 3.3 renderer, scene graph, OBJ assets and a headless-testable core.
+A performance-first 3D game engine in Python with an OpenGL 3.3 renderer, deterministic procedural worlds, first-person collision and a headless AI harness.
 
-Keystone is a small, readable engine rather than a framework wrapper: the math, scene graph, asset loader, GLSL programs and frame loop are all in this repository, and every layer is covered by tests. It renders on the GPU, boots a demo window in one command, and can render deterministic PNG frames without a visible window for CI and agents.
+Keystone's core loop is a **seeded expedition**: one integer seed generates an island and a dungeon, the player walks the terrain, enters the crypt through a stone portal, explores a generated room-and-corridor layout, and returns to the surface. The authoritative simulation is independent of OpenGL, so the same run can be rendered, replayed from JSON actions, or hashed for regression checks.
+
+| Overworld | Dungeon |
+|---|---|
+| ![Terrain and portal](assets/expedition.png) | ![Generated crypt](assets/dungeon.png) |
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
@@ -16,13 +20,25 @@ Keystone is a small, readable engine rather than a framework wrapper: the math, 
   ```bash
   python -m pytest -q
   ```
-- **Run the demo window**:
+- **Run the expedition**:
   ```bash
   python -m keystone
   ```
-- **Render a frame without a window**:
+- **Run a specific seed**:
+  ```bash
+  python -m keystone --seed 42
+  ```
+- **Original showcase scene**:
+  ```bash
+  python -m keystone --demo
+  ```
+- **Render headlessly**:
   ```bash
   python -m keystone --headless --frames 1 --size 1280x720 --out frame.png
+  ```
+- **Ask the AI harness for the action schema**:
+  ```bash
+  python -m keystone.harness catalog
   ```
 
 ### 🛠️ AIKit Commands (run from the AIKit folder)
@@ -36,35 +52,71 @@ Keystone is a small, readable engine rather than a framework wrapper: the math, 
 
 ## 🎮 Controls
 
-The demo captures the mouse on start.
+The window captures the mouse on start.
 
 | Input | Action |
 |---|---|
 | `W` / `A` / `S` / `D` | Move forward / left / back / right |
-| `Q` / `E` | Move down / up |
 | Mouse | Look around |
 | Arrow keys | Look with the keyboard |
-| `Shift` | Move faster |
+| `Shift` | Sprint |
+| `E` | Enter the portal, or leave through the crypt exit |
 | `F1` | Release or recapture the mouse |
 | `Esc` | Close the window |
 
+## 🧭 The Core Loop
+
+1. `World(seed)` generates the island heightfield and the dungeon layout from the same seed.
+2. The player starts at a walkable clearing, facing the stone portal.
+3. Walking uses terrain height, water and slope checks; the dungeon uses a player-radius grid collision check.
+4. Interacting within range of the portal switches the world to `dungeon` and rebuilds the scene around the dungeon spawn.
+5. Interacting at the exit rune restores the overworld position at the portal.
+6. `World.state_hash()` fingerprints seed, time, player, terrain metadata and dungeon tiles. Identical seeds and actions produce identical hashes.
+
+The dungeon preview is generated from the same run: `assets/dungeon.png`.
+
 ## 🚀 Features
 
-- **GPU renderer**: OpenGL 3.3 core, GLSL 330, indexed `glDrawElements`, depth testing, back-face culling and a gradient sky pass.
-- **Blinn-Phong lighting**: one directional light, ambient fill, specular highlights, distance fog and an optional world-space checker on any material.
-- **Scene graph**: named nodes, parent/child transforms, world matrices, visibility inherited from ancestors and cycle-safe reparenting.
-- **Perspective camera**: yaw/pitch orientation with pitch clamping, fly movement and `look_at`.
-- **Math core**: immutable `Vec3`, column-major `Mat4` (OpenGL-ready flat upload), `Quat` rotation and slerp. No hidden global state.
-- **Geometry**: indexed `MeshData`, cube / plane / UV-sphere primitives and a streaming Wavefront OBJ loader with UV, normal and negative-index support. Missing normals are synthesized per face.
-- **Headless parity**: the same renderer runs in a hidden 64×64 context in tests and at 1280×720 for screenshots, with no display server dependency beyond GLFW.
-- **Dependency-free PNG capture**: `keystone.png` writes RGBA screenshots with the standard library only.
-- **Deterministic demo**: the same scene and animation run in a window or headless; `Demo.update(dt)` is the only animation source.
+- **Deterministic simulation core**: `keystone/sim/` imports no OpenGL; a fixed-step world, seeded generation and a stable replay hash drive every view.
+- **Procedural island**: deterministic integer-hash value noise and FBM, radial island falloff, water level, biome colors, a clearing and a path from spawn to portal.
+- **Procedural dungeon**: seeded non-overlapping rooms, L-shaped corridors, farthest-room exit, symmetric-raycast field of view and BFS pathfinding.
+- **First-person collision**: terrain walkability (water/slope), dungeon radius checks with axis-separated sliding, and portal/exit range transitions.
+- **GPU renderer**: OpenGL 3.3 core, GLSL 330, per-vertex colors, one directional light, an optional warm point light (the crypt torch), depth testing, culling, gradient sky and distance fog.
+- **Static batching**: terrain is one mesh; trees, crowns, rocks and the path are merged into four meshes, so the expedition renders in roughly ten draw calls.
+- **Day/night atmosphere**: sun elevation drives daylight, warm dawn tint, ambient light, sky/horizon colors and light intensity; the dungeon overrides with its own moody palette.
+- **AI harness**: `catalog`, `run` and `selftest` JSON commands reproduce a run from a seed and an action list, with no GPU and no browser.
+- **Headless parity**: the same renderer runs in a hidden context for tests and screenshots.
+
+## 🤖 Headless AI Harness
+
+```bash
+python -m keystone.harness catalog
+python -m keystone.harness selftest
+python -m keystone.harness run --seed 7 --actions actions.json --out run.json
+```
+
+`actions.json`:
+
+```json
+{
+  "actions": [
+    {"action": "turn", "yaw": 90},
+    {"action": "move", "forward": 1.0, "seconds": 1.0, "sprint": true},
+    {"action": "interact"},
+    {"action": "wait", "seconds": 0.5}
+  ]
+}
+```
+
+The result contains the final state (`mode`, `player`, `terrain`, `dungeon`, `near_entrance`, `near_exit`, `events`) and a `hash`. The same seed and actions always produce the same hash; `selftest` proves determinism, seed sensitivity, portal entry, exit transition and rejection of unknown actions.
 
 ## 📈 Performance
 
-Keystone submits geometry once per mesh (VBO/EBO) and only uniforms per frame; it never re-uploads vertex data while a mesh is cached. Depth testing and back-face culling are enabled globally, and the sky is one full-screen triangle.
+- Frame loop after construction: about **1.6 ms per frame** at 1280×720 in a local headless run (AMD Radeon RX 9060 XT, OpenGL 3.3 core).
+- 120 frames at 1280×720, including process startup, terrain/dungeon construction and GLFW teardown: about **4.0 s wall-clock** locally. Construction and driver teardown dominate that number, not rendering.
+- The static world is uploaded once; each frame updates the camera, atmosphere, transforms and a handful of uniforms.
 
-A local headless run of 120 frames at 1280×720, including interpreter start, demo construction and GPU context creation, completed in about 1.0 s on an AMD Radeon RX 9060 XT (OpenGL 3.3 core, Python 3.14). That is a measurement of this demo, not a benchmark suite; the next expected bottleneck is Python draw submission for scenes with many thousands of objects.
+These are measurements of this demo on one machine, not a benchmark suite.
 
 ## 📦 What's Inside
 
@@ -72,34 +124,53 @@ A local headless run of 120 frames at 1280×720, including interpreter start, de
 keystone/
 ├── keystone/
 │   ├── __init__.py           <- package surface and version
-│   ├── __main__.py           <- CLI: window, headless frames, PNG output
+│   ├── __main__.py           <- CLI: expedition, showcase, headless frames
 │   ├── math3d.py             <- Vec3, Mat4, Quat (column-major, OpenGL-ready)
 │   ├── camera.py             <- perspective camera and fly-style movement
-│   ├── scene.py              <- hierarchy, transforms, light, sky and fog
-│   ├── geometry.py           <- indexed mesh data and Blinn-Phong material
-│   ├── primitives.py         <- cube, ground plane and UV sphere
+│   ├── scene.py              <- hierarchy, transforms, lights, sky and fog
+│   ├── geometry.py           <- indexed mesh data with optional vertex colors
+│   ├── mesh_builder.py       <- merge boxes, quads and meshes into one MeshData
+│   ├── primitives.py         <- cube, plane, cone, cylinder and UV sphere
 │   ├── obj_loader.py         <- streaming Wavefront OBJ loader
 │   ├── png.py                <- dependency-free PNG screenshot writer
+│   ├── atmosphere.py         <- day/night sky, ambient and light model
+│   ├── expedition.py         <- world-to-scene assembly and player controls
+│   ├── harness.py            <- deterministic JSON action harness
 │   ├── app.py                <- engine loop, input and screenshot capture
-│   ├── demo.py               <- built-in animated demo scene
+│   ├── demo.py               <- original showcase scene
+│   ├── procedural/
+│   │   ├── __init__.py
+│   │   ├── noise.py          <- deterministic value noise and FBM
+│   │   ├── terrain.py        <- island heightfield, biome colors and mesh
+│   │   └── dungeon.py        <- rooms, corridors, FOV and BFS
+│   ├── sim/
+│   │   ├── __init__.py
+│   │   └── world.py          <- deterministic state, collision, modes, hash
 │   └── gpu/
 │       ├── __init__.py       <- GPU adapter package marker
 │       ├── context.py        <- GLFW window and OpenGL 3.3 context
 │       ├── shader.py         <- GLSL compilation and uniform upload
 │       ├── mesh_buffer.py    <- VAO/VBO/EBO upload and drawing
-│       └── renderer.py       <- forward renderer, sky, depth, fog, readback
+│       └── renderer.py       <- forward renderer, sky, lights, readback
 ├── assets/
 │   ├── octahedron.obj        <- sample OBJ asset
-│   └── screenshot.png        <- generated demo frame
+│   ├── screenshot.png        <- showcase scene capture
+│   ├── expedition.png        <- expedition overworld capture
+│   └── dungeon.png           <- generated crypt capture
 ├── tests/
-│   ├── test_math3d.py        <- unit tests for the math core
-│   ├── test_scene.py         <- unit tests for hierarchy and camera
-│   ├── test_geometry.py      <- unit tests for meshes, primitives and OBJ
-│   ├── test_png.py           <- unit tests for the PNG writer
-│   ├── test_renderer.py      <- headless OpenGL integration tests
-│   └── test_app.py           <- engine loop, demo and CLI tests
+│   ├── test_math3d.py        <- math core
+│   ├── test_scene.py         <- hierarchy, camera and lights
+│   ├── test_geometry.py      <- meshes, primitives, builder and OBJ
+│   ├── test_png.py           <- PNG writer
+│   ├── test_renderer.py      <- headless OpenGL integration
+│   ├── test_procedural.py    <- noise, terrain and atmosphere
+│   ├── test_dungeon.py       <- dungeon, FOV and pathfinding
+│   ├── test_world.py         <- deterministic state, movement and modes
+│   ├── test_expedition.py    <- scene assembly and scene transitions
+│   ├── test_harness.py       <- AI harness API and CLI
+│   └── test_app.py           <- engine loop, demo and CLI
 ├── requirements.txt          <- pinned runtime and test dependencies
-├── pyproject.toml            <- package metadata and pytest configuration
+├── pyproject.toml            <- package metadata, pytest and ruff configuration
 ├── .gitignore                <- transient AIKit state excluded
 ├── LICENSE                   <- Aegean License 1.1 (AL-1.1): free personal use
 ├── COMMERCIAL.md             <- Commercial licensing terms
@@ -114,18 +185,21 @@ keystone/
 ```text
 Engine.run
   -> poll GLFW events and resize the framebuffer
-  -> read keyboard / captured mouse and move the camera
-  -> Demo.update(dt): rotate the orbit ring, spin and bob the crystal
-  -> Renderer.render(scene)
-       -> clear color + depth
+  -> Expedition.handle_input: keyboard + captured mouse -> MoveIntent
+  -> Expedition.update
+       -> World.step: time, turn, collision, portal/exit interaction
+       -> rebuild scene only when mode changes
+       -> Atmosphere.at(day_fraction): sky, horizon, ambient, directional light
+       -> camera follows the player eye
+  -> Renderer.render
        -> sky pass (full-screen triangle, depth writes off)
-       -> scene pass (one draw per visible MeshData, cached GPU buffers)
+       -> scene pass (terrain, water, batched trees/rocks/path, portal or crypt)
   -> swap buffers (visible window only)
 ```
 
 ## 🧩 Extending the Engine
 
-Add any primitive or OBJ mesh to a scene with a transform and a material:
+Add a mesh to any scene with a transform and a material:
 
 ```python
 from keystone.geometry import Material
@@ -146,28 +220,33 @@ scene.add(
 )
 ```
 
-`MeshData` is immutable and GPU-ready: positions, normals, optional UVs and triangle indices. A node's `mesh` is uploaded once and cached by identity; change the transform every frame at no upload cost. Hidden ancestors skip the whole subtree during rendering.
+`MeshData` carries positions, normals, optional UVs, triangle indices and optional vertex colors; the GPU uploads it once and caches it by identity. `MeshBuilder` merges static geometry, which is how the 90 trees and the path become four draw calls.
+
+## 🧬 Lineage & Licensing
+
+Keystone's first implementation was built in this workspace. The seeded expedition deliberately reuses **algorithms and design patterns** from sibling AegeanWorks projects:
+
+- **Aldervale** — integer-hash value noise/FBM, island heightfield, biome color palette, day/night atmosphere model, mesh-builder primitives.
+- **Crypt-Crawler** — room-and-corridor generation, symmetric-raycast FOV, BFS pathfinding and the deterministic JSON harness pattern.
+- **Dustline** — streaming-world collision ideas (circle/box separation and segment blocking).
+
+These were reimplemented as modular Python; no AGL-licensed assets or source files were copied into this repository. See ADR-006 for the provenance decision. Keystone itself remains under the Aegean License 1.1 (AL-1.1).
 
 ## 🗺️ Roadmap
 
-Keystone ships the vertical slice it set out to prove: GPU rasterization, scene hierarchy, assets, camera, lighting and headless capture. The next milestones, in order, are:
-
-1. Shadow mapping and a second light type (point/spot).
-2. PBR materials, sRGB/linear color management and texture loading.
-3. Animation: skeletal skinning, morph targets and a timeline.
-4. A scene format (JSON/glTF) and an asset hot-reload path.
-5. An editor with gizmos and an inspector, plus an ECS for large scenes.
+1. Shadow maps and a second point light for the crypt.
+2. PBR materials, textures and sRGB color management.
+3. Weather (rain/snow particles) and a wind-driven foliage animation.
+4. Enemies, combat and loot using the Dustline archetype model.
+5. Save/load of the seed + action log, and a rewind/debug viewer.
+6. glTF/scene import and an editor with gizmos.
 
 ## 🤖 AIKit Integration
 
-This project is a first-class AIKit project:
-
-- `.aikit/project.json` declares `mechanics.core` (the headless engine paths) and `mechanics.test` (a one-frame headless render), so an agent and the UI exercise the same engine.
-- `.aikit/task_ledger.json` records the plan, checkpoints and handoff state; resume with `python aikit.py resume keystone`.
-- `.aikit/decisions.md` records architecture decisions (ADR-001..ADR-003).
-- `python aikit.py check keystone` is the Phase 4 gate: tests, hygiene scan, guidelines and secret scan. It never pushes; delivery is opt-in.
-
-The engine is intentionally host- and editor-agnostic: no AIKit imports exist inside `keystone/`, so it can be embedded in a game, a tool or another agent harness.
+- `.aikit/project.json` declares `mechanics.core` (simulation, terrain, dungeon, expedition, renderer, harness) and `mechanics.test` (`python -m keystone.harness selftest`), so an agent exercises the same headless core.
+- `.aikit/task_ledger.json` records plans, checkpoints and handoff state; resume with `python aikit.py resume keystone`.
+- `.aikit/decisions.md` records ADR-001 through ADR-006.
+- `python aikit.py check keystone` is the Phase 4 gate: tests, lint, mechanics, hygiene, guidelines and secret scan. It never pushes; delivery is opt-in.
 
 ## 📜 License
 

@@ -35,3 +35,27 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Agents and CI cannot rely on a visible window or a human looking at the screen, yet renderer regressions must be caught. Re-uploading static meshes every frame would waste bandwidth.
 - **Decision**: Create a hidden GLFW window for integration tests, read pixels with `glReadPixels`, and write PNG frames with a stdlib writer. Upload each immutable `MeshData` once into a VAO/VBO/EBO and cache it by identity in `Renderer`.
 - **Consequences**: Renderer behaviour is observable in automated tests and screenshots, and static geometry has no per-frame upload cost. Tests require a machine with an OpenGL 3.3 context; the dependency is documented in the README.
+
+### ADR-004: Make a deterministic seeded expedition the engine core
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: Rendering alone did not make Keystone a game engine. Sibling projects already prove procedural worlds, seeded replay and AI-addressable simulation; the engine needed one loop that binds them and runs without a GPU.
+- **Decision**: `keystone.sim.World` owns seed, time, player, terrain, dungeon, movement, mode transitions and `state_hash()`. It imports no OpenGL. `keystone.expedition.Expedition` is the view/adapter that rebuilds a `Scene` on mode changes; `keystone.harness` drives the same world from JSON actions.
+- **Consequences**: The same run can be rendered, replayed headlessly or hashed in tests. Terrain, dungeon, collision and atmosphere become reusable systems rather than demo code. The simulation contract must stay stable; changing generation or movement changes replay hashes and needs an ADR.
+
+### ADR-005: Add vertex colors, static batching and a local point light
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: Procedural terrain needs per-vertex biome colors; a forest of individual nodes would cost one draw call per tree; the enclosed crypt needs a local light source.
+- **Decision**: `MeshData` gains optional per-vertex RGB (11 floats per interleaved vertex). `MeshBuilder.add_mesh` merges primitives into a single indexed mesh. `Scene.point_light` adds one optional warm point light with quadratic falloff, used as the player torch in the dungeon.
+- **Consequences**: The GPU layout and shader gain a color attribute and point-light uniforms; all existing meshes default to white vertex colors. The expedition renders in about ten draw calls. Only one point light is supported per scene; multiple lights need a future lighting pass.
+
+### ADR-006: Extract algorithms, not AGL source, into the AL-1.1 engine
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: Several sibling games contributed proven algorithms, but they are AGL-1.1 projects while Keystone is AL-1.1 software.
+- **Decision**: Reimplement the useful algorithms as new modular Python (FBM/heightfield/atmosphere from Aldervale, room/corridor/FOV/BFS and harness shape from Crypt-Crawler, collision ideas from Dustline). Do not copy AGL source files or assets. Credit the sources in the README and record any future direct reuse in a new ADR after a license review.
+- **Consequences**: Provenance is explicit and the engine stays under AL-1.1. Direct code or asset reuse remains a deliberate, reviewed action rather than an accident of porting.
