@@ -13,6 +13,13 @@ from keystone.headless import run_simulation
 from keystone.samples import CubeDemo
 
 
+class HudCube(CubeDemo):
+    name = "hud-cube"
+
+    def draw_ui(self, canvas, _state):
+        canvas.rect(70, 70, 30, 20, (1.0, 0.0, 0.0, 1.0))
+
+
 class EngineTest(unittest.TestCase):
     def test_headless_engine_runs_fixed_steps_and_saves_a_png(self):
         game = CubeDemo()
@@ -68,6 +75,21 @@ class EngineTest(unittest.TestCase):
         self.assertTrue(engine.apply_ui_action("resume"))
         self.assertFalse(engine.paused)
         self.assertFalse(engine.apply_ui_action("missing"))
+
+    def test_game_ui_hook_adds_pixels_to_the_capture(self):
+        with tempfile.TemporaryDirectory() as directory:
+            custom_path = Path(directory) / "custom.png"
+            plain_path = Path(directory) / "plain.png"
+            custom = Engine(HudCube(), 160, 120, visible=False, ui=True)
+            self.addCleanup(custom.close)
+            custom.run(max_frames=1)
+            custom.screenshot(custom_path)
+            custom.close()
+            plain = Engine(CubeDemo(), 160, 120, visible=False, ui=True)
+            self.addCleanup(plain.close)
+            plain.run(max_frames=1)
+            plain.screenshot(plain_path)
+            self.assertNotEqual(custom_path.read_bytes(), plain_path.read_bytes())
 
     def test_bad_size_is_a_usage_error(self):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:

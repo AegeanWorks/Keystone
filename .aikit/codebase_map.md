@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `51`
-- **Total Classes**: `65`
+- **Total Classes**: `66`
 - **Total Top-Level Functions**: `54`
-- **Total Class Methods**: `327`
-- **Total Source Lines**: `5032`
+- **Total Class Methods**: `331`
+- **Total Source Lines**: `5077`
 
 ---
 
@@ -58,7 +58,7 @@
 ### [`keystone/app.py`](keystone/app.py)
 > *Game-agnostic engine runtime: window, fixed step, input, render and capture.*
 
-**Size**: `220` lines (`8032` bytes)
+**Size**: `222` lines (`8165` bytes)
 
 **Classes:**
 - `class Engine` - *Owns the runtime around one external GameModule.*
@@ -365,7 +365,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `62` lines (`2176` bytes)
+**Size**: `63` lines (`2241` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -547,7 +547,7 @@
 ### [`keystone/ui/overlay.py`](keystone/ui/overlay.py)
 > *Game-agnostic human overlay: HUD, controls help and pause menu.*
 
-**Size**: `129` lines (`5529` bytes)
+**Size**: `132` lines (`5698` bytes)
 
 **Classes:**
 - `class HudState` - *Presentation-only snapshot the overlay needs for one frame.*
@@ -556,7 +556,7 @@
   - Method `.toggle()`
   - Method `.hit_test(x, y)` - *Return the action of the button under the pointer, if any.*
   - Method `._menu(canvas, state, scale, line)`
-  - Method `.build(state)`
+  - Method `.build(state, game_draw)`
 
 ---
 
@@ -592,14 +592,17 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `203` lines (`9253` bytes)
+**Size**: `225` lines (`10126` bytes)
 
 **Classes:**
+- `class HudCube`
+  - Method `.draw_ui(canvas, _state)`
 - `class EngineTest`
   - Method `.test_headless_engine_runs_fixed_steps_and_saves_a_png()`
   - Method `.test_ui_overlay_changes_the_captured_frame()`
   - Method `.test_pause_stops_updates_but_keeps_rendering()`
   - Method `.test_ui_actions_are_drivable_without_real_input()`
+  - Method `.test_game_ui_hook_adds_pixels_to_the_capture()`
   - Method `.test_bad_size_is_a_usage_error()`
   - Method `.test_out_requires_headless()`
   - Method `.test_ui_flags_are_limited_to_rendered_runs()`
@@ -765,12 +768,13 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `45` lines (`1600` bytes)
+**Size**: `53` lines (`1934` bytes)
 
 **Classes:**
 - `class PluginTest`
   - Method `.test_sample_loads_and_implements_the_contract()`
   - Method `.test_describe_exposes_capabilities_actions_and_snapshot()`
+  - Method `.test_describe_reports_a_game_ui_hook()`
   - Method `.test_invalid_specs_are_rejected()`
   - Method `.test_missing_methods_are_rejected()`
 - `class IncompleteGame`
@@ -908,7 +912,7 @@
 ### [`tests/test_ui.py`](tests/test_ui.py)
 > *Tests for the dependency-free human UI primitives and overlay.*
 
-**Size**: `118` lines (`4609` bytes)
+**Size**: `127` lines (`5062` bytes)
 
 **Classes:**
 - `class FontTest`
@@ -924,6 +928,7 @@
 - `class OverlayTest`
   - Method `.test_overlay_shows_game_status_and_metrics()`
   - Method `.test_pause_banner_and_hidden_overlay()`
+  - Method `.test_game_ui_draws_beneath_the_engine_hud()`
   - Method `.test_pause_menu_buttons_are_hit_testable()`
   - Method `.test_compact_layout_uses_smaller_text()`
   - Method `.test_tiny_canvas_is_clipped_without_errors()`

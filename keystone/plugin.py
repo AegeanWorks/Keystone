@@ -35,6 +35,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "simulate": True,
             "render": True,
             "human_ui": {"overlay": True, "toggle": "h", "pause": "p", "menu": ["resume", "toggle_ui", "quit"]},
+            "game_ui": callable(getattr(game, "draw_ui", None)),
             "report_schema": REPORT_SCHEMA,
         },
     }

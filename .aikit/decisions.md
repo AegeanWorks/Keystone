@@ -171,3 +171,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The human overlay displayed a pause banner but offered no actions; a person still had to remember `P` to resume and `Esc` to quit, and there was no clickable UI or reusable menu state for games.
 - **Decision**: Add a pure `PauseMenu` (Resume / Hide HUD / Quit), draw hit-testable buttons with selected and hover states, add a one-frame `ActionState.mouse_clicked` edge, bind `Enter` to `confirm`, release the cursor while paused, and expose `Engine.apply_ui_action()` for scripted use. `W`/`S` or arrows move the selection.
 - **Consequences**: Pausing now opens a real menu that works by mouse or keyboard; resuming recaptures the cursor. `mouse_clicked` defaults to false so existing action scripts stay valid. Menu selection and hitboxes are presentation state only; games remain unaware of the overlay.
+
+### ADR-021: Let games contribute HUD pixels through an optional hook
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: The human overlay showed engine/runtime information, but an external game had no supported way to draw its own health, score or panels; it would have needed to fork the engine or draw 3D proxies.
+- **Decision**: If a game exposes a callable `draw_ui(canvas, state)`, the Engine passes it to the overlay builder, which calls it before drawing the engine HUD and pause menu. The hook receives the same `Canvas` and `HudState` used by the HUD and is skipped when the overlay is hidden or UI is disabled. `describe_game()` reports `capabilities.game_ui`.
+- **Consequences**: Games can add HUD pixels with the dependency-free font/canvas toolkit while the required five-operation contract stays unchanged. The hook is presentation-only and receives no input dispatch; game UI participates in `--ui` captures and report/diff workflows like any other pixel.

@@ -84,6 +84,20 @@ engine.apply_ui_action("toggle_ui") # hide/show the HUD
 engine.apply_ui_action("quit")      # request window close
 ```
 
+## 7. Draw a game HUD
+
+A game can implement an optional `draw_ui(canvas, state)` hook. It runs before the engine HUD and uses the same clipped canvas, bitmap font and pause state:
+
+```python
+from keystone.ui import Canvas, HudState
+
+
+def draw_ui(self, canvas: Canvas, state: HudState) -> None:
+    canvas.text(24, 96, "GAME HUD", (0.92, 0.94, 0.97, 1.0))
+```
+
+`--describe` reports `capabilities.game_ui` as true when the hook exists. The hook is skipped with `--no-ui` and when the person hides the overlay.
+
 ## Python helpers
 
 ```python

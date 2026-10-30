@@ -93,6 +93,15 @@ class OverlayTest(unittest.TestCase):
         self.assertFalse(overlay.visible)
         self.assertEqual(overlay.build(state()).quads, [])
 
+    def test_game_ui_draws_beneath_the_engine_hud(self):
+        overlay = HumanOverlay()
+        canvas = overlay.build(state(), lambda target, _state: target.text(0, 0, "GAME HUD", (1.0, 1.0, 1.0, 1.0)))
+        self.assertLess(canvas.labels.index("GAME HUD"), canvas.labels.index("KEYSTONE"))
+        overlay.toggle()
+        calls = []
+        overlay.build(state(), lambda target, _state: calls.append(target))
+        self.assertEqual(calls, [])
+
     def test_pause_menu_buttons_are_hit_testable(self):
         overlay = HumanOverlay()
         canvas = overlay.build(state(paused=True))

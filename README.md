@@ -6,7 +6,7 @@
 
 A small, game-agnostic 3D engine core in Python: OpenGL 3.3 rendering, scene graph, meshes and OBJ loading, fixed-step loop, action input, collision primitives, deterministic replay, atomic serialization, and a human HUD/help overlay rendered with an embedded bitmap font.
 
-Games plug in through one five-operation contract. Keystone ships a **cube demo** only as a smoke test; it contains no combat, puzzles, procedural worlds or other genre rules. External game modules live outside this package and load with `--game package.module:Factory`.
+Games plug in through one five-operation contract. Keystone ships a **cube demo** only as a smoke test; it contains no combat, puzzles, procedural worlds or other genre rules. External game modules live outside this package and load with `--game package.module:Factory`. Games may also add an optional `draw_ui(canvas, state)` hook for their own HUD.
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
@@ -94,6 +94,21 @@ class MyGame:
 
 The engine owns the window, OpenGL context, renderer, fixed clock, input sampling and screenshots. The game owns its state, rules and scene contents. The engine never imports a game.
 
+### Optional game UI
+
+A game may add a `draw_ui(canvas, state)` method. It is optional; the five required operations do not change.
+
+```python
+from keystone.ui import Canvas, HudState
+
+
+def draw_ui(self, canvas: Canvas, state: HudState) -> None:
+    canvas.rect(16, 96, 220, 44, (0.03, 0.04, 0.06, 0.7))
+    canvas.text(28, 108, f"OBJECTS {len(self.objects)}", (0.92, 0.94, 0.97, 1.0))
+```
+
+The hook runs before the engine HUD and pause menu, so engine UI stays on top. It receives the current `Canvas` and `HudState`, so games use the same embedded font, clipping and pause state as the engine. Hiding the overlay (`H`) hides game UI too.
+
 ## 🕹️ Sample Controls
 
 The bundled `CubeDemo` uses the generic action map; the overlay shows it at runtime:
@@ -130,7 +145,7 @@ The overlay contains:
 - an interactive pause menu with `Resume`, `Hide HUD` and `Quit`, navigable by keyboard or mouse;
 - a centered pause banner.
 
-`keystone.ui` is split into an embedded 5×7 font, a clipped screen-space `Canvas`, small panel/button widgets, a pure `PauseMenu` state machine and `HumanOverlay`; `keystone.gpu.ui_renderer` uploads the canvas as one alpha-blended draw call. A headless report that includes `--ui` measures the same pixels a person sees.
+`keystone.ui` is split into an embedded 5×7 font, a clipped screen-space `Canvas`, small panel/button widgets, a pure `PauseMenu` state machine and `HumanOverlay`; `keystone.gpu.ui_renderer` uploads the canvas as one alpha-blended draw call. A game's optional `draw_ui(canvas, state)` hook draws into the same canvas. A headless report that includes `--ui` measures the same pixels a person sees.
 
 ## 🚀 Features
 
@@ -147,7 +162,7 @@ The overlay contains:
 - **Visual regression gate**: `--compare-baseline baseline.json` renders a new report, compares image/report hashes, stats and projected nodes, prints the diff and exits non-zero on image change. `--diff-out diff.png` writes a changed-pixel diff image.
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip image loading, changed-pixel counts, bbox and a visual diff without third-party imaging libraries.
 - **Frame reports for AI analysis**: `--report` writes a schema-1 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data and projected screen bounds for every scene node.
-- **Human overlay**: a game-agnostic HUD with game/status, FPS, frame, elapsed time and resolution, plus controls help and an interactive pause menu; drawn with an embedded 5×7 bitmap font, no font asset or imaging library.
+- **Human overlay**: a game-agnostic HUD with game/status, FPS, frame, elapsed time and resolution, plus controls help and an interactive pause menu; drawn with an embedded 5×7 bitmap font, no font asset or imaging library. Games can add their own HUD through the optional `draw_ui(canvas, state)` hook.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
 
 ## 🤖 AI Testing & Frame Analysis

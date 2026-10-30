@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from keystone.ui.canvas import Canvas
@@ -75,11 +76,13 @@ class HumanOverlay:
         canvas.text(left + pad, hint_y, "UP/DOWN OR W/S SELECT", DIM, 1)
         canvas.text(left + pad, hint_y + 9, "ENTER CONFIRM   CLICK CHOOSE", DIM, 1)
 
-    def build(self, state: HudState) -> Canvas:
+    def build(self, state: HudState, game_draw: Callable[[Canvas, HudState], None] | None = None) -> Canvas:
         canvas = Canvas(state.width, state.height)
         self.hits = []
         if not self.visible:
             return canvas
+        if game_draw is not None:
+            game_draw(canvas, state)
         scale = SCALE if state.width >= 620 and state.height >= 360 else 1
         line = 9 * scale
         margin = 12 if scale == SCALE else 6

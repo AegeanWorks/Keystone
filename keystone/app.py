@@ -136,7 +136,9 @@ class Engine:
             paused=self.paused,
             pointer=self._pointer,
         )
-        self.ui_renderer.draw(self.overlay.build(state))
+        draw_game_ui = getattr(self.game, "draw_ui", None)
+        canvas = self.overlay.build(state, draw_game_ui if callable(draw_game_ui) else None)
+        self.ui_renderer.draw(canvas)
 
     def run(self, max_frames: int = 0) -> int:
         """Run until the window closes or max_frames (0 = unlimited) is reached."""
