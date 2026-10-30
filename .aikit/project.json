@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "name": "keystone",
+  "test_command": "python -m pytest -q",
+  "topics": [
+    "aikit",
+    "aikit-integrated",
+    "source-available",
+    "aegean-license",
+    "commercial-license",
+    "3d-engine",
+    "game-engine",
+    "opengl",
+    "python"
+  ],
+  "gates": {},
+  "ui_required": false,
+  "mechanics_required": false,
+  "created": "2026-10-30"
+}
