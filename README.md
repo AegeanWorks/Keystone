@@ -27,9 +27,12 @@ A performance-first 3D game engine in Python with an OpenGL 3.3 renderer, scene 
 keystone/
 ├── keystone/
 │   ├── __init__.py           <- package surface and version
-│   └── math3d.py             <- Vec3, Mat4, Quat (column-major, OpenGL-ready)
+│   ├── math3d.py             <- Vec3, Mat4, Quat (column-major, OpenGL-ready)
+│   ├── camera.py             <- perspective camera and fly-style movement
+│   └── scene.py              <- hierarchy, transforms, light and scene root
 ├── tests/
-│   └── test_math3d.py        <- unit tests for the math core
+│   ├── test_math3d.py        <- unit tests for the math core
+│   └── test_scene.py         <- unit tests for hierarchy and camera
 ├── requirements.txt          <- pinned runtime and test dependencies
 ├── pyproject.toml            <- package metadata and pytest configuration
 ├── .gitignore                <- transient AIKit state excluded
