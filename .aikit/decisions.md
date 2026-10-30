@@ -107,3 +107,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Combat, light locks, weave layouts, cyber networks and the space survey were built beside the renderer and math but treated as engine mechanics. They are games built on the engine, and the core still lacks a game-agnostic module contract, generic input/replay, physics, assets, audio and serialization.
 - **Decision**: Freeze genre feature work. Define `keystone/` as core only and `games/` as optional examples/modules. Introduce a five-operation `GameModule` protocol, `ActionState`, a game registry and a game-agnostic `Engine`; core must never import `games.*`. Preserve the current features by moving them to `games/expedition`, `games/space` and `games/showcase` after this document is reviewed. The full boundary, inventory, dependency rules, module roadmap and staged refactor sequence are in `docs/ARCHITECTURE.md`.
 - **Consequences**: No new genre modules until the core split is accepted. The current v0.7.0 tree keeps running during review; the next work is the boundary refactor, then real core systems (physics, assets/serialization, scene/ECS, renderer, input/audio, tooling). Existing replay hashes and screenshots may change when modules move.
+
+### ADR-013: Remove the genre prototypes and ship a core-only engine
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: The user rejected the game mechanics as engine core and directed a game-agnostic engine with the prototypes removed. ADR-012 described the split; this ADR executes it.
+- **Decision**: Delete the expedition, combat, light-lock, weave, network, space and showcase modules, their tests and screenshots. Keep a game-agnostic core with a five-operation `GameModule` protocol, a generic `Engine`, `ActionState`/`InputMap`, `FixedStepClock`, collision primitives, `CommandLog`/`stable_hash`, atomic JSON persistence and the `CubeDemo` smoke test. External games load through `--game package.module:Factory`.
+- **Consequences**: v0.8.0 is much smaller and contains no genre rules. The deleted prototypes remain in git history but are not part of the package. The engine now has a real core API to extend; physics, assets, audio, ECS and tooling remain roadmap items.

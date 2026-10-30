@@ -26,21 +26,15 @@
   "ui_source": "detected",
   "mechanics": {
     "core": [
-      "keystone/sim/world.py",
-      "keystone/procedural/terrain.py",
-      "keystone/procedural/dungeon.py",
-      "keystone/procedural/weave.py",
-      "keystone/procedural/network.py",
-      "keystone/beams.py",
-      "keystone/combat.py",
-      "keystone/expedition.py",
-      "keystone/space.py",
-      "keystone/space_expedition.py",
-      "keystone/space_harness.py",
-      "keystone/procedural/space.py",
-      "keystone/harness.py",
+      "keystone/app.py",
+      "keystone/plugin.py",
+      "keystone/input.py",
+      "keystone/clock.py",
+      "keystone/physics.py",
+      "keystone/replay.py",
+      "keystone/serialization.py",
       "keystone/gpu/renderer.py"
     ],
-    "test": "python -m keystone.harness selftest"
+    "test": "python -m keystone --headless --frames 1 --size 64x48"
   }
 }

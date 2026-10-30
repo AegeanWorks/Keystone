@@ -6,86 +6,52 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `53`
-- **Total Classes**: `80`
-- **Total Top-Level Functions**: `55`
-- **Total Class Methods**: `458`
-- **Total Source Lines**: `6606`
+- **Total Python Modules**: `37`
+- **Total Classes**: `52`
+- **Total Top-Level Functions**: `31`
+- **Total Class Methods**: `256`
+- **Total Source Lines**: `3363`
 
 ---
 
 ## 📦 Modules & Exported Symbols
 
 ### [`keystone/__init__.py`](keystone/__init__.py)
-> *Keystone: a performance-first 3D game engine with an OpenGL 3.3 renderer.*
+> *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `6` lines (`184` bytes)
+**Size**: `18` lines (`522` bytes)
+
+**Functions:**
+- `def __getattr__(name)`
 
 ---
 
 ### [`keystone/__main__.py`](keystone/__main__.py)
-> *Command-line entry point for the Keystone demo.*
+> *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `135` lines (`5287` bytes)
+**Size**: `91` lines (`3269` bytes)
 
 **Functions:**
 - `def _size(text)`
 - `def _frames(text)`
-- `def _seed(text)`
 - `def main(argv)`
 
 ---
 
 ### [`keystone/app.py`](keystone/app.py)
-> *Engine runtime: window loop, fly controls and screenshot capture.*
+> *Game-agnostic engine runtime: window, fixed step, input, render and capture.*
 
-**Size**: `132` lines (`4876` bytes)
+**Size**: `120` lines (`4210` bytes)
 
 **Classes:**
-- `class Engine` - *Bind one scene to one OpenGL context and drive the frame loop.*
-  - Method `.__init__(scene, width, height, visible, msaa, title)`
+- `class Engine` - *Owns the runtime around one external GameModule.*
+  - Method `.__init__(game, width, height, visible, msaa, title)`
   - Method `.__enter__()`
   - Method `.__exit__(*exc_info)`
-  - Method `._process_input(dt)`
-  - Method `.run(update, max_frames, controls, status)` - *Render until the window closes or max_frames (0 = unlimited) is reached.*
+  - Method `._handle_system_actions(actions)`
+  - Method `.run(max_frames)` - *Run until the window closes or max_frames (0 = unlimited) is reached.*
   - Method `.screenshot(path)`
   - Method `.close()`
-
----
-
-### [`keystone/atmosphere.py`](keystone/atmosphere.py)
-> *Day/night atmosphere derived from a normalized world clock.*
-
-**Size**: `63` lines (`2110` bytes)
-
-**Classes:**
-- `class Atmosphere` - *Lighting and sky colors for one moment of the day.*
-  - Method `.at(day_fraction)`
-
-**Functions:**
-- `def apply_atmosphere(scene, atmosphere)`
-
----
-
-### [`keystone/beams.py`](keystone/beams.py)
-> *Deterministic 2D light-routing lock: mirrors, dye, color masks and receivers.*
-
-**Size**: `128` lines (`4479` bytes)
-
-**Classes:**
-- `class BeamSegment`
-- `class LightLock` - *A fixed five-cell light circuit whose mirrors seal the crypt portal.*
-  - Method `.__init__(seed, origin)`
-  - Method `.in_bounds(x, z)`
-  - Method `.trace()`
-  - Property `.solved`
-  - Method `.rotate(x, z)`
-  - Method `.set_orientation(x, z, orientation)`
-  - Method `.nearest_mirror(world_x, world_z, radius)`
-  - Method `.snapshot()`
-
-**Functions:**
-- `def mask_to_rgb(mask)`
 
 ---
 
@@ -107,65 +73,16 @@
 
 ---
 
-### [`keystone/combat.py`](keystone/combat.py)
-> *Deterministic survivors-style combat: archetypes, waves, auto-fire and bosses.*
+### [`keystone/clock.py`](keystone/clock.py)
+> *Fixed-step clock with a bounded catch-up budget.*
 
-**Size**: `240` lines (`8380` bytes)
-
-**Classes:**
-- `class EnemySpec`
-- `class Enemy`
-- `class Combat` - *Combat director owned by the world; no rendering, no wall clock.*
-  - Method `.__post_init__()`
-  - Method `.spawn_around(x, z, standable, facing)` - *Reset the arena around the player after a mode change or death.*
-  - Method `.update(dt, px, pz, standable)`
-  - Method `.revive(x, z, standable, facing)`
-  - Method `.spawn_at(key, x, z)`
-  - Method `.snapshot()`
-  - Method `.status()`
-  - Method `._pick_type()`
-  - Method `._spawn_at_ring(x, z, standable, key, angle, radius)`
-  - Method `._attack(px, pz)`
-  - Method `._move_enemy(enemy, dx, dz, standable)`
-  - Method `._remove_dead()`
-
----
-
-### [`keystone/demo.py`](keystone/demo.py)
-> *Built-in demo scene: a lit platform, an orbiting ring and a spinning crystal.*
-
-**Size**: `111` lines (`3997` bytes)
+**Size**: `34` lines (`1174` bytes)
 
 **Classes:**
-- `class Demo` - *A deterministic scene plus the animation applied by the engine loop.*
-  - Method `.__init__()`
-  - Method `.update(dt)`
-
----
-
-### [`keystone/expedition.py`](keystone/expedition.py)
-> *First-person expedition: procedural overworld, dungeon and scene assembly.*
-
-**Size**: `516` lines (`21579` bytes)
-
-**Classes:**
-- `class Expedition` - *Owns one seeded World and the scene that renders its current mode.*
-  - Method `.__init__(seed, size, layout)`
-  - Method `._build_scenery_meshes()`
-  - Method `._distance_to_path(x, z)`
-  - Method `._build_dungeon_meshes()`
-  - Method `._rebuild()`
-  - Method `._build_overworld()`
-  - Method `._add_portal()`
-  - Method `._add_light_lock()`
-  - Method `._build_dungeon()`
-  - Method `._add_network()`
-  - Method `._apply_visuals()`
-  - Method `._sync_enemies()`
-  - Method `.status()`
-  - Method `.step(dt, intent)`
-  - Method `.update(dt)`
-  - Method `.handle_input(dt, context)`
+- `class FixedStepClock` - *Accumulates wall time and releases whole deterministic simulation steps.*
+  - Method `.__init__(step, max_frame)`
+  - Method `.reset(now)`
+  - Method `.advance(now)`
 
 ---
 
@@ -275,23 +192,21 @@
 
 ---
 
-### [`keystone/harness.py`](keystone/harness.py)
-> *Deterministic JSON harness for driving the expedition without a GPU.*
+### [`keystone/input.py`](keystone/input.py)
+> *Generic input mapping: named actions, axes and pointer look.*
 
-**Size**: `255` lines (`9755` bytes)
+**Size**: `117` lines (`3953` bytes)
 
-**Functions:**
-- `def catalog()` - *Describe every action and the state an agent can observe.*
-- `def _number(action, key, default)`
-- `def _seconds(action)`
-- `def apply_action(world, action)` - *Validate and apply one catalogued action to the world.*
-- `def run_actions(seed, actions, size, layout)`
-- `def selftest()` - *Prove determinism, seed sensitivity, collision and portal transitions.*
-- `def _read_actions(path)`
-- `def _seed_arg(text)`
-- `def _size_arg(text)`
-- `def _write_json(path, payload)`
-- `def main(argv)`
+**Classes:**
+- `class ActionState` - *One sampled input frame; games translate names into their own rules.*
+  - Method `.without_pressed()`
+  - Method `.to_dict()`
+  - Method `.from_dict(data)`
+- `class InputMap` - *Maps keys and pointer motion to action names and continuous axes.*
+  - Method `.__init__(bindings, look_speed, mouse_sensitivity)`
+  - Method `.bind(action, key)`
+  - Method `.set_mouse_enabled(enabled)`
+  - Method `.sample(context, dt)`
 
 ---
 
@@ -377,6 +292,46 @@
 
 ---
 
+### [`keystone/physics.py`](keystone/physics.py)
+> *Generic collision primitives and ray queries for the engine core.*
+
+**Size**: `118` lines (`4714` bytes)
+
+**Classes:**
+- `class Ray`
+  - Method `.__post_init__()`
+- `class AABB`
+  - Method `.__post_init__()`
+- `class Sphere`
+  - Method `.__post_init__()`
+
+**Functions:**
+- `def ray_aabb(ray, box)` - *Return the nearest positive hit distance, or None.*
+- `def ray_sphere(ray, sphere)`
+- `def aabb_overlap(first, second)`
+- `def sphere_aabb_overlap(sphere, box)`
+- `def resolve_sphere_aabb(sphere, box)` - *Push a sphere out of an AABB along the shallowest axis.*
+
+---
+
+### [`keystone/plugin.py`](keystone/plugin.py)
+> *Game-agnostic module contract and loader.*
+
+**Size**: `44` lines (`1580` bytes)
+
+**Classes:**
+- `class GameModule` - *The five operations an external game exposes to the engine.*
+  - Method `.build_scene()`
+  - Method `.update(dt, actions)`
+  - Method `.snapshot()`
+  - Method `.actions()`
+  - Method `.status()`
+
+**Functions:**
+- `def load_game(spec)` - *Load an external game from 'package.module:Factory'.*
+
+---
+
 ### [`keystone/png.py`](keystone/png.py)
 > *Minimal dependency-free PNG writer for headless frame captures.*
 
@@ -403,133 +358,38 @@
 
 ---
 
-### [`keystone/procedural/__init__.py`](keystone/procedural/__init__.py)
-> *Seeded world generation: noise, heightfield terrain and dungeons.*
+### [`keystone/replay.py`](keystone/replay.py)
+> *Deterministic action logs and stable state hashes.*
 
-**Size**: `1` lines (`72` bytes)
-
----
-
-### [`keystone/procedural/dungeon.py`](keystone/procedural/dungeon.py)
-> *Seeded room-and-corridor dungeon generation with FOV and pathfinding.*
-
-**Size**: `199` lines (`6777` bytes)
+**Size**: `50` lines (`1514` bytes)
 
 **Classes:**
-- `class Tile`
-- `class Room`
-  - Property `.center`
-  - Method `.intersects(other, padding)`
-- `class Dungeon`
-  - Method `.in_bounds(x, y)`
-  - Method `.is_walkable(x, y)`
-  - Method `.compute_fov(px, py, radius)` - *Symmetric raycasting with distance attenuation, as in Crypt-Crawler.*
-  - Method `.find_path(start, goal)`
+- `class CommandLog`
+  - Method `.record(actions)`
   - Method `.to_dict()`
-- `class DungeonGenerator` - *Carve non-overlapping rooms and connect them with L-shaped corridors.*
-  - Method `.__init__(width, height, min_room, max_room, max_rooms)`
-  - Method `.generate(seed)`
-  - Method `._carve_corridor(dungeon, start, end, rng)`
-  - Method `._carve_h(dungeon, x0, x1, y)`
-  - Method `._carve_v(dungeon, y0, y1, x)`
+  - Method `.from_dict(data)`
+  - Method `.save(path)`
+  - Method `.load(path)`
+  - Method `.replay_actions()`
+
+**Functions:**
+- `def stable_hash(payload)`
 
 ---
 
-### [`keystone/procedural/network.py`](keystone/procedural/network.py)
-> *Seeded cyber network: terminals, links, hack progress and a living alert.*
+### [`keystone/samples.py`](keystone/samples.py)
+> *A minimal game-agnostic sample used to smoke-test the engine.*
 
-**Size**: `113` lines (`4041` bytes)
+**Size**: `108` lines (`4002` bytes)
 
 **Classes:**
-- `class Terminal`
-- `class Network`
-  - Method `.__post_init__()`
-  - Method `.generate(seed, dungeon, count)`
-  - Property `.complete`
-  - Property `.hacked_count`
-  - Method `.terminal(terminal_id)`
-  - Method `.near_terminal(x, z, radius)`
-  - Method `.hack(terminal_id)`
-  - Method `.update(dt)`
+- `class CubeDemo` - *A rotating cube scene; contains no combat, puzzles or genre rules.*
+  - Method `.__init__()`
+  - Method `.build_scene()`
+  - Method `.update(dt, actions)`
   - Method `.snapshot()`
-
----
-
-### [`keystone/procedural/noise.py`](keystone/procedural/noise.py)
-> *Deterministic integer-hash value noise and fractal sums (no global RNG).*
-
-**Size**: `55` lines (`1441` bytes)
-
-**Functions:**
-- `def hash2i(ix, iy, seed)`
-- `def rand01(ix, iy, seed)`
-- `def _smooth(t)`
-- `def value_noise(x, y, seed)`
-- `def fbm(x, y, seed, octaves, lacunarity, gain)` - *Fractal Brownian motion in [0, 1], deterministic for a seed.*
-
----
-
-### [`keystone/procedural/space.py`](keystone/procedural/space.py)
-> *Seeded star systems, orbiting bodies and hyperlane connections.*
-
-**Size**: `130` lines (`4101` bytes)
-
-**Classes:**
-- `class Body`
-  - Method `.position(time)`
-- `class StarSystem`
-  - Property `.star`
-  - Method `.body(body_id)`
-- `class Galaxy`
-  - Method `.generate(seed, count)`
-  - Method `.system(system_id)`
-
-**Functions:**
-- `def body_snapshot(body, time)`
-
----
-
-### [`keystone/procedural/terrain.py`](keystone/procedural/terrain.py)
-> *Procedural island heightfield with per-vertex biome colors.*
-
-**Size**: `147` lines (`5723` bytes)
-
-**Classes:**
-- `class Terrain` - *A square, island-shaped heightfield sampled once per grid point.*
-  - Method `.generate(seed, size, water)`
-  - Method `._find_spawn()`
-  - Method `._find_entrance(spawn)`
-  - Method `.height_at(x, z)` - *Bilinearly sample the heightfield at world coordinates.*
-  - Method `.normal_at(x, z)`
-  - Method `.is_water(x, z)`
-  - Method `.is_walkable(x, z)`
-  - Method `.color_at(x, z)`
-  - Method `.mesh()`
-
----
-
-### [`keystone/procedural/weave.py`](keystone/procedural/weave.py)
-> *Weft-style Hamiltonian weave routes that become a chain of dungeon rooms.*
-
-**Size**: `175` lines (`5946` bytes)
-
-**Classes:**
-- `class WeaveLayout`
-  - Method `.generate(seed, cols, rows, threads)`
-  - Method `._segment_index(step)`
-  - Property `.width`
-  - Property `.height`
-  - Method `.room_for(cell)`
-  - Method `.floor_color(x, z)`
-  - Method `.to_dungeon()`
-  - Method `._carve(tiles, start, end)`
-  - Method `.snapshot()`
-
-**Functions:**
-- `def _neighbours(cell, cols, rows)`
-- `def _remaining_connected(cols, rows, visited)`
-- `def _search_path(cols, rows, rng, path, visited, nodes, total)`
-- `def _hamiltonian_path(cols, rows, rng)`
+  - Method `.actions()`
+  - Method `.status()`
 
 ---
 
@@ -560,206 +420,53 @@
 
 ---
 
-### [`keystone/sim/__init__.py`](keystone/sim/__init__.py)
-> *Deterministic, renderer-independent simulation core.*
+### [`keystone/serialization.py`](keystone/serialization.py)
+> *Atomic JSON persistence for engine and game state.*
 
-**Size**: `5` lines (`162` bytes)
-
----
-
-### [`keystone/sim/world.py`](keystone/sim/world.py)
-> *Seeded expedition state: player, terrain, dungeon, movement and replay hash.*
-
-**Size**: `286` lines (`11410` bytes)
-
-**Classes:**
-- `class MoveIntent` - *One frame of player intent, in local forward/right and radians.*
-- `class Player`
-- `class World` - *The authoritative expedition state; it never imports OpenGL.*
-  - Method `.__init__(seed, size, layout)`
-  - Property `.day_fraction`
-  - Property `.near_entrance`
-  - Property `.near_exit`
-  - Method `.eye_position()`
-  - Method `.step(dt, intent)`
-  - Method `._hack_nearby_terminal()`
-  - Method `._spawn_hunter()`
-  - Method `.rotate_mirror()`
-  - Method `.interact()`
-  - Method `._record(message)`
-  - Method `._move(dx, dz)`
-  - Method `.is_standable(x, z)` - *Public walkability query shared by combat and future mechanics.*
-  - Method `._free(x, z)`
-  - Method `._respawn()`
-  - Method `._dungeon_free(x, z)`
-  - Method `.snapshot()`
-  - Method `.state_hash()`
-
----
-
-### [`keystone/space.py`](keystone/space.py)
-> *Renderer-independent space flight, body surveys and hyperlane jumps.*
-
-**Size**: `142` lines (`5219` bytes)
-
-**Classes:**
-- `class Ship`
-  - Method `.forward()`
-- `class SpaceWorld`
-  - Method `.__init__(seed)`
-  - Property `.system`
-  - Property `.scanned_count`
-  - Property `.complete`
-  - Method `.step(dt, intent)`
-  - Method `.scan()`
-  - Method `.jump()`
-  - Method `._record(message)`
-  - Method `.snapshot()`
-  - Method `.state_hash()`
-  - Method `.status()`
-
----
-
-### [`keystone/space_expedition.py`](keystone/space_expedition.py)
-> *First-person space scene and controls over the renderer-independent SpaceWorld.*
-
-**Size**: `164` lines (`6333` bytes)
-
-**Classes:**
-- `class SpaceExpedition` - *A free-flight ship, an orbiting system and a jump gate.*
-  - Method `.__init__(seed)`
-  - Method `._build_starfield(seed)`
-  - Method `._build_system()`
-  - Method `._add_gate()`
-  - Method `._sync()`
-  - Method `.step(dt, intent)`
-  - Method `.update(dt)`
-  - Method `.handle_input(dt, context)`
-  - Method `.status()`
-
----
-
-### [`keystone/space_harness.py`](keystone/space_harness.py)
-> *Deterministic JSON harness for the space mode.*
-
-**Size**: `190` lines (`7182` bytes)
+**Size**: `31` lines (`962` bytes)
 
 **Functions:**
-- `def catalog()`
-- `def _number(action, key, default)`
-- `def _seconds(action)`
-- `def apply_action(world, action)`
-- `def run_actions(seed, actions)`
-- `def selftest()`
-- `def _read_actions(path)`
-- `def _write_json(path, payload)`
-- `def main(argv)`
+- `def write_json_atomic(path, payload, backup)`
+- `def read_json(path)`
 
 ---
 
 ### [`tests/test_app.py`](tests/test_app.py)
-> *Integration tests for the engine loop, demo scene and CLI.*
+> *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `80` lines (`3080` bytes)
+**Size**: `47` lines (`1688` bytes)
 
 **Classes:**
-- `class DemoTest`
-  - Method `.test_demo_scene_contains_renderables()`
-  - Method `.test_update_rotates_and_bobs_over_time()`
 - `class EngineTest`
-  - Method `.test_headless_engine_runs_and_saves_a_png()`
-- `class ExpeditionEngineTest`
-  - Method `.test_headless_expedition_renders_and_saves_a_png()`
-- `class CliTest`
+  - Method `.test_headless_engine_runs_fixed_steps_and_saves_a_png()`
   - Method `.test_bad_size_is_a_usage_error()`
   - Method `.test_out_requires_headless()`
-  - Method `.test_bad_seed_is_a_usage_error()`
-  - Method `.test_bad_layout_is_a_usage_error()`
+  - Method `.test_bad_game_spec_reports_why_and_fix()`
 
 ---
 
-### [`tests/test_beams.py`](tests/test_beams.py)
-> *Tests for the deterministic light-lock puzzle.*
+### [`tests/test_boundary.py`](tests/test_boundary.py)
+> *Boundary test: the engine core contains no game rules or imports.*
 
-**Size**: `59` lines (`2029` bytes)
+**Size**: `50` lines (`1557` bytes)
 
 **Classes:**
-- `class LightLockTest`
-  - Method `.test_initial_state_is_unsolved()`
-  - Method `.test_solution_routes_red_through_green_dye_to_the_receiver()`
-  - Method `.test_wrong_orientation_stays_sealed()`
-  - Method `.test_trace_terminates_on_a_cycle()`
-  - Method `.test_rotate_toggles_orientation_and_version()`
-  - Method `.test_nearest_mirror_uses_world_distance()`
-  - Method `.test_snapshot_is_stable()`
-  - Method `.test_mask_to_rgb()`
+- `class CoreBoundaryTest`
+  - Method `.test_core_has_no_genre_modules()`
+  - Method `.test_core_imports_only_core_modules()`
 
 ---
 
-### [`tests/test_combat.py`](tests/test_combat.py)
-> *Tests for the deterministic combat director.*
+### [`tests/test_clock.py`](tests/test_clock.py)
+> *Tests for the fixed-step clock.*
 
-**Size**: `65` lines (`2185` bytes)
-
-**Classes:**
-- `class CombatTest`
-  - Method `.make(seed)`
-  - Method `.test_spawn_is_seeded_and_deterministic()`
-  - Method `.test_auto_fire_kills_a_nearby_enemy()`
-  - Method `.test_contact_damages_the_player()`
-  - Method `.test_wave_five_spawns_a_boss()`
-  - Method `.test_player_death_sets_the_flag()`
-  - Method `.test_snapshot_is_stable_after_the_same_steps()`
-
-**Functions:**
-- `def flat(x, z)`
-
----
-
-### [`tests/test_dungeon.py`](tests/test_dungeon.py)
-> *Tests for seeded dungeon generation, field of view and pathfinding.*
-
-**Size**: `88` lines (`2912` bytes)
+**Size**: `31` lines (`965` bytes)
 
 **Classes:**
-- `class DungeonGenerationTest`
-  - Method `.setUp()`
-  - Method `.test_same_seed_builds_the_same_dungeon()`
-  - Method `.test_different_seeds_differ()`
-  - Method `.test_spawn_and_exit_are_walkable()`
-  - Method `.test_exit_is_reachable_from_spawn()`
-  - Method `.test_to_dict_is_json_serializable()`
-  - Method `.test_generator_rejects_tiny_maps()`
-- `class DungeonVisibilityTest`
-  - Method `.setUp()`
-  - Method `.test_fov_contains_the_observer_and_near_floor()`
-  - Method `.test_fov_is_blocked_by_a_wall()`
-  - Method `.test_walls_and_out_of_bounds_are_not_walkable()`
-
----
-
-### [`tests/test_expedition.py`](tests/test_expedition.py)
-> *Tests for scene assembly and the expedition controller.*
-
-**Size**: `131` lines (`6749` bytes)
-
-**Classes:**
-- `class ExpeditionSceneTest`
-  - Method `.setUp()`
-  - Method `.test_overworld_scene_has_terrain_water_trees_and_a_portal()`
-  - Method `.test_rocks_leave_the_portal_path_clear()`
-  - Method `.test_light_lock_scene_has_emitter_receiver_mirrors_and_beams()`
-  - Method `.test_rotating_a_mirror_rebuilds_the_light_scene()`
-  - Method `.test_camera_starts_at_the_player_eye()`
-  - Method `.test_enemy_nodes_match_the_combat_state()`
-  - Method `.test_step_advances_time_and_syncs_the_camera()`
-  - Method `._solve_light_lock()`
-  - Method `.test_entering_the_portal_switches_to_a_dungeon_scene()`
-  - Method `.test_hacking_a_terminal_rebuilds_the_network_scene()`
-  - Method `.test_atmosphere_reaches_the_scene()`
-  - Method `.test_weave_layout_enters_a_colored_dungeon()`
-  - Method `._solve_light_lock_for(expedition)`
-  - Method `.test_dungeon_lighting_is_darker_than_daylight()`
+- `class FixedStepClockTest`
+  - Method `.test_releases_whole_steps_and_bounds_catch_up()`
+  - Method `.test_reset_drops_accumulator()`
+  - Method `.test_invalid_configuration()`
 
 ---
 
@@ -802,26 +509,22 @@
 
 ---
 
-### [`tests/test_harness.py`](tests/test_harness.py)
-> *Tests for the deterministic JSON AI harness.*
+### [`tests/test_input.py`](tests/test_input.py)
+> *Tests for input sampling and action state.*
 
-**Size**: `112` lines (`4814` bytes)
+**Size**: `63` lines (`2082` bytes)
 
 **Classes:**
-- `class HarnessApiTest`
-  - Method `.test_catalog_describes_actions_and_state()`
-  - Method `.test_actions_are_deterministic()`
-  - Method `.test_seed_changes_the_run()`
-  - Method `.test_layout_is_selected_and_reported()`
-  - Method `.test_unknown_action_is_rejected()`
-  - Method `.test_invalid_seconds_is_rejected()`
-  - Method `.test_selftest_passes()`
-- `class HarnessCliTest`
-  - Method `.test_catalog_prints_json()`
-  - Method `.test_run_reads_actions_and_writes_output()`
-  - Method `.test_actions_file_with_a_utf8_bom_is_accepted()`
-  - Method `.test_bad_seed_is_a_usage_error()`
-  - Method `.test_bad_actions_print_a_triad()`
+- `class FakeContext`
+  - Method `.__init__()`
+  - Method `.key_down(key)`
+  - Method `.cursor_position()`
+- `class InputMapTest`
+  - Method `.test_axes_and_pressed_edges()`
+  - Method `.test_custom_binding()`
+  - Method `.test_mouse_delta_feeds_look()`
+  - Method `.test_disabled_mouse_ignores_pointer()`
+  - Method `.test_action_state_round_trip_and_clear()`
 
 ---
 
@@ -856,22 +559,33 @@
 
 ---
 
-### [`tests/test_network.py`](tests/test_network.py)
-> *Tests for the seeded cyber network and alert state.*
+### [`tests/test_physics.py`](tests/test_physics.py)
+> *Tests for generic ray and collision primitives.*
 
-**Size**: `69` lines (`2915` bytes)
+**Size**: `48` lines (`1567` bytes)
 
 **Classes:**
-- `class NetworkTest`
-  - Method `.setUp()`
-  - Method `.test_generates_reachable_terminals_outside_spawn_and_exit()`
-  - Method `.test_same_seed_is_deterministic()`
-  - Method `.test_hacking_needs_four_steps_and_raises_alert()`
-  - Method `.test_alert_decays_over_time()`
-  - Method `.test_complete_network()`
-  - Method `.test_links_reference_known_terminals()`
-  - Method `.test_unknown_terminal_is_rejected()`
-  - Method `.test_near_terminal_uses_radius()`
+- `class PhysicsTest`
+  - Method `.test_ray_hits_aabb_and_sphere()`
+  - Method `.test_rays_miss()`
+  - Method `.test_ray_validation()`
+  - Method `.test_overlap_and_sphere_pushout()`
+  - Method `.test_non_overlapping_sphere_is_unchanged()`
+
+---
+
+### [`tests/test_plugin.py`](tests/test_plugin.py)
+> *Tests for the GameModule contract and loader.*
+
+**Size**: `34` lines (`975` bytes)
+
+**Classes:**
+- `class PluginTest`
+  - Method `.test_sample_loads_and_implements_the_contract()`
+  - Method `.test_invalid_specs_are_rejected()`
+  - Method `.test_missing_methods_are_rejected()`
+- `class IncompleteGame`
+  - Method `.build_scene()`
 
 ---
 
@@ -888,33 +602,6 @@
 
 **Functions:**
 - `def _chunks(data)`
-
----
-
-### [`tests/test_procedural.py`](tests/test_procedural.py)
-> *Tests for deterministic noise, heightfield terrain and day/night atmosphere.*
-
-**Size**: `93` lines (`3540` bytes)
-
-**Classes:**
-- `class NoiseTest`
-  - Method `.test_noise_is_deterministic_and_bounded()`
-  - Method `.test_fbm_changes_with_seed()`
-  - Method `.test_fbm_is_bounded()`
-- `class TerrainTest`
-  - Method `.setUp()`
-  - Method `.test_same_seed_rebuilds_the_same_grid()`
-  - Method `.test_mesh_is_colored_and_faces_up()`
-  - Method `.test_height_at_grid_point_matches_the_grid()`
-  - Method `.test_spawn_and_entrance_are_walkable()`
-  - Method `.test_water_and_out_of_bounds_are_not_walkable()`
-  - Method `.test_normals_are_unit_length()`
-  - Method `.test_rejects_tiny_grids()`
-- `class AtmosphereTest`
-  - Method `.test_noon_is_bright_and_midnight_is_dark()`
-  - Method `.test_dawn_is_warm()`
-  - Method `.test_apply_updates_scene_light_and_sky()`
-  - Method `.test_atmosphere_rejects_out_of_range_time()`
 
 ---
 
@@ -937,6 +624,32 @@
 
 **Functions:**
 - `def build_scene()`
+
+---
+
+### [`tests/test_replay.py`](tests/test_replay.py)
+> *Tests for deterministic action logs and stable hashes.*
+
+**Size**: `32` lines (`1120` bytes)
+
+**Classes:**
+- `class ReplayTest`
+  - Method `.test_hash_ignores_mapping_order()`
+  - Method `.test_command_log_round_trip()`
+  - Method `.test_invalid_step_is_rejected()`
+
+---
+
+### [`tests/test_samples.py`](tests/test_samples.py)
+> *Tests for the engine's sample game.*
+
+**Size**: `43` lines (`1372` bytes)
+
+**Classes:**
+- `class SampleTest`
+  - Method `.test_scene_contains_only_generic_renderables()`
+  - Method `.test_update_rotates_cubes_and_moves_the_camera()`
+  - Method `.test_actions_schema_is_generic()`
 
 ---
 
@@ -975,123 +688,14 @@
 
 ---
 
-### [`tests/test_space.py`](tests/test_space.py)
-> *Tests for seeded star systems, orbits and hyperlanes.*
+### [`tests/test_serialization.py`](tests/test_serialization.py)
+> *Tests for atomic JSON persistence.*
 
-**Size**: `50` lines (`2020` bytes)
-
-**Classes:**
-- `class GalaxyTest`
-  - Method `.setUp()`
-  - Method `.test_same_seed_is_deterministic()`
-  - Method `.test_every_system_has_a_star_and_planets()`
-  - Method `.test_hyperlanes_are_symmetric_and_connected()`
-  - Method `.test_orbits_move_over_time_and_stars_stay_put()`
-  - Method `.test_unknown_system_and_body_are_rejected()`
-  - Method `.test_rejects_tiny_galaxies()`
-
----
-
-### [`tests/test_space_expedition.py`](tests/test_space_expedition.py)
-> *Tests for the space scene and controller.*
-
-**Size**: `47` lines (`1901` bytes)
+**Size**: `27` lines (`980` bytes)
 
 **Classes:**
-- `class SpaceExpeditionTest`
-  - Method `.setUp()`
-  - Method `.test_scene_has_starfield_bodies_and_a_gate()`
-  - Method `.test_camera_follows_the_ship()`
-  - Method `.test_scanning_a_body_updates_the_scene_and_status()`
-  - Method `.test_jump_rebuilds_the_system_scene()`
-
----
-
-### [`tests/test_space_harness.py`](tests/test_space_harness.py)
-> *Tests for the space harness.*
-
-**Size**: `50` lines (`1933` bytes)
-
-**Classes:**
-- `class SpaceHarnessTest`
-  - Method `.test_catalog_exposes_flight_scan_and_jump()`
-  - Method `.test_actions_are_deterministic()`
-  - Method `.test_invalid_action_is_rejected()`
-  - Method `.test_selftest()`
-  - Method `.test_cli_catalog_and_run()`
-
----
-
-### [`tests/test_space_world.py`](tests/test_space_world.py)
-> *Tests for space flight, scanning and hyperlane jumps.*
-
-**Size**: `67` lines (`2621` bytes)
-
-**Classes:**
-- `class SpaceWorldTest`
-  - Method `.setUp()`
-  - Method `.test_seeded_galaxy_and_hash()`
-  - Method `.test_forward_flight_moves_the_ship()`
-  - Method `.test_nearby_body_scan_adds_credits_and_progress()`
-  - Method `.test_scan_out_of_range_does_nothing()`
-  - Method `.test_survey_completion_reports_the_gate()`
-  - Method `.test_jump_requires_gate_and_changes_system()`
-  - Method `.test_negative_dt_is_rejected()`
-  - Method `.test_galaxy_is_connected()`
-
----
-
-### [`tests/test_weave.py`](tests/test_weave.py)
-> *Tests for the Weft-style Hamiltonian weave generator.*
-
-**Size**: `52` lines (`2220` bytes)
-
-**Classes:**
-- `class WeaveLayoutTest`
-  - Method `.setUp()`
-  - Method `.test_path_covers_every_room_exactly_once()`
-  - Method `.test_consecutive_rooms_are_orthogonal()`
-  - Method `.test_segments_partition_the_path()`
-  - Method `.test_same_seed_is_deterministic()`
-  - Method `.test_dungeon_is_fully_connected()`
-  - Method `.test_room_floors_carry_thread_colors()`
-  - Method `.test_rejects_tiny_layouts()`
-
----
-
-### [`tests/test_world.py`](tests/test_world.py)
-> *Tests for the deterministic expedition simulation core.*
-
-**Size**: `193` lines (`8290` bytes)
-
-**Classes:**
-- `class WorldDeterminismTest`
-  - Method `.test_same_seed_and_actions_produce_the_same_hash()`
-  - Method `.test_different_seed_produces_a_different_world()`
-  - Method `.test_auto_layout_uses_crypt_for_odd_and_weave_for_even_seeds()`
-  - Method `.test_forced_weave_layout_reaches_an_exit()`
-  - Method `.test_invalid_layout_is_rejected()`
-  - Method `.test_hash_changes_when_the_player_moves()`
-- `class WorldMovementTest`
-  - Method `.setUp()`
-  - Method `.test_eye_height_follows_the_terrain()`
-  - Method `.test_forward_moves_the_player()`
-  - Method `.test_pitch_is_clamped()`
-  - Method `.test_day_fraction_advances_with_time()`
-  - Method `.test_negative_dt_is_rejected()`
-  - Method `.test_death_respawns_at_the_safe_point()`
-- `class WorldModeTest`
-  - Method `.setUp()`
-  - Method `._stand_at_entrance()`
-  - Method `._solve_light_lock()`
-  - Method `._complete_network()`
-  - Method `.test_portal_is_sealed_until_the_light_lock_is_solved()`
-  - Method `.test_mirror_rotation_changes_the_lock()`
-  - Method `.test_interacting_at_the_portal_enters_the_dungeon()`
-  - Method `.test_dungeon_walls_block_movement()`
-  - Method `.test_exit_returns_to_the_overworld_portal()`
-  - Method `.test_hacking_a_terminal_advances_the_network()`
-  - Method `.test_high_alert_spawns_a_netwatch_hunter()`
-  - Method `.test_interacting_away_from_the_portal_does_nothing()`
+- `class SerializationTest`
+  - Method `.test_round_trip_and_backup()`
+  - Method `.test_missing_file_raises()`
 
 ---

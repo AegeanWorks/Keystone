@@ -1,44 +1,16 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-architecture-v1",
-    "last_phase": "phase 4",
+    "task_id": "keystone-core-reset-v1",
+    "last_phase": "phase 5",
     "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1793383133.153271,
-    "owner": "opencode:keystone-architecture",
-    "started_by": "opencode:keystone-architecture",
-    "continuations": [],
-    "completed_at": 1793383140.3465905
+    "status": "in_progress",
+    "updated_at": 1793383858.9955578,
+    "owner": "opencode:keystone-core-reset",
+    "started_by": "opencode:keystone-core-reset",
+    "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-expedition-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-expedition-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793380137.3747253,
-      "timestamp_str": "2026-10-30 20:08:57",
-      "agent": "opencode:keystone-expedition"
-    },
-    {
-      "task_id": "keystone-combat-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/4] Plan: combat data + deterministic director -> world integration (spawn/waves/damage/death/hash) -> enemy scene nodes + status title -> docs, harness and gates",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793380485.2616513,
-      "timestamp_str": "2026-10-30 20:14:45",
-      "agent": "opencode:keystone-combat",
-      "impact_assessment": {
-        "why": "The expedition has exploration but no threat; combat is the missing core gameplay mechanic and Dustline provides the proven archetype/wave model.",
-        "benefits": "Turns the seeded expedition into a survival loop, exercises collision/AI/hash headlessly, and gives the harness combat state without a GPU.",
-        "risks": "contract: World snapshot/hash and step gain combat state; dependency: stdlib only; concurrency: single-thread fixed-step; state: spawn RNG and death/reset must stay deterministic.",
-        "mitigation": "Frozen enemy/weapon tables, seeded director tests, deterministic replay hash, scene-sync tests and a headless combat screenshot."
-      }
-    },
     {
       "task_id": "keystone-combat-v1",
       "phase": "completed",
@@ -290,6 +262,39 @@
       "timestamp": 1793383140.3465936,
       "timestamp_str": "2026-10-30 20:59:00",
       "agent": "opencode:keystone-architecture"
+    },
+    {
+      "task_id": "keystone-core-reset-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/5] Plan: add core runtime (GameModule, input, clock, replay, serialization, physics) -> refactor Engine/CLI/sample -> remove game modules/tests/assets -> rewrite docs/ADR/config -> gates, screenshot and commit",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793383365.3956223,
+      "timestamp_str": "2026-10-30 21:02:45",
+      "agent": "opencode:keystone-core-reset",
+      "impact_assessment": {
+        "why": "The project is crowded with game mechanics and lacks a reusable engine boundary; the user directed a game-agnostic core and removal of those modules.",
+        "benefits": "A small, testable engine core that external games import; no genre code in the package; clear plugin and replay contracts.",
+        "risks": "contract: Engine API changes and game code is deleted; dependency: stdlib only for new core modules; concurrency: single-thread loop; state: keep the core runnable after each step.",
+        "mitigation": "Build the core boundary first, keep the sample runnable, remove modules only after tests/CLI pass, and regenerate maps/docs/ADR."
+      }
+    },
+    {
+      "task_id": "keystone-core-reset-v1",
+      "phase": "phase 5",
+      "phase_num": 5,
+      "description": "[5/5] Core-only engine complete: 106 tests, 6/6 gates, all genre modules/tests/screenshots removed, GameModule/Engine/input/clock/physics/replay/serialization boundary added, external --game loader and CubeDemo smoke test; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793383858.9955578,
+      "timestamp_str": "2026-10-30 21:10:58",
+      "agent": "opencode:keystone-core-reset",
+      "handoff": {
+        "state": "v0.8.0 game-agnostic",
+        "next": "core roadmap (scene/ECS, broadphase physics, assets, renderer, audio, tooling)",
+        "evidence": "pytest 106 passed, boundary test, aikit check 6/6, headless sample renders"
+      }
     }
   ]
 }
