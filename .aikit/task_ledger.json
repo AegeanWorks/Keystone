@@ -1,60 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-game-ui-v1",
+    "task_id": "keystone-ui-report-v1",
     "last_phase": "phase 3",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793387250.5132365,
-    "owner": "opencode:keystone-game-ui",
-    "started_by": "opencode:keystone-game-ui",
+    "updated_at": 1793388827.0295715,
+    "owner": "opencode:keystone-ui-report",
+    "started_by": "opencode:keystone-ui-report",
     "continuations": [],
-    "completed_at": 1793387260.26079
+    "completed_at": 1793388830.591199
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-ai-contract-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] AI contract complete: 126 tests, 6/6 gates, describe/--describe discovery, deterministic testing helpers, report diff, JSON simulate and PNG+report evidence; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793384930.217359,
-      "timestamp_str": "2026-10-30 21:28:50",
-      "agent": "opencode:keystone-ai-contract",
-      "handoff": {
-        "state": "v0.10.0 AI-facing core",
-        "next": "core roadmap (scene/ECS, broadphase physics, assets, audio, tooling)",
-        "evidence": "pytest 126, aikit check 6/6, describe/simulate/report commands verified"
-      }
-    },
-    {
-      "task_id": "keystone-ai-contract-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-ai-contract-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793384938.1830518,
-      "timestamp_str": "2026-10-30 21:28:58",
-      "agent": "opencode:keystone-ai-contract"
-    },
-    {
-      "task_id": "keystone-ai-verify-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: publish report schema/describe fields -> add --verify-determinism and --compare-baseline -> tests, docs, ADR and gates",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793385249.392877,
-      "timestamp_str": "2026-10-30 21:34:09",
-      "agent": "opencode:keystone-ai-verify",
-      "impact_assessment": {
-        "why": "AI clients need one-command determinism checks and visual regression gates, not library-only helpers.",
-        "benefits": "A model can verify a scenario twice, compare a frame to a baseline, and discover the report schema without guessing.",
-        "risks": "contract: new CLI flags and report metadata; dependency: stdlib only; concurrency: none; state: baseline comparison must not mutate the baseline.",
-        "mitigation": "Exit-code tests, schema validation, temp baselines and the full project gates."
-      }
-    },
     {
       "task_id": "keystone-ai-verify-v1",
       "phase": "phase 3",
@@ -295,6 +252,49 @@
       "timestamp": 1793387260.2607913,
       "timestamp_str": "2026-10-30 22:07:40",
       "agent": "opencode:keystone-game-ui"
+    },
+    {
+      "task_id": "keystone-ui-report-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: Canvas text/button metadata -> schema-2 UI report + --start-paused -> UI diff, tests, docs, assets, ADR and gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793388539.4556067,
+      "timestamp_str": "2026-10-30 22:28:59",
+      "agent": "opencode:keystone-ui-report",
+      "impact_assessment": {
+        "why": "Human UI pixels are now real, but AI reports cannot see HUD labels, buttons, selection or pause state; UI regressions remain pixel-only.",
+        "benefits": "Reports expose structured UI elements for AI/UI analysis, and baseline diffs can name added/removed/changed labels and buttons.",
+        "risks": "contract: report schema 1->2 with an optional ui field, new --start-paused flag; dependency: none; concurrency: none; state: UI metadata is read-only presentation data.",
+        "mitigation": "Backward-compatible comparison of missing ui, schema tests, deterministic headless UI reports and the full 6/6 gate."
+      }
+    },
+    {
+      "task_id": "keystone-ui-report-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[3/3] UI report complete: Canvas label/button metadata, schema-2 ui field, UI-aware hash and diff, --start-paused menu capture, 159 tests, 6/6 gates, docs/ADR-022, schema-2 sample report; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793388827.0295715,
+      "timestamp_str": "2026-10-30 22:33:47",
+      "agent": "opencode:keystone-ui-report",
+      "handoff": {
+        "state": "v0.17.0 schema-2 UI reports",
+        "next": "UI widgets/settings or core roadmap",
+        "evidence": "pytest 159, aikit check 6/6, paused UI report and UI diff inspected"
+      }
+    },
+    {
+      "task_id": "keystone-ui-report-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-ui-report-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793388830.5912004,
+      "timestamp_str": "2026-10-30 22:33:50",
+      "agent": "opencode:keystone-ui-report"
     }
   ]
 }

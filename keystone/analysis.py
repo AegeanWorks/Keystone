@@ -15,18 +15,23 @@ from keystone.serialization import write_json_atomic
 GRID = 8
 
 REPORT_SCHEMA = {
-    "version": 1,
+    "version": 2,
     "fields": {
         "image": ["path", "width", "height", "rgba_sha256", "png_sha256"],
         "stats": ["mean_rgb", "mean_luma", "content_pixels", "content_ratio", "content_bbox", "dominant_colors", "grid_luma"],
         "scene": ["camera", "node_count", "nodes"],
         "node": ["name", "parent", "visible", "world", "screen", "bbox", "triangles"],
+        "ui": ["visible", "paused", "labels", "buttons"],
+        "ui_label": ["text", "x", "y", "scale", "color"],
+        "ui_button": ["label", "action", "rect", "selected", "hovered"],
         "diagnostics": ["hash", "schema"],
     },
     "notes": [
         "grid_luma is an 8x8 backward-compatible luminance summary.",
         "screen and bbox are top-down image coordinates; screen may be null behind the camera.",
-        "hash covers image metadata, stats and projected nodes, not visual quality.",
+        "hash covers image metadata, stats, projected nodes and ui when present, not visual quality.",
+        "ui is null unless the human overlay was rendered; schema-2 adds this optional field.",
+        "ui labels and button rects are presentation metadata in top-left pixels.",
     ],
 }
 
@@ -141,6 +146,7 @@ def analyze_frame(
     width: int,
     height: int,
     image_path: str | Path | None = None,
+    ui: dict | None = None,
 ) -> dict:
     if width <= 0 or height <= 0:
         raise ValueError("width and height must be positive")
@@ -157,7 +163,7 @@ def analyze_frame(
         image["png_sha256"] = hashlib.sha256(Path(image_path).read_bytes()).hexdigest()
     camera = scene.camera
     report = {
-        "schema": 1,
+        "schema": 2,
         "image": image,
         "stats": stats,
         "scene": {
@@ -172,15 +178,49 @@ def analyze_frame(
             "node_count": len(nodes),
             "nodes": nodes,
         },
+        "ui": ui,
     }
-    report["hash"] = stable_hash({"image": image, "stats": stats, "nodes": nodes})
+    hashed = {"image": image, "stats": stats, "nodes": nodes}
+    if ui is not None:
+        hashed["ui"] = ui
+    report["hash"] = stable_hash(hashed)
     return report
 
 
+def _compare_ui(before: dict | None, after: dict | None) -> dict:
+    empty = {"visible": False, "paused": False, "labels": [], "buttons": []}
+    first = before or empty
+    second = after or empty
+
+    def label_map(ui: dict) -> dict[str, dict]:
+        return {label["text"]: label for label in ui.get("labels", [])}
+
+    def button_map(ui: dict) -> dict[str, dict]:
+        return {button["action"]: button for button in ui.get("buttons", [])}
+
+    first_labels = label_map(first)
+    second_labels = label_map(second)
+    first_buttons = button_map(first)
+    second_buttons = button_map(second)
+    shared_labels = set(first_labels) & set(second_labels)
+    shared_buttons = set(first_buttons) & set(second_buttons)
+    return {
+        "same": first == second,
+        "visible": {"before": first.get("visible"), "after": second.get("visible")},
+        "paused": {"before": first.get("paused"), "after": second.get("paused")},
+        "added_labels": sorted(set(second_labels) - set(first_labels)),
+        "removed_labels": sorted(set(first_labels) - set(second_labels)),
+        "moved_labels": sorted(text for text in shared_labels if first_labels[text] != second_labels[text]),
+        "added_buttons": sorted(set(second_buttons) - set(first_buttons)),
+        "removed_buttons": sorted(set(first_buttons) - set(second_buttons)),
+        "changed_buttons": sorted(action for action in shared_buttons if first_buttons[action] != second_buttons[action]),
+    }
+
+
 def compare_reports(before: dict, after: dict) -> dict:
-    """Compare two schema-1 frame reports for AI-driven visual regression."""
-    if before.get("schema") != 1 or after.get("schema") != 1:
-        raise ValueError("both reports must use schema 1")
+    """Compare schema-1 or schema-2 frame reports for AI-driven regression checks."""
+    if before.get("schema") not in (1, 2) or after.get("schema") not in (1, 2):
+        raise ValueError("both reports must use schema 1 or 2")
     first_stats = before["stats"]
     second_stats = after["stats"]
     first_nodes = {node["name"]: node for node in before["scene"]["nodes"]}
@@ -195,16 +235,19 @@ def compare_reports(before: dict, after: dict) -> dict:
             new.get("visible"),
         ):
             changed.append(name)
+    ui_diff = _compare_ui(before.get("ui"), after.get("ui"))
     return {
-        "schema": 1,
+        "schema": 2,
         "same_image": before["image"]["rgba_sha256"] == after["image"]["rgba_sha256"],
         "same_report": before.get("hash") == after.get("hash"),
+        "same_ui": ui_diff["same"],
         "mean_luma_delta": round(second_stats["mean_luma"] - first_stats["mean_luma"], 3),
         "content_ratio_delta": round(second_stats["content_ratio"] - first_stats["content_ratio"], 4),
         "content_bbox": {"before": first_stats["content_bbox"], "after": second_stats["content_bbox"]},
         "changed_nodes": changed,
         "added_nodes": sorted(set(second_nodes) - set(first_nodes)),
         "removed_nodes": sorted(set(first_nodes) - set(second_nodes)),
+        "ui": ui_diff,
     }
 
 

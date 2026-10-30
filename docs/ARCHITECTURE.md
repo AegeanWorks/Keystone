@@ -1,6 +1,6 @@
 # Keystone Architecture
 
-**Status:** implemented in v0.16.0 — core-only engine with human UI  
+**Status:** implemented in v0.17.0 — core-only engine with human UI and UI reports  
 **Boundary:** `keystone/` is game-agnostic; games are external modules.
 
 ## 1. What Keystone Is
@@ -96,13 +96,14 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 
 - `headless.run_simulation(game, frames, actions, step, trace)` calls `build_scene()` and then `update()` in fixed steps without importing the renderer or creating a GL context.
 - `load_actions()` accepts a JSON list or an object with `actions`; every item is an `ActionState`.
-- `analysis.analyze_frame(scene, pixels, width, height, image_path)` returns schema-1 JSON: image hashes, pixel statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data and projected node bounds. `Engine.capture(image, report)` writes both artifacts.
-- `analysis.compare_reports(before, after)` returns image/report equality, luminance/content-ratio deltas, bbox changes and added/removed/changed nodes.
+- `analysis.analyze_frame(scene, pixels, width, height, image_path, ui=None)` returns schema-2 JSON: image hashes, pixel statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data, projected node bounds and optional UI labels/buttons. `Engine.capture(image, report)` writes both artifacts.
+- `analysis.compare_reports(before, after)` returns image/report equality, luminance/content-ratio deltas, bbox changes, added/removed/changed nodes, and added/removed/moved UI labels and buttons. It accepts schema-1 reports as baselines.
 - `analysis.diff_images(before, after, output)` reads PNGs, writes a visual diff and returns changed-pixel count/ratio, bbox and mean/max delta; `png.read_png()` is the dependency-free reader.
+- `keystone.ui.report.describe_canvas()` turns the rendered `Canvas` into `ui` metadata: visibility, pause state, label text/position/scale/color and button label/action/rect/selection/hover.
 - `describe_game()` exposes `name`, `actions()`, `snapshot()`, capabilities (`simulate`, `render`, `human_ui`, `game_ui`) and the versioned report schema; `--describe` prints it without a window.
 - `ActionState` includes `mouse_clicked` as a one-frame edge so games and menus can react without importing GLFW.
 - `testing.run_script()`, `verify_determinism()` and `assert_deterministic()` turn an action script into test evidence; `--verify-determinism` exposes the two-run check to agents; `--expect-hash` pins a final result.
-- `--simulate` requires no GPU; `--headless` renders off-screen; `--ui` adds the human overlay to a capture; `--no-ui` disables it; `--report` documents a rendered frame; `--compare-baseline` gates visual changes; `--describe` discovers the contract.
+- `--simulate` requires no GPU; `--headless` renders off-screen; `--ui` adds the human overlay to a capture; `--start-paused` renders the pause menu; `--no-ui` disables it; `--report` documents a rendered frame; `--compare-baseline` gates visual changes; `--describe` discovers the contract.
 - `docs/AI_GUIDE.md` is the end-to-end workflow reference.
 - These are core APIs, not a game harness: they never import a game module or know a genre.
 
@@ -132,7 +133,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Headless | Implemented | no-GL simulation and action scripts |
 | AI discovery | Implemented | describe_game/--describe contract introspection |
 | AI testing | Implemented | deterministic scenario helpers |
-| Frame report | Implemented | image statistics, projected nodes and report diff |
+| Frame report | Implemented | image statistics, projected nodes, UI metadata and report diff |
 | Human UI | Implemented | bitmap font, canvas, HUD/help, interactive pause menu |
 | Physics | Implemented (queries) | rays, AABB, sphere overlap/pushout |
 | Audio | Missing | future core module |
@@ -160,9 +161,11 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - `python -m keystone --simulate --frames 1 --expect-hash <hash>` exits 0 only for the pinned hash.
 - `--headless --frames 1 --size 64x48` renders the sample.
 - `--headless --frames 1 --ui --report hud.json` captures the human overlay.
+- `--headless --frames 1 --ui --start-paused --report paused.json` captures the pause menu and its buttons.
 - `--no-ui` keeps windowed and headless captures free of overlay pixels.
 - Pausing opens a hit-testable Resume/Hide HUD/Quit menu and releases the cursor.
 - A game's optional `draw_ui(canvas, state)` contributes pixels to the same capture.
+- `compare_reports()` detects UI label/button changes when `ui` metadata is present.
 - `python -m keystone --headless --frames 1 --out frame.png --report frame.json` writes both artifacts.
 - `--compare-baseline baseline.json` exits non-zero on image change.
 - `--diff-out diff.png` writes a visual pixel diff.

@@ -4,7 +4,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from keystone.analysis import analyze_frame, compare_reports, diff_images, write_report
+from keystone.analysis import (
+    REPORT_SCHEMA,
+    analyze_frame,
+    compare_reports,
+    diff_images,
+    write_report,
+)
 from keystone.math3d import Vec3
 from keystone.png import write_png
 from keystone.samples import CubeDemo
@@ -66,6 +72,60 @@ class AnalysisTest(unittest.TestCase):
         self.assertTrue(diff["same_image"] is False)
         self.assertNotEqual(diff["mean_luma_delta"], 0.0)
         self.assertIn("changed_nodes", diff)
+
+    def test_ui_metadata_is_hashed_and_compared(self):
+        self.assertEqual(REPORT_SCHEMA["version"], 2)
+        game = CubeDemo()
+        pixels = bytes((0, 0, 0, 255)) * 4
+        first = analyze_frame(
+            game.build_scene(),
+            pixels,
+            2,
+            2,
+            ui={
+                "visible": True,
+                "paused": False,
+                "labels": [{"text": "HUD", "x": 1, "y": 2, "scale": 2, "color": [1.0, 1.0, 1.0, 1.0]}],
+                "buttons": [],
+            },
+        )
+        second = analyze_frame(
+            game.build_scene(),
+            pixels,
+            2,
+            2,
+            ui={
+                "visible": True,
+                "paused": True,
+                "labels": [{"text": "MENU", "x": 1, "y": 2, "scale": 2, "color": [1.0, 1.0, 1.0, 1.0]}],
+                "buttons": [
+                    {
+                        "label": "RESUME",
+                        "action": "resume",
+                        "rect": [4, 4, 40, 20],
+                        "selected": True,
+                        "hovered": False,
+                    }
+                ],
+            },
+        )
+        self.assertNotEqual(first["hash"], second["hash"])
+        diff = compare_reports(first, second)
+        self.assertTrue(diff["same_image"])
+        self.assertFalse(diff["same_ui"])
+        self.assertEqual(diff["ui"]["added_labels"], ["MENU"])
+        self.assertEqual(diff["ui"]["removed_labels"], ["HUD"])
+        self.assertEqual(diff["ui"]["added_buttons"], ["resume"])
+        self.assertTrue(diff["ui"]["paused"]["after"])
+
+    def test_compare_reports_accepts_schema_1_without_ui(self):
+        report = analyze_frame(CubeDemo().build_scene(), bytes((0, 0, 0, 255)) * 4, 2, 2)
+        legacy = dict(report)
+        legacy["schema"] = 1
+        legacy.pop("ui")
+        diff = compare_reports(legacy, report)
+        self.assertTrue(diff["same_ui"])
+        self.assertEqual(diff["schema"], 2)
 
     def test_compare_reports_rejects_unknown_schema(self):
         with self.assertRaises(ValueError):

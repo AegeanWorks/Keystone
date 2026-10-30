@@ -45,13 +45,14 @@ python -m keystone --headless --frames 1 --size 1280x720 \
   --out frame.png --report frame.json
 ```
 
-The schema-1 report contains:
+The schema-2 report contains:
 
 - image path, dimensions and PNG/RGBA SHA-256;
 - mean RGB/luminance, content pixels/ratio and bbox;
 - dominant colors and an 8×8 luminance grid;
 - camera parameters;
 - every node's world position, visibility, triangle count, projected screen center and bounding box;
+- `ui` metadata (`visible`, `paused`, labels and buttons) or `null` for clean captures;
 - a stable report hash.
 
 ## 5. Compare against a baseline
@@ -62,7 +63,7 @@ python -m keystone --headless --frames 1 --size 1280x720 \
   --compare-baseline baseline.json --diff-out diff.png
 ```
 
-The diff reports image/report equality, luminance and content-ratio deltas, bbox changes, and added/removed/changed nodes. `--diff-out` additionally writes a visual PNG and reports changed pixels, ratio, bbox, mean delta and max delta. Exit code 0 means the image hash matched; 1 means it changed.
+The diff reports image/report equality, luminance and content-ratio deltas, bbox changes, added/removed/changed nodes, and added/removed/moved UI labels and buttons. `--diff-out` additionally writes a visual PNG and reports changed pixels, ratio, bbox, mean delta and max delta. Exit code 0 means the image hash matched; 1 means it changed.
 
 ## 6. Capture the human UI
 
@@ -71,9 +72,11 @@ Windowed runs draw the HUD by default. For an AI inspection of what a person see
 ```bash
 python -m keystone --headless --frames 1 --size 960x540 --ui \
   --out hud.png --report hud.json
+python -m keystone --headless --frames 1 --size 960x540 --ui --start-paused \
+  --out paused.png --report paused.json
 ```
 
-The overlay reports game/status, FPS, frame, elapsed time, resolution, controls and pause state. `P` opens an interactive `Resume` / `Hide HUD` / `Quit` menu; the cursor is released while it is open. The overlay is presentation-only: `--simulate` and `--verify-determinism` stay GPU-free, and `--no-ui` keeps captures pixel-identical to the pre-overlay behavior.
+The overlay reports game/status, FPS, frame, elapsed time, resolution, controls and pause state. `P` opens an interactive `Resume` / `Hide HUD` / `Quit` menu; the cursor is released while it is open. `--start-paused` makes the menu the first rendered frame. In the report, `ui.labels` gives text/position/scale/color and `ui.buttons` gives label/action/rect/selected/hovered, so an AI can review the interface structurally. The overlay is presentation-only: `--simulate` and `--verify-determinism` stay GPU-free, and `--no-ui` keeps captures pixel-identical to the pre-overlay behavior.
 
 UI actions can also be driven directly, which is useful for scripted tests:
 
@@ -96,7 +99,7 @@ def draw_ui(self, canvas: Canvas, state: HudState) -> None:
     canvas.text(24, 96, "GAME HUD", (0.92, 0.94, 0.97, 1.0))
 ```
 
-`--describe` reports `capabilities.game_ui` as true when the hook exists. The hook is skipped with `--no-ui` and when the person hides the overlay.
+`--describe` reports `capabilities.game_ui` as true when the hook exists. The hook is skipped with `--no-ui` and when the person hides the overlay. `--start-paused` is also useful here: the game's HUD renders under the pause menu.
 
 ## Python helpers
 

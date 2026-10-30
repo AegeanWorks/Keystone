@@ -108,6 +108,9 @@ class EngineTest(unittest.TestCase):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
             main(["--ui", "--no-ui"])
         self.assertEqual(caught.exception.code, 2)
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+            main(["--simulate", "--start-paused"])
+        self.assertEqual(caught.exception.code, 2)
 
     def test_headless_ui_capture_writes_a_report(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -116,7 +119,32 @@ class EngineTest(unittest.TestCase):
                 code = main(["--headless", "--frames", "1", "--size", "160x120", "--ui", "--report", str(report)])
             self.assertEqual(code, 0)
             payload = json.loads(report.read_text(encoding="utf-8"))
-            self.assertEqual(payload["schema"], 1)
+            self.assertEqual(payload["schema"], 2)
+            self.assertTrue(payload["ui"]["visible"])
+            self.assertIn("KEYSTONE", [label["text"] for label in payload["ui"]["labels"]])
+
+    def test_start_paused_headless_report_describes_the_menu(self):
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "paused.json"
+            with contextlib.redirect_stdout(io.StringIO()):
+                code = main(
+                    [
+                        "--headless",
+                        "--frames",
+                        "1",
+                        "--size",
+                        "320x240",
+                        "--ui",
+                        "--start-paused",
+                        "--report",
+                        str(report),
+                    ]
+                )
+            self.assertEqual(code, 0)
+            payload = json.loads(report.read_text(encoding="utf-8"))
+            self.assertTrue(payload["ui"]["paused"])
+            self.assertEqual([button["action"] for button in payload["ui"]["buttons"]], ["resume", "toggle_ui", "quit"])
+            self.assertTrue(payload["ui"]["buttons"][0]["selected"])
 
     def test_bad_game_spec_reports_why_and_fix(self):
         stderr = io.StringIO()
@@ -216,7 +244,8 @@ class EngineTest(unittest.TestCase):
             engine.capture(image, report)
             self.assertTrue(image.exists())
             payload = json.loads(report.read_text(encoding="utf-8"))
-            self.assertEqual(payload["schema"], 1)
+            self.assertEqual(payload["schema"], 2)
+            self.assertIsNone(payload["ui"])
             self.assertEqual(payload["image"]["path"], Path(image).as_posix())
             self.assertGreater(payload["stats"]["mean_luma"], 0.0)
 

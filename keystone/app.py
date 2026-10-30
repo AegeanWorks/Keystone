@@ -11,7 +11,9 @@ from keystone.gpu.ui_renderer import UiRenderer
 from keystone.input import ActionState, InputMap
 from keystone.plugin import GameModule
 from keystone.scene import Scene
+from keystone.ui.canvas import Canvas
 from keystone.ui.overlay import HudState, HumanOverlay
+from keystone.ui.report import describe_canvas
 
 
 class Engine:
@@ -122,9 +124,9 @@ class Engine:
             return True
         return False
 
-    def _draw_ui(self) -> None:
+    def _draw_ui(self) -> Canvas | None:
         if self.overlay is None or self.ui_renderer is None:
-            return
+            return None
         state = HudState(
             game=getattr(self.game, "name", "game"),
             status=self.game.status(),
@@ -139,6 +141,7 @@ class Engine:
         draw_game_ui = getattr(self.game, "draw_ui", None)
         canvas = self.overlay.build(state, draw_game_ui if callable(draw_game_ui) else None)
         self.ui_renderer.draw(canvas)
+        return canvas
 
     def run(self, max_frames: int = 0) -> int:
         """Run until the window closes or max_frames (0 = unlimited) is reached."""
@@ -191,7 +194,7 @@ class Engine:
 
     def capture(self, image_path: str | Path | None, report_path: str | Path | None = None) -> None:
         self.renderer.render(self.scene)
-        self._draw_ui()
+        canvas = self._draw_ui()
         pixels = self.renderer.read_pixels()
         if image_path is not None:
             from keystone.png import write_png
@@ -200,12 +203,14 @@ class Engine:
         if report_path is not None:
             from keystone.analysis import analyze_frame, write_report
 
+            ui = describe_canvas(canvas, self.paused, self.overlay.visible) if canvas is not None else None
             report = analyze_frame(
                 self.scene,
                 pixels,
                 self.renderer.width,
                 self.renderer.height,
                 image_path,
+                ui=ui,
             )
             write_report(report_path, report)
 

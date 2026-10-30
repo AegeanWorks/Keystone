@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `51`
-- **Total Classes**: `66`
-- **Total Top-Level Functions**: `54`
-- **Total Class Methods**: `331`
-- **Total Source Lines**: `5077`
+- **Total Python Modules**: `52`
+- **Total Classes**: `68`
+- **Total Top-Level Functions**: `56`
+- **Total Class Methods**: `337`
+- **Total Source Lines**: `5335`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `203` lines (`10072` bytes)
+**Size**: `209` lines (`10465` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -42,14 +42,15 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `255` lines (`10338` bytes)
+**Size**: `298` lines (`12463` bytes)
 
 **Functions:**
 - `def _rows(pixels, width, height, flip)`
 - `def _stats(pixels, width, height, background, flip)`
 - `def _node_report(scene, width, height)`
-- `def analyze_frame(scene, pixels, width, height, image_path)`
-- `def compare_reports(before, after)` - *Compare two schema-1 frame reports for AI-driven visual regression.*
+- `def analyze_frame(scene, pixels, width, height, image_path, ui)`
+- `def _compare_ui(before, after)`
+- `def compare_reports(before, after)` - *Compare schema-1 or schema-2 frame reports for AI-driven regression checks.*
 - `def diff_images(before, after, output, threshold)` - *Write a visual diff PNG and return changed-pixel statistics.*
 - `def write_report(path, report)`
 
@@ -58,7 +59,7 @@
 ### [`keystone/app.py`](keystone/app.py)
 > *Game-agnostic engine runtime: window, fixed step, input, render and capture.*
 
-**Size**: `222` lines (`8165` bytes)
+**Size**: `227` lines (`8426` bytes)
 
 **Classes:**
 - `class Engine` - *Owns the runtime around one external GameModule.*
@@ -504,14 +505,18 @@
 ### [`keystone/ui/canvas.py`](keystone/ui/canvas.py)
 > *Screen-space 2D canvas built from clipped color quads and bitmap text.*
 
-**Size**: `74` lines (`3113` bytes)
+**Size**: `124` lines (`4348` bytes)
 
 **Classes:**
+- `class TextElement` - *One text draw call recorded for AI/UI reports.*
+- `class ButtonElement` - *One interactive button recorded for AI/UI reports.*
 - `class Canvas` - *Collects UI quads in top-left pixel coordinates and flattens them for GL.*
   - Method `.__init__(width, height)`
+  - Property `.labels` - *Return the drawn text values in draw order.*
   - Method `._add(x, y, width, height, color)`
   - Method `.rect(x, y, width, height, color)` - *Append an axis-aligned filled rectangle, clipped to the canvas.*
   - Method `.text(x, y, text, color, scale)` - *Append bitmap text; lowercase is drawn as uppercase.*
+  - Method `.add_button(x, y, width, height, label, action, selected, hovered)` - *Record button metadata; drawing stays with the widgets module.*
   - Method `.vertices()` - *Return interleaved x, y, r, g, b, a vertices for six triangles per quad.*
   - Method `.measured_height(scale)` - *Return the line height matching a text call at the same scale.*
 
@@ -547,7 +552,7 @@
 ### [`keystone/ui/overlay.py`](keystone/ui/overlay.py)
 > *Game-agnostic human overlay: HUD, controls help and pause menu.*
 
-**Size**: `132` lines (`5698` bytes)
+**Size**: `142` lines (`5975` bytes)
 
 **Classes:**
 - `class HudState` - *Presentation-only snapshot the overlay needs for one frame.*
@@ -557,6 +562,16 @@
   - Method `.hit_test(x, y)` - *Return the action of the button under the pointer, if any.*
   - Method `._menu(canvas, state, scale, line)`
   - Method `.build(state, game_draw)`
+
+---
+
+### [`keystone/ui/report.py`](keystone/ui/report.py)
+> *Serialize a rendered UI canvas into machine-readable report metadata.*
+
+**Size**: `38` lines (`1208` bytes)
+
+**Functions:**
+- `def describe_canvas(canvas, paused, visible)` - *Return stable top-left pixel metadata for labels and buttons.*
 
 ---
 
@@ -574,7 +589,7 @@
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
-**Size**: `104` lines (`4293` bytes)
+**Size**: `164` lines (`6315` bytes)
 
 **Classes:**
 - `class AnalysisTest`
@@ -582,6 +597,8 @@
   - Method `.test_scene_nodes_have_projected_screen_bounds()`
   - Method `.test_png_hash_and_atomic_report()`
   - Method `.test_compare_reports_detects_image_and_stats_changes()`
+  - Method `.test_ui_metadata_is_hashed_and_compared()`
+  - Method `.test_compare_reports_accepts_schema_1_without_ui()`
   - Method `.test_compare_reports_rejects_unknown_schema()`
   - Method `.test_pixel_diff_writes_an_artifact_and_stats()`
   - Method `.test_pixel_diff_rejects_dimension_mismatch()`
@@ -592,7 +609,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `225` lines (`10126` bytes)
+**Size**: `254` lines (`11515` bytes)
 
 **Classes:**
 - `class HudCube`
@@ -607,6 +624,7 @@
   - Method `.test_out_requires_headless()`
   - Method `.test_ui_flags_are_limited_to_rendered_runs()`
   - Method `.test_headless_ui_capture_writes_a_report()`
+  - Method `.test_start_paused_headless_report_describes_the_menu()`
   - Method `.test_bad_game_spec_reports_why_and_fix()`
   - Method `.test_describe_cli_prints_capabilities_without_opening_a_window()`
   - Method `.test_verify_determinism_cli_is_gpu_free()`
@@ -912,7 +930,7 @@
 ### [`tests/test_ui.py`](tests/test_ui.py)
 > *Tests for the dependency-free human UI primitives and overlay.*
 
-**Size**: `127` lines (`5062` bytes)
+**Size**: `144` lines (`5961` bytes)
 
 **Classes:**
 - `class FontTest`
@@ -930,6 +948,7 @@
   - Method `.test_pause_banner_and_hidden_overlay()`
   - Method `.test_game_ui_draws_beneath_the_engine_hud()`
   - Method `.test_pause_menu_buttons_are_hit_testable()`
+  - Method `.test_canvas_metadata_is_report_ready()`
   - Method `.test_compact_layout_uses_smaller_text()`
   - Method `.test_tiny_canvas_is_clipped_without_errors()`
 

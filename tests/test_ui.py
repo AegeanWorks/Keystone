@@ -6,6 +6,7 @@ from keystone.ui.canvas import Canvas
 from keystone.ui.font import GLYPH_HEIGHT, GLYPH_WIDTH, glyph, line_height, text_width
 from keystone.ui.menu import MenuItem, PauseMenu
 from keystone.ui.overlay import HudState, HumanOverlay
+from keystone.ui.report import describe_canvas
 
 
 class FontTest(unittest.TestCase):
@@ -115,6 +116,22 @@ class OverlayTest(unittest.TestCase):
         overlay.toggle()
         self.assertEqual(overlay.build(state(paused=True)).quads, [])
         self.assertEqual(overlay.hits, [])
+
+    def test_canvas_metadata_is_report_ready(self):
+        overlay = HumanOverlay()
+        canvas = overlay.build(state(paused=True))
+        report = describe_canvas(canvas, paused=True, visible=True)
+        self.assertTrue(report["visible"])
+        self.assertTrue(report["paused"])
+        self.assertIn("KEYSTONE", [label["text"] for label in report["labels"]])
+        self.assertEqual([button["action"] for button in report["buttons"]], ["resume", "toggle_ui", "quit"])
+        self.assertTrue(report["buttons"][0]["selected"])
+        self.assertEqual(len(report["buttons"][0]["rect"]), 4)
+        overlay.toggle()
+        hidden = describe_canvas(overlay.build(state()), paused=False, visible=False)
+        self.assertFalse(hidden["visible"])
+        self.assertEqual(hidden["labels"], [])
+        self.assertEqual(hidden["buttons"], [])
 
     def test_compact_layout_uses_smaller_text(self):
         canvas = HumanOverlay().build(state(width=400, height=240))

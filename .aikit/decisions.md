@@ -179,3 +179,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The human overlay showed engine/runtime information, but an external game had no supported way to draw its own health, score or panels; it would have needed to fork the engine or draw 3D proxies.
 - **Decision**: If a game exposes a callable `draw_ui(canvas, state)`, the Engine passes it to the overlay builder, which calls it before drawing the engine HUD and pause menu. The hook receives the same `Canvas` and `HudState` used by the HUD and is skipped when the overlay is hidden or UI is disabled. `describe_game()` reports `capabilities.game_ui`.
 - **Consequences**: Games can add HUD pixels with the dependency-free font/canvas toolkit while the required five-operation contract stays unchanged. The hook is presentation-only and receives no input dispatch; game UI participates in `--ui` captures and report/diff workflows like any other pixel.
+
+### ADR-022: Capture structured UI metadata in schema-2 frame reports
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: The human UI was visible in PNGs, but an AI reading a frame report could not tell which labels and buttons were on screen, which menu item was selected, or whether the game was paused; UI regressions were only pixel diffs.
+- **Decision**: Record `TextElement`/`ButtonElement` metadata on the `Canvas`, add `ui.report.describe_canvas()`, and include an optional `ui` object in the frame report: visibility, pause state, labels with text/position/scale/color and buttons with label/action/rect/selected/hovered. Bump the report schema to 2; include `ui` in the report hash only when present; diff UI labels/buttons in `compare_reports()`; accept schema-1 reports as baselines. Add `--start-paused` so the pause menu can be captured headlessly.
+- **Consequences**: AI and human reviewers get structural UI evidence alongside pixels. `--no-ui` reports keep `ui: null` and their old hash behavior; schema-1 baselines remain comparable. UI metadata is presentation-only, and volatile labels (FPS/time) make deterministic headless captures the reliable baseline.

@@ -55,12 +55,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--size", type=_size, default=(960, 540), metavar="WxH", help="framebuffer size, e.g. 1280x720")
     parser.add_argument("--ui", action="store_true", help="draw the human HUD/help overlay (default: windowed only)")
     parser.add_argument("--no-ui", action="store_true", help="disable the human overlay")
+    parser.add_argument("--start-paused", action="store_true", help="start a rendered run with gameplay paused")
     parser.add_argument("--out", type=Path, default=None, help="PNG for rendering; JSON report for --simulate")
     parser.add_argument("--report", type=Path, default=None, help="machine-readable frame report (requires --headless)")
     args = parser.parse_args(argv)
     if args.describe and (
         args.headless or args.simulate or args.verify_determinism or args.expect_hash
         or args.compare_baseline or args.out or args.report or args.actions or args.trace
+        or args.ui or args.no_ui or args.start_paused
     ):
         parser.error("--describe is a standalone discovery command")
     if args.headless and args.simulate:
@@ -69,6 +71,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--ui and --no-ui are mutually exclusive")
     if (args.ui or args.no_ui) and (args.describe or args.simulate or args.verify_determinism):
         parser.error("--ui/--no-ui apply to rendered runs, not discovery or simulation commands")
+    if args.start_paused and (args.simulate or args.verify_determinism):
+        parser.error("--start-paused applies to rendered runs, not simulation commands")
     if args.verify_determinism and (args.headless or args.simulate or args.report or args.compare_baseline):
         parser.error("--verify-determinism is a standalone no-GL command")
     if args.expect_hash and not (args.simulate or args.verify_determinism):
@@ -136,6 +140,8 @@ def main(argv: list[str] | None = None) -> int:
             title=f"Keystone | {getattr(game, 'name', 'game')}",
             ui=args.ui or (not args.headless and not args.no_ui),
         )
+        if args.start_paused:
+            engine.toggle_pause()
         rendered = engine.run(max_frames=args.frames if args.frames else (1 if args.headless else 0))
         if args.out or args.report:
             engine.capture(args.out, args.report)

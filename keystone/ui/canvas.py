@@ -2,10 +2,37 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from keystone.ui.font import glyph, line_height, text_width
 
 Color = tuple[float, float, float, float]
 Quad = tuple[float, float, float, float, Color]
+
+
+@dataclass(frozen=True, slots=True)
+class TextElement:
+    """One text draw call recorded for AI/UI reports."""
+
+    text: str
+    x: float
+    y: float
+    scale: int
+    color: Color
+
+
+@dataclass(frozen=True, slots=True)
+class ButtonElement:
+    """One interactive button recorded for AI/UI reports."""
+
+    label: str
+    action: str
+    x: float
+    y: float
+    width: float
+    height: float
+    selected: bool
+    hovered: bool
 
 
 class Canvas:
@@ -17,7 +44,13 @@ class Canvas:
         self.width = width
         self.height = height
         self.quads: list[Quad] = []
-        self.labels: list[str] = []
+        self.text_elements: list[TextElement] = []
+        self.buttons: list[ButtonElement] = []
+
+    @property
+    def labels(self) -> list[str]:
+        """Return the drawn text values in draw order."""
+        return [element.text for element in self.text_elements]
 
     def _add(self, x: float, y: float, width: float, height: float, color: Color) -> None:
         left = max(0.0, x)
@@ -38,7 +71,7 @@ class Canvas:
         if scale < 1:
             raise ValueError("text scale must be at least 1")
         value = str(text).upper()
-        self.labels.append(value)
+        self.text_elements.append(TextElement(value, x, y, scale, color))
         cursor = x
         for character in value:
             rows = glyph(character)
@@ -59,6 +92,23 @@ class Canvas:
                         color,
                     )
             cursor += text_width(character, scale) + scale
+
+    def add_button(
+        self,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+        label: str,
+        action: str,
+        selected: bool = False,
+        hovered: bool = False,
+    ) -> None:
+        """Record button metadata; drawing stays with the widgets module."""
+        if width > 0 and height > 0:
+            self.buttons.append(
+                ButtonElement(label.upper(), action, x, y, width, height, selected, hovered)
+            )
 
     def vertices(self) -> list[float]:
         """Return interleaved x, y, r, g, b, a vertices for six triangles per quad."""

@@ -71,6 +71,16 @@ class HumanOverlay:
                 and y <= state.pointer[1] <= y + button_height
             )
             button(canvas, left + pad, y, button_width, button_height, item.label, scale, index == self.menu.index, hovered)
+            canvas.add_button(
+                left + pad,
+                y,
+                button_width,
+                button_height,
+                item.label,
+                item.action,
+                index == self.menu.index,
+                hovered,
+            )
             self.hits.append((float(left + pad), float(y), float(button_width), float(button_height), item.action))
         hint_y = button_y + menu_height + 4 * scale
         canvas.text(left + pad, hint_y, "UP/DOWN OR W/S SELECT", DIM, 1)

@@ -136,7 +136,11 @@ Windowed runs draw a HUD by default; `--no-ui` turns it off and `--ui` adds it t
 ```bash
 python -m keystone --no-ui
 python -m keystone --headless --frames 1 --size 960x540 --ui --out hud.png --report hud.json
+python -m keystone --headless --frames 1 --size 960x540 --ui --start-paused \
+  --out paused.png --report paused.json
 ```
+
+`--start-paused` renders the pause menu immediately, which is useful for UI screenshots and AI UI reports.
 
 The overlay contains:
 
@@ -161,7 +165,7 @@ The overlay contains:
 - **AI discovery and testing**: `--describe`/`describe_game()` expose actions, capabilities, report schema and the current snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; `keystone.testing` provides the same evidence as Python helpers; `compare_reports()` diffs two frame reports.
 - **Visual regression gate**: `--compare-baseline baseline.json` renders a new report, compares image/report hashes, stats and projected nodes, prints the diff and exits non-zero on image change. `--diff-out diff.png` writes a changed-pixel diff image.
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip image loading, changed-pixel counts, bbox and a visual diff without third-party imaging libraries.
-- **Frame reports for AI analysis**: `--report` writes a schema-1 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data and projected screen bounds for every scene node.
+- **Frame reports for AI analysis**: `--report` writes a schema-2 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data, projected screen bounds for every scene node, and structured UI labels/buttons when the overlay is rendered.
 - **Human overlay**: a game-agnostic HUD with game/status, FPS, frame, elapsed time and resolution, plus controls help and an interactive pause menu; drawn with an embedded 5×7 bitmap font, no font asset or imaging library. Games can add their own HUD through the optional `draw_ui(canvas, state)` hook.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
 
@@ -232,9 +236,10 @@ The report contains:
 - image path, dimensions, PNG and RGBA SHA-256, plus an optional pixel-diff summary;
 - mean RGB/luminance, content pixels/ratio, content bounding box, dominant colors and an 8×8 luminance grid;
 - camera parameters;
-- every scene node's world position, visibility, triangle count and projected screen center/bounding box.
+- every scene node's world position, visibility, triangle count and projected screen center/bounding box;
+- when `--ui` is active: `ui.visible`, `ui.paused`, every label's text/position/scale/color and every button's label, action, rect, selection and hover state. `ui` is `null` for clean captures.
 
-This lets an AI model compare a frame, a scene graph and a deterministic simulation without guessing from pixels alone. `keystone.analysis.compare_reports(before, after)` returns image/report equality, luminance and content-ratio deltas, bbox changes, and added/removed/changed nodes. It does not claim to measure visual quality.
+This lets an AI model compare a frame, a scene graph, a deterministic simulation and the human interface without guessing from pixels alone. `keystone.analysis.compare_reports(before, after)` returns image/report equality, luminance and content-ratio deltas, bbox changes, added/removed/changed nodes, and added/removed/moved labels and buttons. It does not claim to measure visual quality.
 
 ## 📦 What's Inside
 
@@ -268,6 +273,7 @@ keystone/
 │   │   ├── canvas.py         <- clipped screen-space quads and text
 │   │   ├── widgets.py        <- panels and menu buttons
 │   │   ├── menu.py           <- pure pause-menu selection state
+│   │   ├── report.py         <- UI labels/buttons for AI reports
 │   │   └── overlay.py        <- HUD, controls help and pause menu
 │   └── gpu/
 │       ├── __init__.py       <- GPU adapter package marker
@@ -279,7 +285,7 @@ keystone/
 ├── assets/
 │   ├── octahedron.obj        <- generic sample OBJ
 │   ├── engine.png            <- sample frame
-│   └── engine.json           <- schema-1 sample frame report
+│   └── engine.json           <- schema-2 sample frame report
 ├── docs/
 │   ├── ARCHITECTURE.md       <- core layers, contract and roadmap
 │   └── AI_GUIDE.md           <- discover, simulate, verify, render and compare
