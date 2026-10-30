@@ -131,3 +131,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: A headless command and a single frame report are not enough for an AI client: it must discover the action/snapshot contract, assert a scenario is deterministic, and compare a baseline against a new frame. Without a stable contract those steps become ad-hoc scripts.
 - **Decision**: Add `describe_game()` and `--describe` for capability/action/snapshot discovery; `keystone.testing.run_script()`, `verify_determinism()` and `assert_deterministic()` for deterministic scenarios; and `analysis.compare_reports()` for image/report/stat/node diffs. All are core, GL-free where possible, and versioned separately from a game's own actions.
 - **Consequences**: AI clients have a discovery → simulate → verify → render → compare loop with JSON evidence. Reports remain descriptive rather than aesthetic judgments, and games still own their action semantics.
+
+### ADR-016: Make verification and baseline comparison first-class CLI workflows
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: `keystone.testing` and `compare_reports()` were library-only, forcing an AI client to write Python wrappers for the two most common checks: repeat a scenario deterministically and gate a frame against a baseline.
+- **Decision**: Add `--verify-determinism` (no GL, two runs, exit 0 only on matching hashes) and `--compare-baseline` (requires `--headless` and `--report`, prints image/stat/node diff, exits non-zero on image change). Publish `REPORT_SCHEMA` through `describe_game()`/`--describe`.
+- **Consequences**: AI/CI clients get direct exit-code gates and schema discovery. Visual comparison is image-hash first; descriptive statistics and node changes are evidence, not aesthetic judgment.

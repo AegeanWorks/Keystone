@@ -24,6 +24,8 @@ class GameModule(Protocol):
 
 def describe_game(game: GameModule) -> dict[str, object]:
     """Return a machine-readable capability/action/snapshot description."""
+    from keystone.analysis import REPORT_SCHEMA
+
     return {
         "schema": 1,
         "game": getattr(game, "name", "game"),
@@ -32,7 +34,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
         "capabilities": {
             "simulate": True,
             "render": True,
-            "report_schema": 1,
+            "report_schema": REPORT_SCHEMA,
         },
     }
 

@@ -9,8 +9,8 @@
 - **Total Python Modules**: `43`
 - **Total Classes**: `55`
 - **Total Top-Level Functions**: `43`
-- **Total Class Methods**: `277`
-- **Total Source Lines**: `3947`
+- **Total Class Methods**: `279`
+- **Total Source Lines**: `4027`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `123` lines (`5336` bytes)
+**Size**: `163` lines (`7441` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -41,7 +41,7 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `195` lines (`7818` bytes)
+**Size**: `211` lines (`8539` bytes)
 
 **Functions:**
 - `def _rows(pixels, width, height, flip)`
@@ -344,7 +344,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `59` lines (`2002` bytes)
+**Size**: `61` lines (`2063` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -490,7 +490,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `91` lines (`3778` bytes)
+**Size**: `112` lines (`4910` bytes)
 
 **Classes:**
 - `class EngineTest`
@@ -499,8 +499,10 @@
   - Method `.test_out_requires_headless()`
   - Method `.test_bad_game_spec_reports_why_and_fix()`
   - Method `.test_describe_cli_prints_capabilities_without_opening_a_window()`
+  - Method `.test_verify_determinism_cli_is_gpu_free()`
   - Method `.test_simulate_cli_prints_json_without_opening_a_window()`
   - Method `.test_simulate_cli_reads_actions_and_writes_output()`
+  - Method `.test_compare_baseline_cli_exits_zero_for_an_identical_frame()`
   - Method `.test_capture_report_and_png()`
 
 ---
@@ -652,7 +654,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `42` lines (`1370` bytes)
+**Size**: `43` lines (`1451` bytes)
 
 **Classes:**
 - `class PluginTest`

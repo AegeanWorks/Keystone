@@ -13,6 +13,22 @@ from keystone.serialization import write_json_atomic
 
 GRID = 8
 
+REPORT_SCHEMA = {
+    "version": 1,
+    "fields": {
+        "image": ["path", "width", "height", "rgba_sha256", "png_sha256"],
+        "stats": ["mean_rgb", "mean_luma", "content_pixels", "content_ratio", "content_bbox", "dominant_colors", "grid_luma"],
+        "scene": ["camera", "node_count", "nodes"],
+        "node": ["name", "parent", "visible", "world", "screen", "bbox", "triangles"],
+        "diagnostics": ["hash", "schema"],
+    },
+    "notes": [
+        "grid_luma is an 8x8 backward-compatible luminance summary.",
+        "screen and bbox are top-down image coordinates; screen may be null behind the camera.",
+        "hash covers image metadata, stats and projected nodes, not visual quality.",
+    ],
+}
+
 
 def _rows(pixels: bytes, width: int, height: int, flip: bool) -> list[bytes]:
     rows = [pixels[row * width * 4 : (row + 1) * width * 4] for row in range(height)]

@@ -93,9 +93,9 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 - `load_actions()` accepts a JSON list or an object with `actions`; every item is an `ActionState`.
 - `analysis.analyze_frame(scene, pixels, width, height, image_path)` returns schema-1 JSON: image hashes, pixel statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data and projected node bounds. `Engine.capture(image, report)` writes both artifacts.
 - `analysis.compare_reports(before, after)` returns image/report equality, luminance/content-ratio deltas, bbox changes and added/removed/changed nodes.
-- `describe_game()` exposes `name`, `actions()`, `snapshot()` and capabilities; `--describe` prints it without a window.
-- `testing.run_script()`, `verify_determinism()` and `assert_deterministic()` turn an action script into test evidence.
-- `--simulate` requires no GPU; `--headless` renders off-screen; `--report` documents a rendered frame; `--describe` discovers the contract.
+- `describe_game()` exposes `name`, `actions()`, `snapshot()`, capabilities and the versioned report schema; `--describe` prints it without a window.
+- `testing.run_script()`, `verify_determinism()` and `assert_deterministic()` turn an action script into test evidence; `--verify-determinism` exposes the two-run check to agents.
+- `--simulate` requires no GPU; `--headless` renders off-screen; `--report` documents a rendered frame; `--compare-baseline` gates visual changes; `--describe` discovers the contract.
 - These are core APIs, not a game harness: they never import a game module or know a genre.
 
 ## 4. Dependency Rules
@@ -147,8 +147,10 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - `python -m pytest -q` passes.
 - `python -m keystone --describe` prints the game contract without a window.
 - `python -m keystone --simulate --frames 1` runs without OpenGL.
+- `python -m keystone --verify-determinism --frames 2` exits 0 only for matching hashes.
 - `python -m keystone --headless --frames 1 --size 64x48` renders the sample.
 - `python -m keystone --headless --frames 1 --out frame.png --report frame.json` writes both artifacts.
+- `--compare-baseline baseline.json` exits non-zero on image change.
 - `compare_reports()` detects image, stat and projected-node changes.
 - `python -m keystone --game missing.module:Factory` exits 1 with `Why:`/`Fix:`.
 - `keystone/` contains no game rules and imports no external game.

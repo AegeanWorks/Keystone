@@ -28,6 +28,10 @@ Games plug in through one five-operation contract. Keystone ships a **cube demo*
   ```bash
   python -m keystone --describe
   ```
+- **Verify a scenario is deterministic**:
+  ```bash
+  python -m keystone --verify-determinism --frames 120
+  ```
 - **Simulate without OpenGL**:
   ```bash
   python -m keystone --simulate --frames 120 --trace
@@ -107,7 +111,8 @@ The bundled `CubeDemo` uses the generic action map:
 - **Replay and persistence**: `ActionState` command logs, stable hashes and atomic JSON writes with a `.bak` snapshot.
 - **Plugin loading**: `load_game("package.module:Factory")` validates the five-operation contract before the engine starts.
 - **No-GL simulation**: `run_simulation()` and `--simulate` drive `GameModule.update()` directly, with JSON action scripts and deterministic hashes, no window or driver required.
-- **AI discovery and testing**: `--describe`/`describe_game()` expose actions, capabilities and the current snapshot; `keystone.testing` runs a script twice and returns deterministic evidence; `compare_reports()` diffs two frame reports.
+- **AI discovery and testing**: `--describe`/`describe_game()` expose actions, capabilities, report schema and the current snapshot; `--verify-determinism` runs a script twice; `keystone.testing` provides the same evidence as Python helpers; `compare_reports()` diffs two frame reports.
+- **Visual regression gate**: `--compare-baseline baseline.json` renders a new report, compares image/report hashes, stats and projected nodes, prints the diff and exits non-zero on image change.
 - **Frame reports for AI analysis**: `--report` writes a schema-1 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data and projected screen bounds for every scene node.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
 
@@ -119,7 +124,17 @@ The bundled `CubeDemo` uses the generic action map:
 python -m keystone --describe
 ```
 
-The JSON response contains the game name, `actions()` schema, current `snapshot()` and capabilities (`simulate`, `render`, `report_schema`). It is the first call an AI client should make.
+The JSON response contains the game name, `actions()` schema, current `snapshot()`, capabilities (`simulate`, `render`) and the versioned report schema. It is the first call an AI client should make.
+
+### Verify determinism and visual regressions
+
+```bash
+python -m keystone --verify-determinism --frames 120 --actions actions.json
+python -m keystone --headless --frames 1 --size 1280x720 \
+  --out frame.png --report current.json --compare-baseline baseline.json
+```
+
+The first command runs the scenario twice and exits 0 only when both hashes match. The second renders, writes the current report, compares it with the baseline and exits non-zero when the image changed. The diff includes luminance/content deltas and changed/added/removed nodes.
 
 ### Simulate without a GPU
 
@@ -162,7 +177,7 @@ python -m keystone --headless --frames 1 --size 1280x720 \
 
 The report contains:
 
-- `schema` and a stable report `hash`;
+- `schema`, report field schema and a stable report `hash`;
 - image path, dimensions, PNG and RGBA SHA-256;
 - mean RGB/luminance, content pixels/ratio, content bounding box, dominant colors and an 8×8 luminance grid;
 - camera parameters;

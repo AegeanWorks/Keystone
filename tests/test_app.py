@@ -51,6 +51,14 @@ class EngineTest(unittest.TestCase):
         self.assertEqual(payload["game"], "cube-demo")
         self.assertTrue(payload["capabilities"]["simulate"])
 
+    def test_verify_determinism_cli_is_gpu_free(self):
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            self.assertEqual(main(["--verify-determinism", "--frames", "2"]), 0)
+        payload = json.loads(buffer.getvalue())
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["first"], payload["second"])
+
     def test_simulate_cli_prints_json_without_opening_a_window(self):
         buffer = io.StringIO()
         with contextlib.redirect_stdout(buffer):
@@ -71,6 +79,19 @@ class EngineTest(unittest.TestCase):
                     0,
                 )
             self.assertEqual(json.loads(out.read_text(encoding="utf-8"))["frames"], 2)
+
+    def test_compare_baseline_cli_exits_zero_for_an_identical_frame(self):
+        with tempfile.TemporaryDirectory() as directory:
+            baseline = Path(directory) / "baseline.json"
+            current = Path(directory) / "current.json"
+            common = ["--headless", "--frames", "1", "--size", "32x24"]
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(main([*common, "--report", str(baseline)]), 0)
+            buffer = io.StringIO()
+            with contextlib.redirect_stdout(buffer):
+                code = main([*common, "--report", str(current), "--compare-baseline", str(baseline)])
+            self.assertEqual(code, 0)
+            self.assertTrue(json.loads(buffer.getvalue())["diff"]["same_image"])
 
     def test_capture_report_and_png(self):
         game = CubeDemo()
