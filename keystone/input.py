@@ -21,6 +21,8 @@ DEFAULT_BINDINGS = {
     "look_down": "down",
     "sprint": "left_shift",
     "toggle_capture": "f1",
+    "toggle_ui": "h",
+    "pause": "p",
     "quit": "escape",
 }
 

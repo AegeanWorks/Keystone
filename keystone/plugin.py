@@ -34,6 +34,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
         "capabilities": {
             "simulate": True,
             "render": True,
+            "human_ui": {"overlay": True, "toggle": "h", "pause": "p"},
             "report_schema": REPORT_SCHEMA,
         },
     }

@@ -18,6 +18,7 @@ class PluginTest(unittest.TestCase):
         self.assertEqual(payload["schema"], 1)
         self.assertEqual(payload["game"], "cube-demo")
         self.assertTrue(payload["capabilities"]["simulate"])
+        self.assertTrue(payload["capabilities"]["human_ui"]["overlay"])
         self.assertEqual(payload["capabilities"]["report_schema"]["version"], 1)
         self.assertIn("axes", payload["actions"])
         self.assertIn("time", payload["snapshot"])

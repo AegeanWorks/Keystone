@@ -1,6 +1,6 @@
 # Keystone Architecture
 
-**Status:** implemented in v0.8.0 — core-only engine  
+**Status:** implemented in v0.14.0 — core-only engine with human UI  
 **Boundary:** `keystone/` is game-agnostic; games are external modules.
 
 ## 1. What Keystone Is
@@ -13,6 +13,7 @@ Keystone is a small 3D engine core. It owns the runtime that any game needs:
 - scene graph and transforms;
 - meshes, materials, primitives and asset loading;
 - forward rendering and screenshots;
+- a human HUD, controls help and pause overlay;
 - collision queries;
 - deterministic action logs and stable hashes;
 - atomic JSON persistence;
@@ -40,10 +41,11 @@ keystone/
 ├── mesh_builder.py   static geometry composition
 ├── primitives.py     cube, plane, cone, cylinder, sphere
 ├── obj_loader.py     streaming OBJ
-├── png.py            screenshot writer
+├── png.py            PNG writer and reader
 ├── math3d.py         Vec3, Mat4, Quat
 ├── samples.py        CubeDemo smoke test
-└── gpu/              GLFW context, GLSL, buffers, forward renderer
+├── ui/               bitmap font, screen canvas, human overlay
+└── gpu/              GLFW context, GLSL, buffers, 3D and UI renderers
 ```
 
 ## 3. Runtime Contract
@@ -75,13 +77,14 @@ The engine owns the runtime; the game owns its state and rules. The engine never
 Engine.run
   -> poll events / resize
   -> sample InputMap -> ActionState
-  -> handle quit / mouse capture
-  -> for each fixed step: GameModule.update(dt, actions)
+  -> handle quit / mouse capture / HUD / pause
+  -> for each fixed step: GameModule.update(dt, actions) unless paused
   -> Renderer.render(GameModule scene)
+  -> UiRenderer.draw(HumanOverlay.build(HudState))
   -> swap and update the title
 ```
 
-Headless runs advance exactly one fixed step per rendered frame. Visible runs use `FixedStepClock` with a 0.25 s catch-up cap.
+Headless runs advance exactly one fixed step per rendered frame. Visible runs use `FixedStepClock` with a 0.25 s catch-up cap. Pausing stops gameplay updates but keeps rendering, input and the overlay alive.
 
 ### Determinism
 
@@ -94,9 +97,9 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 - `analysis.analyze_frame(scene, pixels, width, height, image_path)` returns schema-1 JSON: image hashes, pixel statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data and projected node bounds. `Engine.capture(image, report)` writes both artifacts.
 - `analysis.compare_reports(before, after)` returns image/report equality, luminance/content-ratio deltas, bbox changes and added/removed/changed nodes.
 - `analysis.diff_images(before, after, output)` reads PNGs, writes a visual diff and returns changed-pixel count/ratio, bbox and mean/max delta; `png.read_png()` is the dependency-free reader.
-- `describe_game()` exposes `name`, `actions()`, `snapshot()`, capabilities and the versioned report schema; `--describe` prints it without a window.
+- `describe_game()` exposes `name`, `actions()`, `snapshot()`, capabilities (`simulate`, `render`, `human_ui`) and the versioned report schema; `--describe` prints it without a window.
 - `testing.run_script()`, `verify_determinism()` and `assert_deterministic()` turn an action script into test evidence; `--verify-determinism` exposes the two-run check to agents; `--expect-hash` pins a final result.
-- `--simulate` requires no GPU; `--headless` renders off-screen; `--report` documents a rendered frame; `--compare-baseline` gates visual changes; `--describe` discovers the contract.
+- `--simulate` requires no GPU; `--headless` renders off-screen; `--ui` adds the human overlay to a capture; `--no-ui` disables it; `--report` documents a rendered frame; `--compare-baseline` gates visual changes; `--describe` discovers the contract.
 - `docs/AI_GUIDE.md` is the end-to-end workflow reference.
 - These are core APIs, not a game harness: they never import a game module or know a genre.
 
@@ -127,6 +130,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | AI discovery | Implemented | describe_game/--describe contract introspection |
 | AI testing | Implemented | deterministic scenario helpers |
 | Frame report | Implemented | image statistics, projected nodes and report diff |
+| Human UI | Implemented | bitmap font, canvas, HUD/help, pause banner |
 | Physics | Implemented (queries) | rays, AABB, sphere overlap/pushout |
 | Audio | Missing | future core module |
 | ECS | Optional/missing | evaluate after a real workload |
@@ -140,7 +144,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 4. **Renderer** — instancing/batching, shadows, PBR, post-processing, sRGB/linear color.
 5. **Input/audio** — rebinding, action contexts, mixer and buses.
 6. **Serialization/replay** — versioned scene/save format, undo/rewind, replay runner.
-7. **Tooling** — inspector, asset browser, profiler, editor hooks.
+7. **Tooling** — inspector, asset browser, profiler, richer HUD widgets and editor hooks.
 
 Each core system must have a game-agnostic test and must not introduce genre vocabulary.
 
@@ -151,7 +155,9 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - `python -m keystone --simulate --frames 1` runs without OpenGL.
 - `python -m keystone --verify-determinism --frames 2` exits 0 only for matching hashes.
 - `python -m keystone --simulate --frames 1 --expect-hash <hash>` exits 0 only for the pinned hash.
-- `python -m keystone --headless --frames 1 --size 64x48` renders the sample.
+- `--headless --frames 1 --size 64x48` renders the sample.
+- `--headless --frames 1 --ui --report hud.json` captures the human overlay.
+- `--no-ui` keeps windowed and headless captures free of overlay pixels.
 - `python -m keystone --headless --frames 1 --out frame.png --report frame.json` writes both artifacts.
 - `--compare-baseline baseline.json` exits non-zero on image change.
 - `--diff-out diff.png` writes a visual pixel diff.

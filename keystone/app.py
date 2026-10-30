@@ -7,9 +7,11 @@ from pathlib import Path
 from keystone.clock import FixedStepClock
 from keystone.gpu.context import GLContext
 from keystone.gpu.renderer import Renderer
+from keystone.gpu.ui_renderer import UiRenderer
 from keystone.input import ActionState, InputMap
 from keystone.plugin import GameModule
 from keystone.scene import Scene
+from keystone.ui.overlay import HudState, HumanOverlay
 
 
 class Engine:
@@ -23,6 +25,7 @@ class Engine:
         visible: bool = True,
         msaa: int = 0,
         title: str = "Keystone",
+        ui: bool = False,
     ) -> None:
         self.game = game
         self.context = GLContext(width, height, title, visible, msaa)
@@ -31,18 +34,30 @@ class Engine:
         except Exception:
             self.context.close()
             raise
+        self.ui_renderer: UiRenderer | None = None
+        self.overlay: HumanOverlay | None = HumanOverlay() if ui else None
         try:
+            if ui:
+                self.ui_renderer = UiRenderer()
             self.scene = game.build_scene()
         except Exception:
+            if self.ui_renderer is not None:
+                self.ui_renderer.release()
             self.renderer.release()
             self.context.close()
             raise
         if not isinstance(self.scene, Scene):
+            if self.ui_renderer is not None:
+                self.ui_renderer.release()
             self.renderer.release()
             self.context.close()
             raise TypeError("GameModule.build_scene() must return a Scene")
         self.input = InputMap()
         self.clock = FixedStepClock()
+        self.paused = False
+        self._frames = 0
+        self._elapsed = 0.0
+        self._fps = 0.0
         self._visible = visible
         self._closed = False
         self._captured = visible
@@ -64,6 +79,29 @@ class Engine:
             self._captured = not self._captured
             self.context.set_cursor_captured(self._captured)
             self.input.set_mouse_enabled(self._captured)
+        if "toggle_ui" in actions.pressed and self.overlay is not None:
+            self.overlay.toggle()
+        if "pause" in actions.pressed:
+            self.toggle_pause()
+
+    def toggle_pause(self) -> None:
+        """Pause or resume gameplay while keeping rendering and UI responsive."""
+        self.paused = not self.paused
+
+    def _draw_ui(self) -> None:
+        if self.overlay is None or self.ui_renderer is None:
+            return
+        state = HudState(
+            game=getattr(self.game, "name", "game"),
+            status=self.game.status(),
+            fps=self._fps,
+            frame=self._frames,
+            elapsed=self._elapsed,
+            width=self.renderer.width,
+            height=self.renderer.height,
+            paused=self.paused,
+        )
+        self.ui_renderer.draw(self.overlay.build(state))
 
     def run(self, max_frames: int = 0) -> int:
         """Run until the window closes or max_frames (0 = unlimited) is reached."""
@@ -92,15 +130,20 @@ class Engine:
             self._handle_system_actions(actions)
             if self.context.should_close():
                 break
-            for index, dt in enumerate(steps):
-                self.game.update(dt, actions if index == 0 else actions.without_pressed())
+            if not self.paused:
+                for index, dt in enumerate(steps):
+                    self.game.update(dt, actions if index == 0 else actions.without_pressed())
+                self._elapsed += sum(steps)
             self.renderer.render(self.scene)
+            self._draw_ui()
             if self._visible:
                 self.context.swap_buffers()
             frames += 1
+            self._frames = frames
             fps_frames += 1
             if self._visible and now - fps_start >= 0.5:
                 fps = fps_frames / max(now - fps_start, 1e-6)
+                self._fps = fps
                 self.context.set_title(
                     f"Keystone | {self.game.status()} | {fps:.0f} FPS | {self.renderer.width}x{self.renderer.height}"
                 )
@@ -110,6 +153,7 @@ class Engine:
 
     def capture(self, image_path: str | Path | None, report_path: str | Path | None = None) -> None:
         self.renderer.render(self.scene)
+        self._draw_ui()
         pixels = self.renderer.read_pixels()
         if image_path is not None:
             from keystone.png import write_png
@@ -134,5 +178,7 @@ class Engine:
         if self._closed:
             return
         self._closed = True
+        if self.ui_renderer is not None:
+            self.ui_renderer.release()
         self.renderer.release()
         self.context.close()

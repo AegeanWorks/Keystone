@@ -53,6 +53,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--trace", action="store_true", help="include per-frame snapshots in simulation output")
     parser.add_argument("--frames", type=_frames, default=0, help="frame count (default: 1 headless, or until close)")
     parser.add_argument("--size", type=_size, default=(960, 540), metavar="WxH", help="framebuffer size, e.g. 1280x720")
+    parser.add_argument("--ui", action="store_true", help="draw the human HUD/help overlay (default: windowed only)")
+    parser.add_argument("--no-ui", action="store_true", help="disable the human overlay")
     parser.add_argument("--out", type=Path, default=None, help="PNG for rendering; JSON report for --simulate")
     parser.add_argument("--report", type=Path, default=None, help="machine-readable frame report (requires --headless)")
     args = parser.parse_args(argv)
@@ -63,6 +65,10 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--describe is a standalone discovery command")
     if args.headless and args.simulate:
         parser.error("--headless and --simulate are mutually exclusive")
+    if args.ui and args.no_ui:
+        parser.error("--ui and --no-ui are mutually exclusive")
+    if (args.ui or args.no_ui) and (args.describe or args.simulate or args.verify_determinism):
+        parser.error("--ui/--no-ui apply to rendered runs, not discovery or simulation commands")
     if args.verify_determinism and (args.headless or args.simulate or args.report or args.compare_baseline):
         parser.error("--verify-determinism is a standalone no-GL command")
     if args.expect_hash and not (args.simulate or args.verify_determinism):
@@ -128,6 +134,7 @@ def main(argv: list[str] | None = None) -> int:
             visible=not args.headless,
             msaa=0 if args.headless else 4,
             title=f"Keystone | {getattr(game, 'name', 'game')}",
+            ui=args.ui or (not args.headless and not args.no_ui),
         )
         rendered = engine.run(max_frames=args.frames if args.frames else (1 if args.headless else 0))
         if args.out or args.report:

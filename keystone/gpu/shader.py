@@ -67,6 +67,9 @@ class ShaderProgram:
     def set_mat3(self, name: str, values: tuple[float, ...]) -> None:
         GL.glUniformMatrix3fv(self._location(name), 1, GL.GL_FALSE, values)
 
+    def set_vec2(self, name: str, x: float, y: float) -> None:
+        GL.glUniform2f(self._location(name), x, y)
+
     def set_vec3(self, name: str, vector: Vec3) -> None:
         GL.glUniform3f(self._location(name), vector.x, vector.y, vector.z)
 

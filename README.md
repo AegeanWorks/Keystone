@@ -4,7 +4,7 @@
 
 ![Keystone engine sample](assets/engine.png)
 
-A small, game-agnostic 3D engine core in Python: OpenGL 3.3 rendering, scene graph, meshes and OBJ loading, fixed-step loop, action input, collision primitives, deterministic replay and atomic serialization.
+A small, game-agnostic 3D engine core in Python: OpenGL 3.3 rendering, scene graph, meshes and OBJ loading, fixed-step loop, action input, collision primitives, deterministic replay, atomic serialization, and a human HUD/help overlay rendered with an embedded bitmap font.
 
 Games plug in through one five-operation contract. Keystone ships a **cube demo** only as a smoke test; it contains no combat, puzzles, procedural worlds or other genre rules. External game modules live outside this package and load with `--game package.module:Factory`.
 
@@ -20,9 +20,13 @@ Games plug in through one five-operation contract. Keystone ships a **cube demo*
   ```bash
   python -m keystone
   ```
-- **Render headlessly**:
+- **Hide or disable the human overlay**:
   ```bash
-  python -m keystone --headless --frames 1 --size 1280x720 --out frame.png
+  python -m keystone --no-ui
+  ```
+- **Render headlessly with the HUD**:
+  ```bash
+  python -m keystone --headless --frames 1 --size 960x540 --ui --out hud.png
   ```
 - **Discover a game from an AI client**:
   ```bash
@@ -92,7 +96,7 @@ The engine owns the window, OpenGL context, renderer, fixed clock, input samplin
 
 ## 🕹️ Sample Controls
 
-The bundled `CubeDemo` uses the generic action map:
+The bundled `CubeDemo` uses the generic action map; the overlay shows it at runtime:
 
 | Input | Action |
 |---|---|
@@ -101,8 +105,29 @@ The bundled `CubeDemo` uses the generic action map:
 | `E` / `Q` | Up / down |
 | Mouse | Look |
 | Arrow keys | Keyboard look |
+| `P` | Pause / resume gameplay |
+| `H` | Hide / show the HUD and help |
 | `F1` | Release / recapture the mouse |
 | `Esc` | Quit |
+
+Pausing stops `GameModule.update()` while the window, renderer and overlay stay responsive. The overlay is presentation-only: it never mutates game state.
+
+## 🖥️ Human UI
+
+Windowed runs draw a HUD by default; `--no-ui` turns it off and `--ui` adds it to a headless capture:
+
+```bash
+python -m keystone --no-ui
+python -m keystone --headless --frames 1 --size 960x540 --ui --out hud.png --report hud.json
+```
+
+The overlay contains:
+
+- game name, game status, FPS, frame number, elapsed simulation time and resolution;
+- a controls panel (`P` pause, `H` hide, `F1` cursor, `Esc` quit);
+- a centered pause banner.
+
+`keystone.ui` is split into an embedded 5×7 font, a clipped screen-space `Canvas`, and `HumanOverlay`; `keystone.gpu.ui_renderer` uploads the canvas as one alpha-blended draw call. A headless report that includes `--ui` measures the same pixels a person sees.
 
 ## 🚀 Features
 
@@ -119,6 +144,7 @@ The bundled `CubeDemo` uses the generic action map:
 - **Visual regression gate**: `--compare-baseline baseline.json` renders a new report, compares image/report hashes, stats and projected nodes, prints the diff and exits non-zero on image change. `--diff-out diff.png` writes a changed-pixel diff image.
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip image loading, changed-pixel counts, bbox and a visual diff without third-party imaging libraries.
 - **Frame reports for AI analysis**: `--report` writes a schema-1 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data and projected screen bounds for every scene node.
+- **Human overlay**: a game-agnostic HUD with game/status, FPS, frame, elapsed time and resolution, plus controls help and a pause banner; drawn with an embedded 5×7 bitmap font, no font asset or imaging library.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
 
 ## 🤖 AI Testing & Frame Analysis
@@ -129,7 +155,7 @@ The bundled `CubeDemo` uses the generic action map:
 python -m keystone --describe
 ```
 
-The JSON response contains the game name, `actions()` schema, current `snapshot()`, capabilities (`simulate`, `render`) and the versioned report schema. It is the first call an AI client should make.
+The JSON response contains the game name, `actions()` schema, current `snapshot()`, capabilities (`simulate`, `render`, `human_ui`) and the versioned report schema. It is the first call an AI client should make.
 
 ### Verify determinism and visual regressions
 
@@ -216,13 +242,18 @@ keystone/
 │   ├── mesh_builder.py       <- merge boxes, quads and meshes
 │   ├── primitives.py         <- cube, plane, cone, cylinder and sphere
 │   ├── obj_loader.py         <- streaming Wavefront OBJ loader
-│   ├── png.py                <- dependency-free PNG writer
+│   ├── png.py                <- dependency-free PNG writer and reader
 │   ├── samples.py            <- CubeDemo smoke test
+│   ├── ui/
+│   │   ├── font.py           <- embedded 5x7 bitmap font
+│   │   ├── canvas.py         <- clipped screen-space quads and text
+│   │   └── overlay.py        <- HUD, controls help and pause banner
 │   └── gpu/
 │       ├── __init__.py       <- GPU adapter package marker
 │       ├── context.py        <- GLFW window and OpenGL 3.3 context
 │       ├── shader.py         <- GLSL compilation and uniforms
 │       ├── mesh_buffer.py    <- VAO/VBO/EBO upload and drawing
+│       ├── ui_renderer.py    <- screen-space alpha-blended UI draw
 │       └── renderer.py       <- forward renderer, sky, lights, readback
 ├── assets/
 │   ├── octahedron.obj        <- generic sample OBJ
@@ -235,7 +266,8 @@ keystone/
 │   ├── test_math3d.py        <- math core
 │   ├── test_scene.py         <- hierarchy, camera and lights
 │   ├── test_geometry.py      <- meshes, primitives, builder and OBJ
-│   ├── test_png.py           <- PNG writer
+│   ├── test_png.py           <- PNG writer and reader
+│   ├── test_ui.py            <- font, canvas and overlay
 │   ├── test_renderer.py      <- headless OpenGL integration
 │   ├── test_input.py         <- action mapping and ActionState
 │   ├── test_clock.py         <- fixed-step clock
@@ -271,12 +303,14 @@ GameModule (external)
 Engine
   -> GLContext / InputMap / FixedStepClock
   -> Renderer.render(scene)
+  -> UiRenderer.draw(HumanOverlay.build(state))
 ```
 
 - `keystone.*` imports only the standard library, declared dependencies and other core modules.
 - A game imports the public `keystone` API; it never reaches into another game.
 - `GameModule` is a five-method Protocol, not an inheritance tree.
 - `ActionState` is a frozen DTO; bindings live in `InputMap`.
+- `HudState` is a frozen DTO; the overlay reads it and never writes game state.
 - `CommandLog` records deterministic action frames; `stable_hash()` fingerprints snapshots.
 - `write_json_atomic()` replaces state with a temp file, fsync, `.bak` and `os.replace`.
 

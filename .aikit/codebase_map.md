@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `43`
-- **Total Classes**: `55`
-- **Total Top-Level Functions**: `47`
-- **Total Class Methods**: `285`
-- **Total Source Lines**: `4243`
+- **Total Python Modules**: `49`
+- **Total Classes**: `62`
+- **Total Top-Level Functions**: `51`
+- **Total Class Methods**: `314`
+- **Total Source Lines**: `4802`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `196` lines (`9509` bytes)
+**Size**: `203` lines (`10072` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -58,14 +58,16 @@
 ### [`keystone/app.py`](keystone/app.py)
 > *Game-agnostic engine runtime: window, fixed step, input, render and capture.*
 
-**Size**: `138` lines (`4873` bytes)
+**Size**: `184` lines (`6596` bytes)
 
 **Classes:**
 - `class Engine` - *Owns the runtime around one external GameModule.*
-  - Method `.__init__(game, width, height, visible, msaa, title)`
+  - Method `.__init__(game, width, height, visible, msaa, title, ui)`
   - Method `.__enter__()`
   - Method `.__exit__(*exc_info)`
   - Method `._handle_system_actions(actions)`
+  - Method `.toggle_pause()` - *Pause or resume gameplay while keeping rendering and UI responsive.*
+  - Method `._draw_ui()`
   - Method `.run(max_frames)` - *Run until the window closes or max_frames (0 = unlimited) is reached.*
   - Method `.capture(image_path, report_path)`
   - Method `.screenshot(path)`
@@ -131,7 +133,7 @@
 ### [`keystone/gpu/context.py`](keystone/gpu/context.py)
 > *GLFW window and OpenGL 3.3 context lifecycle with deterministic teardown.*
 
-**Size**: `143` lines (`4890` bytes)
+**Size**: `145` lines (`4932` bytes)
 
 **Classes:**
 - `class GLContext` - *A hidden or visible GLFW window owning one OpenGL 3.3 core context.*
@@ -194,7 +196,7 @@
 ### [`keystone/gpu/shader.py`](keystone/gpu/shader.py)
 > *GLSL program compilation, uniform upload and cleanup.*
 
-**Size**: `80` lines (`3054` bytes)
+**Size**: `83` lines (`3169` bytes)
 
 **Classes:**
 - `class ShaderProgram` - *A linked vertex/fragment program with cached uniform locations.*
@@ -204,8 +206,22 @@
   - Method `._location(name)`
   - Method `.set_mat4(name, matrix)`
   - Method `.set_mat3(name, values)`
+  - Method `.set_vec2(name, x, y)`
   - Method `.set_vec3(name, vector)`
   - Method `.set_float(name, value)`
+  - Method `.release()`
+
+---
+
+### [`keystone/gpu/ui_renderer.py`](keystone/gpu/ui_renderer.py)
+> *Screen-space OpenGL renderer for the human UI canvas.*
+
+**Size**: `94` lines (`3027` bytes)
+
+**Classes:**
+- `class UiRenderer` - *Uploads one canvas per frame and draws it over the 3D scene.*
+  - Method `.__init__()`
+  - Method `.draw(canvas)` - *Draw the canvas with alpha blending, then restore 3D render state.*
   - Method `.release()`
 
 ---
@@ -224,7 +240,7 @@
 ### [`keystone/input.py`](keystone/input.py)
 > *Generic input mapping: named actions, axes and pointer look.*
 
-**Size**: `117` lines (`3953` bytes)
+**Size**: `119` lines (`3993` bytes)
 
 **Classes:**
 - `class ActionState` - *One sampled input frame; games translate names into their own rules.*
@@ -346,7 +362,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `61` lines (`2063` bytes)
+**Size**: `62` lines (`2135` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -475,6 +491,57 @@
 
 ---
 
+### [`keystone/ui/__init__.py`](keystone/ui/__init__.py)
+> *Dependency-free human UI: bitmap font, canvas and HUD overlay.*
+
+**Size**: `6` lines (`213` bytes)
+
+---
+
+### [`keystone/ui/canvas.py`](keystone/ui/canvas.py)
+> *Screen-space 2D canvas built from clipped color quads and bitmap text.*
+
+**Size**: `74` lines (`3113` bytes)
+
+**Classes:**
+- `class Canvas` - *Collects UI quads in top-left pixel coordinates and flattens them for GL.*
+  - Method `.__init__(width, height)`
+  - Method `._add(x, y, width, height, color)`
+  - Method `.rect(x, y, width, height, color)` - *Append an axis-aligned filled rectangle, clipped to the canvas.*
+  - Method `.text(x, y, text, color, scale)` - *Append bitmap text; lowercase is drawn as uppercase.*
+  - Method `.vertices()` - *Return interleaved x, y, r, g, b, a vertices for six triangles per quad.*
+  - Method `.measured_height(scale)` - *Return the line height matching a text call at the same scale.*
+
+---
+
+### [`keystone/ui/font.py`](keystone/ui/font.py)
+> *Embedded 5x7 bitmap font for the dependency-free human overlay.*
+
+**Size**: `80` lines (`4634` bytes)
+
+**Functions:**
+- `def glyph(character)` - *Return the 7x5 rows for one character; lowercase maps to uppercase.*
+- `def text_width(text, scale)` - *Return the pixel width of text, excluding trailing tracking.*
+- `def line_height(scale)` - *Return the pixel height of one uppercase text line.*
+
+---
+
+### [`keystone/ui/overlay.py`](keystone/ui/overlay.py)
+> *Game-agnostic human overlay: HUD, controls help and pause banner.*
+
+**Size**: `117` lines (`4540` bytes)
+
+**Classes:**
+- `class HudState` - *Presentation-only snapshot the overlay needs for one frame.*
+- `class HumanOverlay` - *Builds the pixel UI and tracks whether the person hid it.*
+  - Method `.__init__()`
+  - Method `.toggle()`
+  - Method `._panel(canvas, x, y, width, height, color)`
+  - Method `._truncate(text, width, scale)`
+  - Method `.build(state)`
+
+---
+
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
@@ -496,13 +563,17 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `143` lines (`6324` bytes)
+**Size**: `187` lines (`8442` bytes)
 
 **Classes:**
 - `class EngineTest`
   - Method `.test_headless_engine_runs_fixed_steps_and_saves_a_png()`
+  - Method `.test_ui_overlay_changes_the_captured_frame()`
+  - Method `.test_pause_stops_updates_but_keeps_rendering()`
   - Method `.test_bad_size_is_a_usage_error()`
   - Method `.test_out_requires_headless()`
+  - Method `.test_ui_flags_are_limited_to_rendered_runs()`
+  - Method `.test_headless_ui_capture_writes_a_report()`
   - Method `.test_bad_game_spec_reports_why_and_fix()`
   - Method `.test_describe_cli_prints_capabilities_without_opening_a_window()`
   - Method `.test_verify_determinism_cli_is_gpu_free()`
@@ -662,7 +733,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `43` lines (`1451` bytes)
+**Size**: `44` lines (`1523` bytes)
 
 **Classes:**
 - `class PluginTest`
@@ -799,5 +870,28 @@
   - Method `.test_verify_determinism_passes_for_the_sample()`
   - Method `.test_assert_deterministic_returns_evidence()`
   - Method `.test_trace_mode_is_available()`
+
+---
+
+### [`tests/test_ui.py`](tests/test_ui.py)
+> *Tests for the dependency-free human UI primitives and overlay.*
+
+**Size**: `82` lines (`3023` bytes)
+
+**Classes:**
+- `class FontTest`
+  - Method `.test_metrics_match_the_bitmap_grid()`
+  - Method `.test_lowercase_and_unknown_characters_are_supported()`
+- `class CanvasTest`
+  - Method `.test_rect_is_clipped_to_canvas_bounds()`
+  - Method `.test_text_records_labels_and_stays_inside_the_canvas()`
+  - Method `.test_invalid_geometry_is_rejected()`
+- `class OverlayTest`
+  - Method `.test_overlay_shows_game_status_and_metrics()`
+  - Method `.test_pause_banner_and_hidden_overlay()`
+  - Method `.test_compact_layout_uses_smaller_text()`
+
+**Functions:**
+- `def state(**overrides)`
 
 ---

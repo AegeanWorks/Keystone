@@ -155,3 +155,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The report comparison could say that an image changed, but an AI or human reviewer had no pixel-level artifact or changed-region evidence.
 - **Decision**: Add `png.read_png()` for 8-bit RGBA non-interlaced PNGs (all PNG filters), and `analysis.diff_images()` to compare two PNGs, write a visual diff, and report changed pixels/ratio, bbox, mean/max channel delta. Wire `--diff-out` into `--compare-baseline`.
 - **Consequences**: Baseline checks now produce both JSON and a diff image without third-party imaging libraries. The reader intentionally supports only RGBA 8-bit non-interlaced files; other PNG variants fail with a clear error.
+
+### ADR-019: Give the human runtime a first-class, game-agnostic HUD
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: The engine had become excellent for AI clients but a person launching the window had no in-engine HUD, control reference or pause feedback; the title bar was the only status surface.
+- **Decision**: Add `keystone.ui` (embedded 5×7 bitmap font, clipped `Canvas`, `HumanOverlay`/`HudState`) and `gpu.ui_renderer.UiRenderer` for one alpha-blended screen-space draw. The Engine draws the overlay after the 3D scene, toggles it with `H`, pauses gameplay with `P` without stopping rendering, and exposes `--ui`/`--no-ui`. Windowed runs default to UI on; headless captures default to off so existing report hashes and baselines stay stable.
+- **Consequences**: People get a readable HUD, controls help and pause banner with no font/asset dependency. The overlay is presentation-only and never mutates game state. UI pixels are included in `--ui` reports, so UI screenshots can be reviewed by the same report/diff workflow; `--no-ui` preserves clean scene captures.

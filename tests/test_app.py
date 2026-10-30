@@ -26,6 +26,33 @@ class EngineTest(unittest.TestCase):
             engine.screenshot(path)
             self.assertTrue(path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n"))
 
+    def test_ui_overlay_changes_the_captured_frame(self):
+        with tempfile.TemporaryDirectory() as directory:
+            plain_path = Path(directory) / "plain.png"
+            ui_path = Path(directory) / "ui.png"
+            plain = Engine(CubeDemo(), 160, 120, visible=False)
+            plain.run(max_frames=1)
+            plain.screenshot(plain_path)
+            plain.close()
+            overlay = Engine(CubeDemo(), 160, 120, visible=False, ui=True)
+            self.addCleanup(overlay.close)
+            overlay.run(max_frames=1)
+            overlay.screenshot(ui_path)
+            self.assertNotEqual(plain_path.read_bytes(), ui_path.read_bytes())
+
+    def test_pause_stops_updates_but_keeps_rendering(self):
+        game = CubeDemo()
+        engine = Engine(game, 48, 32, visible=False)
+        self.addCleanup(engine.close)
+        engine.run(max_frames=1)
+        paused_at = game.snapshot()["time"]
+        engine.toggle_pause()
+        self.assertEqual(engine.run(max_frames=3), 3)
+        self.assertEqual(game.snapshot()["time"], paused_at)
+        engine.toggle_pause()
+        engine.run(max_frames=1)
+        self.assertGreater(game.snapshot()["time"], paused_at)
+
     def test_bad_size_is_a_usage_error(self):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
             main(["--size", "wide"])
@@ -35,6 +62,23 @@ class EngineTest(unittest.TestCase):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
             main(["--out", "frame.png"])
         self.assertEqual(caught.exception.code, 2)
+
+    def test_ui_flags_are_limited_to_rendered_runs(self):
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+            main(["--simulate", "--ui"])
+        self.assertEqual(caught.exception.code, 2)
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+            main(["--ui", "--no-ui"])
+        self.assertEqual(caught.exception.code, 2)
+
+    def test_headless_ui_capture_writes_a_report(self):
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / "ui.json"
+            with contextlib.redirect_stdout(io.StringIO()):
+                code = main(["--headless", "--frames", "1", "--size", "160x120", "--ui", "--report", str(report)])
+            self.assertEqual(code, 0)
+            payload = json.loads(report.read_text(encoding="utf-8"))
+            self.assertEqual(payload["schema"], 1)
 
     def test_bad_game_spec_reports_why_and_fix(self):
         stderr = io.StringIO()

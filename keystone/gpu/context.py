@@ -25,6 +25,8 @@ _KEYS = {
     "down": glfw.KEY_DOWN,
     "left": glfw.KEY_LEFT,
     "right": glfw.KEY_RIGHT,
+    "h": glfw.KEY_H,
+    "p": glfw.KEY_P,
     "escape": glfw.KEY_ESCAPE,
     "f1": glfw.KEY_F1,
 }

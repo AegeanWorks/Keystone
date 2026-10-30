@@ -13,7 +13,7 @@ The JSON response contains:
 - `game`: name;
 - `actions`: the game's action schema;
 - `snapshot`: the current state shape;
-- `capabilities`: `simulate`, `render` and the versioned `report_schema`.
+- `capabilities`: `simulate`, `render`, `human_ui` and the versioned `report_schema`.
 
 ## 2. Simulate without OpenGL
 
@@ -63,6 +63,17 @@ python -m keystone --headless --frames 1 --size 1280x720 \
 ```
 
 The diff reports image/report equality, luminance and content-ratio deltas, bbox changes, and added/removed/changed nodes. `--diff-out` additionally writes a visual PNG and reports changed pixels, ratio, bbox, mean delta and max delta. Exit code 0 means the image hash matched; 1 means it changed.
+
+## 6. Capture the human UI
+
+Windowed runs draw the HUD by default. For an AI inspection of what a person sees, add `--ui` to a headless run:
+
+```bash
+python -m keystone --headless --frames 1 --size 960x540 --ui \
+  --out hud.png --report hud.json
+```
+
+The overlay reports game/status, FPS, frame, elapsed time, resolution, controls and pause state. It is presentation-only: `--simulate` and `--verify-determinism` stay GPU-free, and `--no-ui` keeps captures pixel-identical to the pre-overlay behavior.
 
 ## Python helpers
 
