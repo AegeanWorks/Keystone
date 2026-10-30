@@ -2,6 +2,7 @@
 
 import tempfile
 import unittest
+from dataclasses import dataclass
 from pathlib import Path
 
 from keystone.analysis import (
@@ -15,6 +16,12 @@ from keystone.geometry import Material
 from keystone.math3d import Vec3
 from keystone.png import write_png
 from keystone.samples import CubeDemo
+from keystone.scene import Node, Scene
+
+
+@dataclass(frozen=True)
+class Health:
+    value: int
 
 
 class AnalysisTest(unittest.TestCase):
@@ -65,6 +72,22 @@ class AnalysisTest(unittest.TestCase):
         root = next(node for node in report["scene"]["nodes"] if node["name"] == "")
         self.assertNotIn("material", root)
 
+    def test_scene_identity_metadata_is_reported(self):
+        scene = Scene()
+        scene.camera.position = Vec3(0.0, 0.0, 5.0)
+        hero = scene.add(Node("hero", id="hero-1", tags={"player", "lit"}, layer="actors"))
+        hero.add_component(Health(3))
+        report = analyze_frame(scene, bytes((0, 0, 0, 255)) * 4, 2, 2)
+        entry = next(node for node in report["scene"]["nodes"] if node["id"] == "hero-1")
+        self.assertEqual(entry["name"], "hero")
+        self.assertEqual(entry["parent_id"], "root")
+        self.assertEqual(entry["tags"], ["lit", "player"])
+        self.assertEqual(entry["layer"], "actors")
+        self.assertEqual(entry["components"], ["Health"])
+        root = next(node for node in report["scene"]["nodes"] if node["id"] == "root")
+        self.assertEqual(root["tags"], [])
+        self.assertEqual(root["components"], [])
+
     def test_png_hash_and_atomic_report(self):
         game = CubeDemo()
         scene = game.build_scene()
@@ -88,7 +111,7 @@ class AnalysisTest(unittest.TestCase):
         self.assertIn("changed_nodes", diff)
 
     def test_ui_metadata_is_hashed_and_compared(self):
-        self.assertEqual(REPORT_SCHEMA["version"], 3)
+        self.assertEqual(REPORT_SCHEMA["version"], 4)
         game = CubeDemo()
         pixels = bytes((0, 0, 0, 255)) * 4
         first = analyze_frame(
@@ -134,13 +157,44 @@ class AnalysisTest(unittest.TestCase):
 
     def test_compare_reports_accepts_older_schemas(self):
         report = analyze_frame(CubeDemo().build_scene(), bytes((0, 0, 0, 255)) * 4, 2, 2)
-        for version in (1, 2):
+        for version in (1, 2, 3):
             legacy = dict(report)
             legacy["schema"] = version
             legacy.pop("ui")
             diff = compare_reports(legacy, report)
             self.assertTrue(diff["same_ui"])
-            self.assertEqual(diff["schema"], 3)
+            self.assertEqual(diff["schema"], 4)
+
+    def test_compare_reports_detects_identity_metadata_changes(self):
+        first_scene = Scene()
+        first_scene.camera.position = Vec3(0.0, 0.0, 5.0)
+        first_scene.add(Node("hero", id="hero-1", tags={"player"}, layer="actors"))
+        second_scene = Scene()
+        second_scene.camera.position = Vec3(0.0, 0.0, 5.0)
+        hero = second_scene.add(Node("hero", id="hero-1", tags={"enemy"}, layer="props"))
+        hero.add_component(Health(9))
+        diff = compare_reports(
+            analyze_frame(first_scene, bytes((0, 0, 0, 255)) * 4, 2, 2),
+            analyze_frame(second_scene, bytes((0, 0, 0, 255)) * 4, 2, 2),
+        )
+        self.assertIn("hero-1", diff["changed_nodes"])
+
+    def test_compare_reports_distinguishes_duplicate_names_by_id(self):
+        first_scene = Scene()
+        first_scene.camera.position = Vec3(0.0, 0.0, 5.0)
+        first_scene.add(Node("duplicate", id="first"))
+        first_scene.add(Node("duplicate", id="second"))
+        second_scene = Scene()
+        second_scene.camera.position = Vec3(0.0, 0.0, 5.0)
+        second_scene.add(Node("duplicate", id="first"))
+        pixels = bytes((0, 0, 0, 255)) * 4
+        diff = compare_reports(
+            analyze_frame(first_scene, pixels, 2, 2),
+            analyze_frame(second_scene, pixels, 2, 2),
+        )
+        self.assertEqual(diff["removed_nodes"], ["second"])
+        self.assertEqual(diff["added_nodes"], [])
+        self.assertNotIn("first", diff["changed_nodes"])
 
     def test_compare_reports_detects_material_changes(self):
         pixels = bytes((0, 0, 0, 255)) * 4

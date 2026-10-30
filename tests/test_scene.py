@@ -2,10 +2,16 @@
 
 import math
 import unittest
+from dataclasses import dataclass
 
 from keystone.camera import PerspectiveCamera
 from keystone.math3d import Mat4, Quat, Vec3
 from keystone.scene import DirectionalLight, Node, PointLight, Scene, Transform
+
+
+@dataclass(frozen=True)
+class Health:
+    value: int
 
 
 class TransformTest(unittest.TestCase):
@@ -80,6 +86,85 @@ class NodeTest(unittest.TestCase):
         self.assertTrue(child.world_visible())
         parent.visible = False
         self.assertFalse(child.world_visible())
+
+
+class NodeIdentityTest(unittest.TestCase):
+    def test_scene_assigns_unique_ids_on_attach(self):
+        scene = Scene()
+        first = scene.add(Node("first"))
+        second = scene.add(Node("second"))
+        self.assertEqual(scene.root.id, "root")
+        self.assertEqual(first.id, "node-1")
+        self.assertEqual(second.id, "node-2")
+
+    def test_ids_are_scene_local_and_survive_reparenting(self):
+        first = Scene()
+        second = Scene()
+        moved = first.add(Node("moved"))
+        parent = first.add(Node("parent"))
+        original = moved.id
+        first.root.add_child(moved)
+        parent.add_child(moved)
+        self.assertEqual(moved.id, original)
+        self.assertEqual(second.add(Node("other")).id, "node-1")
+
+    def test_explicit_id_is_preserved_and_findable(self):
+        scene = Scene()
+        hero = scene.add(Node("hero", id="hero-1"))
+        self.assertEqual(hero.id, "hero-1")
+        self.assertIs(scene.find_by_id("hero-1"), hero)
+        self.assertIsNone(scene.find_by_id("missing"))
+
+    def test_duplicate_explicit_id_is_rejected_without_attaching(self):
+        scene = Scene()
+        scene.add(Node("first", id="duplicate"))
+        with self.assertRaises(ValueError):
+            scene.add(Node("second", id="duplicate"))
+        self.assertEqual(scene.query(name="second"), [])
+
+    def test_tags_are_copied_and_queryable(self):
+        tags = {"enemy"}
+        node = Node("raider", tags=tags)
+        tags.add("later")
+        node.add_tag("boss")
+        self.assertEqual(node.tags, {"enemy", "boss"})
+        scene = Scene()
+        scene.add(node)
+        self.assertEqual(scene.query(tag="boss"), [node])
+        node.remove_tag("boss")
+        self.assertEqual(scene.query(tag="boss"), [])
+
+    def test_layer_and_component_queries_filter_attached_nodes(self):
+        scene = Scene()
+        actor = scene.add(Node("actor", layer="actors"))
+        prop = scene.add(Node("prop", layer="props"))
+        actor.add_component(Health(5))
+        self.assertEqual(scene.query(layer="actors"), [actor])
+        self.assertEqual(scene.query(component=Health), [actor])
+        self.assertEqual(scene.query(tag="missing"), [])
+        self.assertIs(scene.find(name="act"), None)
+        self.assertIs(scene.find(name="actor"), actor)
+        self.assertIs(scene.find(layer="props"), prop)
+
+    def test_component_access_and_removal(self):
+        node = Node("actor")
+        node.add_component(Health(10))
+        self.assertTrue(node.has_component(Health))
+        self.assertEqual(node.get_component(Health).value, 10)
+        node.remove_component(Health)
+        self.assertFalse(node.has_component(Health))
+        with self.assertRaises(KeyError):
+            node.require_component(Health)
+
+    def test_invalid_identity_fields_are_rejected(self):
+        with self.assertRaises(ValueError):
+            Node("bad", layer="")
+        with self.assertRaises(ValueError):
+            Node("bad", tags={""})
+        with self.assertRaises(TypeError):
+            Node("bad", tags="enemy")
+        with self.assertRaises(TypeError):
+            Node("bad").add_component(None)
 
 
 class CameraTest(unittest.TestCase):

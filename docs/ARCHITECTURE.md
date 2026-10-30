@@ -1,6 +1,6 @@
 # Keystone Architecture
 
-**Status:** implemented in v0.18.0 — core-only engine with textured materials and human UI  
+**Status:** implemented in v0.19.0 — core-only engine with scene identity, textured materials and human UI
 **Boundary:** `keystone/` is game-agnostic; games are external modules.
 
 ## 1. What Keystone Is
@@ -35,7 +35,7 @@ keystone/
 ├── analysis.py       frame statistics, projected scene and report diff
 ├── testing.py        deterministic AI/CI scenario helpers
 ├── physics.py        Ray, AABB, Sphere, queries and pushout
-├── scene.py          Node, Transform, Scene, DirectionalLight, PointLight
+├── scene.py          Node, Transform, Scene identity/queries, DirectionalLight, PointLight
 ├── camera.py         PerspectiveCamera
 ├── geometry.py       MeshData, Material
 ├── mesh_builder.py   static geometry composition
@@ -70,6 +70,10 @@ The engine owns the runtime; the game owns its state and rules. The engine never
 
 A game may additionally expose `draw_ui(canvas, state)`. It is an optional presentation hook, not part of the five required operations, and receives the per-frame `Canvas` and `HudState`. `describe_game()` reports its presence as `capabilities.game_ui`.
 
+### Scene identity
+
+`Node` exposes `id`, `tags`, `layer` and `components`. `Scene` allocates deterministic per-scene IDs (`node-1`, `node-2`, ...) when a node is attached or first traversed, preserves explicit IDs, rejects duplicates, and keeps an ID across reparenting. `Scene.query()` and `Scene.find()` filter by name, tag, layer and component type; `Scene.find_by_id()` resolves an ID. Tags are strings, a node has one layer, and components are keyed by their class (one per type). Queries are linear scans; an index is a future optimization.
+
 ### Loading
 
 `load_game("package.module:Factory")` imports the module, calls the factory, and validates the five methods. Invalid specs fail before the window opens, with a CLI `Why:`/`Fix:` message.
@@ -97,8 +101,8 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 
 - `headless.run_simulation(game, frames, actions, step, trace)` calls `build_scene()` and then `update()` in fixed steps without importing the renderer or creating a GL context.
 - `load_actions()` accepts a JSON list or an object with `actions`; every item is an `ActionState`.
-- `analysis.analyze_frame(scene, pixels, width, height, image_path, ui=None)` returns schema-3 JSON: image hashes, pixel statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data, projected node bounds, material/texture metadata and optional UI labels/buttons. `Engine.capture(image, report)` writes both artifacts.
-- `analysis.compare_reports(before, after)` returns image/report equality, luminance/content-ratio deltas, bbox changes, added/removed/changed nodes (including material changes), and added/removed/moved UI labels and buttons. It accepts schema-1/2 reports as baselines.
+- `analysis.analyze_frame(scene, pixels, width, height, image_path, ui=None)` returns schema-4 JSON: image hashes, pixel statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data, projected node bounds with scene identity/tags/layers/components, material/texture metadata and optional UI labels/buttons. `Engine.capture(image, report)` writes both artifacts.
+- `analysis.compare_reports(before, after)` returns image/report equality, luminance/content-ratio deltas, bbox changes, added/removed/changed nodes (including identity, tag, layer, component and material changes), and added/removed/moved UI labels and buttons. It accepts schema-1/2/3 reports as baselines and keys schema-4 nodes by ID.
 - `analysis.diff_images(before, after, output)` reads PNGs, writes a visual diff and returns changed-pixel count/ratio, bbox and mean/max delta; `png.read_png()` is the dependency-free reader.
 - `TextureData` is immutable RGBA8 data with PNG and checker factories; `Material.texture` is sampled through mesh UVs with repeat wrapping and mipmaps, and the renderer caches one GPU texture per payload.
 - `keystone.ui.report.describe_canvas()` turns the rendered `Canvas` into `ui` metadata: visibility, pause state, label text/position/scale/color and button label/action/rect/selection/hover.
@@ -123,7 +127,8 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | System | Status | Responsibility |
 |---|---|---|
 | Math | Implemented | Vec3, Mat4, Quat, transforms |
-| Scene | Implemented | hierarchy, visibility, lights |
+| Scene | Implemented | hierarchy, visibility, lights, IDs, tags, layers and components |
+| Scene queries | Implemented | name/tag/layer/component filters and ID lookup |
 | Camera | Implemented | perspective and view matrices |
 | Geometry | Implemented | indexed meshes, materials, vertex colors |
 | Assets | Implemented | indexed meshes, materials, RGBA textures, OBJ, PNG |
@@ -144,7 +149,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 
 ## 6. Roadmap
 
-1. **Scene identity and components** — stable node IDs, tags/layers, optional ECS queries.
+1. **Scene identity and components** — implemented in v0.19.0; stable node IDs, tags/layers and typed component queries.
 2. **Physics** — broadphase, character controller, triggers, raycast filters.
 3. **Assets** — asset registry, material graphs, glTF, hot reload.
 4. **Renderer** — instancing/batching, shadows, PBR, post-processing, sRGB/linear color.
@@ -168,6 +173,9 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - Pausing opens a hit-testable Resume/Hide HUD/Quit menu and releases the cursor.
 - A game's optional `draw_ui(canvas, state)` contributes pixels to the same capture.
 - `compare_reports()` detects UI label/button changes when `ui` metadata is present.
+- `Scene` assigns unique IDs, preserves them across reparenting and rejects duplicate explicit IDs.
+- `Scene.query()`/`find()` filter by name, tag, layer and component; `find_by_id()` resolves an ID.
+- Schema-4 reports include node ID, parent ID, tags, layer and component names; older reports still compare by name.
 - `TextureData.checker()` renders through a textured plane and material metadata appears in reports.
 - `python -m keystone --headless --frames 1 --out frame.png --report frame.json` writes both artifacts.
 - `--compare-baseline baseline.json` exits non-zero on image change.

@@ -8,7 +8,7 @@ from keystone.plugin import GameModule
 from keystone.scene import Node, Scene, Transform
 from keystone.texture import TextureData
 
-__version__ = "0.18.0"
+__version__ = "0.19.0"
 __all__ = ["ActionState", "Engine", "GameModule", "Mat4", "Node", "Quat", "Scene", "TextureData", "Transform", "Vec3"]
 
 

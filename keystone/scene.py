@@ -1,12 +1,15 @@
-"""Scene graph: hierarchical transforms, visibility, camera and directional light."""
+"""Scene graph: hierarchical transforms, identity, components, camera and light."""
 
 from __future__ import annotations
 
 from collections.abc import Iterator
 from dataclasses import dataclass, field
+from typing import TypeVar
 
 from keystone.camera import PerspectiveCamera
 from keystone.math3d import Mat4, Quat, Vec3
+
+T = TypeVar("T")
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,7 +30,7 @@ class Transform:
 
 @dataclass(eq=False)
 class Node:
-    """A named transform node with optional renderable payload and children."""
+    """A named transform node with identity, tags, components and children."""
 
     name: str = ""
     transform: Transform = field(default_factory=Transform)
@@ -36,6 +39,62 @@ class Node:
     visible: bool = True
     parent: Node | None = field(default=None, repr=False)
     children: list[Node] = field(default_factory=list)
+    id: str = ""
+    tags: set[str] = field(default_factory=set)
+    layer: str = "default"
+    components: dict[type, object] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.id, str):
+            raise TypeError("node id must be a string")
+        if self.id and not self.id.strip():
+            raise ValueError("node id must not be blank")
+        if not isinstance(self.layer, str) or not self.layer:
+            raise ValueError("node layer must be a non-empty string")
+        if isinstance(self.tags, str):
+            raise TypeError("tags must be a collection of strings, not a string")
+        self.tags = set(self.tags)
+        for tag in self.tags:
+            if not isinstance(tag, str) or not tag:
+                raise ValueError("tags must be non-empty strings")
+        self.components = dict(self.components)
+        for component_type in self.components:
+            if not isinstance(component_type, type):
+                raise TypeError("component keys must be types")
+
+    def add_tag(self, tag: str) -> None:
+        if not isinstance(tag, str) or not tag:
+            raise ValueError("tags must be non-empty strings")
+        self.tags.add(tag)
+
+    def remove_tag(self, tag: str) -> None:
+        self.tags.discard(tag)
+
+    def has_tag(self, tag: str) -> bool:
+        return tag in self.tags
+
+    def add_component(self, component: T) -> T:
+        if component is None:
+            raise TypeError("component must not be None")
+        self.components[type(component)] = component
+        return component
+
+    def get_component(self, component_type: type[T]) -> T | None:
+        value = self.components.get(component_type)
+        return value if isinstance(value, component_type) else None
+
+    def require_component(self, component_type: type[T]) -> T:
+        value = self.get_component(component_type)
+        if value is None:
+            raise KeyError(f"node {self.id or self.name!r} has no {component_type.__name__}")
+        return value
+
+    def has_component(self, component_type: type) -> bool:
+        return component_type in self.components
+
+    def remove_component(self, component_type: type[T]) -> T | None:
+        value = self.components.pop(component_type, None)
+        return value if isinstance(value, component_type) else None
 
     def add_child(self, child: Node) -> None:
         if child is self or child.is_ancestor_of(self):
@@ -109,11 +168,15 @@ class PointLight:
             raise ValueError("point light intensity must be non-negative")
 
 
+def _root_node() -> Node:
+    return Node("", id="root")
+
+
 @dataclass
 class Scene:
-    """Root node, active camera, one directional light and atmosphere settings."""
+    """Root node, identity allocation, queries, camera, lights and atmosphere."""
 
-    root: Node = field(default_factory=Node)
+    root: Node = field(default_factory=_root_node)
     camera: PerspectiveCamera = field(default_factory=PerspectiveCamera)
     light: DirectionalLight = field(default_factory=DirectionalLight)
     point_light: PointLight | None = None
@@ -121,10 +184,84 @@ class Scene:
     background: Vec3 = Vec3(0.045, 0.055, 0.075)
     sky: Vec3 = Vec3(0.01, 0.015, 0.04)
     fog_density: float = 0.012
+    _next_id: int = field(default=1, init=False, repr=False)
 
     def add(self, node: Node) -> Node:
+        self._prepare(node)
         self.root.add_child(node)
         return node
 
     def traverse(self) -> Iterator[Node]:
+        self._prepare(self.root)
         return self.root.traverse()
+
+    def query(
+        self,
+        *,
+        name: str | None = None,
+        tag: str | None = None,
+        layer: str | None = None,
+        component: type | None = None,
+    ) -> list[Node]:
+        """Return every node matching all supplied filters."""
+        matches = []
+        for node in self.traverse():
+            if name is not None and node.name != name:
+                continue
+            if tag is not None and tag not in node.tags:
+                continue
+            if layer is not None and node.layer != layer:
+                continue
+            if component is not None and component not in node.components:
+                continue
+            matches.append(node)
+        return matches
+
+    def find(
+        self,
+        *,
+        name: str | None = None,
+        tag: str | None = None,
+        layer: str | None = None,
+        component: type | None = None,
+    ) -> Node | None:
+        """Return the first node matching all supplied filters."""
+        matches = self.query(name=name, tag=tag, layer=layer, component=component)
+        return matches[0] if matches else None
+
+    def find_by_id(self, node_id: str) -> Node | None:
+        for node in self.traverse():
+            if node.id == node_id:
+                return node
+        return None
+
+    def _used_ids(self, exclude: Node | None = None) -> set[str]:
+        if exclude is self.root:
+            return set()
+        detached = exclude is not None and exclude.parent is None
+        used = set()
+        for node in self.root.traverse():
+            if not detached and exclude is not None and (node is exclude or exclude.is_ancestor_of(node)):
+                continue
+            if node.id:
+                used.add(node.id)
+        return used
+
+    def _prepare(self, node: Node) -> None:
+        used = self._used_ids(exclude=node)
+        subtree = list(node.traverse())
+        for item in subtree:
+            if item.id:
+                if item.id in used:
+                    raise ValueError(f"duplicate node id: {item.id!r}")
+                used.add(item.id)
+        for item in subtree:
+            if item.id:
+                continue
+            while True:
+                candidate = f"node-{self._next_id}"
+                self._next_id += 1
+                if candidate not in used:
+                    break
+            item.id = candidate
+            used.add(candidate)

@@ -94,6 +94,32 @@ class MyGame:
 
 The engine owns the window, OpenGL context, renderer, fixed clock, input sampling and screenshots. The game owns its state, rules and scene contents. The engine never imports a game.
 
+### Scene identity and components
+
+A node carries a stable scene ID, tags, one layer and optional typed components:
+
+```python
+from dataclasses import dataclass
+
+from keystone.scene import Node, Scene
+
+
+@dataclass(frozen=True)
+class Health:
+    value: int
+
+
+scene = Scene()
+hero = scene.add(Node("hero", id="hero", tags={"player"}, layer="actors"))
+hero.add_component(Health(100))
+
+assert scene.find_by_id("hero") is hero
+assert scene.query(tag="player", layer="actors") == [hero]
+assert scene.query(component=Health) == [hero]
+```
+
+IDs are allocated per scene (`node-1`, `node-2`, ...) on attach or first traversal. An explicit `id` is kept, a duplicate is rejected, and reparenting preserves the ID. `tags` are a set of strings, `layer` is one string, and each node holds one component per type. Queries are linear scans over the scene; an index can be added when a real workload needs it.
+
 ### Optional game UI
 
 A game may add a `draw_ui(canvas, state)` method. It is optional; the five required operations do not change.
@@ -169,7 +195,7 @@ The overlay contains:
 ## 🚀 Features
 
 - **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth testing, back-face culling, Blinn-Phong lighting, vertex colors, fog, gradient sky and an optional point light.
-- **Scene graph**: named nodes, local/world transforms, visibility, cycle-safe parenting and cached static GPU meshes.
+- **Scene graph**: named nodes with stable per-scene IDs, tags, layers, optional typed components, local/world transforms, visibility, cycle-safe parenting, linear queries and cached static GPU meshes.
 - **Assets**: immutable `MeshData` with optional UVs and vertex colors, cube/plane/cone/cylinder/sphere primitives, a streaming OBJ loader, and an immutable `TextureData` with PNG and procedural checker sources.
 - **Textured materials**: `Material.texture` samples an RGBA texture with repeat wrapping and mipmaps; the renderer caches one GPU texture per immutable payload and the sample floor demonstrates a procedural checker.
 - **Fixed-step runtime**: `FixedStepClock` releases whole simulation steps with a bounded catch-up budget; the headless path advances exactly one step per rendered frame for deterministic tests.
@@ -181,7 +207,7 @@ The overlay contains:
 - **AI discovery and testing**: `--describe`/`describe_game()` expose actions, capabilities, report schema and the current snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; `keystone.testing` provides the same evidence as Python helpers; `compare_reports()` diffs two frame reports.
 - **Visual regression gate**: `--compare-baseline baseline.json` renders a new report, compares image/report hashes, stats and projected nodes, prints the diff and exits non-zero on image change. `--diff-out diff.png` writes a changed-pixel diff image.
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip image loading, changed-pixel counts, bbox and a visual diff without third-party imaging libraries.
-- **Frame reports for AI analysis**: `--report` writes a schema-3 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data, projected screen bounds for every scene node, material/texture metadata, and structured UI labels/buttons when the overlay is rendered.
+- **Frame reports for AI analysis**: `--report` writes a schema-4 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data, projected screen bounds and identity metadata (ID, parent ID, tags, layer, components) for every scene node, material/texture metadata, and structured UI labels/buttons when the overlay is rendered.
 - **Human overlay**: a game-agnostic HUD with game/status, FPS, frame, elapsed time and resolution, plus controls help and an interactive pause menu; drawn with an embedded 5×7 bitmap font, no font asset or imaging library. Games can add their own HUD through the optional `draw_ui(canvas, state)` hook.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
 
@@ -304,7 +330,7 @@ keystone/
 ├── assets/
 │   ├── octahedron.obj        <- generic sample OBJ
 │   ├── engine.png            <- sample frame
-│   └── engine.json           <- schema-3 sample frame report
+│   └── engine.json           <- schema-4 sample frame report
 ├── docs/
 │   ├── ARCHITECTURE.md       <- core layers, contract and roadmap
 │   └── AI_GUIDE.md           <- discover, simulate, verify, render and compare
@@ -365,7 +391,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the dependency rules, mod
 
 ## 🗺️ Core Roadmap
 
-1. Scene identity and optional ECS/component queries.
+1. ~~Scene identity and optional ECS/component queries.~~ Implemented in v0.19.0.
 2. Broadphase physics, character controller and trigger volumes.
 3. Asset registry, material graphs, glTF import and hot reload.
 4. Renderer instancing, shadows, PBR and post-processing.

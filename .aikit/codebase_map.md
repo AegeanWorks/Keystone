@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `55`
-- **Total Classes**: `71`
-- **Total Top-Level Functions**: `57`
-- **Total Class Methods**: `352`
-- **Total Source Lines**: `5633`
+- **Total Classes**: `74`
+- **Total Top-Level Functions**: `58`
+- **Total Class Methods**: `377`
+- **Total Source Lines**: `5933`
 
 ---
 
@@ -42,7 +42,7 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `333` lines (`13738` bytes)
+**Size**: `354` lines (`14746` bytes)
 
 **Functions:**
 - `def _rows(pixels, width, height, flip)`
@@ -51,7 +51,7 @@
 - `def _node_report(scene, width, height)`
 - `def analyze_frame(scene, pixels, width, height, image_path, ui)`
 - `def _compare_ui(before, after)`
-- `def compare_reports(before, after)` - *Compare schema-1/2/3 frame reports for AI-driven regression checks.*
+- `def compare_reports(before, after)` - *Compare schema-1/2/3/4 frame reports for AI-driven regression checks.*
 - `def diff_images(before, after, output, threshold)` - *Write a visual diff PNG and return changed-pixel statistics.*
 - `def write_report(path, report)`
 
@@ -448,7 +448,7 @@
 ### [`keystone/samples.py`](keystone/samples.py)
 > *A minimal game-agnostic sample used to smoke-test the engine.*
 
-**Size**: `114` lines (`4215` bytes)
+**Size**: `117` lines (`4325` bytes)
 
 **Classes:**
 - `class CubeDemo` - *A rotating cube scene; contains no combat, puzzles or genre rules.*
@@ -462,14 +462,23 @@
 ---
 
 ### [`keystone/scene.py`](keystone/scene.py)
-> *Scene graph: hierarchical transforms, visibility, camera and directional light.*
+> *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `130` lines (`4162` bytes)
+**Size**: `267` lines (`9130` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
   - Method `.matrix()`
-- `class Node` - *A named transform node with optional renderable payload and children.*
+- `class Node` - *A named transform node with identity, tags, components and children.*
+  - Method `.__post_init__()`
+  - Method `.add_tag(tag)`
+  - Method `.remove_tag(tag)`
+  - Method `.has_tag(tag)`
+  - Method `.add_component(component)`
+  - Method `.get_component(component_type)`
+  - Method `.require_component(component_type)`
+  - Method `.has_component(component_type)`
+  - Method `.remove_component(component_type)`
   - Method `.add_child(child)`
   - Method `.remove_child(child)`
   - Method `.is_ancestor_of(other)`
@@ -482,9 +491,17 @@
   - Method `.radiance()`
 - `class PointLight` - *A local light with quadratic falloff, used for torches and lamps.*
   - Method `.__post_init__()`
-- `class Scene` - *Root node, active camera, one directional light and atmosphere settings.*
+- `class Scene` - *Root node, identity allocation, queries, camera, lights and atmosphere.*
   - Method `.add(node)`
   - Method `.traverse()`
+  - Method `.query(*, name, tag, layer, component)` - *Return every node matching all supplied filters.*
+  - Method `.find(*, name, tag, layer, component)` - *Return the first node matching all supplied filters.*
+  - Method `.find_by_id(node_id)`
+  - Method `._used_ids(exclude)`
+  - Method `._prepare(node)`
+
+**Functions:**
+- `def _root_node()`
 
 ---
 
@@ -619,17 +636,21 @@
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
-**Size**: `191` lines (`7671` bytes)
+**Size**: `245` lines (`10158` bytes)
 
 **Classes:**
+- `class Health`
 - `class AnalysisTest`
   - Method `.test_pixel_stats_and_content_bbox()`
   - Method `.test_scene_nodes_have_projected_screen_bounds()`
   - Method `.test_material_and_texture_metadata_are_reported()`
+  - Method `.test_scene_identity_metadata_is_reported()`
   - Method `.test_png_hash_and_atomic_report()`
   - Method `.test_compare_reports_detects_image_and_stats_changes()`
   - Method `.test_ui_metadata_is_hashed_and_compared()`
   - Method `.test_compare_reports_accepts_older_schemas()`
+  - Method `.test_compare_reports_detects_identity_metadata_changes()`
+  - Method `.test_compare_reports_distinguishes_duplicate_names_by_id()`
   - Method `.test_compare_reports_detects_material_changes()`
   - Method `.test_compare_reports_rejects_unknown_schema()`
   - Method `.test_pixel_diff_writes_an_artifact_and_stats()`
@@ -902,9 +923,10 @@
 ### [`tests/test_scene.py`](tests/test_scene.py)
 > *Unit tests for the Keystone scene graph and perspective camera.*
 
-**Size**: `158` lines (`5878` bytes)
+**Size**: `243` lines (`9112` bytes)
 
 **Classes:**
+- `class Health`
 - `class TransformTest`
   - Method `.test_matrix_applies_scale_then_rotation_then_translation()`
   - Method `.test_default_transform_is_identity()`
@@ -916,6 +938,15 @@
   - Method `.test_add_child_rejects_self_and_cycles()`
   - Method `.test_remove_child_rejects_a_stranger()`
   - Method `.test_world_visible_respects_hidden_ancestor()`
+- `class NodeIdentityTest`
+  - Method `.test_scene_assigns_unique_ids_on_attach()`
+  - Method `.test_ids_are_scene_local_and_survive_reparenting()`
+  - Method `.test_explicit_id_is_preserved_and_findable()`
+  - Method `.test_duplicate_explicit_id_is_rejected_without_attaching()`
+  - Method `.test_tags_are_copied_and_queryable()`
+  - Method `.test_layer_and_component_queries_filter_attached_nodes()`
+  - Method `.test_component_access_and_removal()`
+  - Method `.test_invalid_identity_fields_are_rejected()`
 - `class CameraTest`
   - Method `.test_forward_yaw_zero_is_minus_z()`
   - Method `.test_forward_yaw_90_points_positive_x()`

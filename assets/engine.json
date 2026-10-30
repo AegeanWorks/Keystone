@@ -1,5 +1,5 @@
 {
-  "hash": "40d0a0fee90a566f5b8369d87fe37532",
+  "hash": "54212a61e7ba76f35875da1a9657a156",
   "image": {
     "height": 720,
     "path": "assets/engine.png",
@@ -24,12 +24,17 @@
     "nodes": [
       {
         "bbox": null,
+        "components": [],
+        "id": "root",
+        "layer": "default",
         "name": "",
         "parent": null,
+        "parent_id": null,
         "screen": [
           640.0,
           443.87
         ],
+        "tags": [],
         "visible": true,
         "world": [
           0.0,
@@ -44,6 +49,9 @@
           998.78,
           312.88
         ],
+        "components": [],
+        "id": "floor",
+        "layer": "default",
         "material": {
           "checker_scale": 0.0,
           "color": [
@@ -62,10 +70,12 @@
         },
         "name": "floor",
         "parent": "",
+        "parent_id": "root",
         "screen": [
           640.0,
           443.87
         ],
+        "tags": [],
         "triangles": 2,
         "visible": true,
         "world": [
@@ -81,6 +91,9 @@
           524.95,
           460.48
         ],
+        "components": [],
+        "id": "cube-0",
+        "layer": "default",
         "material": {
           "checker_scale": 0.0,
           "color": [
@@ -94,10 +107,12 @@
         },
         "name": "cube-0",
         "parent": "",
+        "parent_id": "root",
         "screen": [
           463.45,
           392.07
         ],
+        "tags": [],
         "triangles": 12,
         "visible": true,
         "world": [
@@ -113,6 +128,9 @@
           716.3,
           478.58
         ],
+        "components": [],
+        "id": "cube-1",
+        "layer": "default",
         "material": {
           "checker_scale": 0.0,
           "color": [
@@ -126,10 +144,12 @@
         },
         "name": "cube-1",
         "parent": "",
+        "parent_id": "root",
         "screen": [
           640.0,
           392.07
         ],
+        "tags": [],
         "triangles": 12,
         "visible": true,
         "world": [
@@ -145,6 +165,9 @@
           899.99,
           473.34
         ],
+        "components": [],
+        "id": "cube-2",
+        "layer": "default",
         "material": {
           "checker_scale": 0.0,
           "color": [
@@ -158,10 +181,12 @@
         },
         "name": "cube-2",
         "parent": "",
+        "parent_id": "root",
         "screen": [
           816.55,
           392.07
         ],
+        "tags": [],
         "triangles": 12,
         "visible": true,
         "world": [
@@ -177,6 +202,9 @@
           699.66,
           326.28
         ],
+        "components": [],
+        "id": "orb",
+        "layer": "default",
         "material": {
           "checker_scale": 0.0,
           "color": [
@@ -190,10 +218,12 @@
         },
         "name": "orb",
         "parent": "",
+        "parent_id": "root",
         "screen": [
           640.0,
           262.51
         ],
+        "tags": [],
         "triangles": 672,
         "visible": true,
         "world": [
@@ -204,7 +234,7 @@
       }
     ]
   },
-  "schema": 3,
+  "schema": 4,
   "stats": {
     "content_bbox": [
       0,

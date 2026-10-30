@@ -45,6 +45,7 @@ class CubeDemo:
         self.scene.add(
             Node(
                 "floor",
+                id="floor",
                 mesh=plane(20.0),
                 material=Material(
                     color=Vec3(1.0, 1.0, 1.0),
@@ -59,7 +60,8 @@ class CubeDemo:
         for index, color in enumerate(colors):
             node = Node(
                 f"cube-{index}",
-                Transform(position=Vec3((index - 1) * 2.4, 0.75, 0.0)),
+                id=f"cube-{index}",
+                transform=Transform(position=Vec3((index - 1) * 2.4, 0.75, 0.0)),
                 mesh=cube(1.4),
                 material=Material(color=Vec3(*color), specular=0.4, shininess=48.0),
             )
@@ -68,7 +70,8 @@ class CubeDemo:
         self.scene.add(
             Node(
                 "orb",
-                Transform(position=Vec3(0.0, 2.5, 0.0), scale=Vec3(0.7, 0.7, 0.7)),
+                id="orb",
+                transform=Transform(position=Vec3(0.0, 2.5, 0.0), scale=Vec3(0.7, 0.7, 0.7)),
                 mesh=sphere(1.0, segments=24, rings=14),
                 material=Material(color=Vec3(0.95, 0.78, 0.3), specular=0.8, shininess=96.0),
             )

@@ -16,12 +16,12 @@ from keystone.texture import TextureData
 GRID = 8
 
 REPORT_SCHEMA = {
-    "version": 3,
+    "version": 4,
     "fields": {
         "image": ["path", "width", "height", "rgba_sha256", "png_sha256"],
         "stats": ["mean_rgb", "mean_luma", "content_pixels", "content_ratio", "content_bbox", "dominant_colors", "grid_luma"],
         "scene": ["camera", "node_count", "nodes"],
-        "node": ["name", "parent", "visible", "world", "screen", "bbox", "triangles", "material"],
+        "node": ["id", "name", "parent", "parent_id", "visible", "tags", "layer", "components", "world", "screen", "bbox", "triangles", "material"],
         "material": ["color", "specular", "shininess", "checker_scale", "texture"],
         "texture": ["name", "width", "height", "sha256"],
         "ui": ["visible", "paused", "labels", "buttons"],
@@ -32,9 +32,10 @@ REPORT_SCHEMA = {
     "notes": [
         "grid_luma is an 8x8 backward-compatible luminance summary.",
         "screen and bbox are top-down image coordinates; screen may be null behind the camera.",
-        "hash covers image metadata, stats, projected nodes with materials and ui when present, not visual quality.",
+        "hash covers image metadata, stats, projected nodes with identity/materials and ui when present, not visual quality.",
         "ui is null unless the human overlay was rendered; schema-2 added it.",
-        "schema-3 adds material and texture metadata; schema-1/2 reports remain comparable.",
+        "schema-3 adds material and texture metadata; schema-4 adds node id, tags, layer and components.",
+        "schema-1/2/3 reports remain comparable; nodes are keyed by id only when both reports are schema 4.",
         "ui labels and button rects are presentation metadata in top-left pixels.",
     ],
 }
@@ -123,9 +124,14 @@ def _node_report(scene: Scene, width: int, height: int) -> list[dict]:
         world = node.world_matrix()
         center = world.transform_point(Vec3())
         entry = {
+            "id": node.id,
             "name": node.name,
             "parent": node.parent.name if node.parent else None,
+            "parent_id": node.parent.id if node.parent else None,
             "visible": node.world_visible(),
+            "tags": sorted(node.tags),
+            "layer": node.layer,
+            "components": sorted(component_type.__name__ for component_type in node.components),
             "world": [round(center.x, 3), round(center.y, 3), round(center.z, 3)],
             "screen": None,
             "bbox": None,
@@ -192,7 +198,7 @@ def analyze_frame(
         image["png_sha256"] = hashlib.sha256(Path(image_path).read_bytes()).hexdigest()
     camera = scene.camera
     report = {
-        "schema": 3,
+        "schema": 4,
         "image": image,
         "stats": stats,
         "scene": {
@@ -247,32 +253,47 @@ def _compare_ui(before: dict | None, after: dict | None) -> dict:
 
 
 def compare_reports(before: dict, after: dict) -> dict:
-    """Compare schema-1/2/3 frame reports for AI-driven regression checks."""
-    if before.get("schema") not in (1, 2, 3) or after.get("schema") not in (1, 2, 3):
-        raise ValueError("both reports must use schema 1, 2 or 3")
+    """Compare schema-1/2/3/4 frame reports for AI-driven regression checks."""
+    if before.get("schema") not in (1, 2, 3, 4) or after.get("schema") not in (1, 2, 3, 4):
+        raise ValueError("both reports must use schema 1, 2, 3 or 4")
     first_stats = before["stats"]
     second_stats = after["stats"]
-    first_nodes = {node["name"]: node for node in before["scene"]["nodes"]}
-    second_nodes = {node["name"]: node for node in after["scene"]["nodes"]}
+    key = "id" if before.get("schema") == 4 and after.get("schema") == 4 else "name"
+    first_nodes = {(node.get(key) or node["name"]): node for node in before["scene"]["nodes"]}
+    second_nodes = {(node.get(key) or node["name"]): node for node in after["scene"]["nodes"]}
     changed = []
     for name in sorted(set(first_nodes) | set(second_nodes)):
         old = first_nodes.get(name)
         new = second_nodes.get(name)
         if old is None or new is None or (
+            old.get("id"),
+            old.get("name"),
+            old.get("parent"),
+            old.get("parent_id"),
+            old.get("visible"),
+            old.get("tags"),
+            old.get("layer"),
+            old.get("components"),
             old.get("screen"),
             old.get("bbox"),
-            old.get("visible"),
             old.get("material"),
         ) != (
+            new.get("id"),
+            new.get("name"),
+            new.get("parent"),
+            new.get("parent_id"),
+            new.get("visible"),
+            new.get("tags"),
+            new.get("layer"),
+            new.get("components"),
             new.get("screen"),
             new.get("bbox"),
-            new.get("visible"),
             new.get("material"),
         ):
             changed.append(name)
     ui_diff = _compare_ui(before.get("ui"), after.get("ui"))
     return {
-        "schema": 3,
+        "schema": 4,
         "same_image": before["image"]["rgba_sha256"] == after["image"]["rgba_sha256"],
         "same_report": before.get("hash") == after.get("hash"),
         "same_ui": ui_diff["same"],
