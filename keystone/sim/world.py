@@ -12,6 +12,7 @@ from keystone.beams import LightLock
 from keystone.combat import Combat
 from keystone.math3d import Vec3
 from keystone.procedural.dungeon import Dungeon, DungeonGenerator
+from keystone.procedural.network import Network
 from keystone.procedural.terrain import Terrain
 from keystone.procedural.weave import WeaveLayout
 
@@ -56,6 +57,7 @@ class World:
             self.dungeon: Dungeon = self.weave.to_dungeon()
         else:
             self.dungeon = DungeonGenerator().generate(self.seed ^ 0x5EED)
+        self.network = Network.generate(self.seed ^ 0xA17E, self.dungeon)
         self.mode = "overworld"
         self.time = DAY_SECONDS * 0.35
         self.player = Player(self.terrain.spawn[0], self.terrain.spawn[1])
@@ -112,12 +114,34 @@ class World:
         )
         if intent.interact:
             self.interact()
+        self.network.update(dt)
         self.combat.update(dt, self.player.x, self.player.z, self.is_standable)
         if self.combat.dead:
             self._respawn()
         for event in self.combat.events:
             self.messages.append(event)
         return list(self.events)
+
+    def _hack_nearby_terminal(self) -> bool:
+        terminal = self.network.near_terminal(self.player.x, self.player.z)
+        if terminal is None:
+            return False
+        message = self.network.hack(terminal.terminal_id)
+        if message:
+            self._record(message)
+            if self.network.alert >= 50.0 and not terminal.hacked:
+                self._spawn_hunter()
+        return True
+
+    def _spawn_hunter(self) -> None:
+        for index in range(12):
+            angle = math.tau * index / 12.0
+            x = self.player.x + math.cos(angle) * 3.0
+            z = self.player.z + math.sin(angle) * 3.0
+            if self.is_standable(x, z):
+                self.combat.spawn_at("stalker", x, z)
+                self._record("NetWatch hunter inbound.")
+                return
 
     def rotate_mirror(self) -> bool:
         if self.mode != "overworld":
@@ -150,6 +174,12 @@ class World:
             return
         elif self.mode == "overworld" and self.near_entrance:
             self._record("The portal is sealed. Align the light with the rune.")
+        elif self.mode == "dungeon" and self._hack_nearby_terminal():
+            return
+        elif self.mode == "dungeon" and self.near_exit and not self.network.complete:
+            self._record(
+                f"The exit rune is sealed. Network {self.network.hacked_count}/{len(self.network.terminals)} compromised."
+            )
         elif self.mode == "dungeon" and self.near_exit:
             self.mode = "overworld"
             self.player.x = self.terrain.entrance[0]
@@ -241,6 +271,7 @@ class World:
             "near_entrance": self.near_entrance,
             "near_exit": self.near_exit,
             "light_lock": self.light_lock.snapshot(),
+            "network": self.network.snapshot(),
             "combat": self.combat.snapshot(),
             "events": list(self.events),
         }

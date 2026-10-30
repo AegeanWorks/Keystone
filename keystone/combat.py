@@ -141,6 +141,12 @@ class Combat:
     def revive(self, x: float, z: float, standable: Standable, facing: float | None = None) -> None:
         self.spawn_around(x, z, standable, facing)
 
+    def spawn_at(self, key: str, x: float, z: float) -> Enemy:
+        spec = ENEMY_TYPES[key]
+        enemy = Enemy(spec, x, z, spec.hp, spec.hp)
+        self.enemies.append(enemy)
+        return enemy
+
     def snapshot(self) -> dict:
         return {
             "player_hp": round(self.player_hp, 2),

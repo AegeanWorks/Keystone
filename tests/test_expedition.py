@@ -77,9 +77,24 @@ class ExpeditionSceneTest(unittest.TestCase):
         self.assertEqual(self.expedition.world.mode, "dungeon")
         self.assertIn("dungeon-floor", names)
         self.assertIn("dungeon-walls", names)
+        self.assertIn("network-links", names)
+        self.assertGreaterEqual(sum(name.startswith("network-terminal-") for name in names), 3)
         self.assertIn("exit-rune", names)
         self.assertAlmostEqual(self.expedition.scene.camera.position.y, 1.7)
         self.assertTrue(any("crypt" in event.lower() for event in events))
+
+    def test_hacking_a_terminal_rebuilds_the_network_scene(self):
+        self._solve_light_lock()
+        self.expedition.world.player.x, self.expedition.world.player.z = self.expedition.world.terrain.entrance
+        self.expedition.step(0.016, MoveIntent(interact=True))
+        terminal = self.expedition.world.network.terminals[0]
+        self.expedition.world.player.x = terminal.x
+        self.expedition.world.player.z = terminal.z
+        version = self.expedition.world.network.version
+        self.expedition.step(0.016, MoveIntent(interact=True))
+        self.assertGreater(self.expedition.world.network.version, version)
+        names = [node.name for node in self.expedition.scene.traverse()]
+        self.assertIn(f"network-terminal-{terminal.terminal_id}", names)
 
     def test_atmosphere_reaches_the_scene(self):
         self.expedition.world.time = 0.0

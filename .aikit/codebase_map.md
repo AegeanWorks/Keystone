@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `43`
-- **Total Classes**: `67`
+- **Total Python Modules**: `45`
+- **Total Classes**: `70`
 - **Total Top-Level Functions**: `45`
-- **Total Class Methods**: `379`
-- **Total Source Lines**: `5426`
+- **Total Class Methods**: `406`
+- **Total Source Lines**: `5749`
 
 ---
 
@@ -110,7 +110,7 @@
 ### [`keystone/combat.py`](keystone/combat.py)
 > *Deterministic survivors-style combat: archetypes, waves, auto-fire and bosses.*
 
-**Size**: `234` lines (`8176` bytes)
+**Size**: `240` lines (`8380` bytes)
 
 **Classes:**
 - `class EnemySpec`
@@ -120,6 +120,7 @@
   - Method `.spawn_around(x, z, standable, facing)` - *Reset the arena around the player after a mode change or death.*
   - Method `.update(dt, px, pz, standable)`
   - Method `.revive(x, z, standable, facing)`
+  - Method `.spawn_at(key, x, z)`
   - Method `.snapshot()`
   - Method `.status()`
   - Method `._pick_type()`
@@ -145,7 +146,7 @@
 ### [`keystone/expedition.py`](keystone/expedition.py)
 > *First-person expedition: procedural overworld, dungeon and scene assembly.*
 
-**Size**: `465` lines (`19421` bytes)
+**Size**: `516` lines (`21579` bytes)
 
 **Classes:**
 - `class Expedition` - *Owns one seeded World and the scene that renders its current mode.*
@@ -158,6 +159,7 @@
   - Method `._add_portal()`
   - Method `._add_light_lock()`
   - Method `._build_dungeon()`
+  - Method `._add_network()`
   - Method `._apply_visuals()`
   - Method `._sync_enemies()`
   - Method `.status()`
@@ -276,7 +278,7 @@
 ### [`keystone/harness.py`](keystone/harness.py)
 > *Deterministic JSON harness for driving the expedition without a GPU.*
 
-**Size**: `252` lines (`9611` bytes)
+**Size**: `255` lines (`9755` bytes)
 
 **Functions:**
 - `def catalog()` - *Describe every action and the state an agent can observe.*
@@ -347,7 +349,7 @@
 ### [`keystone/mesh_builder.py`](keystone/mesh_builder.py)
 > *Compose boxes and quads into a single indexed MeshData.*
 
-**Size**: `101` lines (`3899` bytes)
+**Size**: `104` lines (`3965` bytes)
 
 **Classes:**
 - `class MeshBuilder` - *Accumulates flat-shaded quads and boxes, then builds one mesh.*
@@ -355,6 +357,7 @@
   - Method `.add_quad(p0, p1, p2, p3, color)`
   - Method `.add_mesh(mesh, offset, scale, color)` - *Merge another mesh under a uniform scale and translation.*
   - Method `.add_box(cx, cy, cz, sx, sy, sz, color)`
+  - Method `.is_empty()`
   - Method `.build()`
 
 ---
@@ -429,6 +432,26 @@
   - Method `._carve_corridor(dungeon, start, end, rng)`
   - Method `._carve_h(dungeon, x0, x1, y)`
   - Method `._carve_v(dungeon, y0, y1, x)`
+
+---
+
+### [`keystone/procedural/network.py`](keystone/procedural/network.py)
+> *Seeded cyber network: terminals, links, hack progress and a living alert.*
+
+**Size**: `113` lines (`4041` bytes)
+
+**Classes:**
+- `class Terminal`
+- `class Network`
+  - Method `.__post_init__()`
+  - Method `.generate(seed, dungeon, count)`
+  - Property `.complete`
+  - Property `.hacked_count`
+  - Method `.terminal(terminal_id)`
+  - Method `.near_terminal(x, z, radius)`
+  - Method `.hack(terminal_id)`
+  - Method `.update(dt)`
+  - Method `.snapshot()`
 
 ---
 
@@ -527,7 +550,7 @@
 ### [`keystone/sim/world.py`](keystone/sim/world.py)
 > *Seeded expedition state: player, terrain, dungeon, movement and replay hash.*
 
-**Size**: `252` lines (`9996` bytes)
+**Size**: `283` lines (`11344` bytes)
 
 **Classes:**
 - `class MoveIntent` - *One frame of player intent, in local forward/right and radians.*
@@ -539,6 +562,8 @@
   - Property `.near_exit`
   - Method `.eye_position()`
   - Method `.step(dt, intent)`
+  - Method `._hack_nearby_terminal()`
+  - Method `._spawn_hunter()`
   - Method `.rotate_mirror()`
   - Method `.interact()`
   - Method `._record(message)`
@@ -636,7 +661,7 @@
 ### [`tests/test_expedition.py`](tests/test_expedition.py)
 > *Tests for scene assembly and the expedition controller.*
 
-**Size**: `116` lines (`5826` bytes)
+**Size**: `131` lines (`6749` bytes)
 
 **Classes:**
 - `class ExpeditionSceneTest`
@@ -650,6 +675,7 @@
   - Method `.test_step_advances_time_and_syncs_the_camera()`
   - Method `._solve_light_lock()`
   - Method `.test_entering_the_portal_switches_to_a_dungeon_scene()`
+  - Method `.test_hacking_a_terminal_rebuilds_the_network_scene()`
   - Method `.test_atmosphere_reaches_the_scene()`
   - Method `.test_weave_layout_enters_a_colored_dungeon()`
   - Method `._solve_light_lock_for(expedition)`
@@ -747,6 +773,25 @@
   - Method `.test_quaternion_matrix_matches_matrix_rotation()`
   - Method `.test_multiplication_composes_in_order()`
   - Method `.test_slerp_endpoints()`
+
+---
+
+### [`tests/test_network.py`](tests/test_network.py)
+> *Tests for the seeded cyber network and alert state.*
+
+**Size**: `69` lines (`2915` bytes)
+
+**Classes:**
+- `class NetworkTest`
+  - Method `.setUp()`
+  - Method `.test_generates_reachable_terminals_outside_spawn_and_exit()`
+  - Method `.test_same_seed_is_deterministic()`
+  - Method `.test_hacking_needs_four_steps_and_raises_alert()`
+  - Method `.test_alert_decays_over_time()`
+  - Method `.test_complete_network()`
+  - Method `.test_links_reference_known_terminals()`
+  - Method `.test_unknown_terminal_is_rejected()`
+  - Method `.test_near_terminal_uses_radius()`
 
 ---
 
@@ -871,7 +916,7 @@
 ### [`tests/test_world.py`](tests/test_world.py)
 > *Tests for the deterministic expedition simulation core.*
 
-**Size**: `161` lines (`6852` bytes)
+**Size**: `193` lines (`8290` bytes)
 
 **Classes:**
 - `class WorldDeterminismTest`
@@ -893,11 +938,14 @@
   - Method `.setUp()`
   - Method `._stand_at_entrance()`
   - Method `._solve_light_lock()`
+  - Method `._complete_network()`
   - Method `.test_portal_is_sealed_until_the_light_lock_is_solved()`
   - Method `.test_mirror_rotation_changes_the_lock()`
   - Method `.test_interacting_at_the_portal_enters_the_dungeon()`
   - Method `.test_dungeon_walls_block_movement()`
   - Method `.test_exit_returns_to_the_overworld_portal()`
+  - Method `.test_hacking_a_terminal_advances_the_network()`
+  - Method `.test_high_alert_spawns_a_netwatch_hunter()`
   - Method `.test_interacting_away_from_the_portal_does_nothing()`
 
 ---

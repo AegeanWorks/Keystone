@@ -1,66 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-weave-v1",
+    "task_id": "keystone-network-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793381923.2130952,
-    "owner": "opencode:keystone-weave",
-    "started_by": "opencode:keystone-weave",
+    "updated_at": 1793382302.6238437,
+    "owner": "opencode:keystone-network",
+    "started_by": "opencode:keystone-network",
     "continuations": [],
-    "completed_at": 1793381929.174291
+    "completed_at": 1793382315.3299153
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/6] Plan: math3d -> scene graph/cameras -> geometry+OBJ -> OpenGL renderer -> app/demo -> AIKit integration + docs; each milestone ships with tests and a green check",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793376783.7979572,
-      "timestamp_str": "2026-10-30 19:13:03",
-      "agent": "opencode:keystone-v1",
-      "impact_assessment": {
-        "why": "The user asked for a new, performance-first 3D game engine that is AIKit-compatible; a GPU renderer is the only stack with real performance available on this machine (OpenGL 3.3 verified, no Rust/C++ toolchain).",
-        "benefits": "GPU-rasterized 3D at interactive frame rates; headless-testable core; zero new installs; each milestone independently verifiable by aikit check.",
-        "risks": "contract: new package API, no existing consumers; dependency: PyOpenGL/GLFW/numpy versions and GPU driver variance, CI may lack a GL context; concurrency: single-threaded render loop only; state: window/GL resources must be released deterministically.",
-        "mitigation": "Pin deps in requirements.txt; probe OpenGL 3.3 at startup and fail with Why/Fix; keep all rendering tests on a hidden 64x64 context with explicit teardown; no background threads; document GPU requirement."
-      }
-    },
-    {
-      "task_id": "keystone-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[1/6] Math core green: 19 unit tests pass; aikit check 4/4 gates; checklist passed; README cold-start facts filled",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793377030.7087002,
-      "timestamp_str": "2026-10-30 19:17:10",
-      "agent": "opencode:keystone-v1",
-      "handoff": {
-        "state": "math3d API frozen (Vec3, Mat4, Quat)",
-        "next": "scene graph and cameras",
-        "evidence": "pytest 19 passed, check 4/4"
-      }
-    },
-    {
-      "task_id": "keystone-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/6] Scene graph and camera green: 39 unit tests pass; cycle/parenting guarded; check 4/4; checklist passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793377179.3350718,
-      "timestamp_str": "2026-10-30 19:19:39",
-      "agent": "opencode:keystone-v1",
-      "handoff": {
-        "state": "Scene(root, camera, light), Node hierarchy and perspective camera frozen",
-        "next": "geometry, primitives and OBJ loader",
-        "evidence": "pytest 39 passed"
-      }
-    },
     {
       "task_id": "keystone-v1",
       "phase": "phase 4",
@@ -301,6 +252,49 @@
       "timestamp": 1793381929.1742938,
       "timestamp_str": "2026-10-30 20:38:49",
       "agent": "opencode:keystone-weave"
+    },
+    {
+      "task_id": "keystone-network-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/4] Plan: seeded terminal graph + hack/alert state -> World dungeon gate/hunter response/hash -> network nodes and links in the dungeon scene -> docs, ADR and gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793382049.5308948,
+      "timestamp_str": "2026-10-30 20:40:49",
+      "agent": "opencode:keystone-network",
+      "impact_assessment": {
+        "why": "Cyberpulse's network and living-alert model gives the dungeon an objective beyond reaching the exit and makes combat respond to player actions.",
+        "benefits": "Every dungeon run gets a deterministic infiltration graph, a risk/reward alert clock and hunter pressure, all replayable through the harness.",
+        "risks": "contract: World snapshot/hash and dungeon interact gain network state; dependency: stdlib only; concurrency: single-thread; state: hacking must remain reachable and exit gating must not strand a run.",
+        "mitigation": "Generate terminals only in reachable non-spawn/exit rooms, test graph connectivity, force completion in replay tests, and keep a sealed-exit message with the current progress."
+      }
+    },
+    {
+      "task_id": "keystone-network-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[4/4] Cyber network complete: 180 tests, 6/6 gates, terminal graph/hack/alert/hunter/exit-gate coverage, 60-frame visible dogfood, network scene screenshot; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793382302.6238437,
+      "timestamp_str": "2026-10-30 20:45:02",
+      "agent": "opencode:keystone-network",
+      "handoff": {
+        "state": "Network and network-gated exit frozen for v0.6.0",
+        "next": "network puzzle variants or the next mechanic pack",
+        "evidence": "pytest 180 passed, aikit check 6/6, strict check pending clean commit"
+      }
+    },
+    {
+      "task_id": "keystone-network-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-network-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793382315.3299167,
+      "timestamp_str": "2026-10-30 20:45:15",
+      "agent": "opencode:keystone-network"
     }
   ]
 }

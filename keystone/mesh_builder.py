@@ -89,6 +89,9 @@ class MeshBuilder:
             self.add_quad(*face, color)
         return self
 
+    def is_empty(self) -> bool:
+        return not self._indices
+
     def build(self) -> MeshData:
         if not self._indices:
             raise ValueError("mesh builder has no geometry")

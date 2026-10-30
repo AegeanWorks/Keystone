@@ -36,7 +36,7 @@ def catalog() -> dict[str, Any]:
         },
         "state_keys": [
             "seed", "time", "day_fraction", "mode", "player", "terrain", "dungeon",
-            "near_entrance", "near_exit", "light_lock", "combat", "events",
+            "near_entrance", "near_exit", "light_lock", "network", "combat", "events",
         ],
         "limits": {"actions": MAX_ACTIONS, "seconds": MAX_SECONDS, "step": FIXED_STEP},
         "layouts": ["auto", "crypt", "weave"],
@@ -154,6 +154,9 @@ def selftest() -> dict[str, Any]:
     if world.mode != "dungeon":
         raise AssertionError("interact did not enter the dungeon")
     checks.append("portal entry")
+    for terminal in world.network.terminals:
+        while not terminal.hacked:
+            world.network.hack(terminal.terminal_id)
     world.player.x = world.dungeon.exit[0] + 0.5
     world.player.z = world.dungeon.exit[1] + 0.5
     apply_action(world, {"action": "interact"})

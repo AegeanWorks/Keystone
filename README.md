@@ -4,9 +4,9 @@
 
 ![Keystone expedition](assets/expedition.png)
 
-A performance-first 3D game engine in Python with an OpenGL 3.3 renderer, deterministic procedural worlds, first-person collision, survivors-style combat, light-routing puzzles and a headless AI harness.
+A performance-first 3D game engine in Python with an OpenGL 3.3 renderer, deterministic procedural worlds, first-person collision, survivors-style combat, light-routing puzzles, cyber-network infiltration and a headless AI harness.
 
-Keystone's core loop is a **seeded expedition**: one integer seed generates an island, a dungeon and a light lock, the player walks the terrain, fights escalating enemy waves, turns mirrors to open the crypt portal, explores a generated room-and-corridor layout, and returns to the surface. The authoritative simulation is independent of OpenGL, so the same run can be rendered, replayed from JSON actions, or hashed for regression checks.
+Keystone's core loop is a **seeded expedition**: one integer seed generates an island, a dungeon, a light lock and a cyber network. The player walks the terrain, fights escalating enemy waves, turns mirrors to open the crypt portal, hacks network terminals while avoiding NetWatch hunters, explores a generated room layout, and returns to the surface. The authoritative simulation is independent of OpenGL, so the same run can be rendered, replayed from JSON actions, or hashed for regression checks.
 
 | Overworld | Dungeon |
 |---|---|
@@ -64,7 +64,7 @@ The window captures the mouse on start.
 | Mouse | Look around |
 | Arrow keys | Look with the keyboard |
 | `Shift` | Sprint |
-| `E` | Turn a nearby light-lock mirror; enter the portal when the lock is solved; leave through the crypt exit |
+| `E` | Turn a nearby light-lock mirror; enter the portal when the lock is solved; hack a network terminal; leave through the crypt exit when the network is complete |
 | `F1` | Release or recapture the mouse |
 | `Esc` | Close the window |
 
@@ -78,8 +78,9 @@ Weapons fire automatically at the nearest enemy in range. Keep moving to avoid c
 4. Enemies chase, split, explode or soak damage; the weapon auto-fires, waves escalate and a Warlord arrives every fifth wave. Death respawns the player at the last safe point with a fresh arena.
 5. The crypt portal is sealed by a light lock: an emitter, a green dye cell, two rotatable mirrors and a receiver. Turn the mirrors with `E` until the beam arrives with the exact target color; the receiver turns green and the portal opens.
 6. Interacting at the open portal switches the world to `dungeon`, rebuilds the scene and respawns the arena around the dungeon spawn. Auto layout chooses the room-and-corridor crypt on odd seeds and the woven room chain on even seeds; `--layout crypt|weave` forces one.
-7. Interacting at the exit rune restores the overworld position at the portal.
-8. `World.state_hash()` fingerprints seed, time, player, terrain metadata, dungeon tiles, weave path, light-lock state and combat state. Identical seeds and actions produce identical hashes.
+7. The dungeon exit is sealed until the cyber network is compromised. Each terminal takes four `E` presses; every press raises the alert, and at 50+ alert NetWatch hunters spawn. Hack all terminals to unlock the exit.
+8. Interacting at the unlocked exit rune restores the overworld position at the portal.
+9. `World.state_hash()` fingerprints seed, time, player, terrain metadata, dungeon tiles, weave path, light-lock state, network state and combat state. Identical seeds and actions produce identical hashes.
 
 The dungeon preview is generated from the same run: `assets/dungeon.png`.
 
@@ -92,6 +93,7 @@ The dungeon preview is generated from the same run: `assets/dungeon.png`.
 - **Survivors combat**: six seeded enemy archetypes (Crawler, Stalker, Bulwark, Splitter, Bomber, Warlord boss), auto-fire hitscan, contact damage, split-on-death, escalating waves, boss waves and death/respawn. The whole director is renderer-independent and included in the replay hash.
 - **Light lock**: a seeded 2D beam circuit with additive red/green/blue color masks, `/` and `\` mirrors, a dye cell, a receiver, cycle-safe tracing and a portal gate. Mirrors rotate with `E`; the whole lock is renderer-independent and hashed.
 - **Weave layout**: Weft-style Hamiltonian room chains. The generator visits every room exactly once, cuts the route into three colored threads and colors the 7×7 room floors by thread; every room is reachable and the exit is the final room.
+- **Cyber network**: a seeded terminal graph in the dungeon with links, four-step hacks, rising alert, decaying heat, NetWatch hunter spawns at 50+ alert and a network-gated exit. Terminals and links are rendered in the scene and all state is hashed.
 - **GPU renderer**: OpenGL 3.3 core, GLSL 330, per-vertex colors, one directional light, an optional warm point light (the crypt torch), depth testing, culling, gradient sky and distance fog.
 - **Static batching**: terrain is one mesh; trees, crowns, rocks and the path are merged into four meshes, so the expedition renders in roughly ten draw calls.
 - **Day/night atmosphere**: sun elevation drives daylight, warm dawn tint, ambient light, sky/horizon colors and light intensity; the dungeon overrides with its own moody palette.
@@ -113,6 +115,14 @@ The director is seeded and lives in `keystone/combat.py`; it has no OpenGL depen
 `WeaveLayout` is a Weft-style Hamiltonian generator. It covers a 4×3 room grid exactly once, checks that the remaining cells stay connected while searching, then cuts the path into three colored threads. Each path cell becomes a 7×7 room, consecutive rooms are joined by corridors, and the room floor carries its thread color. The result is a guaranteed connected room chain from spawn to exit, with no unreachable room and no duplicate visit.
 
 Even seeds select the weave in `auto` mode; odd seeds keep the room-and-corridor crypt. Force either with `--layout crypt` or `--layout weave`.
+
+## 🕸️ Cyber Network
+
+![Network terminal in the crypt](assets/network.png)
+
+Each dungeon gets a seeded terminal graph. Four terminal rooms are selected from the reachable, non-spawn, non-exit rooms and connected by a deterministic link tree plus one extra link. Every terminal takes four `E` presses to compromise; each press raises the alert by 8 and the alert decays by 0.6/s. At 50+ alert, NetWatch spawns a hunter near the player. The exit rune stays sealed until every terminal is hacked, and the title reports `net n/4 alert N`.
+
+Terminals are cyan until hacked and green afterward; links are drawn as thin conduits. The network snapshot is part of the world hash, so a scripted run can hack terminals and exit deterministically.
 
 ## 🔦 Light Lock
 
@@ -144,7 +154,7 @@ python -m keystone.harness run --seed 7 --actions actions.json --out run.json
 }
 ```
 
-The result contains the final state (`mode`, `player`, `terrain`, `dungeon`, `near_entrance`, `near_exit`, `light_lock`, `combat`, `events`) and a `hash`. The `rotate` action turns the nearest reachable mirror. The same seed and actions always produce the same hash; `selftest` proves determinism, seed sensitivity, portal entry, exit transition and rejection of unknown actions.
+The result contains the final state (`mode`, `player`, `terrain`, `dungeon`, `near_entrance`, `near_exit`, `light_lock`, `network`, `combat`, `events`) and a `hash`. The `rotate` action turns the nearest reachable mirror. The same seed and actions always produce the same hash; `selftest` proves determinism, seed sensitivity, portal entry, exit transition and rejection of unknown actions.
 
 ## 📈 Performance
 
@@ -181,7 +191,8 @@ keystone/
 │   │   ├── noise.py          <- deterministic value noise and FBM
 │   │   ├── terrain.py        <- island heightfield, biome colors and mesh
 │   │   ├── dungeon.py        <- rooms, corridors, FOV and BFS
-│   │   └── weave.py          <- Hamiltonian room chain and thread colors
+│   │   ├── weave.py          <- Hamiltonian room chain and thread colors
+│   │   └── network.py        <- terminal graph, hacks and alert state
 │   ├── sim/
 │   │   ├── __init__.py
 │   │   └── world.py          <- deterministic state, collision, modes, hash
@@ -198,7 +209,8 @@ keystone/
 │   ├── dungeon.png           <- generated crypt capture
 │   ├── combat.png            <- enemy pack capture
 │   ├── lightlock.png         <- portal light-lock capture
-│   └── weave.png             <- woven room capture
+│   ├── weave.png             <- woven room capture
+│   └── network.png           <- dungeon terminal capture
 ├── tests/
 │   ├── test_math3d.py        <- math core
 │   ├── test_scene.py         <- hierarchy, camera and lights
@@ -208,6 +220,7 @@ keystone/
 │   ├── test_procedural.py    <- noise, terrain and atmosphere
 │   ├── test_dungeon.py       <- dungeon, FOV and pathfinding
 │   ├── test_weave.py         <- Hamiltonian path, threads and dungeon
+│   ├── test_network.py       <- terminals, links, hacks and alert
 │   ├── test_beams.py         <- light lock, mirrors, dye and cycles
 │   ├── test_combat.py        <- archetypes, waves, damage and boss
 │   ├── test_world.py         <- deterministic state, movement and modes
@@ -276,6 +289,7 @@ Keystone's first implementation was built in this workspace. The seeded expediti
 - **Dustline** — streaming-world collision ideas (circle/box separation and segment blocking), enemy archetype/wave/boss structure and combat pacing.
 - **Iris** — color-mask light routing, mirror reflection, cycle-safe beam tracing and receiver validation.
 - **Weft** — randomized Hamiltonian path with Warnsdorff ordering and connectivity checks, cut into colored thread segments and used as a guaranteed-coverage room chain.
+- **Cyberpulse** — seeded terminal graphs, hack progress, alert tiers, NetWatch hunter response and the network-gated exit.
 
 These were reimplemented as modular Python; no AGL-licensed assets or source files were copied into this repository. See ADR-006 for the provenance decision. Keystone itself remains under the Aegean License 1.1 (AL-1.1).
 
@@ -287,12 +301,13 @@ These were reimplemented as modular Python; no AGL-licensed assets or source fil
 4. Weapons/upgrades, champion affixes and loot using the wider Dustline tables.
 5. More light-lock chambers, lenses and movable emitters inside the crypt.
 6. Weave loops, branches and thread-route puzzles inside the room chain.
-7. Save/load of the seed + action log, and a rewind/debug viewer.
-8. glTF/scene import and an editor with gizmos.
+7. Network puzzle variants (frequency/buffer/hash) and alert-driven terminal defenses.
+8. Save/load of the seed + action log, and a rewind/debug viewer.
+9. glTF/scene import and an editor with gizmos.
 
 ## 🤖 AIKit Integration
 
-- `.aikit/project.json` declares `mechanics.core` (simulation, terrain, dungeon, weave, beams, combat, expedition, renderer, harness) and `mechanics.test` (`python -m keystone.harness selftest`), so an agent exercises the same headless core.
+- `.aikit/project.json` declares `mechanics.core` (simulation, terrain, dungeon, weave, network, beams, combat, expedition, renderer, harness) and `mechanics.test` (`python -m keystone.harness selftest`), so an agent exercises the same headless core.
 - `.aikit/task_ledger.json` records plans, checkpoints and handoff state; resume with `python aikit.py resume keystone`.
 - `.aikit/decisions.md` records ADR-001 through ADR-006.
 - `python aikit.py check keystone` is the Phase 4 gate: tests, lint, mechanics, hygiene, guidelines and secret scan. It never pushes; delivery is opt-in.

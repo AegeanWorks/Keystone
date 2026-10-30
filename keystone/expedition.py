@@ -22,6 +22,9 @@ WATER = Material(color=Vec3(0.08, 0.24, 0.36), specular=0.8, shininess=96.0)
 PORTAL = Material(color=Vec3(0.15, 0.75, 0.7), specular=1.0, shininess=128.0)
 TERRAIN = Material(color=Vec3(1.0, 1.0, 1.0), specular=0.03, shininess=4.0)
 CRYSTAL = Material(color=Vec3(1.0, 0.72, 0.22), specular=1.0, shininess=128.0)
+NETWORK_OFF = Material(color=Vec3(0.15, 0.8, 0.95), specular=1.0, shininess=128.0)
+NETWORK_ON = Material(color=Vec3(0.2, 1.0, 0.45), specular=1.0, shininess=128.0)
+NETWORK_LINK = (0.18, 0.55, 0.7)
 EMITTER = Material(color=Vec3(1.0, 0.18, 0.1), specular=1.0, shininess=128.0)
 RECEIVER_OPEN = Material(color=Vec3(1.0, 0.85, 0.15), specular=1.0, shininess=128.0)
 RECEIVER_LOCKED = Material(color=Vec3(0.2, 1.0, 0.5), specular=1.0, shininess=128.0)
@@ -39,6 +42,7 @@ class Expedition:
         self._intent = MoveIntent()
         self._mode = self.world.mode
         self._lock_version = -1
+        self._network_version = -1
         self._captured = True
         self._last_cursor: tuple[float, float] | None = None
         self._e_was_down = False
@@ -208,6 +212,7 @@ class Expedition:
             self._build_dungeon()
         self._apply_visuals()
         self._lock_version = self.world.light_lock.version
+        self._network_version = self.world.network.version
         self._sync_enemies()
 
     def _build_overworld(self) -> None:
@@ -333,6 +338,7 @@ class Expedition:
         self.scene.add(Node("dungeon-floor", mesh=self._dungeon_floor, material=TERRAIN))
         self.scene.add(Node("dungeon-walls", mesh=self._dungeon_walls, material=TERRAIN))
         self.scene.add(Node("dungeon-ceiling", mesh=self._dungeon_ceiling, material=TERRAIN))
+        self._add_network()
         spawn_room = self.world.dungeon.rooms[0]
         for index, room in enumerate(self.world.dungeon.rooms[1:4], 1):
             x, z = room.x + 1.0, room.y + 1.0
@@ -366,6 +372,47 @@ class Expedition:
                 material=PORTAL,
             )
         )
+
+    def _add_network(self) -> None:
+        network = self.world.network
+        for terminal in network.terminals:
+            self.scene.add(
+                Node(
+                    f"network-terminal-{terminal.terminal_id}",
+                    Transform(
+                        position=Vec3(terminal.x, 1.1, terminal.z),
+                        scale=Vec3(0.18 + terminal.progress * 0.12, 0.18 + terminal.progress * 0.12, 0.18 + terminal.progress * 0.12),
+                    ),
+                    mesh=sphere(1.0, segments=10, rings=7),
+                    material=NETWORK_ON if terminal.hacked else NETWORK_OFF,
+                )
+            )
+        links = MeshBuilder()
+        for first_id, second_id in network.links:
+            first = network.terminal(first_id)
+            second = network.terminal(second_id)
+            if abs(second.x - first.x) > 0.01:
+                links.add_box(
+                    (first.x + second.x) / 2.0,
+                    0.9,
+                    first.z,
+                    abs(second.x - first.x) + 0.05,
+                    0.05,
+                    0.05,
+                    NETWORK_LINK,
+                )
+            if abs(second.z - first.z) > 0.01:
+                links.add_box(
+                    second.x,
+                    0.9,
+                    (first.z + second.z) / 2.0,
+                    0.05,
+                    0.05,
+                    abs(second.z - first.z) + 0.05,
+                    NETWORK_LINK,
+                )
+        if not links.is_empty():
+            self.scene.add(Node("network-links", mesh=links.build(), material=TERRAIN))
 
     def _apply_visuals(self) -> None:
         apply_atmosphere(self.scene, Atmosphere.at(self.world.day_fraction))
@@ -415,14 +462,18 @@ class Expedition:
 
     def status(self) -> str:
         light = "open" if self.world.light_lock.solved else "sealed"
-        return f"{self.world.mode} | {self.world.combat.status()} | light {light}"
+        network = self.world.network
+        return (
+            f"{self.world.mode} | {self.world.combat.status()} | light {light} | "
+            f"net {network.hacked_count}/{len(network.terminals)} alert {network.alert:.0f}"
+        )
 
     def step(self, dt: float, intent: MoveIntent | None = None) -> list[str]:
         events = self.world.step(dt, intent or MoveIntent())
         if self.world.mode != self._mode:
             self._mode = self.world.mode
             self._rebuild()
-        elif self.world.light_lock.version != self._lock_version:
+        elif self.world.light_lock.version != self._lock_version or self.world.network.version != self._network_version:
             self._rebuild()
         else:
             self._apply_visuals()

@@ -100,6 +100,11 @@ class WorldModeTest(unittest.TestCase):
         self.world.light_lock.set_orientation(-1, 0, "\\")
         self.world.light_lock.set_orientation(-1, 2, "/")
 
+    def _complete_network(self):
+        for terminal in self.world.network.terminals:
+            while not terminal.hacked:
+                self.world.network.hack(terminal.terminal_id)
+
     def test_portal_is_sealed_until_the_light_lock_is_solved(self):
         self.world.player.x = self.world.terrain.entrance[0] + 2.5
         self.world.player.z = self.world.terrain.entrance[1] + 0.5
@@ -147,8 +152,35 @@ class WorldModeTest(unittest.TestCase):
         self.world.player.x = self.world.dungeon.exit[0] + 0.5
         self.world.player.z = self.world.dungeon.exit[1] + 0.5
         self.world.step(0.016, MoveIntent(interact=True))
+        self.assertEqual(self.world.mode, "dungeon")
+        self.assertIn("sealed", " ".join(self.world.messages))
+        self._complete_network()
+        self.world.step(0.016, MoveIntent(interact=True))
         self.assertEqual(self.world.mode, "overworld")
         self.assertTrue(self.world.near_entrance)
+
+    def test_hacking_a_terminal_advances_the_network(self):
+        self._solve_light_lock()
+        self._stand_at_entrance()
+        self.world.step(0.016, MoveIntent(interact=True))
+        terminal = self.world.network.terminals[0]
+        self.world.player.x = terminal.x
+        self.world.player.z = terminal.z
+        self.world.step(0.016, MoveIntent(interact=True))
+        self.assertGreater(terminal.progress, 0.0)
+        self.assertGreater(self.world.network.alert, 0.0)
+
+    def test_high_alert_spawns_a_netwatch_hunter(self):
+        self._solve_light_lock()
+        self._stand_at_entrance()
+        self.world.step(0.016, MoveIntent(interact=True))
+        for terminal in self.world.network.terminals[:2]:
+            self.world.player.x = terminal.x
+            self.world.player.z = terminal.z
+            for _ in range(4):
+                self.world.step(0.016, MoveIntent(interact=True))
+        self.assertGreaterEqual(self.world.network.alert, 50.0)
+        self.assertIn("NetWatch", " ".join(self.world.messages))
 
     def test_interacting_away_from_the_portal_does_nothing(self):
         self.world.player.x = self.world.terrain.spawn[0]

@@ -83,3 +83,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The crypt's rooms-and-corridors layout was the only dungeon topology. Weft's Hamiltonian route generator guarantees full coverage and offers a visibly different, deterministic layout that fits the existing `Dungeon` interface.
 - **Decision**: Add `keystone.procedural.weave.WeaveLayout`: a 4×3 Hamiltonian room path with Warnsdorff ordering and connectivity checks, cut into three colored thread segments, expanded into 7×7 rooms joined by corridors. `World(layout=auto)` chooses weave for even seeds and crypt for odd seeds; `crypt`/`weave` force one. Room floors carry the thread color and `World.snapshot()` includes the weave path/segments.
 - **Consequences**: The engine now has two deterministic dungeon topologies and the CLI/harness expose `--layout`. Changing the grid, room size or path changes hashes and screenshots. The weave is a chain, not a loop or branch graph; those remain future work.
+
+### ADR-010: Make the cyber network the dungeon objective
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: The dungeon exit opened unconditionally once the light lock was solved, so the crypt had no infiltration objective and Cyberpulse's network/living-alert model was unused.
+- **Decision**: Add `keystone.procedural.network.Network`: a seeded graph of four terminal rooms selected from reachable non-spawn/non-exit rooms, a deterministic link tree plus one extra link, four-step hacks, alert gain/decay and a hunter response at 50+ alert. The exit is sealed until every terminal is hacked. Terminals and links render in the dungeon; network state is included in `World.snapshot()` and `state_hash()`.
+- **Consequences**: A dungeon run now has an objective beyond survival and navigation; hacking creates risk and combat pressure. Terminal count/link topology changes hashes and screenshots. The current hack is a progress counter, not Cyberpulse's frequency/buffer/hash puzzle variants; those remain future work.
