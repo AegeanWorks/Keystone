@@ -4,9 +4,9 @@
 
 ![Keystone expedition](assets/expedition.png)
 
-A performance-first 3D game engine in Python with an OpenGL 3.3 renderer, deterministic procedural worlds, first-person collision, survivors-style combat and a headless AI harness.
+A performance-first 3D game engine in Python with an OpenGL 3.3 renderer, deterministic procedural worlds, first-person collision, survivors-style combat, light-routing puzzles and a headless AI harness.
 
-Keystone's core loop is a **seeded expedition**: one integer seed generates an island and a dungeon, the player walks the terrain, fights escalating enemy waves, enters the crypt through a stone portal, explores a generated room-and-corridor layout, and returns to the surface. The authoritative simulation is independent of OpenGL, so the same run can be rendered, replayed from JSON actions, or hashed for regression checks.
+Keystone's core loop is a **seeded expedition**: one integer seed generates an island, a dungeon and a light lock, the player walks the terrain, fights escalating enemy waves, turns mirrors to open the crypt portal, explores a generated room-and-corridor layout, and returns to the surface. The authoritative simulation is independent of OpenGL, so the same run can be rendered, replayed from JSON actions, or hashed for regression checks.
 
 | Overworld | Dungeon |
 |---|---|
@@ -60,7 +60,7 @@ The window captures the mouse on start.
 | Mouse | Look around |
 | Arrow keys | Look with the keyboard |
 | `Shift` | Sprint |
-| `E` | Enter the portal, or leave through the crypt exit |
+| `E` | Turn a nearby light-lock mirror; enter the portal when the lock is solved; leave through the crypt exit |
 | `F1` | Release or recapture the mouse |
 | `Esc` | Close the window |
 
@@ -72,9 +72,10 @@ Weapons fire automatically at the nearest enemy in range. Keep moving to avoid c
 2. The player starts at a walkable clearing, facing the stone portal, with the opening enemy pack in the forward arc.
 3. Walking uses terrain height, water and slope checks; the dungeon uses a player-radius grid collision check.
 4. Enemies chase, split, explode or soak damage; the weapon auto-fires, waves escalate and a Warlord arrives every fifth wave. Death respawns the player at the last safe point with a fresh arena.
-5. Interacting within range of the portal switches the world to `dungeon`, rebuilds the scene and respawns the arena around the dungeon spawn.
-6. Interacting at the exit rune restores the overworld position at the portal.
-7. `World.state_hash()` fingerprints seed, time, player, terrain metadata, dungeon tiles and combat state. Identical seeds and actions produce identical hashes.
+5. The crypt portal is sealed by a light lock: an emitter, a green dye cell, two rotatable mirrors and a receiver. Turn the mirrors with `E` until the beam arrives with the exact target color; the receiver turns green and the portal opens.
+6. Interacting at the open portal switches the world to `dungeon`, rebuilds the scene and respawns the arena around the dungeon spawn.
+7. Interacting at the exit rune restores the overworld position at the portal.
+8. `World.state_hash()` fingerprints seed, time, player, terrain metadata, dungeon tiles, light-lock state and combat state. Identical seeds and actions produce identical hashes.
 
 The dungeon preview is generated from the same run: `assets/dungeon.png`.
 
@@ -85,6 +86,7 @@ The dungeon preview is generated from the same run: `assets/dungeon.png`.
 - **Procedural dungeon**: seeded non-overlapping rooms, L-shaped corridors, farthest-room exit, symmetric-raycast field of view and BFS pathfinding.
 - **First-person collision**: terrain walkability (water/slope), dungeon radius checks with axis-separated sliding, and portal/exit range transitions.
 - **Survivors combat**: six seeded enemy archetypes (Crawler, Stalker, Bulwark, Splitter, Bomber, Warlord boss), auto-fire hitscan, contact damage, split-on-death, escalating waves, boss waves and death/respawn. The whole director is renderer-independent and included in the replay hash.
+- **Light lock**: a seeded 2D beam circuit with additive red/green/blue color masks, `/` and `\` mirrors, a dye cell, a receiver, cycle-safe tracing and a portal gate. Mirrors rotate with `E`; the whole lock is renderer-independent and hashed.
 - **GPU renderer**: OpenGL 3.3 core, GLSL 330, per-vertex colors, one directional light, an optional warm point light (the crypt torch), depth testing, culling, gradient sky and distance fog.
 - **Static batching**: terrain is one mesh; trees, crowns, rocks and the path are merged into four meshes, so the expedition renders in roughly ten draw calls.
 - **Day/night atmosphere**: sun elevation drives daylight, warm dawn tint, ambient light, sky/horizon colors and light intensity; the dungeon overrides with its own moody palette.
@@ -98,6 +100,14 @@ The dungeon preview is generated from the same run: `assets/dungeon.png`.
 Combat follows the Dustline model: the player only moves, the weapon auto-fires, and the pressure comes from wave composition and positioning. Enemies spawn around the player, chase across terrain or dungeon corridors, and deal contact damage. Crawlers are the baseline, Stalkers are fast, Bulwarks soak damage, Splitters spawn two Stalkers on death, Bombers explode on contact, and a Warlord boss arrives every fifth wave.
 
 The director is seeded and lives in `keystone/combat.py`; it has no OpenGL dependency. Death resets the player to the last safe point with a fresh arena, so the AI harness can replay an entire run and still stop deterministically.
+
+## 🔦 Light Lock
+
+![Light lock at the portal](assets/lightlock.png)
+
+The portal circuit starts unsolved on every seed. A red emitter sends a beam east; the beam must pass through the green dye to become yellow, then reach the receiver with exactly the target mask. Two mirrors (`/` and `\`) redirect it. Standing within reach of a mirror and pressing `E` rotates it; the beam mesh and receiver color update immediately. The receiver turns green and the title reports `light open` when the lock is solved.
+
+The tracer is cycle-safe: a mirror loop stops rather than spinning forever. `LightLock.snapshot()` is part of `World.snapshot()`, so mirror orientation, solved state and hash all replay identically.
 
 ## 🤖 Headless AI Harness
 
@@ -114,13 +124,14 @@ python -m keystone.harness run --seed 7 --actions actions.json --out run.json
   "actions": [
     {"action": "turn", "yaw": 90},
     {"action": "move", "forward": 1.0, "seconds": 1.0, "sprint": true},
+    {"action": "rotate"},
     {"action": "interact"},
     {"action": "wait", "seconds": 0.5}
   ]
 }
 ```
 
-The result contains the final state (`mode`, `player`, `terrain`, `dungeon`, `near_entrance`, `near_exit`, `combat`, `events`) and a `hash`. The same seed and actions always produce the same hash; `selftest` proves determinism, seed sensitivity, portal entry, exit transition and rejection of unknown actions.
+The result contains the final state (`mode`, `player`, `terrain`, `dungeon`, `near_entrance`, `near_exit`, `light_lock`, `combat`, `events`) and a `hash`. The `rotate` action turns the nearest reachable mirror. The same seed and actions always produce the same hash; `selftest` proves determinism, seed sensitivity, portal entry, exit transition and rejection of unknown actions.
 
 ## 📈 Performance
 
@@ -146,6 +157,7 @@ keystone/
 │   ├── obj_loader.py         <- streaming Wavefront OBJ loader
 │   ├── png.py                <- dependency-free PNG screenshot writer
 │   ├── atmosphere.py         <- day/night sky, ambient and light model
+│   ├── beams.py              <- light-lock tracer, mirrors, dye and receiver
 │   ├── combat.py             <- archetypes, waves, auto-fire, boss, death
 │   ├── expedition.py         <- world-to-scene assembly and player controls
 │   ├── harness.py            <- deterministic JSON action harness
@@ -170,7 +182,8 @@ keystone/
 │   ├── screenshot.png        <- showcase scene capture
 │   ├── expedition.png        <- expedition overworld capture
 │   ├── dungeon.png           <- generated crypt capture
-│   └── combat.png            <- enemy pack capture
+│   ├── combat.png            <- enemy pack capture
+│   └── lightlock.png         <- portal light-lock capture
 ├── tests/
 │   ├── test_math3d.py        <- math core
 │   ├── test_scene.py         <- hierarchy, camera and lights
@@ -179,6 +192,7 @@ keystone/
 │   ├── test_renderer.py      <- headless OpenGL integration
 │   ├── test_procedural.py    <- noise, terrain and atmosphere
 │   ├── test_dungeon.py       <- dungeon, FOV and pathfinding
+│   ├── test_beams.py         <- light lock, mirrors, dye and cycles
 │   ├── test_combat.py        <- archetypes, waves, damage and boss
 │   ├── test_world.py         <- deterministic state, movement and modes
 │   ├── test_expedition.py    <- scene assembly and scene transitions
@@ -244,6 +258,7 @@ Keystone's first implementation was built in this workspace. The seeded expediti
 - **Aldervale** — integer-hash value noise/FBM, island heightfield, biome color palette, day/night atmosphere model, mesh-builder primitives.
 - **Crypt-Crawler** — room-and-corridor generation, symmetric-raycast FOV, BFS pathfinding and the deterministic JSON harness pattern.
 - **Dustline** — streaming-world collision ideas (circle/box separation and segment blocking), enemy archetype/wave/boss structure and combat pacing.
+- **Iris** — color-mask light routing, mirror reflection, cycle-safe beam tracing and receiver validation.
 
 These were reimplemented as modular Python; no AGL-licensed assets or source files were copied into this repository. See ADR-006 for the provenance decision. Keystone itself remains under the Aegean License 1.1 (AL-1.1).
 
@@ -253,12 +268,13 @@ These were reimplemented as modular Python; no AGL-licensed assets or source fil
 2. PBR materials, textures and sRGB color management.
 3. Weather (rain/snow particles) and a wind-driven foliage animation.
 4. Weapons/upgrades, champion affixes and loot using the wider Dustline tables.
-5. Save/load of the seed + action log, and a rewind/debug viewer.
-6. glTF/scene import and an editor with gizmos.
+5. More light-lock chambers, lenses and movable emitters inside the crypt.
+6. Save/load of the seed + action log, and a rewind/debug viewer.
+7. glTF/scene import and an editor with gizmos.
 
 ## 🤖 AIKit Integration
 
-- `.aikit/project.json` declares `mechanics.core` (simulation, terrain, dungeon, combat, expedition, renderer, harness) and `mechanics.test` (`python -m keystone.harness selftest`), so an agent exercises the same headless core.
+- `.aikit/project.json` declares `mechanics.core` (simulation, terrain, dungeon, beams, combat, expedition, renderer, harness) and `mechanics.test` (`python -m keystone.harness selftest`), so an agent exercises the same headless core.
 - `.aikit/task_ledger.json` records plans, checkpoints and handoff state; resume with `python aikit.py resume keystone`.
 - `.aikit/decisions.md` records ADR-001 through ADR-006.
 - `python aikit.py check keystone` is the Phase 4 gate: tests, lint, mechanics, hygiene, guidelines and secret scan. It never pushes; delivery is opt-in.

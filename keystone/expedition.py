@@ -6,6 +6,7 @@ import math
 import random
 
 from keystone.atmosphere import Atmosphere, apply_atmosphere
+from keystone.beams import mask_to_rgb
 from keystone.combat import ENEMY_TYPES
 from keystone.geometry import Material, MeshData
 from keystone.gpu.context import GLContext
@@ -21,6 +22,11 @@ WATER = Material(color=Vec3(0.08, 0.24, 0.36), specular=0.8, shininess=96.0)
 PORTAL = Material(color=Vec3(0.15, 0.75, 0.7), specular=1.0, shininess=128.0)
 TERRAIN = Material(color=Vec3(1.0, 1.0, 1.0), specular=0.03, shininess=4.0)
 CRYSTAL = Material(color=Vec3(1.0, 0.72, 0.22), specular=1.0, shininess=128.0)
+EMITTER = Material(color=Vec3(1.0, 0.18, 0.1), specular=1.0, shininess=128.0)
+RECEIVER_OPEN = Material(color=Vec3(1.0, 0.85, 0.15), specular=1.0, shininess=128.0)
+RECEIVER_LOCKED = Material(color=Vec3(0.2, 1.0, 0.5), specular=1.0, shininess=128.0)
+DYE = Material(color=Vec3(0.2, 1.0, 0.3), specular=1.0, shininess=96.0)
+MIRROR = Material(color=Vec3(0.75, 0.82, 0.95), specular=1.0, shininess=128.0)
 
 
 class Expedition:
@@ -32,6 +38,7 @@ class Expedition:
         self.scene.camera.fov_y = 65.0
         self._intent = MoveIntent()
         self._mode = self.world.mode
+        self._lock_version = -1
         self._captured = True
         self._last_cursor: tuple[float, float] | None = None
         self._e_was_down = False
@@ -195,6 +202,7 @@ class Expedition:
         else:
             self._build_dungeon()
         self._apply_visuals()
+        self._lock_version = self.world.light_lock.version
         self._sync_enemies()
 
     def _build_overworld(self) -> None:
@@ -212,6 +220,7 @@ class Expedition:
         self.scene.add(Node("rocks", mesh=self._rocks, material=TERRAIN))
         self.scene.add(Node("path", mesh=self._path, material=TERRAIN))
         self._add_portal()
+        self._add_light_lock()
 
     def _add_portal(self) -> None:
         x, z = self.world.terrain.entrance
@@ -253,6 +262,67 @@ class Expedition:
                 material=PORTAL,
             )
         )
+
+    def _add_light_lock(self) -> None:
+        lock = self.world.light_lock
+        ox, oz = lock.origin
+        ground = self.world.terrain.height_at(ox, oz)
+        height = ground + 1.35
+        self.scene.add(
+            Node(
+                "light-emitter",
+                Transform(position=Vec3(ox - 3.0, height, oz)),
+                mesh=cube(0.32),
+                material=EMITTER,
+            )
+        )
+        receiver_material = RECEIVER_LOCKED if lock.solved else RECEIVER_OPEN
+        self.scene.add(
+            Node(
+                "light-receiver",
+                Transform(position=Vec3(ox - 3.0, height, oz + 2.0)),
+                mesh=cube(0.32),
+                material=receiver_material,
+            )
+        )
+        self.scene.add(
+            Node(
+                "light-dye",
+                Transform(position=Vec3(ox - 1.0, height, oz + 1.0)),
+                mesh=sphere(0.14, segments=10, rings=7),
+                material=DYE,
+            )
+        )
+        for (x, z), orientation in lock.mirrors.items():
+            angle = math.pi / 4.0 if orientation == "/" else -math.pi / 4.0
+            self.scene.add(
+                Node(
+                    f"light-mirror-{x}-{z}",
+                    Transform(
+                        position=Vec3(ox + x, height, oz + z),
+                        rotation=Quat.from_axis_angle(Vec3.UP, angle),
+                        scale=Vec3(0.08, 1.0, 0.5),
+                    ),
+                    mesh=cube(1.0),
+                    material=MIRROR,
+                )
+            )
+        beams = MeshBuilder()
+        for segment in lock.trace():
+            sx, sz = segment.start
+            ex, ez = segment.end
+            wx0, wz0 = ox + sx, oz + sz
+            wx1, wz1 = ox + ex, oz + ez
+            beams.add_box(
+                (wx0 + wx1) / 2.0,
+                height,
+                (wz0 + wz1) / 2.0,
+                abs(wx1 - wx0) + 0.05,
+                0.05,
+                abs(wz1 - wz0) + 0.05,
+                mask_to_rgb(segment.mask),
+            )
+        self.scene.add(Node("light-beams", mesh=beams.build(), material=TERRAIN))
 
     def _build_dungeon(self) -> None:
         self.scene.add(Node("dungeon-floor", mesh=self._dungeon_floor, material=TERRAIN))
@@ -339,12 +409,15 @@ class Expedition:
             )
 
     def status(self) -> str:
-        return f"{self.world.mode} | {self.world.combat.status()}"
+        light = "open" if self.world.light_lock.solved else "sealed"
+        return f"{self.world.mode} | {self.world.combat.status()} | light {light}"
 
     def step(self, dt: float, intent: MoveIntent | None = None) -> list[str]:
         events = self.world.step(dt, intent or MoveIntent())
         if self.world.mode != self._mode:
             self._mode = self.world.mode
+            self._rebuild()
+        elif self.world.light_lock.version != self._lock_version:
             self._rebuild()
         else:
             self._apply_visuals()

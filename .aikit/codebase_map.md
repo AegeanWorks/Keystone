@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `39`
-- **Total Classes**: `62`
-- **Total Top-Level Functions**: `40`
-- **Total Class Methods**: `331`
-- **Total Source Lines**: `4787`
+- **Total Python Modules**: `41`
+- **Total Classes**: `65`
+- **Total Top-Level Functions**: `41`
+- **Total Class Methods**: `355`
+- **Total Source Lines**: `5121`
 
 ---
 
@@ -64,6 +64,28 @@
 
 **Functions:**
 - `def apply_atmosphere(scene, atmosphere)`
+
+---
+
+### [`keystone/beams.py`](keystone/beams.py)
+> *Deterministic 2D light-routing lock: mirrors, dye, color masks and receivers.*
+
+**Size**: `128` lines (`4479` bytes)
+
+**Classes:**
+- `class BeamSegment`
+- `class LightLock` - *A fixed five-cell light circuit whose mirrors seal the crypt portal.*
+  - Method `.__init__(seed, origin)`
+  - Method `.in_bounds(x, z)`
+  - Method `.trace()`
+  - Property `.solved`
+  - Method `.rotate(x, z)`
+  - Method `.set_orientation(x, z, orientation)`
+  - Method `.nearest_mirror(world_x, world_z, radius)`
+  - Method `.snapshot()`
+
+**Functions:**
+- `def mask_to_rgb(mask)`
 
 ---
 
@@ -123,7 +145,7 @@
 ### [`keystone/expedition.py`](keystone/expedition.py)
 > *First-person expedition: procedural overworld, dungeon and scene assembly.*
 
-**Size**: `387` lines (`16214` bytes)
+**Size**: `460` lines (`19099` bytes)
 
 **Classes:**
 - `class Expedition` - *Owns one seeded World and the scene that renders its current mode.*
@@ -134,6 +156,7 @@
   - Method `._rebuild()`
   - Method `._build_overworld()`
   - Method `._add_portal()`
+  - Method `._add_light_lock()`
   - Method `._build_dungeon()`
   - Method `._apply_visuals()`
   - Method `._sync_enemies()`
@@ -253,7 +276,7 @@
 ### [`keystone/harness.py`](keystone/harness.py)
 > *Deterministic JSON harness for driving the expedition without a GPU.*
 
-**Size**: `238` lines (`9036` bytes)
+**Size**: `244` lines (`9310` bytes)
 
 **Functions:**
 - `def catalog()` - *Describe every action and the state an agent can observe.*
@@ -479,7 +502,7 @@
 ### [`keystone/sim/world.py`](keystone/sim/world.py)
 > *Seeded expedition state: player, terrain, dungeon, movement and replay hash.*
 
-**Size**: `221` lines (`8508` bytes)
+**Size**: `241` lines (`9379` bytes)
 
 **Classes:**
 - `class MoveIntent` - *One frame of player intent, in local forward/right and radians.*
@@ -491,6 +514,7 @@
   - Property `.near_exit`
   - Method `.eye_position()`
   - Method `.step(dt, intent)`
+  - Method `.rotate_mirror()`
   - Method `.interact()`
   - Method `._record(message)`
   - Method `._move(dx, dz)`
@@ -520,6 +544,24 @@
   - Method `.test_bad_size_is_a_usage_error()`
   - Method `.test_out_requires_headless()`
   - Method `.test_bad_seed_is_a_usage_error()`
+
+---
+
+### [`tests/test_beams.py`](tests/test_beams.py)
+> *Tests for the deterministic light-lock puzzle.*
+
+**Size**: `59` lines (`2029` bytes)
+
+**Classes:**
+- `class LightLockTest`
+  - Method `.test_initial_state_is_unsolved()`
+  - Method `.test_solution_routes_red_through_green_dye_to_the_receiver()`
+  - Method `.test_wrong_orientation_stays_sealed()`
+  - Method `.test_trace_terminates_on_a_cycle()`
+  - Method `.test_rotate_toggles_orientation_and_version()`
+  - Method `.test_nearest_mirror_uses_world_distance()`
+  - Method `.test_snapshot_is_stable()`
+  - Method `.test_mask_to_rgb()`
 
 ---
 
@@ -568,16 +610,19 @@
 ### [`tests/test_expedition.py`](tests/test_expedition.py)
 > *Tests for scene assembly and the expedition controller.*
 
-**Size**: `77` lines (`3723` bytes)
+**Size**: `100` lines (`4934` bytes)
 
 **Classes:**
 - `class ExpeditionSceneTest`
   - Method `.setUp()`
   - Method `.test_overworld_scene_has_terrain_water_trees_and_a_portal()`
   - Method `.test_rocks_leave_the_portal_path_clear()`
+  - Method `.test_light_lock_scene_has_emitter_receiver_mirrors_and_beams()`
+  - Method `.test_rotating_a_mirror_rebuilds_the_light_scene()`
   - Method `.test_camera_starts_at_the_player_eye()`
   - Method `.test_enemy_nodes_match_the_combat_state()`
   - Method `.test_step_advances_time_and_syncs_the_camera()`
+  - Method `._solve_light_lock()`
   - Method `.test_entering_the_portal_switches_to_a_dungeon_scene()`
   - Method `.test_atmosphere_reaches_the_scene()`
   - Method `.test_dungeon_lighting_is_darker_than_daylight()`
@@ -779,7 +824,7 @@
 ### [`tests/test_world.py`](tests/test_world.py)
 > *Tests for the deterministic expedition simulation core.*
 
-**Size**: `118` lines (`4812` bytes)
+**Size**: `143` lines (`6010` bytes)
 
 **Classes:**
 - `class WorldDeterminismTest`
@@ -797,6 +842,9 @@
 - `class WorldModeTest`
   - Method `.setUp()`
   - Method `._stand_at_entrance()`
+  - Method `._solve_light_lock()`
+  - Method `.test_portal_is_sealed_until_the_light_lock_is_solved()`
+  - Method `.test_mirror_rotation_changes_the_lock()`
   - Method `.test_interacting_at_the_portal_enters_the_dungeon()`
   - Method `.test_dungeon_walls_block_movement()`
   - Method `.test_exit_returns_to_the_overworld_portal()`

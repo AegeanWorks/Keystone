@@ -31,11 +31,12 @@ def catalog() -> dict[str, Any]:
                 "defaults": {"yaw": 0.0, "pitch": 0.0},
             },
             "interact": {"fields": {}},
+            "rotate": {"fields": {}},
             "wait": {"fields": {"seconds": "float"}, "defaults": {"seconds": 0.5}},
         },
         "state_keys": [
             "seed", "time", "day_fraction", "mode", "player", "terrain", "dungeon",
-            "near_entrance", "near_exit", "combat", "events",
+            "near_entrance", "near_exit", "light_lock", "combat", "events",
         ],
         "limits": {"actions": MAX_ACTIONS, "seconds": MAX_SECONDS, "step": FIXED_STEP},
         "notes": [
@@ -83,6 +84,9 @@ def apply_action(world: World, action: dict[str, Any]) -> None:
         )
     elif name == "interact":
         world.step(0.0, MoveIntent(interact=True))
+    elif name == "rotate":
+        if not world.rotate_mirror():
+            raise ValueError("no mirror is within reach")
     elif name == "wait":
         for _ in range(round(_seconds(action) / FIXED_STEP)):
             world.step(FIXED_STEP)
@@ -135,6 +139,8 @@ def selftest() -> dict[str, Any]:
     checks.append("seed sensitivity")
 
     world = World(7, size=32)
+    world.light_lock.set_orientation(-1, 0, "\\")
+    world.light_lock.set_orientation(-1, 2, "/")
     world.player.x = world.terrain.entrance[0]
     world.player.z = world.terrain.entrance[1]
     apply_action(world, {"action": "interact"})

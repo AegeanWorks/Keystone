@@ -27,6 +27,23 @@ class ExpeditionSceneTest(unittest.TestCase):
         for x, _, z in self.expedition._rocks.positions:
             self.assertGreaterEqual(self.expedition._distance_to_path(x, z), 1.4)
 
+    def test_light_lock_scene_has_emitter_receiver_mirrors_and_beams(self):
+        names = [node.name for node in self.expedition.scene.traverse()]
+        self.assertIn("light-emitter", names)
+        self.assertIn("light-receiver", names)
+        self.assertIn("light-dye", names)
+        self.assertIn("light-beams", names)
+        self.assertGreaterEqual(sum(name.startswith("light-mirror-") for name in names), 2)
+
+    def test_rotating_a_mirror_rebuilds_the_light_scene(self):
+        before = self.expedition.world.light_lock.version
+        self.expedition.world.player.x = self.expedition.world.terrain.entrance[0] - 1.0
+        self.expedition.world.player.z = self.expedition.world.terrain.entrance[1]
+        self.expedition.step(0.016, MoveIntent(interact=True))
+        self.assertGreater(self.expedition.world.light_lock.version, before)
+        names = [node.name for node in self.expedition.scene.traverse()]
+        self.assertIn("light-beams", names)
+
     def test_camera_starts_at_the_player_eye(self):
         camera = self.expedition.scene.camera
         self.assertEqual(camera.position, self.expedition.world.eye_position())
@@ -48,7 +65,12 @@ class ExpeditionSceneTest(unittest.TestCase):
         self.assertNotEqual(before, after)
         self.assertEqual(after, self.expedition.world.eye_position())
 
+    def _solve_light_lock(self):
+        self.expedition.world.light_lock.set_orientation(-1, 0, "\\")
+        self.expedition.world.light_lock.set_orientation(-1, 2, "/")
+
     def test_entering_the_portal_switches_to_a_dungeon_scene(self):
+        self._solve_light_lock()
         self.expedition.world.player.x, self.expedition.world.player.z = self.expedition.world.terrain.entrance
         events = self.expedition.step(0.016, MoveIntent(interact=True))
         names = [node.name for node in self.expedition.scene.traverse()]
@@ -68,6 +90,7 @@ class ExpeditionSceneTest(unittest.TestCase):
 
     def test_dungeon_lighting_is_darker_than_daylight(self):
         overworld = self.expedition.scene.light.intensity
+        self._solve_light_lock()
         self.expedition.world.player.x, self.expedition.world.player.z = self.expedition.world.terrain.entrance
         self.expedition.step(0.016, MoveIntent(interact=True))
         self.assertLess(self.expedition.scene.light.intensity, overworld)

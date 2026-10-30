@@ -8,6 +8,7 @@ import math
 from collections import deque
 from dataclasses import dataclass
 
+from keystone.beams import LightLock
 from keystone.combat import Combat
 from keystone.math3d import Vec3
 from keystone.procedural.dungeon import Dungeon, DungeonGenerator
@@ -54,6 +55,7 @@ class World:
         self.player.yaw = math.atan2(dx, -dz)
         self.messages: deque[str] = deque(maxlen=8)
         self.events: list[str] = []
+        self.light_lock = LightLock(self.seed ^ 0x11A7, self.terrain.entrance)
         self.combat = Combat(self.seed ^ 0xC0FFEE)
         self.combat.spawn_around(self.player.x, self.player.z, self.is_standable, self.player.yaw)
 
@@ -108,8 +110,21 @@ class World:
             self.messages.append(event)
         return list(self.events)
 
+    def rotate_mirror(self) -> bool:
+        if self.mode != "overworld":
+            return False
+        mirror = self.light_lock.nearest_mirror(self.player.x, self.player.z)
+        if mirror is None:
+            return False
+        self.light_lock.rotate(*mirror)
+        if self.light_lock.solved:
+            self._record("The rune answers. The portal is open.")
+        else:
+            self._record("Mirror turned.")
+        return True
+
     def interact(self) -> None:
-        if self.mode == "overworld" and self.near_entrance:
+        if self.mode == "overworld" and self.near_entrance and self.light_lock.solved:
             self.mode = "dungeon"
             self.player.x = self.dungeon.spawn[0] + 0.5
             self.player.z = self.dungeon.spawn[1] + 0.5
@@ -122,6 +137,10 @@ class World:
             )
             self.combat.spawn_around(self.player.x, self.player.z, self.is_standable, self.player.yaw)
             self._record("Entered the sunken crypt.")
+        elif self.mode == "overworld" and self.rotate_mirror():
+            return
+        elif self.mode == "overworld" and self.near_entrance:
+            self._record("The portal is sealed. Align the light with the rune.")
         elif self.mode == "dungeon" and self.near_exit:
             self.mode = "overworld"
             self.player.x = self.terrain.entrance[0]
@@ -210,6 +229,7 @@ class World:
             },
             "near_entrance": self.near_entrance,
             "near_exit": self.near_exit,
+            "light_lock": self.light_lock.snapshot(),
             "combat": self.combat.snapshot(),
             "events": list(self.events),
         }

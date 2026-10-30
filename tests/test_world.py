@@ -78,7 +78,30 @@ class WorldModeTest(unittest.TestCase):
     def _stand_at_entrance(self):
         self.world.player.x, self.world.player.z = self.world.terrain.entrance
 
+    def _solve_light_lock(self):
+        self.world.light_lock.set_orientation(-1, 0, "\\")
+        self.world.light_lock.set_orientation(-1, 2, "/")
+
+    def test_portal_is_sealed_until_the_light_lock_is_solved(self):
+        self.world.player.x = self.world.terrain.entrance[0] + 2.5
+        self.world.player.z = self.world.terrain.entrance[1] + 0.5
+        self.world.step(0.016, MoveIntent(interact=True))
+        self.assertEqual(self.world.mode, "overworld")
+        self.assertIn("sealed", " ".join(self.world.messages))
+        self._solve_light_lock()
+        self.world.step(0.016, MoveIntent(interact=True))
+        self.assertEqual(self.world.mode, "dungeon")
+
+    def test_mirror_rotation_changes_the_lock(self):
+        self.world.player.x = self.world.terrain.entrance[0] - 1.0
+        self.world.player.z = self.world.terrain.entrance[1]
+        version = self.world.light_lock.version
+        self.world.step(0.016, MoveIntent(interact=True))
+        self.assertGreater(self.world.light_lock.version, version)
+        self.assertIn("Mirror turned", " ".join(self.world.messages))
+
     def test_interacting_at_the_portal_enters_the_dungeon(self):
+        self._solve_light_lock()
         self._stand_at_entrance()
         self.assertTrue(self.world.near_entrance)
         events = self.world.step(0.016, MoveIntent(interact=True))
@@ -90,6 +113,7 @@ class WorldModeTest(unittest.TestCase):
         )
 
     def test_dungeon_walls_block_movement(self):
+        self._solve_light_lock()
         self._stand_at_entrance()
         self.world.step(0.016, MoveIntent(interact=True))
         for _ in range(300):
@@ -99,6 +123,7 @@ class WorldModeTest(unittest.TestCase):
         self.assertTrue(self.world.dungeon.is_walkable(tile_x, tile_y))
 
     def test_exit_returns_to_the_overworld_portal(self):
+        self._solve_light_lock()
         self._stand_at_entrance()
         self.world.step(0.016, MoveIntent(interact=True))
         self.world.player.x = self.world.dungeon.exit[0] + 0.5
