@@ -3,24 +3,15 @@
   "active_task": {
     "task_id": "keystone-scene-identity-v1",
     "last_phase": "phase 3",
-    "active_phase": 3,
-    "status": "in_progress",
+    "active_phase": 5,
+    "status": "completed",
     "updated_at": 1793398707.5723712,
     "owner": "opencode:keystone-identity",
     "started_by": "opencode:keystone-identity",
-    "continuations": []
+    "continuations": [],
+    "completed_at": 1793398923.6150455
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-ai-vision-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-ai-vision-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793385957.1594677,
-      "timestamp_str": "2026-10-30 21:45:57",
-      "agent": "opencode:keystone-ai-vision"
-    },
     {
       "task_id": "keystone-human-ui-v1",
       "phase": "phase 2",
@@ -290,6 +281,16 @@
         "next": "broadphase physics/character controller or asset registry",
         "evidence": "176 tests, aikit check 6/6, schema-4 report and identity diff verified"
       }
+    },
+    {
+      "task_id": "keystone-scene-identity-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-scene-identity-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793398923.6150477,
+      "timestamp_str": "2026-10-31 01:22:03",
+      "agent": "opencode:keystone-identity"
     }
   ]
 }
