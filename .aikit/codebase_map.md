@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `43`
 - **Total Classes**: `55`
-- **Total Top-Level Functions**: `43`
-- **Total Class Methods**: `279`
-- **Total Source Lines**: `4027`
+- **Total Top-Level Functions**: `44`
+- **Total Class Methods**: `281`
+- **Total Source Lines**: `4056`
 
 ---
 
@@ -29,11 +29,12 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `163` lines (`7441` bytes)
+**Size**: `179` lines (`8329` bytes)
 
 **Functions:**
 - `def _size(text)`
 - `def _frames(text)`
+- `def _hash(text)`
 - `def main(argv)`
 
 ---
@@ -490,7 +491,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `112` lines (`4910` bytes)
+**Size**: `125` lines (`5650` bytes)
 
 **Classes:**
 - `class EngineTest`
@@ -500,6 +501,8 @@
   - Method `.test_bad_game_spec_reports_why_and_fix()`
   - Method `.test_describe_cli_prints_capabilities_without_opening_a_window()`
   - Method `.test_verify_determinism_cli_is_gpu_free()`
+  - Method `.test_expect_hash_gate_matches_and_rejects()`
+  - Method `.test_invalid_expected_hash_is_a_usage_error()`
   - Method `.test_simulate_cli_prints_json_without_opening_a_window()`
   - Method `.test_simulate_cli_reads_actions_and_writes_output()`
   - Method `.test_compare_baseline_cli_exits_zero_for_an_identical_frame()`

@@ -7,7 +7,7 @@ from keystone.math3d import Mat4, Quat, Vec3
 from keystone.plugin import GameModule
 from keystone.scene import Node, Scene, Transform
 
-__version__ = "0.11.0"
+__version__ = "0.12.0"
 __all__ = ["ActionState", "Engine", "GameModule", "Mat4", "Node", "Quat", "Scene", "Transform", "Vec3"]
 
 

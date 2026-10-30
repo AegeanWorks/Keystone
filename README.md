@@ -32,6 +32,10 @@ Games plug in through one five-operation contract. Keystone ships a **cube demo*
   ```bash
   python -m keystone --verify-determinism --frames 120
   ```
+- **Pin a known result**:
+  ```bash
+  python -m keystone --simulate --frames 120 --expect-hash <32-hex-hash>
+  ```
 - **Simulate without OpenGL**:
   ```bash
   python -m keystone --simulate --frames 120 --trace
@@ -111,7 +115,7 @@ The bundled `CubeDemo` uses the generic action map:
 - **Replay and persistence**: `ActionState` command logs, stable hashes and atomic JSON writes with a `.bak` snapshot.
 - **Plugin loading**: `load_game("package.module:Factory")` validates the five-operation contract before the engine starts.
 - **No-GL simulation**: `run_simulation()` and `--simulate` drive `GameModule.update()` directly, with JSON action scripts and deterministic hashes, no window or driver required.
-- **AI discovery and testing**: `--describe`/`describe_game()` expose actions, capabilities, report schema and the current snapshot; `--verify-determinism` runs a script twice; `keystone.testing` provides the same evidence as Python helpers; `compare_reports()` diffs two frame reports.
+- **AI discovery and testing**: `--describe`/`describe_game()` expose actions, capabilities, report schema and the current snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; `keystone.testing` provides the same evidence as Python helpers; `compare_reports()` diffs two frame reports.
 - **Visual regression gate**: `--compare-baseline baseline.json` renders a new report, compares image/report hashes, stats and projected nodes, prints the diff and exits non-zero on image change.
 - **Frame reports for AI analysis**: `--report` writes a schema-1 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data and projected screen bounds for every scene node.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
@@ -134,7 +138,9 @@ python -m keystone --headless --frames 1 --size 1280x720 \
   --out frame.png --report current.json --compare-baseline baseline.json
 ```
 
-The first command runs the scenario twice and exits 0 only when both hashes match. The second renders, writes the current report, compares it with the baseline and exits non-zero when the image changed. The diff includes luminance/content deltas and changed/added/removed nodes.
+The first command runs the scenario twice and exits 0 only when both hashes match. The second renders, writes the current report, compares it with the baseline and exits non-zero when the image changed. The diff includes luminance/content deltas and changed/added/removed nodes. `--expect-hash <32-hex>` pins a known final hash for either simulation mode.
+
+See [`docs/AI_GUIDE.md`](docs/AI_GUIDE.md) for the complete discover → simulate → verify → render → compare workflow.
 
 ### Simulate without a GPU
 
@@ -222,7 +228,8 @@ keystone/
 │   ├── engine.png            <- sample frame
 │   └── engine.json           <- schema-1 sample frame report
 ├── docs/
-│   └── ARCHITECTURE.md       <- core layers, contract and roadmap
+│   ├── ARCHITECTURE.md       <- core layers, contract and roadmap
+│   └── AI_GUIDE.md           <- discover, simulate, verify, render and compare
 ├── tests/
 │   ├── test_math3d.py        <- math core
 │   ├── test_scene.py         <- hierarchy, camera and lights

@@ -29,6 +29,13 @@ def _frames(text: str) -> int:
     return value
 
 
+def _hash(text: str) -> str:
+    value = text.lower()
+    if len(value) != 32 or any(character not in "0123456789abcdef" for character in value):
+        raise argparse.ArgumentTypeError("hash must be 32 hexadecimal characters")
+    return value
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m keystone",
@@ -39,6 +46,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--headless", action="store_true", help="render without opening a window")
     parser.add_argument("--simulate", action="store_true", help="advance the game without OpenGL")
     parser.add_argument("--verify-determinism", action="store_true", help="run a scenario twice and compare hashes")
+    parser.add_argument("--expect-hash", type=_hash, default=None, help="assert the final scenario hash")
     parser.add_argument("--compare-baseline", type=Path, default=None, help="compare the current report with a baseline report")
     parser.add_argument("--actions", type=Path, default=None, help="JSON action list for --simulate/--verify-determinism")
     parser.add_argument("--trace", action="store_true", help="include per-frame snapshots in simulation output")
@@ -48,14 +56,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--report", type=Path, default=None, help="machine-readable frame report (requires --headless)")
     args = parser.parse_args(argv)
     if args.describe and (
-        args.headless or args.simulate or args.verify_determinism or args.compare_baseline
-        or args.out or args.report or args.actions or args.trace
+        args.headless or args.simulate or args.verify_determinism or args.expect_hash
+        or args.compare_baseline or args.out or args.report or args.actions or args.trace
     ):
         parser.error("--describe is a standalone discovery command")
     if args.headless and args.simulate:
         parser.error("--headless and --simulate are mutually exclusive")
     if args.verify_determinism and (args.headless or args.simulate or args.report or args.compare_baseline):
         parser.error("--verify-determinism is a standalone no-GL command")
+    if args.expect_hash and not (args.simulate or args.verify_determinism):
+        parser.error("--expect-hash requires --simulate or --verify-determinism")
     if args.simulate and args.report:
         parser.error("--report requires the rendered --headless path")
     if args.report and not args.headless:
@@ -84,6 +94,9 @@ def main(argv: list[str] | None = None) -> int:
 
             actions = load_actions(args.actions) if args.actions else []
             result = verify_determinism(lambda: load_game(args.game), actions, frames=args.frames or None)
+            if args.expect_hash:
+                result["expected_hash"] = args.expect_hash
+                result["ok"] = result["ok"] and result["hash"] == args.expect_hash
             if args.out:
                 write_json_atomic(args.out, result)
             print(json.dumps(result, indent=2, sort_keys=True))
@@ -95,10 +108,13 @@ def main(argv: list[str] | None = None) -> int:
             actions = load_actions(args.actions) if args.actions else []
             frames = args.frames if args.frames else (len(actions) or 1)
             result = run_simulation(game, frames, actions, trace=args.trace)
+            if args.expect_hash:
+                result["expected_hash"] = args.expect_hash
+                result["ok"] = result["hash"] == args.expect_hash
             if args.out:
                 write_json_atomic(args.out, result)
             print(json.dumps(result, indent=2, sort_keys=True))
-            return 0
+            return 0 if result["ok"] else 1
 
         from keystone.app import Engine
 

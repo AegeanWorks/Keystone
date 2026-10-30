@@ -139,3 +139,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: `keystone.testing` and `compare_reports()` were library-only, forcing an AI client to write Python wrappers for the two most common checks: repeat a scenario deterministically and gate a frame against a baseline.
 - **Decision**: Add `--verify-determinism` (no GL, two runs, exit 0 only on matching hashes) and `--compare-baseline` (requires `--headless` and `--report`, prints image/stat/node diff, exits non-zero on image change). Publish `REPORT_SCHEMA` through `describe_game()`/`--describe`.
 - **Consequences**: AI/CI clients get direct exit-code gates and schema discovery. Visual comparison is image-hash first; descriptive statistics and node changes are evidence, not aesthetic judgment.
+
+### ADR-017: Support explicit expected-hash gates and an AI workflow guide
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: Determinism was checkable by running twice, but an AI client also needs to pin a known-good result and fail on drift in one command. The workflow was spread across README sections.
+- **Decision**: Add `--expect-hash <32-hex>` to `--simulate` and `--verify-determinism`; mismatches return 1 and include `expected_hash`. Add `docs/AI_GUIDE.md` covering discovery, simulation, hash pinning, rendering, reports and baseline comparison.
+- **Consequences**: A model can gate a known outcome directly. Expected hashes are explicit operator input, never silently refreshed; changing game behavior requires updating the pin deliberately.

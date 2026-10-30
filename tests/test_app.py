@@ -9,6 +9,7 @@ from pathlib import Path
 
 from keystone.__main__ import main
 from keystone.app import Engine
+from keystone.headless import run_simulation
 from keystone.samples import CubeDemo
 
 
@@ -58,6 +59,18 @@ class EngineTest(unittest.TestCase):
         payload = json.loads(buffer.getvalue())
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["first"], payload["second"])
+
+    def test_expect_hash_gate_matches_and_rejects(self):
+        expected = run_simulation(CubeDemo(), 1)["hash"]
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(main(["--simulate", "--frames", "1", "--expect-hash", expected]), 0)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(main(["--simulate", "--frames", "1", "--expect-hash", "0" * 32]), 1)
+
+    def test_invalid_expected_hash_is_a_usage_error(self):
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+            main(["--simulate", "--expect-hash", "not-a-hash"])
+        self.assertEqual(caught.exception.code, 2)
 
     def test_simulate_cli_prints_json_without_opening_a_window(self):
         buffer = io.StringIO()
