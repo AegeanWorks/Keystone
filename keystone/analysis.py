@@ -5,22 +5,25 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from keystone.geometry import MeshData
+from keystone.geometry import Material, MeshData
 from keystone.math3d import Vec3
 from keystone.png import read_png, write_png
 from keystone.replay import stable_hash
 from keystone.scene import Scene
 from keystone.serialization import write_json_atomic
+from keystone.texture import TextureData
 
 GRID = 8
 
 REPORT_SCHEMA = {
-    "version": 2,
+    "version": 3,
     "fields": {
         "image": ["path", "width", "height", "rgba_sha256", "png_sha256"],
         "stats": ["mean_rgb", "mean_luma", "content_pixels", "content_ratio", "content_bbox", "dominant_colors", "grid_luma"],
         "scene": ["camera", "node_count", "nodes"],
-        "node": ["name", "parent", "visible", "world", "screen", "bbox", "triangles"],
+        "node": ["name", "parent", "visible", "world", "screen", "bbox", "triangles", "material"],
+        "material": ["color", "specular", "shininess", "checker_scale", "texture"],
+        "texture": ["name", "width", "height", "sha256"],
         "ui": ["visible", "paused", "labels", "buttons"],
         "ui_label": ["text", "x", "y", "scale", "color"],
         "ui_button": ["label", "action", "rect", "selected", "hovered"],
@@ -29,8 +32,9 @@ REPORT_SCHEMA = {
     "notes": [
         "grid_luma is an 8x8 backward-compatible luminance summary.",
         "screen and bbox are top-down image coordinates; screen may be null behind the camera.",
-        "hash covers image metadata, stats, projected nodes and ui when present, not visual quality.",
-        "ui is null unless the human overlay was rendered; schema-2 adds this optional field.",
+        "hash covers image metadata, stats, projected nodes with materials and ui when present, not visual quality.",
+        "ui is null unless the human overlay was rendered; schema-2 added it.",
+        "schema-3 adds material and texture metadata; schema-1/2 reports remain comparable.",
         "ui labels and button rects are presentation metadata in top-left pixels.",
     ],
 }
@@ -89,6 +93,28 @@ def _stats(pixels: bytes, width: int, height: int, background: Vec3, flip: bool 
     }
 
 
+def _material_report(material: object) -> dict | None:
+    if not isinstance(material, Material):
+        return None
+    texture = material.texture if isinstance(material.texture, TextureData) else None
+    return {
+        "color": [round(material.color.x, 3), round(material.color.y, 3), round(material.color.z, 3)],
+        "specular": material.specular,
+        "shininess": material.shininess,
+        "checker_scale": material.checker_scale,
+        "texture": (
+            {
+                "name": texture.name,
+                "width": texture.width,
+                "height": texture.height,
+                "sha256": texture.sha256(),
+            }
+            if texture is not None
+            else None
+        ),
+    }
+
+
 def _node_report(scene: Scene, width: int, height: int) -> list[dict]:
     camera = scene.camera
     view_projection = camera.view_projection(width / height)
@@ -113,6 +139,9 @@ def _node_report(scene: Scene, width: int, height: int) -> list[dict]:
                 ]
         except ZeroDivisionError:
             continue
+        material = _material_report(node.material)
+        if material is not None:
+            entry["material"] = material
         mesh = node.mesh
         if isinstance(mesh, MeshData):
             entry["triangles"] = mesh.triangle_count()
@@ -163,7 +192,7 @@ def analyze_frame(
         image["png_sha256"] = hashlib.sha256(Path(image_path).read_bytes()).hexdigest()
     camera = scene.camera
     report = {
-        "schema": 2,
+        "schema": 3,
         "image": image,
         "stats": stats,
         "scene": {
@@ -218,9 +247,9 @@ def _compare_ui(before: dict | None, after: dict | None) -> dict:
 
 
 def compare_reports(before: dict, after: dict) -> dict:
-    """Compare schema-1 or schema-2 frame reports for AI-driven regression checks."""
-    if before.get("schema") not in (1, 2) or after.get("schema") not in (1, 2):
-        raise ValueError("both reports must use schema 1 or 2")
+    """Compare schema-1/2/3 frame reports for AI-driven regression checks."""
+    if before.get("schema") not in (1, 2, 3) or after.get("schema") not in (1, 2, 3):
+        raise ValueError("both reports must use schema 1, 2 or 3")
     first_stats = before["stats"]
     second_stats = after["stats"]
     first_nodes = {node["name"]: node for node in before["scene"]["nodes"]}
@@ -229,15 +258,21 @@ def compare_reports(before: dict, after: dict) -> dict:
     for name in sorted(set(first_nodes) | set(second_nodes)):
         old = first_nodes.get(name)
         new = second_nodes.get(name)
-        if old is None or new is None or (old.get("screen"), old.get("bbox"), old.get("visible")) != (
+        if old is None or new is None or (
+            old.get("screen"),
+            old.get("bbox"),
+            old.get("visible"),
+            old.get("material"),
+        ) != (
             new.get("screen"),
             new.get("bbox"),
             new.get("visible"),
+            new.get("material"),
         ):
             changed.append(name)
     ui_diff = _compare_ui(before.get("ui"), after.get("ui"))
     return {
-        "schema": 2,
+        "schema": 3,
         "same_image": before["image"]["rgba_sha256"] == after["image"]["rgba_sha256"],
         "same_report": before.get("hash") == after.get("hash"),
         "same_ui": ui_diff["same"],

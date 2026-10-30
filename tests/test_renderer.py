@@ -9,8 +9,9 @@ from keystone.gpu.context import GLContext, require_opengl_33
 from keystone.gpu.renderer import Renderer
 from keystone.gpu.shader import ShaderProgram
 from keystone.math3d import Vec3
-from keystone.primitives import cube
+from keystone.primitives import cube, plane
 from keystone.scene import DirectionalLight, Node, PointLight, Scene
+from keystone.texture import TextureData
 
 
 def build_scene() -> Scene:
@@ -73,6 +74,32 @@ class RendererIntegrationTest(unittest.TestCase):
         red, _green, blue, _alpha = pixels[center : center + 4]
         self.assertGreater(red, 80)
         self.assertGreater(red, blue)
+
+    def test_textured_plane_samples_the_texture(self):
+        scene = Scene()
+        scene.ambient = Vec3(1.0, 1.0, 1.0)
+        scene.light = DirectionalLight(intensity=0.0)
+        scene.fog_density = 0.0
+        scene.background = Vec3(0.0, 0.0, 0.0)
+        scene.sky = Vec3(0.0, 0.0, 0.0)
+        scene.camera.position = Vec3(0.0, 3.0, 4.0)
+        scene.camera.look_at(Vec3(0.0, 0.0, 0.0))
+        texture = TextureData(1, 1, bytes((0, 255, 0, 255)), "solid-green")
+        scene.add(
+            Node(
+                "plane",
+                mesh=plane(10.0),
+                material=Material(color=Vec3(1.0, 1.0, 1.0), specular=0.0, texture=texture),
+            )
+        )
+        self.renderer.render(scene)
+        pixels = self.renderer.read_pixels()
+        center = 24 * 64 * 4 + 32 * 4
+        red, green, blue, alpha = pixels[center : center + 4]
+        self.assertEqual(alpha, 255)
+        self.assertGreater(green, 200)
+        self.assertLess(red, 40)
+        self.assertLess(blue, 40)
 
     def test_screenshot_is_a_real_png(self):
         self.renderer.render(build_scene())

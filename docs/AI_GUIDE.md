@@ -45,13 +45,14 @@ python -m keystone --headless --frames 1 --size 1280x720 \
   --out frame.png --report frame.json
 ```
 
-The schema-2 report contains:
+The schema-3 report contains:
 
 - image path, dimensions and PNG/RGBA SHA-256;
 - mean RGB/luminance, content pixels/ratio and bbox;
 - dominant colors and an 8×8 luminance grid;
 - camera parameters;
 - every node's world position, visibility, triangle count, projected screen center and bounding box;
+- per-material color/specular/shininess/checker and optional texture name, dimensions and SHA-256;
 - `ui` metadata (`visible`, `paused`, labels and buttons) or `null` for clean captures;
 - a stable report hash.
 
@@ -63,7 +64,7 @@ python -m keystone --headless --frames 1 --size 1280x720 \
   --compare-baseline baseline.json --diff-out diff.png
 ```
 
-The diff reports image/report equality, luminance and content-ratio deltas, bbox changes, added/removed/changed nodes, and added/removed/moved UI labels and buttons. `--diff-out` additionally writes a visual PNG and reports changed pixels, ratio, bbox, mean delta and max delta. Exit code 0 means the image hash matched; 1 means it changed.
+The diff reports image/report equality, luminance and content-ratio deltas, bbox changes, added/removed/changed nodes, added/removed/moved UI labels and buttons, and material/texture metadata. `--diff-out` additionally writes a visual PNG and reports changed pixels, ratio, bbox, mean delta and max delta. Exit code 0 means the image hash matched; 1 means it changed.
 
 ## 6. Capture the human UI
 

@@ -187,3 +187,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The human UI was visible in PNGs, but an AI reading a frame report could not tell which labels and buttons were on screen, which menu item was selected, or whether the game was paused; UI regressions were only pixel diffs.
 - **Decision**: Record `TextElement`/`ButtonElement` metadata on the `Canvas`, add `ui.report.describe_canvas()`, and include an optional `ui` object in the frame report: visibility, pause state, labels with text/position/scale/color and buttons with label/action/rect/selected/hovered. Bump the report schema to 2; include `ui` in the report hash only when present; diff UI labels/buttons in `compare_reports()`; accept schema-1 reports as baselines. Add `--start-paused` so the pause menu can be captured headlessly.
 - **Consequences**: AI and human reviewers get structural UI evidence alongside pixels. `--no-ui` reports keep `ui: null` and their old hash behavior; schema-1 baselines remain comparable. UI metadata is presentation-only, and volatile labels (FPS/time) make deterministic headless captures the reliable baseline.
+
+### ADR-023: Add immutable RGBA textures and material texture metadata
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: `MeshData` carried UVs and primitives filled them, but the renderer ignored them; materials had only a flat color and a world-space checker. Textured surfaces are a basic 3D engine capability, and AI graphics reports could not identify which texture a node used.
+- **Decision**: Add immutable `TextureData` (RGBA8, PNG and procedural checker sources), `Material.texture`, a renderer-owned `GpuTexture` cache with repeat wrapping and mipmaps, and GLSL texture sampling multiplied into the base color. Use a checker texture on the sample floor. Report material color/specular/shininess/checker and texture name/dimensions/SHA-256; bump the report schema to 3 and accept schema 1/2 baselines.
+- **Consequences**: Games get textured materials with no new dependency beyond the existing PNG reader and PyOpenGL. Textures are opaque (alpha is not blended), one sampler per material, and color management stays linear/untagged. The renderer releases cached textures with meshes; `compare_reports()` flags material changes on a node.

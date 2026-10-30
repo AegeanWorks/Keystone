@@ -76,6 +76,9 @@ class ShaderProgram:
     def set_float(self, name: str, value: float) -> None:
         GL.glUniform1f(self._location(name), value)
 
+    def set_int(self, name: str, value: int) -> None:
+        GL.glUniform1i(self._location(name), value)
+
     def release(self) -> None:
         if self._program:
             GL.glDeleteProgram(self._program)

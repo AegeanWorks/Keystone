@@ -4,7 +4,7 @@
 
 ![Keystone engine sample](assets/engine.png)
 
-A small, game-agnostic 3D engine core in Python: OpenGL 3.3 rendering, scene graph, meshes and OBJ loading, fixed-step loop, action input, collision primitives, deterministic replay, atomic serialization, and a human HUD/help overlay rendered with an embedded bitmap font.
+A small, game-agnostic 3D engine core in Python: OpenGL 3.3 rendering, textured materials, scene graph, meshes and OBJ loading, fixed-step loop, action input, collision primitives, deterministic replay, atomic serialization, and a human HUD/help overlay rendered with an embedded bitmap font.
 
 Games plug in through one five-operation contract. Keystone ships a **cube demo** only as a smoke test; it contains no combat, puzzles, procedural worlds or other genre rules. External game modules live outside this package and load with `--game package.module:Factory`. Games may also add an optional `draw_ui(canvas, state)` hook for their own HUD.
 
@@ -109,6 +109,21 @@ def draw_ui(self, canvas: Canvas, state: HudState) -> None:
 
 The hook runs before the engine HUD and pause menu, so engine UI stays on top. It receives the current `Canvas` and `HudState`, so games use the same embedded font, clipping and pause state as the engine. Hiding the overlay (`H`) hides game UI too.
 
+### Textures
+
+```python
+from keystone.geometry import Material
+from keystone.math3d import Vec3
+from keystone.texture import TextureData
+
+material = Material(
+    color=Vec3(1.0, 1.0, 1.0),
+    texture=TextureData.from_png("assets/floor.png"),
+)
+```
+
+`TextureData.from_png()` accepts the same 8-bit RGBA PNGs as the reader. `TextureData.checker(size, dark, light, cell)` builds a deterministic texture without a file. Textures use repeat wrapping, mipmaps and the mesh UVs; the renderer caches one GPU texture per immutable payload.
+
 ## 🕹️ Sample Controls
 
 The bundled `CubeDemo` uses the generic action map; the overlay shows it at runtime:
@@ -155,7 +170,8 @@ The overlay contains:
 
 - **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth testing, back-face culling, Blinn-Phong lighting, vertex colors, fog, gradient sky and an optional point light.
 - **Scene graph**: named nodes, local/world transforms, visibility, cycle-safe parenting and cached static GPU meshes.
-- **Assets**: immutable `MeshData` with optional UVs and vertex colors, cube/plane/cone/cylinder/sphere primitives, a streaming OBJ loader and a dependency-free PNG writer.
+- **Assets**: immutable `MeshData` with optional UVs and vertex colors, cube/plane/cone/cylinder/sphere primitives, a streaming OBJ loader, and an immutable `TextureData` with PNG and procedural checker sources.
+- **Textured materials**: `Material.texture` samples an RGBA texture with repeat wrapping and mipmaps; the renderer caches one GPU texture per immutable payload and the sample floor demonstrates a procedural checker.
 - **Fixed-step runtime**: `FixedStepClock` releases whole simulation steps with a bounded catch-up budget; the headless path advances exactly one step per rendered frame for deterministic tests.
 - **Action input**: `InputMap` maps keys and pointer motion to `forward`, `right`, `up`, `look_yaw`, `look_pitch`, `pressed` and `held`; games never read GLFW directly.
 - **Physics primitives**: rays, AABBs and spheres with ray queries, overlap tests and sphere/AABB resolution.
@@ -165,7 +181,7 @@ The overlay contains:
 - **AI discovery and testing**: `--describe`/`describe_game()` expose actions, capabilities, report schema and the current snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; `keystone.testing` provides the same evidence as Python helpers; `compare_reports()` diffs two frame reports.
 - **Visual regression gate**: `--compare-baseline baseline.json` renders a new report, compares image/report hashes, stats and projected nodes, prints the diff and exits non-zero on image change. `--diff-out diff.png` writes a changed-pixel diff image.
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip image loading, changed-pixel counts, bbox and a visual diff without third-party imaging libraries.
-- **Frame reports for AI analysis**: `--report` writes a schema-2 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data, projected screen bounds for every scene node, and structured UI labels/buttons when the overlay is rendered.
+- **Frame reports for AI analysis**: `--report` writes a schema-3 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data, projected screen bounds for every scene node, material/texture metadata, and structured UI labels/buttons when the overlay is rendered.
 - **Human overlay**: a game-agnostic HUD with game/status, FPS, frame, elapsed time and resolution, plus controls help and an interactive pause menu; drawn with an embedded 5×7 bitmap font, no font asset or imaging library. Games can add their own HUD through the optional `draw_ui(canvas, state)` hook.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
 
@@ -237,6 +253,7 @@ The report contains:
 - mean RGB/luminance, content pixels/ratio, content bounding box, dominant colors and an 8×8 luminance grid;
 - camera parameters;
 - every scene node's world position, visibility, triangle count and projected screen center/bounding box;
+- each material's color, specular, shininess, checker scale and optional texture name/dimensions/SHA-256;
 - when `--ui` is active: `ui.visible`, `ui.paused`, every label's text/position/scale/color and every button's label, action, rect, selection and hover state. `ui` is `null` for clean captures.
 
 This lets an AI model compare a frame, a scene graph, a deterministic simulation and the human interface without guessing from pixels alone. `keystone.analysis.compare_reports(before, after)` returns image/report equality, luminance and content-ratio deltas, bbox changes, added/removed/changed nodes, and added/removed/moved labels and buttons. It does not claim to measure visual quality.
@@ -266,6 +283,7 @@ keystone/
 │   ├── primitives.py         <- cube, plane, cone, cylinder and sphere
 │   ├── obj_loader.py         <- streaming Wavefront OBJ loader
 │   ├── png.py                <- dependency-free PNG writer and reader
+│   ├── texture.py            <- immutable RGBA textures, PNG and checker sources
 │   ├── samples.py            <- CubeDemo smoke test
 │   ├── ui/
 │   │   ├── __init__.py       <- UI package exports
@@ -280,12 +298,13 @@ keystone/
 │       ├── context.py        <- GLFW window and OpenGL 3.3 context
 │       ├── shader.py         <- GLSL compilation and uniforms
 │       ├── mesh_buffer.py    <- VAO/VBO/EBO upload and drawing
+│       ├── texture_buffer.py <- 2D texture upload, mipmaps and cleanup
 │       ├── ui_renderer.py    <- screen-space alpha-blended UI draw
 │       └── renderer.py       <- forward renderer, sky, lights, readback
 ├── assets/
 │   ├── octahedron.obj        <- generic sample OBJ
 │   ├── engine.png            <- sample frame
-│   └── engine.json           <- schema-2 sample frame report
+│   └── engine.json           <- schema-3 sample frame report
 ├── docs/
 │   ├── ARCHITECTURE.md       <- core layers, contract and roadmap
 │   └── AI_GUIDE.md           <- discover, simulate, verify, render and compare
@@ -294,6 +313,7 @@ keystone/
 │   ├── test_scene.py         <- hierarchy, camera and lights
 │   ├── test_geometry.py      <- meshes, primitives, builder and OBJ
 │   ├── test_png.py           <- PNG writer and reader
+│   ├── test_texture.py       <- texture data, checker and PNG loading
 │   ├── test_ui.py            <- font, canvas, menu and overlay
 │   ├── test_renderer.py      <- headless OpenGL integration
 │   ├── test_input.py         <- action mapping and ActionState
@@ -347,7 +367,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the dependency rules, mod
 
 1. Scene identity and optional ECS/component queries.
 2. Broadphase physics, character controller and trigger volumes.
-3. Asset registry, materials/textures, glTF import and hot reload.
+3. Asset registry, material graphs, glTF import and hot reload.
 4. Renderer instancing, shadows, PBR and post-processing.
 5. Input rebinding, audio mixer and buses.
 6. Scene/save schema versioning and replay/undo tooling.

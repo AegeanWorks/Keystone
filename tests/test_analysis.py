@@ -11,6 +11,7 @@ from keystone.analysis import (
     diff_images,
     write_report,
 )
+from keystone.geometry import Material
 from keystone.math3d import Vec3
 from keystone.png import write_png
 from keystone.samples import CubeDemo
@@ -51,6 +52,19 @@ class AnalysisTest(unittest.TestCase):
         self.assertGreater(cube["triangles"], 0)
         self.assertIn("hash", report)
 
+    def test_material_and_texture_metadata_are_reported(self):
+        scene = CubeDemo().build_scene()
+        report = analyze_frame(scene, bytes((0, 0, 0, 255)) * 4, 2, 2)
+        floor = next(node for node in report["scene"]["nodes"] if node["name"] == "floor")
+        material = floor["material"]
+        texture = material["texture"]
+        self.assertEqual(texture["name"], "floor-checker")
+        self.assertEqual((texture["width"], texture["height"]), (64, 64))
+        self.assertEqual(len(texture["sha256"]), 64)
+        self.assertGreater(material["shininess"], 0)
+        root = next(node for node in report["scene"]["nodes"] if node["name"] == "")
+        self.assertNotIn("material", root)
+
     def test_png_hash_and_atomic_report(self):
         game = CubeDemo()
         scene = game.build_scene()
@@ -74,7 +88,7 @@ class AnalysisTest(unittest.TestCase):
         self.assertIn("changed_nodes", diff)
 
     def test_ui_metadata_is_hashed_and_compared(self):
-        self.assertEqual(REPORT_SCHEMA["version"], 2)
+        self.assertEqual(REPORT_SCHEMA["version"], 3)
         game = CubeDemo()
         pixels = bytes((0, 0, 0, 255)) * 4
         first = analyze_frame(
@@ -118,14 +132,27 @@ class AnalysisTest(unittest.TestCase):
         self.assertEqual(diff["ui"]["added_buttons"], ["resume"])
         self.assertTrue(diff["ui"]["paused"]["after"])
 
-    def test_compare_reports_accepts_schema_1_without_ui(self):
+    def test_compare_reports_accepts_older_schemas(self):
         report = analyze_frame(CubeDemo().build_scene(), bytes((0, 0, 0, 255)) * 4, 2, 2)
-        legacy = dict(report)
-        legacy["schema"] = 1
-        legacy.pop("ui")
-        diff = compare_reports(legacy, report)
-        self.assertTrue(diff["same_ui"])
-        self.assertEqual(diff["schema"], 2)
+        for version in (1, 2):
+            legacy = dict(report)
+            legacy["schema"] = version
+            legacy.pop("ui")
+            diff = compare_reports(legacy, report)
+            self.assertTrue(diff["same_ui"])
+            self.assertEqual(diff["schema"], 3)
+
+    def test_compare_reports_detects_material_changes(self):
+        pixels = bytes((0, 0, 0, 255)) * 4
+        first_scene = CubeDemo().build_scene()
+        second_scene = CubeDemo().build_scene()
+        floor = next(node for node in second_scene.traverse() if node.name == "floor")
+        floor.material = Material(color=Vec3(1.0, 0.0, 0.0))
+        diff = compare_reports(
+            analyze_frame(first_scene, pixels, 2, 2),
+            analyze_frame(second_scene, pixels, 2, 2),
+        )
+        self.assertIn("floor", diff["changed_nodes"])
 
     def test_compare_reports_rejects_unknown_schema(self):
         with self.assertRaises(ValueError):

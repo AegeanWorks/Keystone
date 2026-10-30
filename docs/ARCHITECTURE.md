@@ -1,6 +1,6 @@
 # Keystone Architecture
 
-**Status:** implemented in v0.17.0 — core-only engine with human UI and UI reports  
+**Status:** implemented in v0.18.0 — core-only engine with textured materials and human UI  
 **Boundary:** `keystone/` is game-agnostic; games are external modules.
 
 ## 1. What Keystone Is
@@ -42,6 +42,7 @@ keystone/
 ├── primitives.py     cube, plane, cone, cylinder, sphere
 ├── obj_loader.py     streaming OBJ
 ├── png.py            PNG writer and reader
+├── texture.py        immutable RGBA textures, PNG and checker sources
 ├── math3d.py         Vec3, Mat4, Quat
 ├── samples.py        CubeDemo smoke test
 ├── ui/               bitmap font, canvas, widgets, pause menu and overlay
@@ -96,9 +97,10 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 
 - `headless.run_simulation(game, frames, actions, step, trace)` calls `build_scene()` and then `update()` in fixed steps without importing the renderer or creating a GL context.
 - `load_actions()` accepts a JSON list or an object with `actions`; every item is an `ActionState`.
-- `analysis.analyze_frame(scene, pixels, width, height, image_path, ui=None)` returns schema-2 JSON: image hashes, pixel statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data, projected node bounds and optional UI labels/buttons. `Engine.capture(image, report)` writes both artifacts.
-- `analysis.compare_reports(before, after)` returns image/report equality, luminance/content-ratio deltas, bbox changes, added/removed/changed nodes, and added/removed/moved UI labels and buttons. It accepts schema-1 reports as baselines.
+- `analysis.analyze_frame(scene, pixels, width, height, image_path, ui=None)` returns schema-3 JSON: image hashes, pixel statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data, projected node bounds, material/texture metadata and optional UI labels/buttons. `Engine.capture(image, report)` writes both artifacts.
+- `analysis.compare_reports(before, after)` returns image/report equality, luminance/content-ratio deltas, bbox changes, added/removed/changed nodes (including material changes), and added/removed/moved UI labels and buttons. It accepts schema-1/2 reports as baselines.
 - `analysis.diff_images(before, after, output)` reads PNGs, writes a visual diff and returns changed-pixel count/ratio, bbox and mean/max delta; `png.read_png()` is the dependency-free reader.
+- `TextureData` is immutable RGBA8 data with PNG and checker factories; `Material.texture` is sampled through mesh UVs with repeat wrapping and mipmaps, and the renderer caches one GPU texture per payload.
 - `keystone.ui.report.describe_canvas()` turns the rendered `Canvas` into `ui` metadata: visibility, pause state, label text/position/scale/color and button label/action/rect/selection/hover.
 - `describe_game()` exposes `name`, `actions()`, `snapshot()`, capabilities (`simulate`, `render`, `human_ui`, `game_ui`) and the versioned report schema; `--describe` prints it without a window.
 - `ActionState` includes `mouse_clicked` as a one-frame edge so games and menus can react without importing GLFW.
@@ -124,8 +126,8 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Scene | Implemented | hierarchy, visibility, lights |
 | Camera | Implemented | perspective and view matrices |
 | Geometry | Implemented | indexed meshes, materials, vertex colors |
-| Assets | Implemented (basic) | primitives, OBJ, PNG |
-| Renderer | Implemented | OpenGL 3.3, sky, lights, fog, readback |
+| Assets | Implemented | indexed meshes, materials, RGBA textures, OBJ, PNG |
+| Renderer | Implemented | OpenGL 3.3, sky, lights, fog, textures, readback |
 | Runtime | Implemented | fixed clock, input, loop, screenshots |
 | Plugin | Implemented | GameModule + loader |
 | Replay | Implemented (basic) | action log, stable hash |
@@ -133,7 +135,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Headless | Implemented | no-GL simulation and action scripts |
 | AI discovery | Implemented | describe_game/--describe contract introspection |
 | AI testing | Implemented | deterministic scenario helpers |
-| Frame report | Implemented | image statistics, projected nodes, UI metadata and report diff |
+| Frame report | Implemented | image statistics, projected nodes, materials, UI metadata and report diff |
 | Human UI | Implemented | bitmap font, canvas, HUD/help, interactive pause menu |
 | Physics | Implemented (queries) | rays, AABB, sphere overlap/pushout |
 | Audio | Missing | future core module |
@@ -144,7 +146,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 
 1. **Scene identity and components** — stable node IDs, tags/layers, optional ECS queries.
 2. **Physics** — broadphase, character controller, triggers, raycast filters.
-3. **Assets** — registry, handles, textures/materials, glTF, hot reload.
+3. **Assets** — asset registry, material graphs, glTF, hot reload.
 4. **Renderer** — instancing/batching, shadows, PBR, post-processing, sRGB/linear color.
 5. **Input/audio** — rebinding, action contexts, mixer and buses.
 6. **Serialization/replay** — versioned scene/save format, undo/rewind, replay runner.
@@ -166,6 +168,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - Pausing opens a hit-testable Resume/Hide HUD/Quit menu and releases the cursor.
 - A game's optional `draw_ui(canvas, state)` contributes pixels to the same capture.
 - `compare_reports()` detects UI label/button changes when `ui` metadata is present.
+- `TextureData.checker()` renders through a textured plane and material metadata appears in reports.
 - `python -m keystone --headless --frames 1 --out frame.png --report frame.json` writes both artifacts.
 - `--compare-baseline baseline.json` exits non-zero on image change.
 - `--diff-out diff.png` writes a visual pixel diff.

@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `52`
-- **Total Classes**: `68`
-- **Total Top-Level Functions**: `56`
-- **Total Class Methods**: `337`
-- **Total Source Lines**: `5335`
+- **Total Python Modules**: `55`
+- **Total Classes**: `71`
+- **Total Top-Level Functions**: `57`
+- **Total Class Methods**: `352`
+- **Total Source Lines**: `5633`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `19` lines (`577` bytes)
+**Size**: `20` lines (`633` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -42,15 +42,16 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `298` lines (`12463` bytes)
+**Size**: `333` lines (`13738` bytes)
 
 **Functions:**
 - `def _rows(pixels, width, height, flip)`
 - `def _stats(pixels, width, height, background, flip)`
+- `def _material_report(material)`
 - `def _node_report(scene, width, height)`
 - `def analyze_frame(scene, pixels, width, height, image_path, ui)`
 - `def _compare_ui(before, after)`
-- `def compare_reports(before, after)` - *Compare schema-1 or schema-2 frame reports for AI-driven regression checks.*
+- `def compare_reports(before, after)` - *Compare schema-1/2/3 frame reports for AI-driven regression checks.*
 - `def diff_images(before, after, output, threshold)` - *Write a visual diff PNG and return changed-pixel statistics.*
 - `def write_report(path, report)`
 
@@ -112,7 +113,7 @@
 ### [`keystone/geometry.py`](keystone/geometry.py)
 > *Indexed triangle mesh data and surface material, independent of any GPU API.*
 
-**Size**: `71` lines (`2774` bytes)
+**Size**: `73` lines (`2854` bytes)
 
 **Classes:**
 - `class Material` - *Blinn-Phong surface parameters used by the renderer.*
@@ -179,13 +180,14 @@
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
 > *Blinn-Phong forward renderer with fog, depth testing and screenshot readback.*
 
-**Size**: `220` lines (`8286` bytes)
+**Size**: `250` lines (`9522` bytes)
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
   - Method `.__init__(width, height)`
   - Method `.resize(width, height)`
   - Method `._gpu_mesh(mesh)`
+  - Method `._gpu_texture(texture)`
   - Method `._draw_sky(scene)`
   - Method `.render(scene)`
   - Method `.read_pixels()`
@@ -200,7 +202,7 @@
 ### [`keystone/gpu/shader.py`](keystone/gpu/shader.py)
 > *GLSL program compilation, uniform upload and cleanup.*
 
-**Size**: `83` lines (`3169` bytes)
+**Size**: `86` lines (`3276` bytes)
 
 **Classes:**
 - `class ShaderProgram` - *A linked vertex/fragment program with cached uniform locations.*
@@ -213,6 +215,20 @@
   - Method `.set_vec2(name, x, y)`
   - Method `.set_vec3(name, vector)`
   - Method `.set_float(name, value)`
+  - Method `.set_int(name, value)`
+  - Method `.release()`
+
+---
+
+### [`keystone/gpu/texture_buffer.py`](keystone/gpu/texture_buffer.py)
+> *GPU upload and lifecycle for immutable TextureData.*
+
+**Size**: `53` lines (`1835` bytes)
+
+**Classes:**
+- `class GpuTexture` - *One OpenGL 2D texture with mipmaps and repeat wrapping.*
+  - Method `.__init__(data)`
+  - Method `.bind(unit)`
   - Method `.release()`
 
 ---
@@ -432,7 +448,7 @@
 ### [`keystone/samples.py`](keystone/samples.py)
 > *A minimal game-agnostic sample used to smoke-test the engine.*
 
-**Size**: `108` lines (`4002` bytes)
+**Size**: `114` lines (`4215` bytes)
 
 **Classes:**
 - `class CubeDemo` - *A rotating cube scene; contains no combat, puzzles or genre rules.*
@@ -492,6 +508,20 @@
 - `def run_script(game, actions, frames, step, trace)`
 - `def verify_determinism(factory, actions, frames, step)` - *Run one scenario twice from a factory and compare final hashes.*
 - `def assert_deterministic(factory, actions, frames, step)`
+
+---
+
+### [`keystone/texture.py`](keystone/texture.py)
+> *Immutable RGBA texture data and dependency-free texture sources.*
+
+**Size**: `63` lines (`2290` bytes)
+
+**Classes:**
+- `class TextureData` - *Top-down RGBA8 pixels with a stable name for reports and debugging.*
+  - Method `.__post_init__()`
+  - Method `.sha256()` - *Return a stable digest of the pixel payload.*
+  - Method `.from_png(path, name)` - *Load an 8-bit RGBA non-interlaced PNG through the dependency-free reader.*
+  - Method `.checker(size, dark, light, cell, name)` - *Build a deterministic RGBA checker texture without an image file.*
 
 ---
 
@@ -589,16 +619,18 @@
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
-**Size**: `164` lines (`6315` bytes)
+**Size**: `191` lines (`7671` bytes)
 
 **Classes:**
 - `class AnalysisTest`
   - Method `.test_pixel_stats_and_content_bbox()`
   - Method `.test_scene_nodes_have_projected_screen_bounds()`
+  - Method `.test_material_and_texture_metadata_are_reported()`
   - Method `.test_png_hash_and_atomic_report()`
   - Method `.test_compare_reports_detects_image_and_stats_changes()`
   - Method `.test_ui_metadata_is_hashed_and_compared()`
-  - Method `.test_compare_reports_accepts_schema_1_without_ui()`
+  - Method `.test_compare_reports_accepts_older_schemas()`
+  - Method `.test_compare_reports_detects_material_changes()`
   - Method `.test_compare_reports_rejects_unknown_schema()`
   - Method `.test_pixel_diff_writes_an_artifact_and_stats()`
   - Method `.test_pixel_diff_rejects_dimension_mismatch()`
@@ -821,7 +853,7 @@
 ### [`tests/test_renderer.py`](tests/test_renderer.py)
 > *Headless OpenGL integration tests for the Keystone renderer.*
 
-**Size**: `107` lines (`3851` bytes)
+**Size**: `134` lines (`4911` bytes)
 
 **Classes:**
 - `class RendererIntegrationTest`
@@ -829,6 +861,7 @@
   - Method `.test_render_fills_the_center_with_a_lit_surface()`
   - Method `.test_empty_scene_draws_a_vertical_sky_gradient()`
   - Method `.test_point_light_lights_a_surface_when_the_sun_is_off()`
+  - Method `.test_textured_plane_samples_the_texture()`
   - Method `.test_screenshot_is_a_real_png()`
   - Method `.test_shader_compile_error_explains_why_and_fix()`
 - `class VersionGateTest`
@@ -924,6 +957,19 @@
   - Method `.test_verify_determinism_passes_for_the_sample()`
   - Method `.test_assert_deterministic_returns_evidence()`
   - Method `.test_trace_mode_is_available()`
+
+---
+
+### [`tests/test_texture.py`](tests/test_texture.py)
+> *Tests for immutable texture data and texture sources.*
+
+**Size**: `51` lines (`1776` bytes)
+
+**Classes:**
+- `class TextureDataTest`
+  - Method `.test_checker_is_deterministic_and_has_expected_shape()`
+  - Method `.test_png_round_trip_keeps_pixels()`
+  - Method `.test_bad_texture_data_is_rejected()`
 
 ---
 

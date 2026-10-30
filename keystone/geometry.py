@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from keystone.math3d import Vec3
+from keystone.texture import TextureData
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,6 +16,7 @@ class Material:
     specular: float = 0.35
     shininess: float = 32.0
     checker_scale: float = 0.0
+    texture: TextureData | None = None
 
     def __post_init__(self) -> None:
         if self.specular < 0.0:

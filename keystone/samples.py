@@ -9,6 +9,7 @@ from keystone.geometry import Material
 from keystone.math3d import Quat, Vec3
 from keystone.primitives import cube, plane, sphere
 from keystone.scene import DirectionalLight, Node, PointLight, Scene, Transform
+from keystone.texture import TextureData
 
 
 class CubeDemo:
@@ -45,7 +46,12 @@ class CubeDemo:
             Node(
                 "floor",
                 mesh=plane(20.0),
-                material=Material(color=Vec3(0.16, 0.18, 0.22), specular=0.08, shininess=8.0, checker_scale=0.5),
+                material=Material(
+                    color=Vec3(1.0, 1.0, 1.0),
+                    specular=0.08,
+                    shininess=8.0,
+                    texture=TextureData.checker(64, (0.10, 0.12, 0.16), (0.18, 0.20, 0.25), name="floor-checker"),
+                ),
             )
         )
         colors = ((0.9, 0.4, 0.2), (0.2, 0.7, 0.8), (0.6, 0.45, 0.9))

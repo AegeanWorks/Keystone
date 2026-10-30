@@ -9,9 +9,11 @@ from OpenGL import GL
 from keystone.geometry import Material, MeshData
 from keystone.gpu.mesh_buffer import GpuMesh
 from keystone.gpu.shader import ShaderProgram
+from keystone.gpu.texture_buffer import GpuTexture
 from keystone.math3d import Mat4, Vec3
 from keystone.png import write_png
 from keystone.scene import Scene
+from keystone.texture import TextureData
 
 VERTEX_SHADER = """#version 330 core
 layout(location = 0) in vec3 a_position;
@@ -23,11 +25,13 @@ uniform mat4 u_view_proj;
 uniform mat3 u_normal_matrix;
 out vec3 v_world;
 out vec3 v_normal;
+out vec2 v_uv;
 out vec3 v_color;
 void main() {
     vec4 world = u_model * vec4(a_position, 1.0);
     v_world = world.xyz;
     v_normal = normalize(u_normal_matrix * a_normal);
+    v_uv = a_uv;
     v_color = a_color;
     gl_Position = u_view_proj * world;
 }
@@ -36,8 +40,11 @@ void main() {
 FRAGMENT_SHADER = """#version 330 core
 in vec3 v_world;
 in vec3 v_normal;
+in vec2 v_uv;
 in vec3 v_color;
 uniform vec3 u_color;
+uniform sampler2D u_texture;
+uniform float u_has_texture;
 uniform float u_specular;
 uniform float u_shininess;
 uniform vec3 u_camera_pos;
@@ -61,6 +68,9 @@ void main() {
     vec3 halfway = normalize(light + view);
     float specular = pow(max(dot(normal, halfway), 0.0), u_shininess) * u_specular;
     vec3 base_color = u_color * v_color;
+    if (u_has_texture > 0.5) {
+        base_color *= texture(u_texture, v_uv).rgb;
+    }
     vec3 color = base_color * (u_ambient + u_light_color * diffuse) + u_light_color * specular;
     if (u_point_radius > 0.0) {
         vec3 to_point = u_point_pos - v_world;
@@ -128,6 +138,7 @@ class Renderer:
             raise
         self._sky_program = sky_program
         self._meshes: dict[int, tuple[MeshData, GpuMesh]] = {}
+        self._textures: dict[int, tuple[TextureData, GpuTexture]] = {}
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glDepthFunc(GL.GL_LESS)
         GL.glEnable(GL.GL_CULL_FACE)
@@ -146,6 +157,13 @@ class Renderer:
         if cached is None or cached[0] is not mesh:
             cached = (mesh, GpuMesh(mesh))
             self._meshes[id(mesh)] = cached
+        return cached[1]
+
+    def _gpu_texture(self, texture: TextureData) -> GpuTexture:
+        cached = self._textures.get(id(texture))
+        if cached is None or cached[0] is not texture:
+            cached = (texture, GpuTexture(texture))
+            self._textures[id(texture)] = cached
         return cached[1]
 
     def _draw_sky(self, scene: Scene) -> None:
@@ -200,7 +218,16 @@ class Renderer:
             self._program.set_float("u_specular", material.specular)
             self._program.set_float("u_shininess", material.shininess)
             self._program.set_float("u_checker_scale", material.checker_scale)
+            texture = material.texture if isinstance(material.texture, TextureData) else None
+            if texture is None:
+                GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
+                self._program.set_float("u_has_texture", 0.0)
+            else:
+                self._gpu_texture(texture).bind(0)
+                self._program.set_int("u_texture", 0)
+                self._program.set_float("u_has_texture", 1.0)
             self._gpu_mesh(mesh).draw()
+        GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
 
     def read_pixels(self) -> bytes:
         GL.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1)
@@ -210,6 +237,9 @@ class Renderer:
         write_png(path, self.width, self.height, self.read_pixels())
 
     def release(self) -> None:
+        for _, texture in self._textures.values():
+            texture.release()
+        self._textures.clear()
         for _, mesh in self._meshes.values():
             mesh.release()
         self._meshes.clear()
