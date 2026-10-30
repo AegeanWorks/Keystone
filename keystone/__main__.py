@@ -47,6 +47,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--size", type=_size, default=(960, 540), metavar="WxH", help="framebuffer size, e.g. 1280x720")
     parser.add_argument("--out", default=None, help="write a PNG after a headless run")
     parser.add_argument("--seed", type=_seed, default=7, help="expedition seed (default: 7)")
+    parser.add_argument(
+        "--layout",
+        choices=("auto", "crypt", "weave"),
+        default="auto",
+        help="dungeon layout: auto (seed parity), crypt rooms or woven room chain (default: auto)",
+    )
     parser.add_argument("--demo", action="store_true", help="run the original showcase scene instead of the expedition")
     args = parser.parse_args(argv)
     if args.out and not args.headless:
@@ -65,9 +71,9 @@ def main(argv: list[str] | None = None) -> int:
         else:
             from keystone.expedition import Expedition
 
-            experience = Expedition(args.seed)
+            experience = Expedition(args.seed, layout=args.layout)
             controls = experience.handle_input
-            title = f"Keystone | Expedition seed {args.seed}"
+            title = f"Keystone | Expedition seed {args.seed} | {experience.world.layout}"
         engine = Engine(
             experience.scene,
             args.size[0],
@@ -87,11 +93,13 @@ def main(argv: list[str] | None = None) -> int:
             engine.screenshot(args.out)
         if args.headless:
             suffix = f" -> {args.out}" if args.out else ""
-            mode = getattr(getattr(experience, "world", None), "mode", "demo")
+            world = getattr(experience, "world", None)
+            mode = getattr(world, "mode", "demo")
+            layout = getattr(world, "layout", "demo")
             seed = f" seed={args.seed}" if not args.demo else ""
             print(
                 f"Rendered {rendered} frame(s) at {args.size[0]}x{args.size[1]}"
-                f"{seed} mode={mode}{suffix}"
+                f"{seed} mode={mode} layout={layout}{suffix}"
             )
         return 0
     except Exception as exc:  # noqa: BLE001 - a CLI must never leak a traceback (PRINCIPLE-011 R6)

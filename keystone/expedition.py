@@ -32,8 +32,8 @@ MIRROR = Material(color=Vec3(0.75, 0.82, 0.95), specular=1.0, shininess=128.0)
 class Expedition:
     """Owns one seeded World and the scene that renders its current mode."""
 
-    def __init__(self, seed: int = 7, size: int = 96) -> None:
-        self.world = World(seed, size)
+    def __init__(self, seed: int = 7, size: int = 96, layout: str = "auto") -> None:
+        self.world = World(seed, size, layout)
         self.scene = Scene()
         self.scene.camera.fov_y = 65.0
         self._intent = MoveIntent()
@@ -162,13 +162,18 @@ class Expedition:
             for x in range(dungeon.width):
                 if not dungeon.is_walkable(x, y):
                     continue
-                shade = 0.22 + rand01(x, y, dungeon.seed) * 0.08
+                weave_color = self.world.weave.floor_color(x, y) if self.world.weave else None
+                if weave_color is None:
+                    shade = 0.22 + rand01(x, y, dungeon.seed) * 0.08
+                    color = (shade, shade * 0.95, shade * 1.12)
+                else:
+                    color = tuple(min(1.0, component * 0.9 + 0.08) for component in weave_color)
                 floor.add_quad(
                     (float(x), 0.0, float(y)),
                     (float(x), 0.0, float(y + 1)),
                     (float(x + 1), 0.0, float(y + 1)),
                     (float(x + 1), 0.0, float(y)),
-                    (shade, shade * 0.95, shade * 1.12),
+                    color,
                 )
                 shade = 0.12 + rand01(x, y, dungeon.seed + 5) * 0.05
                 ceiling.add_quad(

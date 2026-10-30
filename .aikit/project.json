@@ -29,6 +29,7 @@
       "keystone/sim/world.py",
       "keystone/procedural/terrain.py",
       "keystone/procedural/dungeon.py",
+      "keystone/procedural/weave.py",
       "keystone/beams.py",
       "keystone/combat.py",
       "keystone/expedition.py",

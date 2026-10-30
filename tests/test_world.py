@@ -23,6 +23,24 @@ class WorldDeterminismTest(unittest.TestCase):
         self.assertNotEqual(World(7, size=32).state_hash(), World(8, size=32).state_hash())
         self.assertNotEqual(World(7, size=32).terrain.heights, World(8, size=32).terrain.heights)
 
+    def test_auto_layout_uses_crypt_for_odd_and_weave_for_even_seeds(self):
+        self.assertEqual(World(7, size=32).layout, "crypt")
+        weave = World(8, size=32)
+        self.assertEqual(weave.layout, "weave")
+        self.assertIsNotNone(weave.weave)
+        self.assertIsNotNone(weave.snapshot()["weave"])
+        self.assertIsNone(World(7, size=32).snapshot()["weave"])
+
+    def test_forced_weave_layout_reaches_an_exit(self):
+        world = World(7, size=32, layout="weave")
+        self.assertEqual(world.layout, "weave")
+        self.assertTrue(world.dungeon.is_walkable(*world.dungeon.spawn))
+        self.assertIsNotNone(world.dungeon.find_path(world.dungeon.spawn, world.dungeon.exit))
+
+    def test_invalid_layout_is_rejected(self):
+        with self.assertRaises(ValueError):
+            World(7, size=32, layout="maze")
+
     def test_hash_changes_when_the_player_moves(self):
         world = World(7, size=32)
         before = world.state_hash()

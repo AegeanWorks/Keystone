@@ -13,6 +13,7 @@ from keystone.combat import Combat
 from keystone.math3d import Vec3
 from keystone.procedural.dungeon import Dungeon, DungeonGenerator
 from keystone.procedural.terrain import Terrain
+from keystone.procedural.weave import WeaveLayout
 
 DAY_SECONDS = 240.0
 EYE_HEIGHT = 1.75
@@ -43,10 +44,18 @@ class Player:
 class World:
     """The authoritative expedition state; it never imports OpenGL."""
 
-    def __init__(self, seed: int, size: int = 96) -> None:
+    def __init__(self, seed: int, size: int = 96, layout: str = "auto") -> None:
+        if layout not in ("auto", "crypt", "weave"):
+            raise ValueError("layout must be 'auto', 'crypt' or 'weave'")
         self.seed = int(seed)
         self.terrain: Terrain = Terrain.generate(self.seed, size=size)
-        self.dungeon: Dungeon = DungeonGenerator().generate(self.seed ^ 0x5EED)
+        self.layout = ("weave" if self.seed % 2 == 0 else "crypt") if layout == "auto" else layout
+        self.weave: WeaveLayout | None = None
+        if self.layout == "weave":
+            self.weave = WeaveLayout.generate(self.seed ^ 0x5745)
+            self.dungeon: Dungeon = self.weave.to_dungeon()
+        else:
+            self.dungeon = DungeonGenerator().generate(self.seed ^ 0x5EED)
         self.mode = "overworld"
         self.time = DAY_SECONDS * 0.35
         self.player = Player(self.terrain.spawn[0], self.terrain.spawn[1])
@@ -209,6 +218,8 @@ class World:
             "time": round(self.time, 3),
             "day_fraction": round(self.day_fraction, 4),
             "mode": self.mode,
+            "layout": self.layout,
+            "weave": self.weave.snapshot() if self.weave else None,
             "player": {
                 "x": round(self.player.x, 4),
                 "z": round(self.player.z, 4),

@@ -1,15 +1,15 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-lightlock-v1",
+    "task_id": "keystone-weave-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793381476.2596815,
-    "owner": "opencode:keystone-lightlock",
-    "started_by": "opencode:keystone-lightlock",
+    "updated_at": 1793381923.2130952,
+    "owner": "opencode:keystone-weave",
+    "started_by": "opencode:keystone-weave",
     "continuations": [],
-    "completed_at": 1793381483.5342565
+    "completed_at": 1793381929.174291
   },
   "checkpoints": [
     {
@@ -258,6 +258,49 @@
       "timestamp": 1793381483.5342598,
       "timestamp_str": "2026-10-30 20:31:23",
       "agent": "opencode:keystone-lightlock"
+    },
+    {
+      "task_id": "keystone-weave-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/4] Plan: Hamiltonian weave generator + tests -> World layout selection/hash -> thread-colored dungeon floors + CLI/harness layout flag -> docs, ADR and gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793381642.5387561,
+      "timestamp_str": "2026-10-30 20:34:02",
+      "agent": "opencode:keystone-weave",
+      "impact_assessment": {
+        "why": "Weft's guaranteed-coverage route generator adds a second deterministic dungeon topology and makes the weave mechanic visible in the 3D world.",
+        "benefits": "Every room is connected exactly once, layouts vary by seed, and the route/thread data stays headless and replayable.",
+        "risks": "contract: World gains a layout field and weave metadata in snapshot/hash; dependency: stdlib only; concurrency: single-thread; state: generated path/segments must remain valid and deterministic.",
+        "mitigation": "Validate path uniqueness/orthogonality/coverage, segment partition and dungeon reachability; force auto-layout tests for both branches; visual floor-color test and screenshot."
+      }
+    },
+    {
+      "task_id": "keystone-weave-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[4/4] Weave layout complete: 169 tests, 6/6 gates, Hamiltonian coverage/orthogonality/partition tests, forced and auto layout tests, 60-frame visible dogfood, weave screenshot; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793381923.2130952,
+      "timestamp_str": "2026-10-30 20:38:43",
+      "agent": "opencode:keystone-weave",
+      "handoff": {
+        "state": "WeaveLayout and --layout option frozen for v0.5.0",
+        "next": "weave branches/loops or the next mechanic pack",
+        "evidence": "pytest 169 passed, aikit check 6/6, strict check pending clean commit"
+      }
+    },
+    {
+      "task_id": "keystone-weave-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-weave-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793381929.1742938,
+      "timestamp_str": "2026-10-30 20:38:49",
+      "agent": "opencode:keystone-weave"
     }
   ]
 }

@@ -88,6 +88,22 @@ class ExpeditionSceneTest(unittest.TestCase):
         self.assertEqual(self.expedition.scene.sky, atmosphere.sky)
         self.assertEqual(self.expedition.scene.background, atmosphere.horizon)
 
+    def test_weave_layout_enters_a_colored_dungeon(self):
+        expedition = Expedition(8, size=32, layout="weave")
+        self._solve_light_lock_for(expedition)
+        expedition.world.player.x, expedition.world.player.z = expedition.world.terrain.entrance
+        expedition.step(0.016, MoveIntent(interact=True))
+        names = [node.name for node in expedition.scene.traverse()]
+        self.assertEqual(expedition.world.mode, "dungeon")
+        self.assertEqual(expedition.world.layout, "weave")
+        self.assertIn("dungeon-floor", names)
+        room = expedition.world.weave.room_for(expedition.world.weave.path[0])
+        self.assertIsNotNone(expedition.world.weave.floor_color(room.x, room.y))
+
+    def _solve_light_lock_for(self, expedition):
+        expedition.world.light_lock.set_orientation(-1, 0, "\\")
+        expedition.world.light_lock.set_orientation(-1, 2, "/")
+
     def test_dungeon_lighting_is_darker_than_daylight(self):
         overworld = self.expedition.scene.light.intensity
         self._solve_light_lock()

@@ -33,6 +33,13 @@ class HarnessApiTest(unittest.TestCase):
         actions = [{"action": "wait", "seconds": 0.1}]
         self.assertNotEqual(run_actions(7, actions, size=32)["hash"], run_actions(8, actions, size=32)["hash"])
 
+    def test_layout_is_selected_and_reported(self):
+        actions = [{"action": "wait", "seconds": 0.1}]
+        self.assertEqual(run_actions(7, actions, size=32)["final"]["layout"], "crypt")
+        self.assertEqual(run_actions(8, actions, size=32)["final"]["layout"], "weave")
+        forced = run_actions(7, actions, size=32, layout="weave")
+        self.assertEqual(forced["final"]["layout"], "weave")
+
     def test_unknown_action_is_rejected(self):
         with self.assertRaises(ValueError) as caught:
             run_actions(7, [{"action": "teleport"}], size=32)

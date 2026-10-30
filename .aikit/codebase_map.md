@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `41`
-- **Total Classes**: `65`
-- **Total Top-Level Functions**: `41`
-- **Total Class Methods**: `355`
-- **Total Source Lines**: `5121`
+- **Total Python Modules**: `43`
+- **Total Classes**: `67`
+- **Total Top-Level Functions**: `45`
+- **Total Class Methods**: `379`
+- **Total Source Lines**: `5426`
 
 ---
 
@@ -26,7 +26,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the Keystone demo.*
 
-**Size**: `116` lines (`4274` bytes)
+**Size**: `124` lines (`4637` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -145,11 +145,11 @@
 ### [`keystone/expedition.py`](keystone/expedition.py)
 > *First-person expedition: procedural overworld, dungeon and scene assembly.*
 
-**Size**: `460` lines (`19099` bytes)
+**Size**: `465` lines (`19421` bytes)
 
 **Classes:**
 - `class Expedition` - *Owns one seeded World and the scene that renders its current mode.*
-  - Method `.__init__(seed, size)`
+  - Method `.__init__(seed, size, layout)`
   - Method `._build_scenery_meshes()`
   - Method `._distance_to_path(x, z)`
   - Method `._build_dungeon_meshes()`
@@ -276,14 +276,14 @@
 ### [`keystone/harness.py`](keystone/harness.py)
 > *Deterministic JSON harness for driving the expedition without a GPU.*
 
-**Size**: `244` lines (`9310` bytes)
+**Size**: `252` lines (`9611` bytes)
 
 **Functions:**
 - `def catalog()` - *Describe every action and the state an agent can observe.*
 - `def _number(action, key, default)`
 - `def _seconds(action)`
 - `def apply_action(world, action)` - *Validate and apply one catalogued action to the world.*
-- `def run_actions(seed, actions, size)`
+- `def run_actions(seed, actions, size, layout)`
 - `def selftest()` - *Prove determinism, seed sensitivity, collision and portal transitions.*
 - `def _read_actions(path)`
 - `def _seed_arg(text)`
@@ -465,6 +465,31 @@
 
 ---
 
+### [`keystone/procedural/weave.py`](keystone/procedural/weave.py)
+> *Weft-style Hamiltonian weave routes that become a chain of dungeon rooms.*
+
+**Size**: `175` lines (`5946` bytes)
+
+**Classes:**
+- `class WeaveLayout`
+  - Method `.generate(seed, cols, rows, threads)`
+  - Method `._segment_index(step)`
+  - Property `.width`
+  - Property `.height`
+  - Method `.room_for(cell)`
+  - Method `.floor_color(x, z)`
+  - Method `.to_dungeon()`
+  - Method `._carve(tiles, start, end)`
+  - Method `.snapshot()`
+
+**Functions:**
+- `def _neighbours(cell, cols, rows)`
+- `def _remaining_connected(cols, rows, visited)`
+- `def _search_path(cols, rows, rng, path, visited, nodes, total)`
+- `def _hamiltonian_path(cols, rows, rng)`
+
+---
+
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, visibility, camera and directional light.*
 
@@ -502,13 +527,13 @@
 ### [`keystone/sim/world.py`](keystone/sim/world.py)
 > *Seeded expedition state: player, terrain, dungeon, movement and replay hash.*
 
-**Size**: `241` lines (`9379` bytes)
+**Size**: `252` lines (`9996` bytes)
 
 **Classes:**
 - `class MoveIntent` - *One frame of player intent, in local forward/right and radians.*
 - `class Player`
 - `class World` - *The authoritative expedition state; it never imports OpenGL.*
-  - Method `.__init__(seed, size)`
+  - Method `.__init__(seed, size, layout)`
   - Property `.day_fraction`
   - Property `.near_entrance`
   - Property `.near_exit`
@@ -530,7 +555,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Integration tests for the engine loop, demo scene and CLI.*
 
-**Size**: `75` lines (`2844` bytes)
+**Size**: `80` lines (`3080` bytes)
 
 **Classes:**
 - `class DemoTest`
@@ -544,6 +569,7 @@
   - Method `.test_bad_size_is_a_usage_error()`
   - Method `.test_out_requires_headless()`
   - Method `.test_bad_seed_is_a_usage_error()`
+  - Method `.test_bad_layout_is_a_usage_error()`
 
 ---
 
@@ -610,7 +636,7 @@
 ### [`tests/test_expedition.py`](tests/test_expedition.py)
 > *Tests for scene assembly and the expedition controller.*
 
-**Size**: `100` lines (`4934` bytes)
+**Size**: `116` lines (`5826` bytes)
 
 **Classes:**
 - `class ExpeditionSceneTest`
@@ -625,6 +651,8 @@
   - Method `._solve_light_lock()`
   - Method `.test_entering_the_portal_switches_to_a_dungeon_scene()`
   - Method `.test_atmosphere_reaches_the_scene()`
+  - Method `.test_weave_layout_enters_a_colored_dungeon()`
+  - Method `._solve_light_lock_for(expedition)`
   - Method `.test_dungeon_lighting_is_darker_than_daylight()`
 
 ---
@@ -671,13 +699,14 @@
 ### [`tests/test_harness.py`](tests/test_harness.py)
 > *Tests for the deterministic JSON AI harness.*
 
-**Size**: `105` lines (`4405` bytes)
+**Size**: `112` lines (`4814` bytes)
 
 **Classes:**
 - `class HarnessApiTest`
   - Method `.test_catalog_describes_actions_and_state()`
   - Method `.test_actions_are_deterministic()`
   - Method `.test_seed_changes_the_run()`
+  - Method `.test_layout_is_selected_and_reported()`
   - Method `.test_unknown_action_is_rejected()`
   - Method `.test_invalid_seconds_is_rejected()`
   - Method `.test_selftest_passes()`
@@ -821,15 +850,36 @@
 
 ---
 
+### [`tests/test_weave.py`](tests/test_weave.py)
+> *Tests for the Weft-style Hamiltonian weave generator.*
+
+**Size**: `52` lines (`2220` bytes)
+
+**Classes:**
+- `class WeaveLayoutTest`
+  - Method `.setUp()`
+  - Method `.test_path_covers_every_room_exactly_once()`
+  - Method `.test_consecutive_rooms_are_orthogonal()`
+  - Method `.test_segments_partition_the_path()`
+  - Method `.test_same_seed_is_deterministic()`
+  - Method `.test_dungeon_is_fully_connected()`
+  - Method `.test_room_floors_carry_thread_colors()`
+  - Method `.test_rejects_tiny_layouts()`
+
+---
+
 ### [`tests/test_world.py`](tests/test_world.py)
 > *Tests for the deterministic expedition simulation core.*
 
-**Size**: `143` lines (`6010` bytes)
+**Size**: `161` lines (`6852` bytes)
 
 **Classes:**
 - `class WorldDeterminismTest`
   - Method `.test_same_seed_and_actions_produce_the_same_hash()`
   - Method `.test_different_seed_produces_a_different_world()`
+  - Method `.test_auto_layout_uses_crypt_for_odd_and_weave_for_even_seeds()`
+  - Method `.test_forced_weave_layout_reaches_an_exit()`
+  - Method `.test_invalid_layout_is_rejected()`
   - Method `.test_hash_changes_when_the_player_moves()`
 - `class WorldMovementTest`
   - Method `.setUp()`

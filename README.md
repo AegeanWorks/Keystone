@@ -28,6 +28,10 @@ Keystone's core loop is a **seeded expedition**: one integer seed generates an i
   ```bash
   python -m keystone --seed 42
   ```
+- **Force a woven dungeon**:
+  ```bash
+  python -m keystone --seed 8 --layout weave
+  ```
 - **Original showcase scene**:
   ```bash
   python -m keystone --demo
@@ -73,9 +77,9 @@ Weapons fire automatically at the nearest enemy in range. Keep moving to avoid c
 3. Walking uses terrain height, water and slope checks; the dungeon uses a player-radius grid collision check.
 4. Enemies chase, split, explode or soak damage; the weapon auto-fires, waves escalate and a Warlord arrives every fifth wave. Death respawns the player at the last safe point with a fresh arena.
 5. The crypt portal is sealed by a light lock: an emitter, a green dye cell, two rotatable mirrors and a receiver. Turn the mirrors with `E` until the beam arrives with the exact target color; the receiver turns green and the portal opens.
-6. Interacting at the open portal switches the world to `dungeon`, rebuilds the scene and respawns the arena around the dungeon spawn.
+6. Interacting at the open portal switches the world to `dungeon`, rebuilds the scene and respawns the arena around the dungeon spawn. Auto layout chooses the room-and-corridor crypt on odd seeds and the woven room chain on even seeds; `--layout crypt|weave` forces one.
 7. Interacting at the exit rune restores the overworld position at the portal.
-8. `World.state_hash()` fingerprints seed, time, player, terrain metadata, dungeon tiles, light-lock state and combat state. Identical seeds and actions produce identical hashes.
+8. `World.state_hash()` fingerprints seed, time, player, terrain metadata, dungeon tiles, weave path, light-lock state and combat state. Identical seeds and actions produce identical hashes.
 
 The dungeon preview is generated from the same run: `assets/dungeon.png`.
 
@@ -87,6 +91,7 @@ The dungeon preview is generated from the same run: `assets/dungeon.png`.
 - **First-person collision**: terrain walkability (water/slope), dungeon radius checks with axis-separated sliding, and portal/exit range transitions.
 - **Survivors combat**: six seeded enemy archetypes (Crawler, Stalker, Bulwark, Splitter, Bomber, Warlord boss), auto-fire hitscan, contact damage, split-on-death, escalating waves, boss waves and death/respawn. The whole director is renderer-independent and included in the replay hash.
 - **Light lock**: a seeded 2D beam circuit with additive red/green/blue color masks, `/` and `\` mirrors, a dye cell, a receiver, cycle-safe tracing and a portal gate. Mirrors rotate with `E`; the whole lock is renderer-independent and hashed.
+- **Weave layout**: Weft-style Hamiltonian room chains. The generator visits every room exactly once, cuts the route into three colored threads and colors the 7×7 room floors by thread; every room is reachable and the exit is the final room.
 - **GPU renderer**: OpenGL 3.3 core, GLSL 330, per-vertex colors, one directional light, an optional warm point light (the crypt torch), depth testing, culling, gradient sky and distance fog.
 - **Static batching**: terrain is one mesh; trees, crowns, rocks and the path are merged into four meshes, so the expedition renders in roughly ten draw calls.
 - **Day/night atmosphere**: sun elevation drives daylight, warm dawn tint, ambient light, sky/horizon colors and light intensity; the dungeon overrides with its own moody palette.
@@ -100,6 +105,14 @@ The dungeon preview is generated from the same run: `assets/dungeon.png`.
 Combat follows the Dustline model: the player only moves, the weapon auto-fires, and the pressure comes from wave composition and positioning. Enemies spawn around the player, chase across terrain or dungeon corridors, and deal contact damage. Crawlers are the baseline, Stalkers are fast, Bulwarks soak damage, Splitters spawn two Stalkers on death, Bombers explode on contact, and a Warlord boss arrives every fifth wave.
 
 The director is seeded and lives in `keystone/combat.py`; it has no OpenGL dependency. Death resets the player to the last safe point with a fresh arena, so the AI harness can replay an entire run and still stop deterministically.
+
+## 🧵 Weave Layout
+
+![Woven dungeon room](assets/weave.png)
+
+`WeaveLayout` is a Weft-style Hamiltonian generator. It covers a 4×3 room grid exactly once, checks that the remaining cells stay connected while searching, then cuts the path into three colored threads. Each path cell becomes a 7×7 room, consecutive rooms are joined by corridors, and the room floor carries its thread color. The result is a guaranteed connected room chain from spawn to exit, with no unreachable room and no duplicate visit.
+
+Even seeds select the weave in `auto` mode; odd seeds keep the room-and-corridor crypt. Force either with `--layout crypt` or `--layout weave`.
 
 ## 🔦 Light Lock
 
@@ -167,7 +180,8 @@ keystone/
 │   │   ├── __init__.py
 │   │   ├── noise.py          <- deterministic value noise and FBM
 │   │   ├── terrain.py        <- island heightfield, biome colors and mesh
-│   │   └── dungeon.py        <- rooms, corridors, FOV and BFS
+│   │   ├── dungeon.py        <- rooms, corridors, FOV and BFS
+│   │   └── weave.py          <- Hamiltonian room chain and thread colors
 │   ├── sim/
 │   │   ├── __init__.py
 │   │   └── world.py          <- deterministic state, collision, modes, hash
@@ -183,7 +197,8 @@ keystone/
 │   ├── expedition.png        <- expedition overworld capture
 │   ├── dungeon.png           <- generated crypt capture
 │   ├── combat.png            <- enemy pack capture
-│   └── lightlock.png         <- portal light-lock capture
+│   ├── lightlock.png         <- portal light-lock capture
+│   └── weave.png             <- woven room capture
 ├── tests/
 │   ├── test_math3d.py        <- math core
 │   ├── test_scene.py         <- hierarchy, camera and lights
@@ -192,6 +207,7 @@ keystone/
 │   ├── test_renderer.py      <- headless OpenGL integration
 │   ├── test_procedural.py    <- noise, terrain and atmosphere
 │   ├── test_dungeon.py       <- dungeon, FOV and pathfinding
+│   ├── test_weave.py         <- Hamiltonian path, threads and dungeon
 │   ├── test_beams.py         <- light lock, mirrors, dye and cycles
 │   ├── test_combat.py        <- archetypes, waves, damage and boss
 │   ├── test_world.py         <- deterministic state, movement and modes
@@ -259,6 +275,7 @@ Keystone's first implementation was built in this workspace. The seeded expediti
 - **Crypt-Crawler** — room-and-corridor generation, symmetric-raycast FOV, BFS pathfinding and the deterministic JSON harness pattern.
 - **Dustline** — streaming-world collision ideas (circle/box separation and segment blocking), enemy archetype/wave/boss structure and combat pacing.
 - **Iris** — color-mask light routing, mirror reflection, cycle-safe beam tracing and receiver validation.
+- **Weft** — randomized Hamiltonian path with Warnsdorff ordering and connectivity checks, cut into colored thread segments and used as a guaranteed-coverage room chain.
 
 These were reimplemented as modular Python; no AGL-licensed assets or source files were copied into this repository. See ADR-006 for the provenance decision. Keystone itself remains under the Aegean License 1.1 (AL-1.1).
 
@@ -269,12 +286,13 @@ These were reimplemented as modular Python; no AGL-licensed assets or source fil
 3. Weather (rain/snow particles) and a wind-driven foliage animation.
 4. Weapons/upgrades, champion affixes and loot using the wider Dustline tables.
 5. More light-lock chambers, lenses and movable emitters inside the crypt.
-6. Save/load of the seed + action log, and a rewind/debug viewer.
-7. glTF/scene import and an editor with gizmos.
+6. Weave loops, branches and thread-route puzzles inside the room chain.
+7. Save/load of the seed + action log, and a rewind/debug viewer.
+8. glTF/scene import and an editor with gizmos.
 
 ## 🤖 AIKit Integration
 
-- `.aikit/project.json` declares `mechanics.core` (simulation, terrain, dungeon, beams, combat, expedition, renderer, harness) and `mechanics.test` (`python -m keystone.harness selftest`), so an agent exercises the same headless core.
+- `.aikit/project.json` declares `mechanics.core` (simulation, terrain, dungeon, weave, beams, combat, expedition, renderer, harness) and `mechanics.test` (`python -m keystone.harness selftest`), so an agent exercises the same headless core.
 - `.aikit/task_ledger.json` records plans, checkpoints and handoff state; resume with `python aikit.py resume keystone`.
 - `.aikit/decisions.md` records ADR-001 through ADR-006.
 - `python aikit.py check keystone` is the Phase 4 gate: tests, lint, mechanics, hygiene, guidelines and secret scan. It never pushes; delivery is opt-in.

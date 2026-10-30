@@ -75,3 +75,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The portal opened unconditionally, so the new world had no spatial puzzle and Iris's beam mechanic was unused. A full 3D light simulation would be larger than the core loop needs.
 - **Decision**: Add `keystone.beams.LightLock`: a seeded 2D circuit at the portal with a red emitter, green dye, two `/` or `\` mirrors, a yellow (red+green) receiver, additive color masks, cycle-safe tracing and a solved state. `World` gates portal entry on it, rotates the nearest mirror with `E`, and includes its snapshot in the replay hash. `Expedition` renders the circuit and rebuilds it when the mirror version changes.
 - **Consequences**: The crypt is now locked by a solvable puzzle; the harness gains a `rotate` action and `light_lock` state. The puzzle is local to the portal and not yet a full chamber system; lenses, movable emitters and in-dungeon locks are future work. Changing the layout or initial orientations changes replay hashes.
+
+### ADR-009: Add a Weft-style Hamiltonian room-chain layout
+
+- **Date**: 2026-10-30
+- **Status**: Accepted
+- **Context**: The crypt's rooms-and-corridors layout was the only dungeon topology. Weft's Hamiltonian route generator guarantees full coverage and offers a visibly different, deterministic layout that fits the existing `Dungeon` interface.
+- **Decision**: Add `keystone.procedural.weave.WeaveLayout`: a 4×3 Hamiltonian room path with Warnsdorff ordering and connectivity checks, cut into three colored thread segments, expanded into 7×7 rooms joined by corridors. `World(layout=auto)` chooses weave for even seeds and crypt for odd seeds; `crypt`/`weave` force one. Room floors carry the thread color and `World.snapshot()` includes the weave path/segments.
+- **Consequences**: The engine now has two deterministic dungeon topologies and the CLI/harness expose `--layout`. Changing the grid, room size or path changes hashes and screenshots. The weave is a chain, not a loop or branch graph; those remain future work.

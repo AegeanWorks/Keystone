@@ -70,6 +70,11 @@ class CliTest(unittest.TestCase):
             main(["--seed", "not-a-number"])
         self.assertEqual(caught.exception.code, 2)
 
+    def test_bad_layout_is_a_usage_error(self):
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+            main(["--layout", "maze"])
+        self.assertEqual(caught.exception.code, 2)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -39,9 +39,11 @@ def catalog() -> dict[str, Any]:
             "near_entrance", "near_exit", "light_lock", "combat", "events",
         ],
         "limits": {"actions": MAX_ACTIONS, "seconds": MAX_SECONDS, "step": FIXED_STEP},
+        "layouts": ["auto", "crypt", "weave"],
         "notes": [
             "Each run starts from one integer seed; identical seed and actions reproduce the same hash.",
             "Positions are world coordinates; mode is 'overworld' or 'dungeon'.",
+            "auto chooses crypt on odd seeds and weave on even seeds; --layout forces one.",
             "Use interact near the portal to enter the crypt and near the exit rune to leave.",
             "Combat auto-fires at the nearest enemy; move to avoid contact damage and watch the wave.",
         ],
@@ -94,12 +96,17 @@ def apply_action(world: World, action: dict[str, Any]) -> None:
         raise ValueError(f"unknown action '{name}'")
 
 
-def run_actions(seed: int, actions: list[dict[str, Any]], size: int = 96) -> dict[str, Any]:
+def run_actions(
+    seed: int,
+    actions: list[dict[str, Any]],
+    size: int = 96,
+    layout: str = "auto",
+) -> dict[str, Any]:
     if not 0 <= int(seed) <= 0xFFFFFFFF:
         raise ValueError("seed must be between 0 and 4294967295")
     if len(actions) > MAX_ACTIONS:
         raise ValueError(f"at most {MAX_ACTIONS} actions are allowed")
-    world = World(int(seed), size=size)
+    world = World(int(seed), size=size, layout=layout)
     total_seconds = 0.0
     for index, action in enumerate(actions):
         if not isinstance(action, dict):
@@ -218,6 +225,7 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--seed", type=_seed_arg, default=7)
     run.add_argument("--actions", type=Path, required=True)
     run.add_argument("--size", type=_size_arg, default=96)
+    run.add_argument("--layout", choices=("auto", "crypt", "weave"), default="auto")
     run.add_argument("--out", type=Path, default=None)
     sub.add_parser("selftest", help="verify determinism, collisions and transitions")
     args = parser.parse_args(argv)
@@ -228,7 +236,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "selftest":
             print(json.dumps(selftest(), indent=2, sort_keys=True))
             return 0
-        result = run_actions(args.seed, _read_actions(args.actions), size=args.size)
+        result = run_actions(args.seed, _read_actions(args.actions), size=args.size, layout=args.layout)
         if args.out is not None:
             _write_json(args.out, result)
         print(json.dumps(result, indent=2, sort_keys=True))
