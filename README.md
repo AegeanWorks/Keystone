@@ -29,10 +29,16 @@ keystone/
 │   ├── __init__.py           <- package surface and version
 │   ├── math3d.py             <- Vec3, Mat4, Quat (column-major, OpenGL-ready)
 │   ├── camera.py             <- perspective camera and fly-style movement
-│   └── scene.py              <- hierarchy, transforms, light and scene root
+│   ├── scene.py              <- hierarchy, transforms, light and scene root
+│   ├── geometry.py           <- indexed mesh data and Blinn-Phong material
+│   ├── primitives.py         <- cube, ground plane and UV sphere
+│   └── obj_loader.py         <- streaming Wavefront OBJ loader
+├── assets/
+│   └── octahedron.obj        <- sample OBJ asset
 ├── tests/
 │   ├── test_math3d.py        <- unit tests for the math core
-│   └── test_scene.py         <- unit tests for hierarchy and camera
+│   ├── test_scene.py         <- unit tests for hierarchy and camera
+│   └── test_geometry.py      <- unit tests for meshes, primitives and OBJ
 ├── requirements.txt          <- pinned runtime and test dependencies
 ├── pyproject.toml            <- package metadata and pytest configuration
 ├── .gitignore                <- transient AIKit state excluded
