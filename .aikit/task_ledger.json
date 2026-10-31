@@ -3,25 +3,15 @@
   "active_task": {
     "task_id": "keystone-gltf-import-v1",
     "last_phase": "phase 3",
-    "active_phase": 3,
-    "status": "in_progress",
+    "active_phase": 5,
+    "status": "completed",
     "updated_at": 1793441355.3031678,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
-    "continuations": []
+    "continuations": [],
+    "completed_at": 1793441374.947862
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-web-console-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[4/5] Web console and WebGL2 viewer: vanilla dashboard, action simulation, live scene refresh, textured/lighted/fogged viewer; --serve/--host/--port CLI; README, AI guide, architecture and ADR-025; browser smoke test passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793428608.0824113,
-      "timestamp_str": "2026-10-31 09:36:48",
-      "agent": "opencode:keystone-web"
-    },
     {
       "task_id": "keystone-web-console-v1",
       "phase": "phase 3",
@@ -259,6 +249,16 @@
       "status": "in_progress",
       "timestamp": 1793441355.3031678,
       "timestamp_str": "2026-10-31 13:09:15",
+      "agent": "opencode:keystone"
+    },
+    {
+      "task_id": "keystone-gltf-import-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-gltf-import-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793441374.947863,
+      "timestamp_str": "2026-10-31 13:09:34",
       "agent": "opencode:keystone"
     }
   ]
