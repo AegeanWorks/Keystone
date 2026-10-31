@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `69`
-- **Total Classes**: `94`
-- **Total Top-Level Functions**: `78`
-- **Total Class Methods**: `492`
-- **Total Source Lines**: `7571`
+- **Total Python Modules**: `70`
+- **Total Classes**: `97`
+- **Total Top-Level Functions**: `83`
+- **Total Class Methods**: `506`
+- **Total Source Lines**: `7979`
 
 ---
 
@@ -80,10 +80,31 @@
 
 ---
 
+### [`keystone/asset_io.py`](keystone/asset_io.py)
+> *Disk-backed asset sources, default loaders and hot-reload reporting.*
+
+**Size**: `125` lines (`4367` bytes)
+
+**Classes:**
+- `class AssetSource` - *One file-backed asset: where it came from, how to load it and its last stamp.*
+  - Method `.__post_init__()`
+- `class ReloadReport` - *Outcome of one synchronous registry refresh.*
+  - Property `.ok` - *True when every checked source loaded and none disappeared.*
+  - Method `.describe()` - *Return a JSON-safe report for logs and AI clients.*
+
+**Functions:**
+- `def default_loader(kind)` - *Return the built-in loader for a kind, or explain how to supply one.*
+- `def kind_from_suffix(path)` - *Infer an asset kind from a .obj or .png path.*
+- `def fingerprint(path)` - *Return (mtime_ns, size) for a readable path, or None when it is absent.*
+- `def asset_kind(payload)` - *Return the registry kind of a payload object.*
+- `def load_asset(kind, path, loader)` - *Load one source and prove the payload matches the declared kind.*
+
+---
+
 ### [`keystone/assets.py`](keystone/assets.py)
 > *Game-agnostic asset registry with stable ids, content hashes and dependencies.*
 
-**Size**: `242` lines (`9418` bytes)
+**Size**: `339` lines (`12964` bytes)
 
 **Classes:**
 - `class AssetRecord` - *One registered asset: a stable id, kind, immutable payload and content digest.*
@@ -95,6 +116,8 @@
   - Method `.__contains__(asset_id)`
   - Method `.__iter__()`
   - Method `.register(asset_id, payload, *, kind, source, dependencies, replace)` - *Register one asset, inferring its kind from the payload when omitted.*
+  - Method `.register_file(asset_id, path, *, kind, loader, dependencies, replace)` - *Load a .obj or .png file, register it and bind it for hot reload.*
+  - Method `.refresh()` - *Re-read every changed source and report reloaded, unchanged, failed and missing ids.*
   - Method `.get(asset_id)` - *Return one record, or None when the id is not registered.*
   - Method `.require(asset_id)` - *Return one record or raise a KeyError naming the missing asset.*
   - Method `.remove(asset_id)` - *Remove one record or raise a KeyError naming the missing asset.*
@@ -111,7 +134,6 @@
 - `def _validate_kind(kind)`
 - `def _validate_dependency(asset_id, dependency)`
 - `def _dependencies(asset_id, dependencies)`
-- `def _kind_of(payload)`
 - `def _digest(kind, payload)`
 - `def _digest_mesh(mesh)`
 - `def _digest_material(material)`
@@ -879,7 +901,7 @@
 ### [`tests/test_assets.py`](tests/test_assets.py)
 > *Unit tests for the asset registry: identity, digests and dependencies.*
 
-**Size**: `127` lines (`6124` bytes)
+**Size**: `313` lines (`14484` bytes)
 
 **Classes:**
 - `class AssetRegistryTest`
@@ -893,6 +915,19 @@
   - Method `.test_stats_and_describe_are_json_safe()`
   - Method `.test_public_package_exports_the_registry()`
   - Method `.test_remove_and_clear_dispose_records()`
+- `class AssetFileSourceTest`
+  - Method `.test_register_file_uses_suffix_and_records_source()`
+  - Method `.test_register_file_requires_kind_or_known_suffix()`
+  - Method `.test_refresh_reports_unchanged()`
+  - Method `.test_refresh_reloads_changed_texture()`
+  - Method `.test_refresh_failure_keeps_last_good_payload()`
+  - Method `.test_refresh_missing_then_recovers()`
+  - Method `.test_refresh_reports_loader_type_error()`
+  - Method `.test_dependencies_survive_refresh()`
+  - Method `.test_clear_and_remove_drop_sources()`
+
+**Functions:**
+- `def _touch(path)`
 
 ---
 

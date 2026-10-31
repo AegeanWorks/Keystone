@@ -359,6 +359,7 @@ keystone/
 │   ├── character.py          <- AABB character movement and ground detection
 │   ├── triggers.py           <- trigger volumes and enter/exit tracking
 │   ├── assets.py             <- mesh, material and texture asset registry
+│   ├── asset_io.py           <- file-backed sources, loaders and hot reload
 │   ├── schema.py             <- versioned core schema constants
 │   ├── math3d.py             <- Vec3, Mat4, Quat (column-major, OpenGL-ready)
 │   ├── camera.py             <- perspective camera
@@ -417,7 +418,7 @@ keystone/
 │   ├── test_broadphase.py    <- spatial-grid queries, updates and pairs
 │   ├── test_character.py     <- floor, wall, jump and validation behavior
 │   ├── test_triggers.py      <- enter/exit tracking and multiple volumes
-│   ├── test_assets.py        <- registry ids, digests and dependencies
+│   ├── test_assets.py        <- registry ids, digests, dependencies and reload
 │   ├── test_plugin.py        <- GameModule contract and loader
 │   ├── test_replay.py        <- command log and hashes
 │   ├── test_serialization.py <- atomic JSON persistence

@@ -1,15 +1,32 @@
 """Unit tests for the asset registry: identity, digests and dependencies."""
 
 import json
+import os
+import tempfile
 import unittest
 from pathlib import Path
 
 import keystone
 from keystone.assets import ASSET_KINDS, AssetRegistry
-from keystone.geometry import Material
+from keystone.geometry import Material, MeshData
 from keystone.math3d import Vec3
+from keystone.png import read_png, write_png
 from keystone.primitives import cube, sphere
 from keystone.texture import TextureData
+
+FIRST_PIXELS = bytes((10, 20, 30, 255, 40, 50, 60, 255, 70, 80, 90, 255, 100, 110, 120, 255))
+SECOND_PIXELS = bytes((1, 2, 3, 255, 4, 5, 6, 255, 7, 8, 9, 255, 10, 11, 12, 255))
+OBJ_TEXT = """v 0 0 0
+v 1 0 0
+v 0 1 0
+vn 0 0 1
+f 1//1 2//1 3//1
+"""
+
+
+def _touch(path: Path) -> None:
+    status = path.stat()
+    os.utime(path, ns=(status.st_atime_ns, status.st_mtime_ns + 1_000_000_000))
 
 
 class AssetRegistryTest(unittest.TestCase):
@@ -123,5 +140,174 @@ class AssetRegistryTest(unittest.TestCase):
         self.assertEqual(self.registry.ids(), ())
 
 
+class AssetFileSourceTest(unittest.TestCase):
+    def test_register_file_uses_suffix_and_records_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            png_path = root / "grid.png"
+            obj_path = root / "mesh.obj"
+            write_png(png_path, 2, 2, FIRST_PIXELS)
+            obj_path.write_text(OBJ_TEXT, encoding="utf-8")
+            registry = AssetRegistry()
+            texture = registry.register_file("texture.grid", png_path)
+            mesh = registry.register_file("mesh.sample", obj_path)
+            self.assertEqual(texture.kind, "texture")
+            self.assertIsInstance(texture.payload, TextureData)
+            self.assertEqual(mesh.kind, "mesh")
+            self.assertIsInstance(mesh.payload, MeshData)
+            self.assertEqual(texture.source, png_path)
+            sources = {entry["id"]: entry for entry in registry.describe()["sources"]}
+            self.assertEqual(sources["texture.grid"]["error"], None)
+            self.assertEqual(sources["texture.grid"]["path"], png_path.as_posix())
+            self.assertEqual(registry.refresh().checked, 2)
+
+    def test_register_file_requires_kind_or_known_suffix(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            data = root / "unknown.json"
+            data.write_text("{}", encoding="utf-8")
+            registry = AssetRegistry()
+            with self.assertRaises(ValueError):
+                registry.register_file("unknown", data)
+            with self.assertRaises(ValueError):
+                registry.register_file("material", data, kind="material")
+            with self.assertRaises(FileNotFoundError):
+                registry.register_file("missing", root / "nope.png")
+            with self.assertRaises(TypeError):
+                registry.register_file("wrong", data, kind="texture", loader=lambda path: cube())
+            registry.register_file(
+                "first", data, kind="texture", loader=lambda path: TextureData.checker(2)
+            )
+            with self.assertRaises(ValueError):
+                registry.register_file(
+                    "first", data, kind="texture", loader=lambda path: TextureData.checker(2)
+                )
+
+    def test_refresh_reports_unchanged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "grid.png"
+            write_png(path, 2, 2, FIRST_PIXELS)
+            registry = AssetRegistry()
+            registry.register_file("texture.grid", path)
+            report = registry.refresh()
+            self.assertEqual(report.checked, 1)
+            self.assertEqual(report.unchanged, ("texture.grid",))
+            self.assertEqual(report.reloaded, ())
+            self.assertEqual(report.failed, ())
+            self.assertEqual(report.missing, ())
+            self.assertTrue(report.ok)
+            json.dumps(report.describe())
+
+    def test_refresh_reloads_changed_texture(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "grid.png"
+            write_png(path, 2, 2, FIRST_PIXELS)
+            registry = AssetRegistry()
+            registry.register_file("texture.grid", path)
+            write_png(path, 2, 2, SECOND_PIXELS)
+            _touch(path)
+            report = registry.refresh()
+            self.assertEqual(report.reloaded, ("texture.grid",))
+            self.assertEqual(registry.require("texture.grid").payload.rgba, read_png(path)[2])
+
+    def test_refresh_failure_keeps_last_good_payload(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "grid.png"
+            write_png(path, 2, 2, FIRST_PIXELS)
+            calls = {"count": 0}
+
+            def flaky(path):
+                calls["count"] += 1
+                if calls["count"] == 1:
+                    return TextureData.from_png(path)
+                raise RuntimeError("boom")
+
+            registry = AssetRegistry()
+            registry.register_file("texture.grid", path, loader=flaky)
+            original = registry.require("texture.grid").payload
+            _touch(path)
+            path.write_bytes(b"not a png")
+            _touch(path)
+            report = registry.refresh()
+            self.assertEqual(report.failed[0][0], "texture.grid")
+            self.assertIn("RuntimeError: boom", report.failed[0][1])
+            self.assertEqual(registry.require("texture.grid").payload, original)
+            self.assertFalse(report.ok)
+            report2 = registry.refresh()
+            self.assertEqual(report2.failed[0][0], "texture.grid")
+            self.assertIn("RuntimeError: boom", report2.failed[0][1])
+
+    def test_refresh_missing_then_recovers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "grid.png"
+            write_png(path, 2, 2, FIRST_PIXELS)
+            registry = AssetRegistry()
+            registry.register_file("texture.grid", path)
+            original = registry.require("texture.grid").payload
+            path.unlink()
+            report = registry.refresh()
+            self.assertEqual(report.missing, ("texture.grid",))
+            self.assertEqual(registry.require("texture.grid").payload, original)
+            self.assertFalse(report.ok)
+            write_png(path, 2, 2, SECOND_PIXELS)
+            _touch(path)
+            report2 = registry.refresh()
+            self.assertEqual(report2.reloaded, ("texture.grid",))
+            self.assertEqual(registry.require("texture.grid").payload.rgba, read_png(path)[2])
+
+    def test_refresh_reports_loader_type_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "grid.png"
+            write_png(path, 2, 2, FIRST_PIXELS)
+            calls = {"count": 0}
+
+            def flaky_type(path):
+                calls["count"] += 1
+                if calls["count"] == 1:
+                    return TextureData.from_png(path)
+                return cube()
+
+            registry = AssetRegistry()
+            registry.register_file("texture.grid", path, loader=flaky_type)
+            _touch(path)
+            path.write_bytes(b"not a png")
+            _touch(path)
+            report = registry.refresh()
+            self.assertEqual(report.failed[0][0], "texture.grid")
+            self.assertTrue(report.failed[0][1].startswith("TypeError"))
+
+    def test_dependencies_survive_refresh(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "grid.png"
+            write_png(path, 2, 2, FIRST_PIXELS)
+            registry = AssetRegistry()
+            registry.register_file("texture.grid", path)
+            registry.register(
+                "material.floor",
+                Material(texture=registry.require("texture.grid").payload),
+                dependencies=("texture.grid",),
+            )
+            write_png(path, 2, 2, SECOND_PIXELS)
+            _touch(path)
+            report = registry.refresh()
+            self.assertEqual(report.reloaded, ("texture.grid",))
+            self.assertEqual(registry.require("material.floor").dependencies, ("texture.grid",))
+            self.assertEqual(registry.missing_dependencies(), ())
+
+    def test_clear_and_remove_drop_sources(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "grid.png"
+            write_png(path, 2, 2, FIRST_PIXELS)
+            registry = AssetRegistry()
+            registry.register_file("texture.grid", path)
+            self.assertEqual(registry.refresh().checked, 1)
+            registry.remove("texture.grid")
+            self.assertEqual(registry.refresh().checked, 0)
+            registry.register_file("texture.grid", path)
+            registry.clear()
+            self.assertEqual(registry.refresh().checked, 0)
+
+
 if __name__ == "__main__":
     unittest.main()
+

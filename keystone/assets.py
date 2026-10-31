@@ -5,14 +5,23 @@ from __future__ import annotations
 import hashlib
 import struct
 from collections.abc import Iterable, Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
+from keystone.asset_io import (
+    ASSET_KINDS,
+    AssetLoader,
+    AssetPayload,
+    AssetSource,
+    ReloadReport,
+    asset_kind,
+    default_loader,
+    fingerprint,
+    kind_from_suffix,
+    load_asset,
+)
 from keystone.geometry import Material, MeshData
 from keystone.texture import TextureData
-
-ASSET_KINDS = ("mesh", "material", "texture")
-AssetPayload = MeshData | Material | TextureData
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,8 +38,9 @@ class AssetRecord:
     def __post_init__(self) -> None:
         _validate_id(self.id)
         _validate_kind(self.kind)
-        if _kind_of(self.payload) != self.kind:
-            raise TypeError(f"payload is a {_kind_of(self.payload)}, not a {self.kind}")
+        actual = asset_kind(self.payload)
+        if actual != self.kind:
+            raise TypeError(f"payload is a {actual}, not a {self.kind}")
         if len(self.sha256) != 64:
             raise ValueError("sha256 must be a 64-character hex digest")
         if self.source is not None and not isinstance(self.source, Path):
@@ -59,6 +69,7 @@ class AssetRegistry:
 
     def __init__(self) -> None:
         self._records: dict[str, AssetRecord] = {}
+        self._sources: dict[str, AssetSource] = {}
 
     def __len__(self) -> int:
         return len(self._records)
@@ -81,7 +92,7 @@ class AssetRegistry:
     ) -> AssetRecord:
         """Register one asset, inferring its kind from the payload when omitted."""
         _validate_id(asset_id)
-        inferred = _kind_of(payload)
+        inferred = asset_kind(payload)
         if kind is not None:
             _validate_kind(kind)
             if kind != inferred:
@@ -102,6 +113,90 @@ class AssetRegistry:
         self._records[asset_id] = record
         return record
 
+    def register_file(
+        self,
+        asset_id: str,
+        path: str | Path,
+        *,
+        kind: str | None = None,
+        loader: AssetLoader | None = None,
+        dependencies: Iterable[str] = (),
+        replace: bool = False,
+    ) -> AssetRecord:
+        """Load a .obj or .png file, register it and bind it for hot reload."""
+        _validate_id(asset_id)
+        if asset_id in self._records and not replace:
+            raise ValueError(
+                f"asset {asset_id!r} is already registered; pass replace=True to replace it"
+            )
+        source_path = Path(path)
+        if kind is None:
+            kind = kind_from_suffix(source_path)
+        else:
+            _validate_kind(kind)
+        mark = fingerprint(source_path)
+        if mark is None:
+            raise FileNotFoundError(f"asset source {source_path} does not exist")
+        selected = loader or default_loader(kind)
+        payload = load_asset(kind, source_path, selected)
+        record = self.register(
+            asset_id,
+            payload,
+            kind=kind,
+            source=source_path,
+            dependencies=dependencies,
+            replace=replace,
+        )
+        self._sources[asset_id] = AssetSource(source_path, kind, selected, mark)
+        return record
+
+    def refresh(self) -> ReloadReport:
+        """Re-read every changed source and report reloaded, unchanged, failed and missing ids."""
+        reloaded: list[str] = []
+        unchanged: list[str] = []
+        failed: list[tuple[str, str]] = []
+        missing: list[str] = []
+        for asset_id in sorted(self._sources):
+            source = self._sources[asset_id]
+            mark = fingerprint(source.path)
+            if mark is None:
+                missing.append(asset_id)
+                continue
+            if mark == source.fingerprint:
+                if source.error is not None:
+                    failed.append((asset_id, source.error))
+                else:
+                    unchanged.append(asset_id)
+                continue
+            try:
+                payload = load_asset(source.kind, source.path, source.loader)
+            except Exception as exc:  # noqa: BLE001 - a loader failure is reported, never hidden
+                message = f"{type(exc).__name__}: {exc}"
+                failed.append((asset_id, message))
+                self._sources[asset_id] = replace(source, fingerprint=mark, error=message)
+                continue
+            old = self._records[asset_id]
+            record = self.register(
+                asset_id,
+                payload,
+                kind=source.kind,
+                source=source.path,
+                dependencies=old.dependencies,
+                replace=True,
+            )
+            self._sources[asset_id] = replace(source, fingerprint=mark, error=None)
+            if record.sha256 == old.sha256:
+                unchanged.append(asset_id)
+            else:
+                reloaded.append(asset_id)
+        return ReloadReport(
+            checked=len(self._sources),
+            reloaded=tuple(reloaded),
+            unchanged=tuple(unchanged),
+            failed=tuple(failed),
+            missing=tuple(missing),
+        )
+
     def get(self, asset_id: str) -> AssetRecord | None:
         """Return one record, or None when the id is not registered."""
         return self._records.get(asset_id)
@@ -118,10 +213,12 @@ class AssetRegistry:
         record = self._records.pop(asset_id, None)
         if record is None:
             raise KeyError(f"asset {asset_id!r} is not registered")
+        self._sources.pop(asset_id, None)
         return record
 
     def clear(self) -> None:
         self._records.clear()
+        self._sources.clear()
 
     def ids(self, kind: str | None = None) -> tuple[str, ...]:
         """Return registered ids in insertion order, optionally filtered by kind."""
@@ -167,6 +264,16 @@ class AssetRegistry:
             "assets": [
                 record.describe() for record in sorted(self._records.values(), key=lambda item: item.id)
             ],
+            "sources": [
+                {
+                    "id": asset_id,
+                    "path": source.path.as_posix(),
+                    "kind": source.kind,
+                    "fingerprint": list(source.fingerprint),
+                    "error": source.error,
+                }
+                for asset_id, source in sorted(self._sources.items())
+            ],
         }
 
 
@@ -201,16 +308,6 @@ def _dependencies(asset_id: str, dependencies: Iterable[str]) -> tuple[str, ...]
     return tuple(sorted(cleaned))
 
 
-def _kind_of(payload: object) -> str:
-    if isinstance(payload, MeshData):
-        return "mesh"
-    if isinstance(payload, Material):
-        return "material"
-    if isinstance(payload, TextureData):
-        return "texture"
-    raise TypeError("payload must be a MeshData, Material or TextureData")
-
-
 def _digest(kind: str, payload: AssetPayload) -> str:
     if kind == "texture" and isinstance(payload, TextureData):
         return payload.sha256()
@@ -218,7 +315,7 @@ def _digest(kind: str, payload: AssetPayload) -> str:
         return _digest_mesh(payload)
     if kind == "material" and isinstance(payload, Material):
         return _digest_material(payload)
-    raise TypeError(f"payload is a {_kind_of(payload)}, not a {kind}")
+    raise TypeError(f"payload is a {asset_kind(payload)}, not a {kind}")
 
 
 def _digest_mesh(mesh: MeshData) -> str:

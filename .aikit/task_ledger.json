@@ -5,22 +5,12 @@
     "last_phase": "phase 3",
     "active_phase": 3,
     "status": "in_progress",
-    "updated_at": 1793438248.769191,
+    "updated_at": 1793439041.8088284,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
     "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-textures-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-textures-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793389316.8063724,
-      "timestamp_str": "2026-10-30 22:41:56",
-      "agent": "opencode:keystone-textures"
-    },
     {
       "task_id": "keystone-scene-identity-v1",
       "phase": "phase 2",
@@ -264,6 +254,17 @@
       "status": "in_progress",
       "timestamp": 1793438248.769191,
       "timestamp_str": "2026-10-31 12:17:28",
+      "agent": "opencode:keystone"
+    },
+    {
+      "task_id": "keystone-asset-registry-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[3/4] Asset file sources and hot reload: asset_io module with AssetSource, Fingerprint, ReloadReport, default loaders for OBJ/PNG, kind_from_suffix, load_asset and refresh; registry.register_file binds sources; refresh reports reloaded/unchanged/failed/missing with persistent last-good fallback; dependencies survive reload; 228 tests, ruff clean, 6/6 gates; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793439041.8088284,
+      "timestamp_str": "2026-10-31 12:30:41",
       "agent": "opencode:keystone"
     }
   ]
