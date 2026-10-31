@@ -3,25 +3,15 @@
   "active_task": {
     "task_id": "keystone-asset-registry-v1",
     "last_phase": "phase 4",
-    "active_phase": 4,
-    "status": "in_progress",
+    "active_phase": 5,
+    "status": "completed",
     "updated_at": 1793439222.1437323,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
-    "continuations": []
+    "continuations": [],
+    "completed_at": 1793439247.6829445
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-scene-identity-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/4] Core identity and schema-4 reports: Node id/tags/layer/typed components, Scene query/find/find_by_id, deterministic per-scene IDs, identity-aware report diff, sample explicit IDs; 176 tests green and ruff clean",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793398510.3315635,
-      "timestamp_str": "2026-10-31 01:15:10",
-      "agent": "opencode:keystone-identity"
-    },
     {
       "task_id": "keystone-scene-identity-v1",
       "phase": "phase 3",
@@ -259,6 +249,16 @@
       "status": "in_progress",
       "timestamp": 1793439222.1437323,
       "timestamp_str": "2026-10-31 12:33:42",
+      "agent": "opencode:keystone"
+    },
+    {
+      "task_id": "keystone-asset-registry-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-asset-registry-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793439247.6829464,
+      "timestamp_str": "2026-10-31 12:34:07",
       "agent": "opencode:keystone"
     }
   ]
