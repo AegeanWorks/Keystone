@@ -219,3 +219,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Physics stopped at individual ray and overlap queries. Games had to scan every collider, reimplement character movement, and hand-roll trigger state; none of those are genre rules, so they belong in the core.
 - **Decision**: Add `keystone.broadphase.SpatialGrid` (uniform grid, exact overlap filtering, insertion-order results), `keystone.character.CharacterBody`/`CharacterController` (AABB body, horizontal wish velocity, gravity, swept axis resolution, ground state), `keystone.triggers.TriggerVolume`/`TriggerTracker` (sorted enter/exit/active events), and `AABB.low/high/contains/overlaps` plus `RayHit`/`raycast()` with an optional key/box predicate. Keep all state caller-owned and GL-free.
 - **Consequences**: Games get deterministic nearby-body queries, reusable character movement and trigger reactions without a genre contract. The controller covers axis-aligned static colliders only; slopes, step-up, moving platforms, capsules and a physics solver remain future work. Cell size controls broadphase performance, never correctness, and trigger tracker state is mutable by design.
+
+### ADR-027: Add the asset registry and hot reload
+
+- **Date**: 2026-10-31
+- **Status**: Accepted
+- **Context**: Meshes, materials and textures were anonymous objects passed straight to nodes, so games could not address, deduplicate, inspect or refresh them. The roadmap's asset step needed a game-agnostic registry and a deterministic hot-reload path before material graphs and glTF import.
+- **Decision**:
+  1. Add `keystone.assets` with `AssetRegistry`, `AssetRecord` and `ASSET_KINDS`. Kinds are inferred from `MeshData`, `Material` and `TextureData`, with explicit kind validation, id and dependency validation, stable content digests, duplicate groups, missing-dependency reports and a JSON-safe `describe()`.
+  2. Add `keystone.asset_io` with `AssetSource`, `Fingerprint`, `ReloadReport`, default PNG and OBJ loaders, suffix-based kind inference, `load_asset` and `fingerprint`. `register_file` loads a source and binds it; `refresh()` re-reads changed files, keeps the last good payload on a loader failure or a missing file, reports persistent errors, and preserves dependencies.
+  3. Export `AssetRegistry` from the package and wire `CubeDemo` through the registry so the smoke test proves asset identity.
+- **Consequences**: Games get stable asset ids, content hashes, dependency tracking and synchronous hot reload with no new dependencies or background thread. Broken or missing files surface in `ReloadReport` instead of crashing the render loop. Material graphs and glTF import remain future work.

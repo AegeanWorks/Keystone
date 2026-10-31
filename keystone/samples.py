@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from dataclasses import replace
 
+from keystone.assets import AssetRegistry
 from keystone.geometry import Material
 from keystone.math3d import Quat, Vec3
 from keystone.primitives import cube, plane, sphere
@@ -19,11 +20,32 @@ class CubeDemo:
 
     def __init__(self) -> None:
         self.scene = Scene()
+        self.assets = AssetRegistry()
         self._time = 0.0
         self._cubes: list[Node] = []
 
     def build_scene(self) -> Scene:
         self.scene = Scene()
+        self.assets = AssetRegistry()
+        self.assets.register("mesh.cube", cube(1.4))
+        self.assets.register("mesh.plane", plane(20.0))
+        self.assets.register("mesh.sphere", sphere(1.0, segments=24, rings=14))
+        checker = TextureData.checker(64, (0.10, 0.12, 0.16), (0.18, 0.20, 0.25), name="floor-checker")
+        self.assets.register("texture.floor-checker", checker)
+        self.assets.register(
+            "material.floor",
+            Material(color=Vec3(1.0, 1.0, 1.0), specular=0.08, shininess=8.0, texture=checker),
+        )
+        colors = ((0.9, 0.4, 0.2), (0.2, 0.7, 0.8), (0.6, 0.45, 0.9))
+        for index, color in enumerate(colors):
+            self.assets.register(
+                f"material.cube.{index}",
+                Material(color=Vec3(*color), specular=0.4, shininess=48.0),
+            )
+        self.assets.register(
+            "material.orb",
+            Material(color=Vec3(0.95, 0.78, 0.3), specular=0.8, shininess=96.0),
+        )
         self.scene.background = Vec3(0.035, 0.045, 0.07)
         self.scene.sky = Vec3(0.01, 0.015, 0.04)
         self.scene.ambient = Vec3(0.18, 0.2, 0.26)
@@ -46,13 +68,8 @@ class CubeDemo:
             Node(
                 "floor",
                 id="floor",
-                mesh=plane(20.0),
-                material=Material(
-                    color=Vec3(1.0, 1.0, 1.0),
-                    specular=0.08,
-                    shininess=8.0,
-                    texture=TextureData.checker(64, (0.10, 0.12, 0.16), (0.18, 0.20, 0.25), name="floor-checker"),
-                ),
+                mesh=self.assets.require("mesh.plane").payload,
+                material=self.assets.require("material.floor").payload,
             )
         )
         colors = ((0.9, 0.4, 0.2), (0.2, 0.7, 0.8), (0.6, 0.45, 0.9))
@@ -62,8 +79,8 @@ class CubeDemo:
                 f"cube-{index}",
                 id=f"cube-{index}",
                 transform=Transform(position=Vec3((index - 1) * 2.4, 0.75, 0.0)),
-                mesh=cube(1.4),
-                material=Material(color=Vec3(*color), specular=0.4, shininess=48.0),
+                mesh=self.assets.require("mesh.cube").payload,
+                material=self.assets.require(f"material.cube.{index}").payload,
             )
             self.scene.add(node)
             self._cubes.append(node)
@@ -72,8 +89,8 @@ class CubeDemo:
                 "orb",
                 id="orb",
                 transform=Transform(position=Vec3(0.0, 2.5, 0.0), scale=Vec3(0.7, 0.7, 0.7)),
-                mesh=sphere(1.0, segments=24, rings=14),
-                material=Material(color=Vec3(0.95, 0.78, 0.3), specular=0.8, shininess=96.0),
+                mesh=self.assets.require("mesh.sphere").payload,
+                material=self.assets.require("material.orb").payload,
             )
         )
         return self.scene

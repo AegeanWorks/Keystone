@@ -464,11 +464,33 @@ Engine
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the dependency rules, module responsibilities, acceptance criteria and core roadmap.
 
+## 📦 Asset Registry and Hot Reload
+
+Keystone keeps meshes, materials and textures in a caller-owned `AssetRegistry`:
+
+```python
+from keystone.assets import AssetRegistry
+from keystone.geometry import Material
+from keystone.primitives import cube
+from keystone.texture import TextureData
+
+assets = AssetRegistry()
+assets.register("mesh.cube", cube(1.4))
+checker = TextureData.checker(64, name="floor-checker")
+assets.register("texture.floor", checker)
+assets.register("material.floor", Material(texture=checker), dependencies=("texture.floor",))
+
+assets.register_file("texture.logo", "assets/logo.png")  # PNG -> texture
+assets.refresh()  # re-reads changed files; keeps the last good payload on failure
+```
+
+Each asset has a stable id, kind, content digest, source path and dependency list. `refresh()` returns a `ReloadReport` naming reloaded, unchanged, failed and missing ids, so a game can surface broken assets without crashing. The registry is synchronous and starts no thread; a game calls `refresh()` from its own loop. Material graphs and glTF import remain future work.
+
 ## 🗺️ Core Roadmap
 
 1. ~~Scene identity and optional ECS/component queries.~~ Implemented in v0.19.0.
 2. ~~Broadphase physics, character controller and trigger volumes.~~ Implemented in v0.21.0.
-3. Asset registry, material graphs, glTF import and hot reload.
+3. ~~Asset registry and hot reload.~~ Implemented in v0.22.0; material graphs and glTF import remain.
 4. Renderer instancing, shadows, PBR and post-processing.
 5. Input rebinding, audio mixer and buses.
 6. Scene/save schema versioning and replay/undo tooling.

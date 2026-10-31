@@ -28,7 +28,7 @@ class SceneDocumentTest(unittest.TestCase):
         self.assertEqual(document["schema"], 1)
         self.assertEqual(document["game"], "cube-demo")
         self.assertEqual(document["node_count"], 6)
-        self.assertEqual(document["mesh_count"], 5)
+        self.assertEqual(document["mesh_count"], 3)
         self.assertEqual(document["texture_count"], 1)
         self.assertEqual(len(document["camera"]["view"]), 16)
         self.assertEqual(len(document["nodes"]), 6)
@@ -136,7 +136,7 @@ class WebServerTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(payload["schema"], 1)
         self.assertEqual(payload["node_count"], 6)
-        self.assertEqual(payload["mesh_count"], 5)
+        self.assertEqual(payload["mesh_count"], 3)
         self.assertEqual(payload["texture_count"], 1)
 
     def test_simulate_endpoint_returns_a_deterministic_result(self):

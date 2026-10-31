@@ -1,6 +1,6 @@
 # Keystone Architecture
 
-**Status:** implemented in v0.21.0 — core-only engine with scene identity, textured materials, physics systems, human UI and a local web console
+**Status:** implemented in v0.22.0 — core-only engine with scene identity, textured materials, physics systems, human UI, a local web console and an asset registry with hot reload
 **Boundary:** `keystone/` is game-agnostic; games are external modules.
 
 ## 1. What Keystone Is
@@ -142,7 +142,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Scene queries | Implemented | name/tag/layer/component filters and ID lookup |
 | Camera | Implemented | perspective and view matrices |
 | Geometry | Implemented | indexed meshes, materials, vertex colors |
-| Assets | Implemented | indexed meshes, materials, RGBA textures, OBJ, PNG |
+| Assets | Implemented | indexed meshes, materials, RGBA textures, OBJ, PNG; asset registry with stable ids, digests, dependencies and hot reload |
 | Renderer | Implemented | OpenGL 3.3, sky, lights, fog, textures, readback |
 | Runtime | Implemented | fixed clock, input, loop, screenshots |
 | Plugin | Implemented | GameModule + loader |
@@ -163,7 +163,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 
 1. **Scene identity and components** — implemented in v0.19.0; stable node IDs, tags/layers and typed component queries.
 2. **Physics** — implemented in v0.21.0; broadphase, AABB character controller, triggers and filtered raycasts.
-3. **Assets** — asset registry, material graphs, glTF, hot reload.
+3. **Assets** — asset registry and hot reload implemented in v0.22.0; material graphs and glTF import remain.
 4. **Renderer** — instancing/batching, shadows, PBR, post-processing, sRGB/linear color.
 5. **Input/audio** — rebinding, action contexts, mixer and buses.
 6. **Serialization/replay** — versioned scene/save format, undo/rewind, replay runner.

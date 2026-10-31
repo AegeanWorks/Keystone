@@ -10,7 +10,7 @@
 - **Total Classes**: `97`
 - **Total Top-Level Functions**: `83`
 - **Total Class Methods**: `506`
-- **Total Source Lines**: `7979`
+- **Total Source Lines**: `7996`
 
 ---
 
@@ -559,7 +559,7 @@
 ### [`keystone/samples.py`](keystone/samples.py)
 > *A minimal game-agnostic sample used to smoke-test the engine.*
 
-**Size**: `117` lines (`4325` bytes)
+**Size**: `134` lines (`5223` bytes)
 
 **Classes:**
 - `class CubeDemo` - *A rotating cube scene; contains no combat, puzzles or genre rules.*
