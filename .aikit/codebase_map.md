@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `67`
-- **Total Classes**: `91`
-- **Total Top-Level Functions**: `70`
-- **Total Class Methods**: `465`
-- **Total Source Lines**: `7189`
+- **Total Python Modules**: `69`
+- **Total Classes**: `94`
+- **Total Top-Level Functions**: `78`
+- **Total Class Methods**: `492`
+- **Total Source Lines**: `7571`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `20` lines (`633` bytes)
+**Size**: `33` lines (`739` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -77,6 +77,44 @@
   - Method `.capture(image_path, report_path)`
   - Method `.screenshot(path)`
   - Method `.close()`
+
+---
+
+### [`keystone/assets.py`](keystone/assets.py)
+> *Game-agnostic asset registry with stable ids, content hashes and dependencies.*
+
+**Size**: `242` lines (`9418` bytes)
+
+**Classes:**
+- `class AssetRecord` - *One registered asset: a stable id, kind, immutable payload and content digest.*
+  - Method `.__post_init__()`
+  - Method `.describe()` - *Return a JSON-safe description for AI clients and diagnostics.*
+- `class AssetRegistry` - *Caller-owned registry for meshes, materials and textures.*
+  - Method `.__init__()`
+  - Method `.__len__()`
+  - Method `.__contains__(asset_id)`
+  - Method `.__iter__()`
+  - Method `.register(asset_id, payload, *, kind, source, dependencies, replace)` - *Register one asset, inferring its kind from the payload when omitted.*
+  - Method `.get(asset_id)` - *Return one record, or None when the id is not registered.*
+  - Method `.require(asset_id)` - *Return one record or raise a KeyError naming the missing asset.*
+  - Method `.remove(asset_id)` - *Remove one record or raise a KeyError naming the missing asset.*
+  - Method `.clear()`
+  - Method `.ids(kind)` - *Return registered ids in insertion order, optionally filtered by kind.*
+  - Method `.find_by_digest(sha256)` - *Return every record whose content digest matches, in insertion order.*
+  - Method `.duplicates()` - *Return groups of ids that share one kind and content digest.*
+  - Method `.missing_dependencies()` - *Return every (asset id, dependency id) pair whose dependency is absent.*
+  - Method `.stats()` - *Return total and per-kind counts in a stable order.*
+  - Method `.describe()` - *Return a JSON-safe registry document sorted by asset id.*
+
+**Functions:**
+- `def _validate_id(asset_id)`
+- `def _validate_kind(kind)`
+- `def _validate_dependency(asset_id, dependency)`
+- `def _dependencies(asset_id, dependencies)`
+- `def _kind_of(payload)`
+- `def _digest(kind, payload)`
+- `def _digest_mesh(mesh)`
+- `def _digest_material(material)`
 
 ---
 
@@ -835,6 +873,26 @@
   - Method `.test_simulate_cli_reads_actions_and_writes_output()`
   - Method `.test_compare_baseline_cli_exits_zero_and_writes_diff()`
   - Method `.test_capture_report_and_png()`
+
+---
+
+### [`tests/test_assets.py`](tests/test_assets.py)
+> *Unit tests for the asset registry: identity, digests and dependencies.*
+
+**Size**: `127` lines (`6124` bytes)
+
+**Classes:**
+- `class AssetRegistryTest`
+  - Method `.setUp()`
+  - Method `.test_register_infers_kind_and_preserves_order()`
+  - Method `.test_register_rejects_bad_ids_kinds_and_payloads()`
+  - Method `.test_duplicate_id_requires_replace()`
+  - Method `.test_digest_is_content_based_and_duplicates_are_reported()`
+  - Method `.test_texture_and_material_digests_follow_their_content()`
+  - Method `.test_dependencies_are_sorted_and_missing_ones_reported()`
+  - Method `.test_stats_and_describe_are_json_safe()`
+  - Method `.test_public_package_exports_the_registry()`
+  - Method `.test_remove_and_clear_dispose_records()`
 
 ---
 
