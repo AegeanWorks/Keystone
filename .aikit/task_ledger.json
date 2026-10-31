@@ -3,31 +3,15 @@
   "active_task": {
     "task_id": "keystone-state-history-v1",
     "last_phase": "phase 3",
-    "active_phase": 3,
-    "status": "in_progress",
+    "active_phase": 5,
+    "status": "completed",
     "updated_at": 1793441667.793494,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
-    "continuations": []
+    "continuations": [],
+    "completed_at": 1793441691.8001983
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-physics-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/4] Plan: AABB helpers + spatial-grid broadphase -> AABB character controller and trigger tracking -> raycast filter and docs/ADR -> full gates and delivery",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793431003.6212695,
-      "timestamp_str": "2026-10-31 10:16:43",
-      "agent": "opencode:keystone-physics",
-      "impact_assessment": {
-        "why": "The physics layer still stops at individual ray/overlap queries, so games cannot efficiently find nearby bodies, move a character with gravity and collision, or react to trigger volumes; this is the next core roadmap item.",
-        "benefits": "A deterministic broadphase, a game-agnostic character mover and trigger enter/exit events give games reusable physics without genre rules; raycast filters let games restrict queries by key.",
-        "risks": "contract: new keystone.broadphase, keystone.character and keystone.triggers public modules plus additive AABB helpers and RayHit/raycast; dependency: stdlib only; concurrency: none (caller-owned state); state: immutable bodies plus a mutable trigger tracker and caller-owned collider lists.",
-        "mitigation": "Unit tests first for cell boundaries, update/remove, wall/floor/jump resolution, trigger enter/exit and ray filtering; keep queries deterministic and the full 6/6 project gate."
-      }
-    },
     {
       "task_id": "keystone-physics-v1",
       "phase": "phase 3",
@@ -260,6 +244,16 @@
       "status": "in_progress",
       "timestamp": 1793441667.793494,
       "timestamp_str": "2026-10-31 13:14:27",
+      "agent": "opencode:keystone"
+    },
+    {
+      "task_id": "keystone-state-history-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-state-history-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793441691.8001997,
+      "timestamp_str": "2026-10-31 13:14:51",
       "agent": "opencode:keystone"
     }
   ]
