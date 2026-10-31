@@ -1,0 +1,116 @@
+"""Deterministic spatial-grid broadphase for nearby AABB candidates."""
+
+from __future__ import annotations
+
+import math
+from collections.abc import Hashable, Iterator
+
+from keystone.math3d import Vec3
+from keystone.physics import AABB, aabb_overlap
+
+Cell = tuple[int, int, int]
+
+
+class SpatialGrid:
+    """A uniform grid of AABB proxies with exact overlap filtering.
+
+    Results preserve insertion order so callers get deterministic output even
+    when several proxies share a cell. Cell size is a performance trade-off,
+    not a correctness setting: every exact overlap is still returned.
+    """
+
+    def __init__(self, cell_size: float = 2.0) -> None:
+        if cell_size <= 0.0:
+            raise ValueError("cell_size must be positive")
+        self.cell_size = float(cell_size)
+        self._boxes: dict[Hashable, AABB] = {}
+        self._order: dict[Hashable, int] = {}
+        self._cells: dict[Cell, set[Hashable]] = {}
+        self._next_order = 0
+
+    def __len__(self) -> int:
+        return len(self._boxes)
+
+    def __contains__(self, key: object) -> bool:
+        return key in self._boxes
+
+    def get(self, key: Hashable) -> AABB | None:
+        return self._boxes.get(key)
+
+    def insert(self, key: Hashable, box: AABB) -> None:
+        """Insert or replace a proxy and its current bounds."""
+        if key in self._boxes:
+            self.remove(key)
+        self._boxes[key] = box
+        self._order[key] = self._next_order
+        self._next_order += 1
+        for cell in self._cells_for(box):
+            self._cells.setdefault(cell, set()).add(key)
+
+    def update(self, key: Hashable, box: AABB) -> None:
+        """Move a proxy; unknown keys are inserted."""
+        self.insert(key, box)
+
+    def remove(self, key: Hashable) -> bool:
+        """Remove a proxy; return whether it existed."""
+        box = self._boxes.pop(key, None)
+        if box is None:
+            return False
+        self._order.pop(key, None)
+        for cell in self._cells_for(box):
+            members = self._cells.get(cell)
+            if members is None:
+                continue
+            members.discard(key)
+            if not members:
+                del self._cells[cell]
+        return True
+
+    def clear(self) -> None:
+        self._boxes.clear()
+        self._order.clear()
+        self._cells.clear()
+        self._next_order = 0
+
+    def query(self, box: AABB) -> list[Hashable]:
+        """Return proxies whose bounds overlap ``box`` in insertion order."""
+        candidates = self._candidates(box)
+        return [
+            key
+            for key in sorted(candidates, key=self._order.__getitem__)
+            if aabb_overlap(self._boxes[key], box)
+        ]
+
+    def query_point(self, point: Vec3) -> list[Hashable]:
+        return self.query(AABB(point, Vec3()))
+
+    def pairs(self) -> list[tuple[Hashable, Hashable]]:
+        """Return every exact overlapping proxy pair, once, in insertion order."""
+        found: set[tuple[Hashable, Hashable]] = set()
+        for members in self._cells.values():
+            ordered = sorted(members, key=self._order.__getitem__)
+            for first_index, first in enumerate(ordered):
+                for second in ordered[first_index + 1 :]:
+                    if first not in self._boxes or second not in self._boxes:
+                        continue
+                    if not aabb_overlap(self._boxes[first], self._boxes[second]):
+                        continue
+                    pair = (first, second)
+                    if self._order[pair[0]] > self._order[pair[1]]:
+                        pair = (pair[1], pair[0])
+                    found.add(pair)
+        return sorted(found, key=lambda pair: (self._order[pair[0]], self._order[pair[1]]))
+
+    def _cells_for(self, box: AABB) -> Iterator[Cell]:
+        low = box.low() / self.cell_size
+        high = box.high() / self.cell_size
+        for x in range(math.floor(low.x), math.floor(high.x) + 1):
+            for y in range(math.floor(low.y), math.floor(high.y) + 1):
+                for z in range(math.floor(low.z), math.floor(high.z) + 1):
+                    yield (x, y, z)
+
+    def _candidates(self, box: AABB) -> set[Hashable]:
+        found: set[Hashable] = set()
+        for cell in self._cells_for(box):
+            found.update(self._cells.get(cell, ()))
+        return found

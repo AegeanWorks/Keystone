@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
 from keystone.math3d import Vec3
@@ -29,6 +30,29 @@ class AABB:
     def __post_init__(self) -> None:
         if self.half_extents.x < 0.0 or self.half_extents.y < 0.0 or self.half_extents.z < 0.0:
             raise ValueError("AABB half extents must be non-negative")
+
+    def low(self) -> Vec3:
+        return self.center - self.half_extents
+
+    def high(self) -> Vec3:
+        return self.center + self.half_extents
+
+    def contains(self, point: Vec3) -> bool:
+        return (
+            abs(point.x - self.center.x) <= self.half_extents.x
+            and abs(point.y - self.center.y) <= self.half_extents.y
+            and abs(point.z - self.center.z) <= self.half_extents.z
+        )
+
+    def overlaps(self, other: AABB) -> bool:
+        return aabb_overlap(self, other)
+
+
+@dataclass(frozen=True, slots=True)
+class RayHit:
+    key: str
+    box: AABB
+    distance: float
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,6 +91,22 @@ def ray_aabb(ray: Ray, box: AABB) -> float | None:
     if tmax < 0.0 or tmin > ray.t_max:
         return None
     return max(tmin, 0.0)
+
+
+def raycast(
+    ray: Ray,
+    colliders: Iterable[tuple[str, AABB]],
+    predicate: Callable[[str, AABB], bool] | None = None,
+) -> RayHit | None:
+    """Return the nearest AABB hit, optionally filtered by key and box."""
+    best: RayHit | None = None
+    for key, box in colliders:
+        if predicate is not None and not predicate(key, box):
+            continue
+        distance = ray_aabb(ray, box)
+        if distance is not None and (best is None or distance < best.distance):
+            best = RayHit(key, box, distance)
+    return best
 
 
 def ray_sphere(ray: Ray, sphere: Sphere) -> float | None:

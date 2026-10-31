@@ -1,6 +1,6 @@
 # Keystone Architecture
 
-**Status:** implemented in v0.20.0 — core-only engine with scene identity, textured materials, human UI and a local web console
+**Status:** implemented in v0.21.0 — core-only engine with scene identity, textured materials, physics systems, human UI and a local web console
 **Boundary:** `keystone/` is game-agnostic; games are external modules.
 
 ## 1. What Keystone Is
@@ -34,7 +34,10 @@ keystone/
 ├── headless.py       no-GL action simulation
 ├── analysis.py       frame statistics, projected scene and report diff
 ├── testing.py        deterministic AI/CI scenario helpers
-├── physics.py        Ray, AABB, Sphere, queries and pushout
+├── physics.py        Ray, AABB, Sphere, queries, raycasts and pushout
+├── broadphase.py     deterministic spatial-grid broadphase
+├── character.py      AABB character movement, gravity and ground state
+├── triggers.py       trigger volumes and enter/exit tracking
 ├── schema.py         versioned core schema constants
 ├── scene.py          Node, Transform, Scene identity/queries, DirectionalLight, PointLight
 ├── camera.py         PerspectiveCamera
@@ -151,7 +154,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Frame report | Implemented | image statistics, projected nodes, materials, UI metadata and report diff |
 | Human UI | Implemented | bitmap font, canvas, HUD/help, interactive pause menu |
 | Web console | Implemented | scene export, JSON API, CORS, static WebGL2 viewer |
-| Physics | Implemented (queries) | rays, AABB, sphere overlap/pushout |
+| Physics | Implemented | rays, AABB, sphere queries, broadphase, character movement and triggers |
 | Audio | Missing | future core module |
 | ECS | Optional/missing | evaluate after a real workload |
 | Editor/tooling | Missing | future core module |
@@ -159,7 +162,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 ## 6. Roadmap
 
 1. **Scene identity and components** — implemented in v0.19.0; stable node IDs, tags/layers and typed component queries.
-2. **Physics** — broadphase, character controller, triggers, raycast filters.
+2. **Physics** — implemented in v0.21.0; broadphase, AABB character controller, triggers and filtered raycasts.
 3. **Assets** — asset registry, material graphs, glTF, hot reload.
 4. **Renderer** — instancing/batching, shadows, PBR, post-processing, sRGB/linear color.
 5. **Input/audio** — rebinding, action contexts, mixer and buses.
@@ -182,6 +185,9 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - Pausing opens a hit-testable Resume/Hide HUD/Quit menu and releases the cursor.
 - A game's optional `draw_ui(canvas, state)` contributes pixels to the same capture.
 - `compare_reports()` detects UI label/button changes when `ui` metadata is present.
+- `SpatialGrid` returns exact overlapping proxies after updates/removals, without duplicates.
+- `CharacterController` rests on a floor, stops at walls and leaves the ground on a jump.
+- `TriggerTracker` reports sorted enter, stay and exit sets; `raycast()` filters candidates and returns the nearest hit.
 - `Scene` assigns unique IDs, preserves them across reparenting and rejects duplicate explicit IDs.
 - `Scene.query()`/`find()` filter by name, tag, layer and component; `find_by_id()` resolves an ID.
 - Schema-4 reports include node ID, parent ID, tags, layer and component names; older reports still compare by name.

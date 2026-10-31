@@ -124,6 +124,32 @@ assert scene.query(component=Health) == [hero]
 
 IDs are allocated per scene (`node-1`, `node-2`, ...) on attach or first traversal. An explicit `id` is kept, a duplicate is rejected, and reparenting preserves the ID. `tags` are a set of strings, `layer` is one string, and each node holds one component per type. Queries are linear scans over the scene; an index can be added when a real workload needs it.
 
+### Physics: broadphase, characters and triggers
+
+```python
+from keystone.broadphase import SpatialGrid
+from keystone.character import CharacterBody, CharacterController
+from keystone.math3d import Vec3
+from keystone.physics import AABB, Ray, raycast
+from keystone.triggers import TriggerTracker, TriggerVolume
+
+grid = SpatialGrid(cell_size=4.0)
+wall = AABB(Vec3(0, 0, 0), Vec3(0.5, 2, 4))
+grid.insert("wall", wall)
+boxes = [grid.get(key) for key in grid.query(AABB(Vec3(0, 0, 0), Vec3(1, 1, 1)))]
+controller = CharacterController()
+body = controller.step(
+    CharacterBody(Vec3(0, 1, 0)),
+    Vec3(4, 0, 0),
+    1 / 60,
+    [box for box in boxes if box is not None],
+)
+events = TriggerTracker().update(body.box(), [TriggerVolume("door", AABB(Vec3(0, 1, 0), Vec3(1, 1, 1)))])
+hit = raycast(Ray(Vec3(), Vec3(0, 0, 1)), [("wall", wall)])
+```
+
+`SpatialGrid` keeps a uniform grid of AABB proxies and returns exact overlaps in insertion order; `cell_size` is a performance trade-off, not a correctness setting. `CharacterController` moves an AABB body with horizontal wish velocity, gravity, wall/floor response and ground detection against static AABBs; slopes, step-up and moving platforms are not included yet. `TriggerTracker` reports sorted `entered`/`exited`/`active` names, and `raycast()` returns the nearest hit with an optional key/box filter.
+
 ### Optional game UI
 
 A game may add a `draw_ui(canvas, state)` method. It is optional; the five required operations do not change.
@@ -227,7 +253,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 - **Textured materials**: `Material.texture` samples an RGBA texture with repeat wrapping and mipmaps; the renderer caches one GPU texture per immutable payload and the sample floor demonstrates a procedural checker.
 - **Fixed-step runtime**: `FixedStepClock` releases whole simulation steps with a bounded catch-up budget; the headless path advances exactly one step per rendered frame for deterministic tests.
 - **Action input**: `InputMap` maps keys and pointer motion to `forward`, `right`, `up`, `look_yaw`, `look_pitch`, `pressed` and `held`; games never read GLFW directly.
-- **Physics primitives**: rays, AABBs and spheres with ray queries, overlap tests and sphere/AABB resolution.
+- **Physics**: ray/AABB/sphere queries, sphere pushout, deterministic spatial-grid broadphase, AABB character movement with gravity and ground detection, trigger enter/exit tracking and filtered raycasts.
 - **Replay and persistence**: `ActionState` command logs, stable hashes and atomic JSON writes with a `.bak` snapshot.
 - **Plugin loading**: `load_game("package.module:Factory")` validates the five-operation contract before the engine starts.
 - **No-GL simulation**: `run_simulation()` and `--simulate` drive `GameModule.update()` directly, with JSON action scripts and deterministic hashes, no window or driver required.
@@ -328,7 +354,10 @@ keystone/
 │   ├── headless.py           <- no-GL simulation and JSON action scripts
 │   ├── analysis.py           <- frame statistics, projected scene and report diff
 │   ├── testing.py            <- deterministic AI/CI scenario helpers
-│   ├── physics.py            <- rays, AABB, sphere queries and pushout
+│   ├── physics.py            <- rays, AABB, sphere queries, pushout and raycasts
+│   ├── broadphase.py         <- deterministic spatial-grid broadphase
+│   ├── character.py          <- AABB character movement and ground detection
+│   ├── triggers.py           <- trigger volumes and enter/exit tracking
 │   ├── schema.py             <- versioned core schema constants
 │   ├── math3d.py             <- Vec3, Mat4, Quat (column-major, OpenGL-ready)
 │   ├── camera.py             <- perspective camera
@@ -383,7 +412,10 @@ keystone/
 │   ├── test_renderer.py      <- headless OpenGL integration
 │   ├── test_input.py         <- action mapping and ActionState
 │   ├── test_clock.py         <- fixed-step clock
-│   ├── test_physics.py       <- rays, AABB and sphere queries
+│   ├── test_physics.py       <- rays, AABB, sphere queries and raycasts
+│   ├── test_broadphase.py    <- spatial-grid queries, updates and pairs
+│   ├── test_character.py     <- floor, wall, jump and validation behavior
+│   ├── test_triggers.py      <- enter/exit tracking and multiple volumes
 │   ├── test_plugin.py        <- GameModule contract and loader
 │   ├── test_replay.py        <- command log and hashes
 │   ├── test_serialization.py <- atomic JSON persistence
@@ -432,7 +464,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the dependency rules, mod
 ## 🗺️ Core Roadmap
 
 1. ~~Scene identity and optional ECS/component queries.~~ Implemented in v0.19.0.
-2. Broadphase physics, character controller and trigger volumes.
+2. ~~Broadphase physics, character controller and trigger volumes.~~ Implemented in v0.21.0.
 3. Asset registry, material graphs, glTF import and hot reload.
 4. Renderer instancing, shadows, PBR and post-processing.
 5. Input rebinding, audio mixer and buses.

@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `61`
-- **Total Classes**: `81`
-- **Total Top-Level Functions**: `66`
-- **Total Class Methods**: `422`
-- **Total Source Lines**: `6659`
+- **Total Python Modules**: `67`
+- **Total Classes**: `91`
+- **Total Top-Level Functions**: `70`
+- **Total Class Methods**: `465`
+- **Total Source Lines**: `7189`
 
 ---
 
@@ -80,6 +80,29 @@
 
 ---
 
+### [`keystone/broadphase.py`](keystone/broadphase.py)
+> *Deterministic spatial-grid broadphase for nearby AABB candidates.*
+
+**Size**: `116` lines (`4333` bytes)
+
+**Classes:**
+- `class SpatialGrid` - *A uniform grid of AABB proxies with exact overlap filtering.*
+  - Method `.__init__(cell_size)`
+  - Method `.__len__()`
+  - Method `.__contains__(key)`
+  - Method `.get(key)`
+  - Method `.insert(key, box)` - *Insert or replace a proxy and its current bounds.*
+  - Method `.update(key, box)` - *Move a proxy; unknown keys are inserted.*
+  - Method `.remove(key)` - *Remove a proxy; return whether it existed.*
+  - Method `.clear()`
+  - Method `.query(box)` - *Return proxies whose bounds overlap ``box`` in insertion order.*
+  - Method `.query_point(point)`
+  - Method `.pairs()` - *Return every exact overlapping proxy pair, once, in insertion order.*
+  - Method `._cells_for(box)`
+  - Method `._candidates(box)`
+
+---
+
 ### [`keystone/camera.py`](keystone/camera.py)
 > *Perspective camera with yaw/pitch orientation and fly-style movement.*
 
@@ -95,6 +118,27 @@
   - Method `.move(forward, right, up)`
   - Method `.rotate(yaw_delta, pitch_delta)`
   - Method `.look_at(target)`
+
+---
+
+### [`keystone/character.py`](keystone/character.py)
+> *Game-agnostic AABB character movement with gravity and collision response.*
+
+**Size**: `120` lines (`4109` bytes)
+
+**Classes:**
+- `class CharacterBody` - *An axis-aligned character body with velocity and ground state.*
+  - Method `.__post_init__()`
+  - Method `.box()`
+- `class CharacterController` - *Resolve horizontal wish velocity and gravity against static AABBs.*
+  - Method `.__post_init__()`
+  - Method `.step(body, wish_velocity, dt, colliders)` - *Advance one step; horizontal speed is the wish velocity, vertical is body velocity.*
+  - Method `._move_axis(position, half, axis, amount, colliders)`
+
+**Functions:**
+- `def _component(vector, axis)`
+- `def _with_axis(vector, axis, value)`
+- `def _other_axes_overlap(position, half, box, axis)`
 
 ---
 
@@ -361,18 +405,24 @@
 ### [`keystone/physics.py`](keystone/physics.py)
 > *Generic collision primitives and ray queries for the engine core.*
 
-**Size**: `118` lines (`4714` bytes)
+**Size**: `158` lines (`5921` bytes)
 
 **Classes:**
 - `class Ray`
   - Method `.__post_init__()`
 - `class AABB`
   - Method `.__post_init__()`
+  - Method `.low()`
+  - Method `.high()`
+  - Method `.contains(point)`
+  - Method `.overlaps(other)`
+- `class RayHit`
 - `class Sphere`
   - Method `.__post_init__()`
 
 **Functions:**
 - `def ray_aabb(ray, box)` - *Return the nearest positive hit distance, or None.*
+- `def raycast(ray, colliders, predicate)` - *Return the nearest AABB hit, optionally filtered by key and box.*
 - `def ray_sphere(ray, sphere)`
 - `def aabb_overlap(first, second)`
 - `def sphere_aabb_overlap(sphere, box)`
@@ -547,6 +597,22 @@
   - Method `.sha256()` - *Return a stable digest of the pixel payload.*
   - Method `.from_png(path, name)` - *Load an 8-bit RGBA non-interlaced PNG through the dependency-free reader.*
   - Method `.checker(size, dark, light, cell, name)` - *Build a deterministic RGBA checker texture without an image file.*
+
+---
+
+### [`keystone/triggers.py`](keystone/triggers.py)
+> *Game-agnostic trigger volumes with enter/exit tracking.*
+
+**Size**: `49` lines (`1458` bytes)
+
+**Classes:**
+- `class TriggerVolume` - *A named AABB that reports when a body enters or leaves it.*
+  - Method `.__post_init__()`
+  - Method `.contains(body)`
+- `class TriggerEvents` - *The enter, exit and active sets for one tracker update.*
+- `class TriggerTracker` - *Remember active trigger names across updates.*
+  - Method `.update(body, volumes)`
+  - Method `.reset()`
 
 ---
 
@@ -785,6 +851,37 @@
 
 ---
 
+### [`tests/test_broadphase.py`](tests/test_broadphase.py)
+> *Tests for the deterministic spatial-grid broadphase.*
+
+**Size**: `68` lines (`2910` bytes)
+
+**Classes:**
+- `class SpatialGridTest`
+  - Method `.test_query_returns_true_overlaps_in_insertion_order()`
+  - Method `.test_same_cell_candidates_are_still_filtered()`
+  - Method `.test_update_moves_a_proxy_and_remove_deletes_it()`
+  - Method `.test_negative_coordinates_and_large_boxes_use_multiple_cells()`
+  - Method `.test_pairs_are_unique_and_ordered_by_insertion()`
+  - Method `.test_clear_and_validation()`
+
+---
+
+### [`tests/test_character.py`](tests/test_character.py)
+> *Tests for the AABB character controller.*
+
+**Size**: `60` lines (`2475` bytes)
+
+**Classes:**
+- `class CharacterControllerTest`
+  - Method `.test_body_exposes_its_collision_box()`
+  - Method `.test_character_falls_and_rests_on_a_floor()`
+  - Method `.test_character_stops_at_a_wall_without_tunneling()`
+  - Method `.test_jump_leaves_the_ground()`
+  - Method `.test_character_rejects_invalid_configuration_and_step()`
+
+---
+
 ### [`tests/test_clock.py`](tests/test_clock.py)
 > *Tests for the fixed-step clock.*
 
@@ -907,7 +1004,7 @@
 ### [`tests/test_physics.py`](tests/test_physics.py)
 > *Tests for generic ray and collision primitives.*
 
-**Size**: `48` lines (`1567` bytes)
+**Size**: `77` lines (`2972` bytes)
 
 **Classes:**
 - `class PhysicsTest`
@@ -916,6 +1013,9 @@
   - Method `.test_ray_validation()`
   - Method `.test_overlap_and_sphere_pushout()`
   - Method `.test_non_overlapping_sphere_is_unchanged()`
+  - Method `.test_aabb_helpers_are_consistent_with_overlap()`
+  - Method `.test_raycast_returns_the_nearest_hit()`
+  - Method `.test_raycast_filter_can_skip_candidates()`
 
 ---
 
@@ -1084,6 +1184,19 @@
   - Method `.test_checker_is_deterministic_and_has_expected_shape()`
   - Method `.test_png_round_trip_keeps_pixels()`
   - Method `.test_bad_texture_data_is_rejected()`
+
+---
+
+### [`tests/test_triggers.py`](tests/test_triggers.py)
+> *Tests for trigger volumes and enter/exit tracking.*
+
+**Size**: `48` lines (`2043` bytes)
+
+**Classes:**
+- `class TriggerTest`
+  - Method `.test_trigger_volume_validates_its_name_and_overlap()`
+  - Method `.test_tracker_reports_enter_stay_and_exit()`
+  - Method `.test_tracker_handles_multiple_volumes_in_sorted_order()`
 
 ---
 

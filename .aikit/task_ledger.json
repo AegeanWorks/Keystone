@@ -1,93 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-web-console-v1",
+    "task_id": "keystone-physics-v1",
     "last_phase": "phase 3",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793428692.8884654,
-    "owner": "opencode:keystone-web",
-    "started_by": "opencode:keystone-web",
+    "updated_at": 1793432760.4661477,
+    "owner": "opencode:keystone-physics",
+    "started_by": "opencode:keystone-physics",
     "continuations": [],
-    "completed_at": 1793428700.2533667
+    "completed_at": 1793432767.3336315
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-game-ui-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: optional GameModule.draw_ui(canvas, state) hook -> Engine composition + describe capability -> tests, docs, ADR and gates",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793387002.2868545,
-      "timestamp_str": "2026-10-30 22:03:22",
-      "agent": "opencode:keystone-game-ui",
-      "impact_assessment": {
-        "why": "An engine-only HUD cannot show game state; games need a supported way to draw health/score/custom panels with the same dependency-free UI toolkit.",
-        "benefits": "External games can add HUDs and panels without forking the engine, while the five required GameModule operations stay unchanged.",
-        "risks": "contract: optional draw_ui hook and describe capability; dependency: none; concurrency: none; state: the game draws into a per-frame Canvas, never the engine's menu.",
-        "mitigation": "Hook/no-hook capture test, describe test, hidden-overlay behavior documented and the full 6/6 gate."
-      }
-    },
-    {
-      "task_id": "keystone-game-ui-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[3/3] Game UI hook complete: draw_ui(canvas,state) under engine HUD/menu, game_ui capability, 155 tests, 6/6 gates, README/AI guide/ARCHITECTURE/ADR-021; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793387250.5132365,
-      "timestamp_str": "2026-10-30 22:07:30",
-      "agent": "opencode:keystone-game-ui",
-      "handoff": {
-        "state": "v0.16.0 human UI with game HUD hook",
-        "next": "UI widget expansion (sliders/settings) or core roadmap",
-        "evidence": "pytest 155, aikit check 6/6, custom HUD capture inspected"
-      }
-    },
-    {
-      "task_id": "keystone-game-ui-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-game-ui-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793387260.2607913,
-      "timestamp_str": "2026-10-30 22:07:40",
-      "agent": "opencode:keystone-game-ui"
-    },
-    {
-      "task_id": "keystone-ui-report-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: Canvas text/button metadata -> schema-2 UI report + --start-paused -> UI diff, tests, docs, assets, ADR and gates",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793388539.4556067,
-      "timestamp_str": "2026-10-30 22:28:59",
-      "agent": "opencode:keystone-ui-report",
-      "impact_assessment": {
-        "why": "Human UI pixels are now real, but AI reports cannot see HUD labels, buttons, selection or pause state; UI regressions remain pixel-only.",
-        "benefits": "Reports expose structured UI elements for AI/UI analysis, and baseline diffs can name added/removed/changed labels and buttons.",
-        "risks": "contract: report schema 1->2 with an optional ui field, new --start-paused flag; dependency: none; concurrency: none; state: UI metadata is read-only presentation data.",
-        "mitigation": "Backward-compatible comparison of missing ui, schema tests, deterministic headless UI reports and the full 6/6 gate."
-      }
-    },
-    {
-      "task_id": "keystone-ui-report-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[3/3] UI report complete: Canvas label/button metadata, schema-2 ui field, UI-aware hash and diff, --start-paused menu capture, 159 tests, 6/6 gates, docs/ADR-022, schema-2 sample report; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793388827.0295715,
-      "timestamp_str": "2026-10-30 22:33:47",
-      "agent": "opencode:keystone-ui-report",
-      "handoff": {
-        "state": "v0.17.0 schema-2 UI reports",
-        "next": "UI widgets/settings or core roadmap",
-        "evidence": "pytest 159, aikit check 6/6, paused UI report and UI diff inspected"
-      }
-    },
     {
       "task_id": "keystone-ui-report-v1",
       "phase": "completed",
@@ -281,6 +205,71 @@
       "timestamp": 1793428700.2533684,
       "timestamp_str": "2026-10-31 09:38:20",
       "agent": "opencode:keystone-web"
+    },
+    {
+      "task_id": "keystone-physics-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/4] Plan: AABB helpers + spatial-grid broadphase -> AABB character controller and trigger tracking -> raycast filter and docs/ADR -> full gates and delivery",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793431003.6212695,
+      "timestamp_str": "2026-10-31 10:16:43",
+      "agent": "opencode:keystone-physics",
+      "impact_assessment": {
+        "why": "The physics layer still stops at individual ray/overlap queries, so games cannot efficiently find nearby bodies, move a character with gravity and collision, or react to trigger volumes; this is the next core roadmap item.",
+        "benefits": "A deterministic broadphase, a game-agnostic character mover and trigger enter/exit events give games reusable physics without genre rules; raycast filters let games restrict queries by key.",
+        "risks": "contract: new keystone.broadphase, keystone.character and keystone.triggers public modules plus additive AABB helpers and RayHit/raycast; dependency: stdlib only; concurrency: none (caller-owned state); state: immutable bodies plus a mutable trigger tracker and caller-owned collider lists.",
+        "mitigation": "Unit tests first for cell boundaries, update/remove, wall/floor/jump resolution, trigger enter/exit and ray filtering; keep queries deterministic and the full 6/6 project gate."
+      }
+    },
+    {
+      "task_id": "keystone-physics-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/4] Physics primitives and broadphase: AABB low/high/contains/overlaps, RayHit/raycast with predicate, deterministic SpatialGrid insert/update/remove/query/pairs; unit tests green",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793432759.379312,
+      "timestamp_str": "2026-10-31 10:45:59",
+      "agent": "opencode:keystone-physics"
+    },
+    {
+      "task_id": "keystone-physics-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[4/4] Delivery ready: 210 tests, 6/6 project gates, ruff clean, README physics section, architecture/roadmap/acceptance and ADR-026 updated, codebase map current; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793432759.7334838,
+      "timestamp_str": "2026-10-31 10:45:59",
+      "agent": "opencode:keystone-physics",
+      "handoff": {
+        "state": "v0.21.0 broadphase, character controller, triggers and filtered raycasts",
+        "next": "asset registry/material graphs or renderer instancing",
+        "evidence": "210 tests, aikit check 6/6"
+      }
+    },
+    {
+      "task_id": "keystone-physics-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[3/4] Character and triggers: AABB character with wish velocity, gravity, swept X/Z/Y response, ground state and skin; TriggerVolume/Tracker sorted enter/exit/active; floor, wall, jump and trigger tests green",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793432760.4661477,
+      "timestamp_str": "2026-10-31 10:46:00",
+      "agent": "opencode:keystone-physics"
+    },
+    {
+      "task_id": "keystone-physics-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-physics-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793432767.333633,
+      "timestamp_str": "2026-10-31 10:46:07",
+      "agent": "opencode:keystone-physics"
     }
   ]
 }
