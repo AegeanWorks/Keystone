@@ -366,6 +366,7 @@ keystone/
 │   ├── scene.py              <- hierarchy, identity, components, transforms and lights
 │   ├── geometry.py           <- MeshData and Material
 │   ├── mesh_builder.py       <- merge boxes, quads and meshes
+│   ├── material_graph.py     <- declarative node graphs evaluating to Material
 │   ├── primitives.py         <- cube, plane, cone, cylinder and sphere
 │   ├── obj_loader.py         <- streaming Wavefront OBJ loader
 │   ├── png.py                <- dependency-free PNG writer and reader
@@ -419,6 +420,7 @@ keystone/
 │   ├── test_character.py     <- floor, wall, jump and validation behavior
 │   ├── test_triggers.py      <- enter/exit tracking and multiple volumes
 │   ├── test_assets.py        <- registry ids, digests, dependencies and reload
+│   ├── test_material_graph.py <- declarative material graph evaluation
 │   ├── test_plugin.py        <- GameModule contract and loader
 │   ├── test_replay.py        <- command log and hashes
 │   ├── test_serialization.py <- atomic JSON persistence

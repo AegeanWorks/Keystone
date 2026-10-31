@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `70`
-- **Total Classes**: `97`
-- **Total Top-Level Functions**: `83`
-- **Total Class Methods**: `506`
-- **Total Source Lines**: `7996`
+- **Total Python Modules**: `72`
+- **Total Classes**: `101`
+- **Total Top-Level Functions**: `87`
+- **Total Class Methods**: `522`
+- **Total Source Lines**: `8429`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `33` lines (`739` bytes)
+**Size**: `36` lines (`854` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -377,6 +377,31 @@
   - Method `.bind(action, key)`
   - Method `.set_mouse_enabled(enabled)`
   - Method `.sample(context, dt)`
+
+---
+
+### [`keystone/material_graph.py`](keystone/material_graph.py)
+> *Declarative, deterministic material graphs that evaluate to a Material.*
+
+**Size**: `312` lines (`13250` bytes)
+
+**Classes:**
+- `class MaterialGraphNode` - *One node in a material graph: a kind, parameters and input node ids.*
+  - Method `.__post_init__()`
+  - Method `.param(name, default)` - *Return one parameter value, or default when it is absent.*
+  - Method `.to_dict()`
+- `class MaterialGraph` - *An immutable, serializable graph that evaluates to one Material.*
+  - Method `.__post_init__()`
+  - Method `.node(node_id)`
+  - Method `.validate()`
+  - Method `.to_dict()`
+  - Method `.from_dict(data)`
+  - Method `.evaluate(*, textures, registry)` - *Evaluate the graph and return its Material.*
+
+**Functions:**
+- `def _json_value(value)`
+- `def _from_json_value(value)`
+- `def _evaluate_node(node, values, textures, registry)`
 
 ---
 
@@ -1060,6 +1085,27 @@
   - Method `.test_disabled_mouse_ignores_pointer()`
   - Method `.test_mouse_click_is_a_single_frame_edge()`
   - Method `.test_action_state_round_trip_and_clear()`
+
+---
+
+### [`tests/test_material_graph.py`](tests/test_material_graph.py)
+> *Unit tests for declarative material graphs.*
+
+**Size**: `118` lines (`4551` bytes)
+
+**Classes:**
+- `class MaterialGraphCoreTest`
+  - Method `.test_constant_color_and_float_feed_a_material()`
+  - Method `.test_checker_node_builds_a_textured_material()`
+  - Method `.test_mix_combines_colors()`
+  - Method `.test_validation_rejects_cycles_and_bad_graphs()`
+  - Method `.test_evaluation_is_deterministic()`
+- `class MaterialGraphSerializationTest`
+  - Method `.test_round_trip_preserves_evaluation()`
+  - Method `.test_texture_node_resolves_by_name()`
+
+**Functions:**
+- `def _node(node_id, kind, *, params, inputs)`
 
 ---
 

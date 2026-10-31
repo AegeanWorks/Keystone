@@ -230,3 +230,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
   2. Add `keystone.asset_io` with `AssetSource`, `Fingerprint`, `ReloadReport`, default PNG and OBJ loaders, suffix-based kind inference, `load_asset` and `fingerprint`. `register_file` loads a source and binds it; `refresh()` re-reads changed files, keeps the last good payload on a loader failure or a missing file, reports persistent errors, and preserves dependencies.
   3. Export `AssetRegistry` from the package and wire `CubeDemo` through the registry so the smoke test proves asset identity.
 - **Consequences**: Games get stable asset ids, content hashes, dependency tracking and synchronous hot reload with no new dependencies or background thread. Broken or missing files surface in `ReloadReport` instead of crashing the render loop. Material graphs and glTF import remain future work.
+
+### ADR-028: Add declarative material graphs
+
+- **Date**: 2026-10-31
+- **Status**: Accepted
+- **Context**: Materials were literal `Material` values, so reusable procedural surfaces, texture references and mixes had to be rebuilt by hand in every game and could not be serialized or inspected by AI clients.
+- **Decision**:
+  1. Add `keystone.material_graph` with `MaterialGraphNode` and `MaterialGraph`. Node kinds are `color`, `float`, `checker`, `texture`, `mix` and `material`; inputs form a directed graph evaluated in topological order with cycle detection.
+  2. Parameters are frozen `(name, value)` pairs and graphs serialize to schema-1 JSON with `to_dict()`/`from_dict()`, keeping `Vec3` as channel arrays and parameters as JSON values.
+  3. `evaluate(textures=..., registry=...)` resolves color, checker and texture nodes, including asset ids through an `AssetRegistry`, and returns one `Material`.
+- **Consequences**: Games and AI clients can build, serialize, inspect and evaluate materials without OpenGL. Graphs are immutable and deterministic; texture payloads are referenced by asset id or name rather than embedded. Material graphs do not change the report schema or the renderer contract.

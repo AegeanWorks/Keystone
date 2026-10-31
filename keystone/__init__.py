@@ -4,18 +4,21 @@ from __future__ import annotations
 
 from keystone.assets import AssetRegistry
 from keystone.input import ActionState
+from keystone.material_graph import MaterialGraph, MaterialGraphNode
 from keystone.math3d import Mat4, Quat, Vec3
 from keystone.plugin import GameModule
 from keystone.scene import Node, Scene, Transform
 from keystone.texture import TextureData
 
-__version__ = "0.22.0"
+__version__ = "0.23.0"
 __all__ = [
     "ActionState",
     "AssetRegistry",
     "Engine",
     "GameModule",
     "Mat4",
+    "MaterialGraph",
+    "MaterialGraphNode",
     "Node",
     "Quat",
     "Scene",
