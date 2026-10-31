@@ -241,3 +241,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
   2. Parameters are frozen `(name, value)` pairs and graphs serialize to schema-1 JSON with `to_dict()`/`from_dict()`, keeping `Vec3` as channel arrays and parameters as JSON values.
   3. `evaluate(textures=..., registry=...)` resolves color, checker and texture nodes, including asset ids through an `AssetRegistry`, and returns one `Material`.
 - **Consequences**: Games and AI clients can build, serialize, inspect and evaluate materials without OpenGL. Graphs are immutable and deterministic; texture payloads are referenced by asset id or name rather than embedded. Material graphs do not change the report schema or the renderer contract.
+
+### ADR-029: Add dependency-free glTF 2.0 import
+
+- **Date**: 2026-10-31
+- **Status**: Accepted
+- **Context**: Keystone could load OBJ and PNG assets but had no path for modern glTF scenes, so AI and game authors had to convert assets or hand-build meshes. A glTF importer must not add a runtime dependency or require OpenGL.
+- **Decision**:
+  1. Add `keystone.gltf` as a package with `io`, `textures`, `materials`, `meshes`, `scene` and `loader` modules. `load_gltf(source, registry=None)` accepts a path, JSON text, bytes or an already-parsed mapping and returns a `GltfImport`.
+  2. Decode external and embedded base64 buffers, typed accessors (SCALAR/VEC2/VEC3/VEC4/MAT4), meshes with optional normals/UVs/colors/indices, PBR materials (base color, roughness to specular/shininess, base color texture), PNG images and node/scene hierarchies with TRS or matrix transforms.
+  3. Reuse `TextureData.from_png_bytes`, `MeshData`, `Material` and `Scene`, and optionally register imported assets in an `AssetRegistry`.
+- **Consequences**: Games and AI clients can import glTF 2.0 scenes without new dependencies or a GPU. JPEG images, animations, skins, morph targets and multi-primitive mesh splitting beyond the first primitive remain future work. Matrix decomposition assumes affine transforms with non-zero scale.

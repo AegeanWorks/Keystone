@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `72`
-- **Total Classes**: `101`
-- **Total Top-Level Functions**: `87`
-- **Total Class Methods**: `522`
-- **Total Source Lines**: `8429`
+- **Total Python Modules**: `80`
+- **Total Classes**: `103`
+- **Total Top-Level Functions**: `105`
+- **Total Class Methods**: `531`
+- **Total Source Lines**: `9222`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `36` lines (`854` bytes)
+**Size**: `39` lines (`937` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -229,6 +229,87 @@
   - Method `.triangle_count()`
   - Method `.bounds()`
   - Method `.interleaved()` - *Pack position, normal and UV into one vertex stream for the GPU.*
+
+---
+
+### [`keystone/gltf/__init__.py`](keystone/gltf/__init__.py)
+> *Dependency-free glTF 2.0 import for Keystone scenes.*
+
+**Size**: `5` lines (`153` bytes)
+
+---
+
+### [`keystone/gltf/io.py`](keystone/gltf/io.py)
+> *glTF source reading, buffers and typed accessor decoding.*
+
+**Size**: `121` lines (`4634` bytes)
+
+**Functions:**
+- `def read_source(source)` - *Return (json text, base directory) for a path, JSON text or bytes.*
+- `def decode_data_uri(uri)`
+- `def load_buffers(document, base_dir)`
+- `def read_accessor(accessor, buffer_views, buffers)`
+
+---
+
+### [`keystone/gltf/loader.py`](keystone/gltf/loader.py)
+> *Top-level glTF import orchestration.*
+
+**Size**: `77` lines (`2759` bytes)
+
+**Classes:**
+- `class GltfImport` - *The result of importing one glTF document.*
+
+**Functions:**
+- `def load_gltf(source, registry)` - *Load a glTF 2.0 document from a path, JSON text or bytes.*
+
+---
+
+### [`keystone/gltf/materials.py`](keystone/gltf/materials.py)
+> *glTF material conversion.*
+
+**Size**: `46` lines (`1799` bytes)
+
+**Functions:**
+- `def load_materials(document, textures)`
+
+---
+
+### [`keystone/gltf/meshes.py`](keystone/gltf/meshes.py)
+> *glTF mesh and primitive decoding.*
+
+**Size**: `167` lines (`7135` bytes)
+
+**Functions:**
+- `def _as_vec3(value)`
+- `def _compute_normals(positions, indices)`
+- `def load_meshes(document, buffers, buffer_views, materials)`
+- `def _accessor(document, index)`
+
+---
+
+### [`keystone/gltf/scene.py`](keystone/gltf/scene.py)
+> *glTF node, transform and scene construction.*
+
+**Size**: `148` lines (`5863` bytes)
+
+**Functions:**
+- `def _matrix_to_transform(matrix)`
+- `def _node_transform(raw)`
+- `def build_scene(document, meshes, materials)`
+
+---
+
+### [`keystone/gltf/textures.py`](keystone/gltf/textures.py)
+> *glTF image and texture decoding.*
+
+**Size**: `99` lines (`3946` bytes)
+
+**Functions:**
+- `def _image_bytes(image, buffers, buffer_views, base_dir)`
+- `def _mime_from_path(path)`
+- `def _texture_from_bytes(data, mime_type, name)`
+- `def load_textures(document, buffers, buffer_views, base_dir)`
 
 ---
 
@@ -674,13 +755,14 @@
 ### [`keystone/texture.py`](keystone/texture.py)
 > *Immutable RGBA texture data and dependency-free texture sources.*
 
-**Size**: `63` lines (`2290` bytes)
+**Size**: `83` lines (`3033` bytes)
 
 **Classes:**
 - `class TextureData` - *Top-down RGBA8 pixels with a stable name for reports and debugging.*
   - Method `.__post_init__()`
   - Method `.sha256()` - *Return a stable digest of the pixel payload.*
   - Method `.from_png(path, name)` - *Load an 8-bit RGBA non-interlaced PNG through the dependency-free reader.*
+  - Method `.from_png_bytes(data, name)` - *Load an 8-bit RGBA non-interlaced PNG from bytes.*
   - Method `.checker(size, dark, light, cell, name)` - *Build a deterministic RGBA checker texture without an image file.*
 
 ---
@@ -1049,6 +1131,27 @@
   - Method `.test_defaults_are_valid()`
   - Method `.test_rejects_negative_specular()`
   - Method `.test_rejects_negative_checker_scale()`
+
+---
+
+### [`tests/test_gltf.py`](tests/test_gltf.py)
+> *Unit tests for dependency-free glTF 2.0 import.*
+
+**Size**: `107` lines (`4871` bytes)
+
+**Classes:**
+- `class GltfImportTest`
+  - Method `.test_loads_a_triangle_mesh_and_material()`
+  - Method `.test_translation_is_preserved()`
+  - Method `.test_loads_from_a_file()`
+  - Method `.test_rejects_wrong_version()`
+  - Method `.test_rejects_missing_position()`
+  - Method `.test_loads_an_embedded_png_texture()`
+  - Method `.test_loads_an_external_buffer_file()`
+  - Method `.test_registers_assets_when_registry_is_provided()`
+
+**Functions:**
+- `def _triangle_gltf(*, translation, color, roughness)`
 
 ---
 

@@ -41,6 +41,26 @@ class TextureData:
         return cls(width, height, rgba, name or source.stem)
 
     @classmethod
+    def from_png_bytes(cls, data: bytes, name: str = "texture") -> TextureData:
+        """Load an 8-bit RGBA non-interlaced PNG from bytes."""
+        import os
+        import tempfile
+        from pathlib import Path
+
+        descriptor, temporary_name = tempfile.mkstemp(suffix=".png")
+        try:
+            with os.fdopen(descriptor, "wb") as handle:
+                handle.write(data)
+            temporary = Path(temporary_name)
+            width, height, rgba = read_png(temporary)
+        finally:
+            try:
+                Path(temporary_name).unlink()
+            except OSError:  # hygiene: allow best-effort cleanup of a temporary file
+                pass
+        return cls(width, height, rgba, name)
+
+    @classmethod
     def checker(
         cls,
         size: int = 64,

@@ -372,6 +372,14 @@ keystone/
 │   ├── png.py                <- dependency-free PNG writer and reader
 │   ├── texture.py            <- immutable RGBA textures, PNG and checker sources
 │   ├── samples.py            <- CubeDemo smoke test
+│   ├── gltf/
+│   │   ├── __init__.py       <- glTF package exports
+│   │   ├── io.py             <- source, buffer and accessor decoding
+│   │   ├── textures.py       <- image and texture decoding
+│   │   ├── materials.py      <- PBR to Material conversion
+│   │   ├── meshes.py         <- primitive and mesh decoding
+│   │   ├── scene.py          <- node, transform and scene construction
+│   │   └── loader.py         <- top-level import orchestration
 │   ├── ui/
 │   │   ├── __init__.py       <- UI package exports
 │   │   ├── font.py           <- embedded 5x7 bitmap font
@@ -421,6 +429,7 @@ keystone/
 │   ├── test_triggers.py      <- enter/exit tracking and multiple volumes
 │   ├── test_assets.py        <- registry ids, digests, dependencies and reload
 │   ├── test_material_graph.py <- declarative material graph evaluation
+│   ├── test_gltf.py           <- glTF 2.0 import and texture loading
 │   ├── test_plugin.py        <- GameModule contract and loader
 │   ├── test_replay.py        <- command log and hashes
 │   ├── test_serialization.py <- atomic JSON persistence

@@ -144,6 +144,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Geometry | Implemented | indexed meshes, materials, vertex colors |
 | Assets | Implemented | indexed meshes, materials, RGBA textures, OBJ, PNG; asset registry with stable ids, digests, dependencies and hot reload |
 | Material graphs | Implemented | declarative node graphs evaluating to Material: color, float, checker, texture, mix and material nodes, cycle detection, JSON serialization |
+| glTF 2.0 | Implemented | dependency-free importer for meshes, materials, textures and scenes; external and embedded buffers, PNG textures, TRS and matrix transforms |
 | Renderer | Implemented | OpenGL 3.3, sky, lights, fog, textures, readback |
 | Runtime | Implemented | fixed clock, input, loop, screenshots |
 | Plugin | Implemented | GameModule + loader |
@@ -164,7 +165,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 
 1. **Scene identity and components** — implemented in v0.19.0; stable node IDs, tags/layers and typed component queries.
 2. **Physics** — implemented in v0.21.0; broadphase, AABB character controller, triggers and filtered raycasts.
-3. **Assets** — asset registry and hot reload implemented in v0.22.0; material graphs implemented in v0.23.0; glTF import remains.
+3. **Assets** — asset registry and hot reload in v0.22.0; material graphs in v0.23.0; glTF 2.0 import in v0.24.0.
 4. **Renderer** — instancing/batching, shadows, PBR, post-processing, sRGB/linear color.
 5. **Input/audio** — rebinding, action contexts, mixer and buses.
 6. **Serialization/replay** — versioned scene/save format, undo/rewind, replay runner.

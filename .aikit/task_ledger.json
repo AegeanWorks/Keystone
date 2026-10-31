@@ -1,39 +1,16 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-material-graphs-v1",
-    "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1793440408.160761,
+    "task_id": "keystone-gltf-import-v1",
+    "last_phase": "phase 3",
+    "active_phase": 3,
+    "status": "in_progress",
+    "updated_at": 1793441355.3031678,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
-    "continuations": [],
-    "completed_at": 1793440433.5776298
+    "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-web-console-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/5] Scene export schema 1: shared mesh/texture dedup, world matrices, camera/lights/atmosphere, node identity/tags/layers/components; deterministic export tests",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793428608.0534523,
-      "timestamp_str": "2026-10-31 09:36:48",
-      "agent": "opencode:keystone-web"
-    },
-    {
-      "task_id": "keystone-web-console-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[3/5] Stdlib JSON API: threaded localhost server, /api index/health/describe/scene/simulate, CORS and OPTIONS, session lock, body/frame limits, JSON errors, static whitelist; integration tests",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793428608.059716,
-      "timestamp_str": "2026-10-31 09:36:48",
-      "agent": "opencode:keystone-web"
-    },
     {
       "task_id": "keystone-web-console-v1",
       "phase": "phase 3",
@@ -254,6 +231,34 @@
       "status": "completed",
       "timestamp": 1793440433.577631,
       "timestamp_str": "2026-10-31 12:53:53",
+      "agent": "opencode:keystone"
+    },
+    {
+      "task_id": "keystone-gltf-import-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/4] Plan dependency-free glTF 2.0 import: package with io, textures, materials, meshes, scene and loader modules; buffers, accessors, meshes, PBR materials, PNG textures, node/scene hierarchy, TRS and matrix transforms; tests, docs and ADR-029",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793441352.8092163,
+      "timestamp_str": "2026-10-31 13:09:12",
+      "agent": "opencode:keystone",
+      "impact_assessment": {
+        "why": "Keystone could load OBJ and PNG assets but had no path for modern glTF scenes, forcing asset conversion or hand-built meshes.",
+        "benefits": "Games and AI clients can import glTF 2.0 scenes, meshes, materials and textures without new dependencies or OpenGL, with optional AssetRegistry registration.",
+        "risks": "contract: new public keystone.gltf package plus GltfImport/load_gltf exports and version 0.24.0, no report or web schema change; dependency: stdlib plus existing geometry, math3d, scene and texture modules only; concurrency: pure import with no shared state; state: no persisted files, inputs are read-only",
+        "mitigation": "Failing-first tests for triangle meshes, materials, translation, files, version validation, missing positions, embedded PNG textures, external buffers and registry registration; full 6/6 project gate before delivery"
+      }
+    },
+    {
+      "task_id": "keystone-gltf-import-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/4] glTF import core: package with io, textures, materials, meshes, scene and loader; typed accessor decoding, PNG textures, PBR material conversion, mesh decoding with normals/UVs/colors/indices, node and scene construction with TRS and matrix transforms; 8 tests, ruff clean, 6/6 gates; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793441355.3031678,
+      "timestamp_str": "2026-10-31 13:09:15",
       "agent": "opencode:keystone"
     }
   ]
