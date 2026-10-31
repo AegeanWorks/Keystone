@@ -252,3 +252,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
   2. Decode external and embedded base64 buffers, typed accessors (SCALAR/VEC2/VEC3/VEC4/MAT4), meshes with optional normals/UVs/colors/indices, PBR materials (base color, roughness to specular/shininess, base color texture), PNG images and node/scene hierarchies with TRS or matrix transforms.
   3. Reuse `TextureData.from_png_bytes`, `MeshData`, `Material` and `Scene`, and optionally register imported assets in an `AssetRegistry`.
 - **Consequences**: Games and AI clients can import glTF 2.0 scenes without new dependencies or a GPU. JPEG images, animations, skins, morph targets and multi-primitive mesh splitting beyond the first primitive remain future work. Matrix decomposition assumes affine transforms with non-zero scale.
+
+### ADR-030: Add versioned scene snapshots and undo/redo history
+
+- **Date**: 2026-10-31
+- **Status**: Accepted
+- **Context**: The engine had no way to save, restore or roll back a scene graph without OpenGL or a game-specific serializer, and replay/inspection workflows need deterministic state checkpoints.
+- **Decision**:
+  1. Add `keystone.history.History`, a bounded undo/redo stack that deep-copies snapshots and reports `can_undo`/`can_redo`.
+  2. Add `keystone.scene_snapshot` with `SCENE_SNAPSHOT_VERSION = 1`, `scene_to_dict` and `scene_from_dict`. Snapshots store node identity, hierarchy, tags, layer, visibility, transforms and camera state, plus mesh/material asset ids when an `AssetRegistry` is supplied.
+  3. Rebuild parents through `Node.add_child`, validate the snapshot version and reattach assets from the registry on load.
+- **Consequences**: Games and AI clients can save, restore and roll back scene graphs without OpenGL or a GPU. Mesh and material payloads are referenced by asset id rather than embedded, so a snapshot is small and a missing asset leaves the node without that payload. Undo/redo state is caller-owned and in memory.

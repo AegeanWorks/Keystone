@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `80`
-- **Total Classes**: `103`
-- **Total Top-Level Functions**: `105`
-- **Total Class Methods**: `531`
-- **Total Source Lines**: `9222`
+- **Total Python Modules**: `84`
+- **Total Classes**: `106`
+- **Total Top-Level Functions**: `110`
+- **Total Class Methods**: `553`
+- **Total Source Lines**: `9613`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `39` lines (`937` bytes)
+**Size**: `44` lines (`1100` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -443,6 +443,28 @@
 
 ---
 
+### [`keystone/history.py`](keystone/history.py)
+> *Bounded undo/redo history for engine and game state.*
+
+**Size**: `84` lines (`2666` bytes)
+
+**Classes:**
+- `class History` - *A small, bounded undo/redo stack.*
+  - Method `.__init__(capacity)`
+  - Property `.capacity`
+  - Property `.can_undo`
+  - Property `.can_redo`
+  - Property `.redo_available`
+  - Method `.push(value)` - *Record a new snapshot and discard any redo branch.*
+  - Method `.undo()` - *Move to the previous snapshot and return it, or None when at the bottom.*
+  - Method `.redo()` - *Move to the next snapshot and return it, or None when at the top.*
+  - Method `.peek()` - *Return the current snapshot without moving, or None when empty.*
+  - Method `.values()` - *Return all retained snapshots in chronological order.*
+  - Method `.clear()`
+  - Method `.__len__()`
+
+---
+
 ### [`keystone/input.py`](keystone/input.py)
 > *Generic input mapping: named actions, axes and pointer look.*
 
@@ -719,6 +741,20 @@
 
 **Functions:**
 - `def _root_node()`
+
+---
+
+### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
+> *Versioned, asset-aware snapshots of a Keystone scene.*
+
+**Size**: `155` lines (`6557` bytes)
+
+**Functions:**
+- `def _transform_to_dict(transform)`
+- `def _transform_from_dict(data)`
+- `def _asset_id(payload, registry)`
+- `def scene_to_dict(scene, registry)` - *Serialize a scene to a versioned, JSON-safe dictionary.*
+- `def scene_from_dict(data, registry)` - *Rebuild a scene from a versioned snapshot.*
 
 ---
 
@@ -1170,6 +1206,22 @@
 
 ---
 
+### [`tests/test_history.py`](tests/test_history.py)
+> *Unit tests for bounded undo/redo history.*
+
+**Size**: `71` lines (`2245` bytes)
+
+**Classes:**
+- `class HistoryTest`
+  - Method `.test_push_undo_redo_restores_values()`
+  - Method `.test_new_push_clears_redo_branch()`
+  - Method `.test_capacity_drops_oldest_entries()`
+  - Method `.test_snapshots_are_deep_copied()`
+  - Method `.test_clear_and_empty_behavior()`
+  - Method `.test_peek_returns_current_without_moving()`
+
+---
+
 ### [`tests/test_input.py`](tests/test_input.py)
 > *Tests for input sampling and action state.*
 
@@ -1387,6 +1439,20 @@
   - Method `.test_scene_has_a_sky_color_distinct_from_the_horizon()`
   - Method `.test_point_light_validates_its_radius_and_intensity()`
   - Method `.test_directional_light_normalizes_lookup_direction()`
+
+---
+
+### [`tests/test_scene_snapshot.py`](tests/test_scene_snapshot.py)
+> *Unit tests for versioned scene snapshots.*
+
+**Size**: `76` lines (`3173` bytes)
+
+**Classes:**
+- `class SceneSnapshotTest`
+  - Method `._scene()`
+  - Method `.test_round_trip_preserves_structure_and_transforms()`
+  - Method `.test_rejects_unknown_version()`
+  - Method `.test_asset_registry_round_trip_attaches_mesh_and_material()`
 
 ---
 

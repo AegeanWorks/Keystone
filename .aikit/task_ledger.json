@@ -1,43 +1,16 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-gltf-import-v1",
+    "task_id": "keystone-state-history-v1",
     "last_phase": "phase 3",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1793441355.3031678,
+    "active_phase": 3,
+    "status": "in_progress",
+    "updated_at": 1793441667.793494,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
-    "continuations": [],
-    "completed_at": 1793441374.947862
+    "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-web-console-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[5/5] Delivery ready: 193 tests, 6/6 project gates, ruff clean, README/AI guide/architecture/ADR-025 and codebase map current, UI contract recorded, browser console + WebGL2 viewer smoke-tested on localhost; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793428692.8884654,
-      "timestamp_str": "2026-10-31 09:38:12",
-      "agent": "opencode:keystone-web",
-      "handoff": {
-        "state": "v0.20.0 local web console, JSON API and WebGL2 scene viewer",
-        "next": "broadphase physics/character controller or asset registry",
-        "evidence": "193 tests, aikit check 6/6, /api/scene 6 nodes/5 meshes/1 texture, WebGL2 no console errors"
-      }
-    },
-    {
-      "task_id": "keystone-web-console-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-web-console-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793428700.2533684,
-      "timestamp_str": "2026-10-31 09:38:20",
-      "agent": "opencode:keystone-web"
-    },
     {
       "task_id": "keystone-physics-v1",
       "phase": "phase 2",
@@ -259,6 +232,34 @@
       "status": "completed",
       "timestamp": 1793441374.947863,
       "timestamp_str": "2026-10-31 13:09:34",
+      "agent": "opencode:keystone"
+    },
+    {
+      "task_id": "keystone-state-history-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/4] Plan versioned scene snapshots and undo/redo history: History stack, scene_to_dict/scene_from_dict with asset references, tests, docs and ADR-030",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793441665.8231394,
+      "timestamp_str": "2026-10-31 13:14:25",
+      "agent": "opencode:keystone",
+      "impact_assessment": {
+        "why": "The engine had no way to save, restore or roll back a scene graph without OpenGL or a game-specific serializer.",
+        "benefits": "Games and AI clients can save, restore and roll back scene graphs without OpenGL, with asset references and bounded undo/redo.",
+        "risks": "contract: new public keystone.history and keystone.scene_snapshot modules plus exports and version 0.25.0, no report or web schema change; dependency: stdlib plus existing scene, math3d and assets modules only; concurrency: pure in-memory state with no shared locks; state: snapshots are in memory, mesh and material payloads are referenced by asset id",
+        "mitigation": "Failing-first tests for undo/redo, capacity, deep copy, version validation, round trips and asset reattachment; full 6/6 project gate before delivery"
+      }
+    },
+    {
+      "task_id": "keystone-state-history-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/4] History and scene snapshots: History deep-copies snapshots and bounds capacity; scene_to_dict/scene_from_dict version 1 preserve identity, hierarchy, tags, layer, visibility, transforms, camera and asset references; 11 tests, ruff clean, 6/6 gates; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793441667.793494,
+      "timestamp_str": "2026-10-31 13:14:27",
       "agent": "opencode:keystone"
     }
   ]

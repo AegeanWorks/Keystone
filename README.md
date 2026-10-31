@@ -350,6 +350,8 @@ keystone/
 │   ├── input.py              <- ActionState and InputMap
 │   ├── plugin.py             <- GameModule protocol and loader
 │   ├── replay.py             <- command log and stable hash
+│   ├── history.py            <- bounded undo/redo snapshots
+│   ├── scene_snapshot.py     <- versioned scene save/load
 │   ├── serialization.py      <- atomic JSON persistence
 │   ├── headless.py           <- no-GL simulation and JSON action scripts
 │   ├── analysis.py           <- frame statistics, projected scene and report diff
@@ -430,6 +432,8 @@ keystone/
 │   ├── test_assets.py        <- registry ids, digests, dependencies and reload
 │   ├── test_material_graph.py <- declarative material graph evaluation
 │   ├── test_gltf.py           <- glTF 2.0 import and texture loading
+│   ├── test_history.py        <- bounded undo/redo history
+│   ├── test_scene_snapshot.py <- versioned scene save/load
 │   ├── test_plugin.py        <- GameModule contract and loader
 │   ├── test_replay.py        <- command log and hashes
 │   ├── test_serialization.py <- atomic JSON persistence

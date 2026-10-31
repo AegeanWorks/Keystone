@@ -1,6 +1,6 @@
 # Keystone Architecture
 
-**Status:** implemented in v0.22.0 — core-only engine with scene identity, textured materials, physics systems, human UI, a local web console and an asset registry with hot reload
+**Status:** implemented in v0.25.0 - core-only engine with scene identity, textured materials, physics systems, human UI, a local web console, an asset registry with hot reload, material graphs, glTF 2.0 import and versioned scene snapshots with undo/redo
 **Boundary:** `keystone/` is game-agnostic; games are external modules.
 
 ## 1. What Keystone Is
@@ -143,6 +143,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Camera | Implemented | perspective and view matrices |
 | Geometry | Implemented | indexed meshes, materials, vertex colors |
 | Assets | Implemented | indexed meshes, materials, RGBA textures, OBJ, PNG; asset registry with stable ids, digests, dependencies and hot reload |
+| State snapshots | Implemented | versioned scene save/load with asset references and bounded undo/redo history |
 | Material graphs | Implemented | declarative node graphs evaluating to Material: color, float, checker, texture, mix and material nodes, cycle detection, JSON serialization |
 | glTF 2.0 | Implemented | dependency-free importer for meshes, materials, textures and scenes; external and embedded buffers, PNG textures, TRS and matrix transforms |
 | Renderer | Implemented | OpenGL 3.3, sky, lights, fog, textures, readback |
