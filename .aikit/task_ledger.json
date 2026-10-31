@@ -3,31 +3,15 @@
   "active_task": {
     "task_id": "keystone-material-graphs-v1",
     "last_phase": "phase 4",
-    "active_phase": 4,
-    "status": "in_progress",
+    "active_phase": 5,
+    "status": "completed",
     "updated_at": 1793440408.160761,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
-    "continuations": []
+    "continuations": [],
+    "completed_at": 1793440433.5776298
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-web-console-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/5] Plan: serializable scene document -> stdlib JSON API -> vanilla web console and WebGL2 viewer -> CLI --serve, docs/ADR -> full gates and browser check",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793427974.037331,
-      "timestamp_str": "2026-10-31 09:26:14",
-      "agent": "opencode:keystone-web",
-      "impact_assessment": {
-        "why": "The engine's AI surface is CLI-only and the human surface is a desktop window; AI clients and browser users need the same game contract, scene state and deterministic simulation over a local web API.",
-        "benefits": "One JSON contract for CLI, AI clients and a browser console; a WebGL2 preview of any exported scene; CORS-enabled localhost endpoints for describe, scene and simulate; no new runtime dependencies or GPU requirement on the server.",
-        "risks": "contract: new keystone.web API, scene schema 1 and --serve/--host/--port flags; dependency: Python stdlib plus existing keystone modules, vanilla JS with no CDN; concurrency: threaded HTTP requests share one game session behind a lock; state: localhost-only default, simulation mutates the in-memory game, no files or secrets exposed.",
-        "mitigation": "Pure scene-serialization tests, HTTP integration tests on an ephemeral port, static-asset and CLI validation tests, a manual browser/console check, and the full pytest/aikit gate."
-      }
-    },
     {
       "task_id": "keystone-web-console-v1",
       "phase": "phase 3",
@@ -260,6 +244,16 @@
       "status": "in_progress",
       "timestamp": 1793440408.160761,
       "timestamp_str": "2026-10-31 12:53:28",
+      "agent": "opencode:keystone"
+    },
+    {
+      "task_id": "keystone-material-graphs-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-material-graphs-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793440433.577631,
+      "timestamp_str": "2026-10-31 12:53:53",
       "agent": "opencode:keystone"
     }
   ]
