@@ -29,6 +29,21 @@ class CoreBoundaryTest(unittest.TestCase):
             self.assertFalse((root / f"{name}.py").exists(), name)
             self.assertFalse((root / name).exists(), name)
 
+    def test_core_does_not_import_the_web_adapter(self):
+        root = Path(keystone.__file__).parent
+        for path in root.rglob("*.py"):
+            relative = path.relative_to(root)
+            if relative.parts[0] == "web" or relative.name == "__main__.py":
+                continue
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("keystone.web"):
+                    self.fail(f"{path} imports the web adapter: {node.module}")
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        if alias.name.startswith("keystone.web"):
+                            self.fail(f"{path} imports the web adapter: {alias.name}")
+
     def test_core_imports_only_core_modules(self):
         root = Path(keystone.__file__).parent
         for path in root.rglob("*.py"):

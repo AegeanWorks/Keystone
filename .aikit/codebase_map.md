@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `55`
-- **Total Classes**: `74`
-- **Total Top-Level Functions**: `58`
-- **Total Class Methods**: `377`
-- **Total Source Lines**: `5933`
+- **Total Python Modules**: `61`
+- **Total Classes**: `81`
+- **Total Top-Level Functions**: `66`
+- **Total Class Methods**: `422`
+- **Total Source Lines**: `6659`
 
 ---
 
@@ -29,12 +29,13 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `209` lines (`10465` bytes)
+**Size**: `234` lines (`11763` bytes)
 
 **Functions:**
 - `def _size(text)`
 - `def _frames(text)`
 - `def _hash(text)`
+- `def _port(text)`
 - `def main(argv)`
 
 ---
@@ -382,7 +383,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `63` lines (`2241` bytes)
+**Size**: `69` lines (`2524` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -502,6 +503,13 @@
 
 **Functions:**
 - `def _root_node()`
+
+---
+
+### [`keystone/schema.py`](keystone/schema.py)
+> *Core-facing schema versions shared with optional adapters.*
+
+**Size**: `6` lines (`147` bytes)
 
 ---
 
@@ -633,6 +641,77 @@
 
 ---
 
+### [`keystone/web/__init__.py`](keystone/web/__init__.py)
+> *Local web console and JSON API for Keystone.*
+
+**Size**: `19` lines (`641` bytes)
+
+**Functions:**
+- `def __getattr__(name)`
+
+---
+
+### [`keystone/web/scene.py`](keystone/web/scene.py)
+> *Export a game-agnostic scene as a JSON document for the browser viewer.*
+
+**Size**: `127` lines (`4395` bytes)
+
+**Functions:**
+- `def _floats(values)`
+- `def _mesh_document(mesh)`
+- `def _texture_document(texture)`
+- `def scene_document(scene, game)` - *Serialize one scene into a deterministic, viewer-ready document.*
+
+---
+
+### [`keystone/web/schema.py`](keystone/web/schema.py)
+> *Versioned schemas shared by the web API, AI clients and the browser viewer.*
+
+**Size**: `27` lines (`1310` bytes)
+
+---
+
+### [`keystone/web/server.py`](keystone/web/server.py)
+> *A localhost JSON API and static web console for the game-agnostic engine.*
+
+**Size**: `284` lines (`12025` bytes)
+
+**Classes:**
+- `class WebProblem` - *One client-facing error with an actionable fix.*
+  - Method `.__init__(status, why, fix)`
+- `class GameSession` - *One in-memory game guarded by a lock for concurrent HTTP requests.*
+  - Method `.__init__(game)`
+  - Property `.name`
+  - Method `.describe()`
+  - Method `.simulate(frames, actions, step, trace)`
+  - Method `.scene()`
+- `class KeystoneHTTPServer` - *Threaded server carrying one game session for the request handler.*
+  - Method `.__init__(address, session)`
+  - Method `.handle_error(request, client_address)`
+- `class ConsoleHandler` - *Serve the API and the bundled static console.*
+  - Method `.log_message(format, *args)`
+  - Method `.do_OPTIONS()`
+  - Method `.do_GET()`
+  - Method `.do_POST()`
+  - Method `.do_PUT()`
+  - Method `.do_PATCH()`
+  - Method `.do_DELETE()`
+  - Property `.session`
+  - Method `._index()`
+  - Method `._health()`
+  - Method `._read_json()`
+  - Method `._send_file(name)`
+  - Method `._send_problem(problem)`
+  - Method `._method_not_allowed()`
+  - Method `._send_json(status, payload)`
+  - Method `._send(status, body, content_type)`
+
+**Functions:**
+- `def create_server(game, host, port)` - *Create a bound server; port 0 asks the OS for a free port.*
+- `def serve(game, host, port)` - *Run the local console until interrupted.*
+
+---
+
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
@@ -662,7 +741,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `254` lines (`11515` bytes)
+**Size**: `276` lines (`12485` bytes)
 
 **Classes:**
 - `class HudCube`
@@ -676,6 +755,9 @@
   - Method `.test_bad_size_is_a_usage_error()`
   - Method `.test_out_requires_headless()`
   - Method `.test_ui_flags_are_limited_to_rendered_runs()`
+  - Method `.test_serve_is_a_standalone_web_command()`
+  - Method `.test_web_flags_require_serve()`
+  - Method `.test_bad_web_port_is_a_usage_error()`
   - Method `.test_headless_ui_capture_writes_a_report()`
   - Method `.test_start_paused_headless_report_describes_the_menu()`
   - Method `.test_bad_game_spec_reports_why_and_fix()`
@@ -693,11 +775,12 @@
 ### [`tests/test_boundary.py`](tests/test_boundary.py)
 > *Boundary test: the engine core contains no game rules or imports.*
 
-**Size**: `50` lines (`1557` bytes)
+**Size**: `65` lines (`2391` bytes)
 
 **Classes:**
 - `class CoreBoundaryTest`
   - Method `.test_core_has_no_genre_modules()`
+  - Method `.test_core_does_not_import_the_web_adapter()`
   - Method `.test_core_imports_only_core_modules()`
 
 ---
@@ -839,7 +922,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `53` lines (`1934` bytes)
+**Size**: `55` lines (`2090` bytes)
 
 **Classes:**
 - `class PluginTest`
@@ -1031,5 +1114,34 @@
 
 **Functions:**
 - `def state(**overrides)`
+
+---
+
+### [`tests/test_web.py`](tests/test_web.py)
+> *Tests for scene export, the local JSON API and the browser console assets.*
+
+**Size**: `193` lines (`8398` bytes)
+
+**Classes:**
+- `class Health`
+- `class SceneDocumentTest`
+  - Method `.test_sample_scene_document_has_identity_geometry_and_texture()`
+  - Method `.test_world_matrices_and_mesh_references_are_exported()`
+  - Method `.test_shared_meshes_are_exported_once()`
+  - Method `.test_node_identity_metadata_is_exported()`
+  - Method `.test_scene_document_is_deterministic()`
+  - Method `.test_schema_describes_export_fields()`
+  - Method `.test_public_web_exports_are_available()`
+- `class WebServerTest`
+  - Method `.setUp()`
+  - Method `._stop()`
+  - Method `._request(path, method, payload)`
+  - Method `._json(path, method, payload)`
+  - Method `.test_health_and_cors()`
+  - Method `.test_describe_includes_the_web_capability()`
+  - Method `.test_scene_endpoint_returns_the_scene_document()`
+  - Method `.test_simulate_endpoint_returns_a_deterministic_result()`
+  - Method `.test_options_preflight_and_static_assets()`
+  - Method `.test_api_index_and_errors_are_json()`
 
 ---

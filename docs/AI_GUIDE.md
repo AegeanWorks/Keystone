@@ -13,7 +13,7 @@ The JSON response contains:
 - `game`: name;
 - `actions`: the game's action schema;
 - `snapshot`: the current state shape;
-- `capabilities`: `simulate`, `render`, `human_ui` and the versioned `report_schema`.
+- `capabilities`: `simulate`, `render`, `human_ui`, `game_ui`, `web` and the versioned `report_schema`/`scene_schema`.
 
 ## 2. Simulate without OpenGL
 
@@ -101,6 +101,21 @@ def draw_ui(self, canvas: Canvas, state: HudState) -> None:
 ```
 
 `--describe` reports `capabilities.game_ui` as true when the hook exists. The hook is skipped with `--no-ui` and when the person hides the overlay. `--start-paused` is also useful here: the game's HUD renders under the pause menu.
+
+## Web API and browser console
+
+```bash
+python -m keystone --serve --port 8899
+```
+
+`GET http://127.0.0.1:8899/api` returns the endpoint and schema index. The API mirrors the CLI contract:
+
+- `GET /api/health` returns `ok`, `game`, `api` and `scene_schema`;
+- `GET /api/describe` returns the same payload as `--describe`, with `capabilities.web`;
+- `GET /api/scene` returns scene document schema 1: camera, lights, atmosphere, node identity/tags/layers/components, world matrices, shared meshes and RGBA textures;
+- `POST /api/simulate` accepts `{"frames": 60, "actions": [...], "step": 0.0167, "trace": false}` and returns the same deterministic result as `--simulate`.
+
+All responses carry `Access-Control-Allow-Origin: *` so a local frontend or AI client can call the API directly. The server is loopback-only by default; do not expose it publicly. It does not need OpenGL. The bundled browser console drives the same endpoints and renders the scene document with WebGL2; that preview is approximate, while `--headless` remains the authoritative pixel render. `/api/scene` uses `self.scene` when the game exposes it (live state); otherwise it calls `build_scene()` for a fresh scene.
 
 ## Python helpers
 

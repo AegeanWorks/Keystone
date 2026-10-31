@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Keystone Web Console</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brandline">
+      <span class="brand">KEYSTONE</span>
+      <span id="game" class="muted">loading</span>
+    </div>
+    <div id="status" class="status" role="status" aria-live="polite">connecting</div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel">
+      <section class="card">
+        <h2>Simulation</h2>
+        <div class="row">
+          <label for="frames">Frames</label>
+          <input id="frames" type="number" min="0" max="100000" step="1" value="60">
+        </div>
+        <label class="stack" for="actions">Actions JSON</label>
+        <textarea id="actions" spellcheck="false" rows="6">[]</textarea>
+        <div class="buttons">
+          <button id="step" type="button">Step 1</button>
+          <button id="run" type="button">Run 60</button>
+          <button id="simulate" type="button" class="primary">Simulate</button>
+        </div>
+        <p class="hint">Actions use the same JSON shape as <code>--simulate --actions</code>.</p>
+      </section>
+
+      <section class="card">
+        <h2>Scene</h2>
+        <div id="summary" class="summary">No scene loaded.</div>
+        <button id="refresh" type="button">Refresh scene</button>
+      </section>
+
+      <section class="card output-card">
+        <h2>JSON</h2>
+        <pre id="output" tabindex="0">Waiting for the engine.</pre>
+      </section>
+    </aside>
+
+    <section class="viewport" aria-label="WebGL scene viewer">
+      <canvas id="canvas"></canvas>
+      <div id="viewer-status" class="viewer-status">WebGL2 viewer</div>
+      <div id="hud" class="hud"></div>
+    </section>
+  </main>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

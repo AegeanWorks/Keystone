@@ -36,6 +36,16 @@ def _hash(text: str) -> str:
     return value
 
 
+def _port(text: str) -> int:
+    try:
+        value = int(text)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("port must be an integer") from exc
+    if not 0 <= value <= 65535:
+        raise argparse.ArgumentTypeError("port must be between 0 and 65535")
+    return value
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m keystone",
@@ -56,9 +66,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--ui", action="store_true", help="draw the human HUD/help overlay (default: windowed only)")
     parser.add_argument("--no-ui", action="store_true", help="disable the human overlay")
     parser.add_argument("--start-paused", action="store_true", help="start a rendered run with gameplay paused")
+    parser.add_argument("--serve", action="store_true", help="serve the local JSON API and WebGL web console")
+    parser.add_argument("--host", default=None, help="web console bind host (default: 127.0.0.1)")
+    parser.add_argument("--port", type=_port, default=None, help="web console port (default: 8000; 0 picks a free port)")
     parser.add_argument("--out", type=Path, default=None, help="PNG for rendering; JSON report for --simulate")
     parser.add_argument("--report", type=Path, default=None, help="machine-readable frame report (requires --headless)")
     args = parser.parse_args(argv)
+    if args.serve and (
+        args.describe or args.headless or args.simulate or args.verify_determinism or args.expect_hash
+        or args.compare_baseline or args.diff_out or args.actions or args.trace or args.ui or args.no_ui
+        or args.start_paused or args.out or args.report
+    ):
+        parser.error("--serve is a standalone web-console command")
+    if (args.host is not None or args.port is not None) and not args.serve:
+        parser.error("--host and --port require --serve")
     if args.describe and (
         args.headless or args.simulate or args.verify_determinism or args.expect_hash
         or args.compare_baseline or args.out or args.report or args.actions or args.trace
@@ -97,6 +118,10 @@ def main(argv: list[str] | None = None) -> int:
     engine = None
     try:
         game = load_game(args.game)
+        if args.serve:
+            from keystone.web import serve
+
+            return serve(game, args.host or "127.0.0.1", args.port if args.port is not None else 8000)
         if args.describe:
             print(json.dumps(describe_game(game), indent=2, sort_keys=True))
             return 0

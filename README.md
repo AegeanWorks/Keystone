@@ -20,6 +20,10 @@ Games plug in through one five-operation contract. Keystone ships a **cube demo*
   ```bash
   python -m keystone
   ```
+- **Open the local web console and WebGL viewer**:
+  ```bash
+  python -m keystone --serve
+  ```
 - **Hide or disable the human overlay**:
   ```bash
   python -m keystone --no-ui
@@ -192,6 +196,29 @@ The overlay contains:
 
 `keystone.ui` is split into an embedded 5×7 font, a clipped screen-space `Canvas`, small panel/button widgets, a pure `PauseMenu` state machine and `HumanOverlay`; `keystone.gpu.ui_renderer` uploads the canvas as one alpha-blended draw call. A game's optional `draw_ui(canvas, state)` hook draws into the same canvas. A headless report that includes `--ui` measures the same pixels a person sees.
 
+## 🌐 Web Console, JSON API and WebGL Viewer
+
+```bash
+python -m keystone --serve
+python -m keystone --serve --port 8899 --game package.module:Factory
+```
+
+The console binds to `127.0.0.1:8000` by default and serves a browser dashboard plus the same AI-facing JSON used by the CLI. It uses only the Python standard library and vanilla JavaScript; there is no npm build, CDN or extra runtime dependency.
+
+The dashboard can inspect the game contract, run the same action scripts as `--simulate`, refresh the live scene, and preview the exported scene in a WebGL2 viewer with textured materials, vertex colors, directional and point lights, fog and the sample checker floor. The browser viewer is an inspection approximation; the OpenGL renderer remains the pixel authority.
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/api/health` | `GET` | server, game and schema versions |
+| `/api/describe` | `GET` | the same discovery payload as `--describe`, including `capabilities.web` |
+| `/api/scene` | `GET` | scene document schema 1: camera, lights, atmosphere, node identity, world matrices, shared meshes and RGBA textures |
+| `/api/simulate` | `POST` | the same deterministic result as `--simulate`; body `{"frames": 60, "actions": [...], "step": 0.0167, "trace": false}` |
+| `/api` | `GET` | endpoint and schema index |
+
+The API sends CORS headers so a local AI client or frontend can call it directly. It is a local development surface, not an internet service: keep the default loopback host, and pass `--host 0.0.0.0` only when you deliberately want network exposure. The server never opens a GL context and never reads files outside its bundled static assets.
+
+`/api/scene` exports the game's `self.scene` when it has one, so a live simulation is visible immediately. A game without that attribute gets a fresh `build_scene()` result; put the scene on `self.scene` if the console should show live state.
+
 ## 🚀 Features
 
 - **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth testing, back-face culling, Blinn-Phong lighting, vertex colors, fog, gradient sky and an optional point light.
@@ -209,6 +236,7 @@ The overlay contains:
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip image loading, changed-pixel counts, bbox and a visual diff without third-party imaging libraries.
 - **Frame reports for AI analysis**: `--report` writes a schema-4 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data, projected screen bounds and identity metadata (ID, parent ID, tags, layer, components) for every scene node, material/texture metadata, and structured UI labels/buttons when the overlay is rendered.
 - **Human overlay**: a game-agnostic HUD with game/status, FPS, frame, elapsed time and resolution, plus controls help and an interactive pause menu; drawn with an embedded 5×7 bitmap font, no font asset or imaging library. Games can add their own HUD through the optional `draw_ui(canvas, state)` hook.
+- **Web console and WebGL viewer**: `--serve` starts a loopback-only stdlib JSON API and vanilla browser dashboard; `/api/describe`, `/api/scene` and `/api/simulate` share the CLI contract, and the WebGL2 viewer previews exported scene documents with textures, lights and fog.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
 
 ## 🤖 AI Testing & Frame Analysis
@@ -219,7 +247,7 @@ The overlay contains:
 python -m keystone --describe
 ```
 
-The JSON response contains the game name, `actions()` schema, current `snapshot()`, capabilities (`simulate`, `render`, `human_ui`) and the versioned report schema. It is the first call an AI client should make.
+The JSON response contains the game name, `actions()` schema, current `snapshot()`, capabilities (`simulate`, `render`, `human_ui`, `game_ui`, `web`) and the versioned report and scene schemas. It is the first call an AI client should make.
 
 ### Verify determinism and visual regressions
 
@@ -301,9 +329,10 @@ keystone/
 │   ├── analysis.py           <- frame statistics, projected scene and report diff
 │   ├── testing.py            <- deterministic AI/CI scenario helpers
 │   ├── physics.py            <- rays, AABB, sphere queries and pushout
+│   ├── schema.py             <- versioned core schema constants
 │   ├── math3d.py             <- Vec3, Mat4, Quat (column-major, OpenGL-ready)
 │   ├── camera.py             <- perspective camera
-│   ├── scene.py              <- hierarchy, transforms and lights
+│   ├── scene.py              <- hierarchy, identity, components, transforms and lights
 │   ├── geometry.py           <- MeshData and Material
 │   ├── mesh_builder.py       <- merge boxes, quads and meshes
 │   ├── primitives.py         <- cube, plane, cone, cylinder and sphere
@@ -319,6 +348,16 @@ keystone/
 │   │   ├── menu.py           <- pure pause-menu selection state
 │   │   ├── report.py         <- UI labels/buttons for AI reports
 │   │   └── overlay.py        <- HUD, controls help and pause menu
+│   ├── web/
+│   │   ├── __init__.py       <- web package exports
+│   │   ├── schema.py         <- web API and scene document schemas
+│   │   ├── scene.py          <- scene-to-JSON export for the viewer
+│   │   ├── server.py         <- stdlib JSON API and static server
+│   │   └── static/
+│   │       ├── index.html    <- console shell
+│   │       ├── app.js        <- console controls and API client
+│   │       ├── viewer.js     <- WebGL2 scene renderer
+│   │       └── style.css     <- console layout and tokens
 │   └── gpu/
 │       ├── __init__.py       <- GPU adapter package marker
 │       ├── context.py        <- GLFW window and OpenGL 3.3 context
@@ -353,6 +392,7 @@ keystone/
 │   ├── test_testing.py       <- deterministic scenario helpers
 │   ├── test_samples.py       <- CubeDemo smoke test
 │   ├── test_boundary.py      <- core has no game modules/imports
+│   ├── test_web.py           <- scene export, JSON API and static assets
 │   └── test_app.py           <- engine loop, CLI, simulate and reports
 ├── requirements.txt          <- pinned runtime and test dependencies
 ├── pyproject.toml            <- package metadata, pytest and ruff configuration
@@ -397,7 +437,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the dependency rules, mod
 4. Renderer instancing, shadows, PBR and post-processing.
 5. Input rebinding, audio mixer and buses.
 6. Scene/save schema versioning and replay/undo tooling.
-7. Editor/inspector, asset browser and profiler.
+7. Editor/inspector, asset browser and profiler; the v0.20.0 web console covers discovery, simulation and scene preview.
 8. AI observation/action adapters that consume the frame report and command log.
 
 Games are external modules; they are not added to this repository.

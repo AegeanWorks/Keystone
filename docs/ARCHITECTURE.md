@@ -1,6 +1,6 @@
 # Keystone Architecture
 
-**Status:** implemented in v0.19.0 — core-only engine with scene identity, textured materials and human UI
+**Status:** implemented in v0.20.0 — core-only engine with scene identity, textured materials, human UI and a local web console
 **Boundary:** `keystone/` is game-agnostic; games are external modules.
 
 ## 1. What Keystone Is
@@ -35,6 +35,7 @@ keystone/
 ├── analysis.py       frame statistics, projected scene and report diff
 ├── testing.py        deterministic AI/CI scenario helpers
 ├── physics.py        Ray, AABB, Sphere, queries and pushout
+├── schema.py         versioned core schema constants
 ├── scene.py          Node, Transform, Scene identity/queries, DirectionalLight, PointLight
 ├── camera.py         PerspectiveCamera
 ├── geometry.py       MeshData, Material
@@ -46,6 +47,7 @@ keystone/
 ├── math3d.py         Vec3, Mat4, Quat
 ├── samples.py        CubeDemo smoke test
 ├── ui/               bitmap font, canvas, widgets, pause menu and overlay
+├── web/              scene export, stdlib JSON API and static WebGL console
 └── gpu/              GLFW context, GLSL, buffers, 3D and UI renderers
 ```
 
@@ -78,6 +80,10 @@ A game may additionally expose `draw_ui(canvas, state)`. It is an optional prese
 
 `load_game("package.module:Factory")` imports the module, calls the factory, and validates the five methods. Invalid specs fail before the window opens, with a CLI `Why:`/`Fix:` message.
 
+### Web API
+
+`keystone.web` exports a versioned scene document (`SCENE_SCHEMA`, version 1) and a stdlib `ThreadingHTTPServer`. `GET /api/describe` reuses `describe_game()`, `POST /api/simulate` reuses `run_simulation()`, and `GET /api/scene` serializes the live scene with shared meshes, RGBA textures, camera, lights and world matrices. Requests share one in-memory `GameSession` behind a lock. The server binds to loopback by default, sends CORS headers for local clients, never creates a GL context and serves only its bundled static assets. The browser console renders that document with WebGL2; the OpenGL renderer remains the pixel authority.
+
 ### Frame lifecycle
 
 ```text
@@ -106,7 +112,8 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 - `analysis.diff_images(before, after, output)` reads PNGs, writes a visual diff and returns changed-pixel count/ratio, bbox and mean/max delta; `png.read_png()` is the dependency-free reader.
 - `TextureData` is immutable RGBA8 data with PNG and checker factories; `Material.texture` is sampled through mesh UVs with repeat wrapping and mipmaps, and the renderer caches one GPU texture per payload.
 - `keystone.ui.report.describe_canvas()` turns the rendered `Canvas` into `ui` metadata: visibility, pause state, label text/position/scale/color and button label/action/rect/selection/hover.
-- `describe_game()` exposes `name`, `actions()`, `snapshot()`, capabilities (`simulate`, `render`, `human_ui`, `game_ui`) and the versioned report schema; `--describe` prints it without a window.
+- `describe_game()` exposes `name`, `actions()`, `snapshot()`, capabilities (`simulate`, `render`, `human_ui`, `game_ui`, `web`) and the versioned report/scene schemas; `--describe` prints it without a window.
+- `--serve` starts the local JSON API and browser console without OpenGL; `keystone.web.scene.scene_document()` exports the viewer document.
 - `ActionState` includes `mouse_clicked` as a one-frame edge so games and menus can react without importing GLFW.
 - `testing.run_script()`, `verify_determinism()` and `assert_deterministic()` turn an action script into test evidence; `--verify-determinism` exposes the two-run check to agents; `--expect-hash` pins a final result.
 - `--simulate` requires no GPU; `--headless` renders off-screen; `--ui` adds the human overlay to a capture; `--start-paused` renders the pause menu; `--no-ui` disables it; `--report` documents a rendered frame; `--compare-baseline` gates visual changes; `--describe` discovers the contract.
@@ -121,6 +128,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 4. The public surface is `keystone/__init__.py` plus the documented modules; no deep imports are required by games.
 5. Shared DTOs are frozen dataclasses.
 6. Game modules are external; this repository ships only the `CubeDemo` smoke test.
+7. `keystone.web` may import core modules; core library modules must not import `keystone.web` (the CLI entry point may compose the adapter).
 
 ## 5. Core Systems
 
@@ -142,6 +150,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | AI testing | Implemented | deterministic scenario helpers |
 | Frame report | Implemented | image statistics, projected nodes, materials, UI metadata and report diff |
 | Human UI | Implemented | bitmap font, canvas, HUD/help, interactive pause menu |
+| Web console | Implemented | scene export, JSON API, CORS, static WebGL2 viewer |
 | Physics | Implemented (queries) | rays, AABB, sphere overlap/pushout |
 | Audio | Missing | future core module |
 | ECS | Optional/missing | evaluate after a real workload |
@@ -155,7 +164,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 4. **Renderer** — instancing/batching, shadows, PBR, post-processing, sRGB/linear color.
 5. **Input/audio** — rebinding, action contexts, mixer and buses.
 6. **Serialization/replay** — versioned scene/save format, undo/rewind, replay runner.
-7. **Tooling** — inspector, asset browser, profiler, richer HUD widgets and editor hooks.
+7. **Tooling** — the v0.20.0 web console covers discovery, simulation and scene preview; inspector, asset browser, profiler, richer HUD widgets and editor hooks remain.
 
 Each core system must have a game-agnostic test and must not introduce genre vocabulary.
 
@@ -181,6 +190,9 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - `--compare-baseline baseline.json` exits non-zero on image change.
 - `--diff-out diff.png` writes a visual pixel diff.
 - `compare_reports()` detects image, stat and projected-node changes.
+- `python -m keystone --serve` starts a loopback JSON API and static console without OpenGL.
+- `GET /api/describe`, `GET /api/scene` and `POST /api/simulate` return the CLI-compatible schemas and CORS headers.
+- The WebGL2 viewer renders a scene document with shared meshes, textures, lights and fog.
 - `python -m keystone --game missing.module:Factory` exits 1 with `Why:`/`Fix:`.
 - `keystone/` contains no game rules and imports no external game.
 - `GameModule` is the only game-facing runtime contract.

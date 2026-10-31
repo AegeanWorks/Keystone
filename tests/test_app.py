@@ -112,6 +112,28 @@ class EngineTest(unittest.TestCase):
             main(["--simulate", "--start-paused"])
         self.assertEqual(caught.exception.code, 2)
 
+    def test_serve_is_a_standalone_web_command(self):
+        for argv in (
+            ["--serve", "--headless"],
+            ["--serve", "--simulate"],
+            ["--serve", "--ui"],
+            ["--serve", "--out", "frame.png"],
+        ):
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+                main(argv)
+            self.assertEqual(caught.exception.code, 2)
+
+    def test_web_flags_require_serve(self):
+        for argv in (["--port", "9000"], ["--host", "0.0.0.0"]):
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+                main(argv)
+            self.assertEqual(caught.exception.code, 2)
+
+    def test_bad_web_port_is_a_usage_error(self):
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+            main(["--serve", "--port", "70000"])
+        self.assertEqual(caught.exception.code, 2)
+
     def test_headless_ui_capture_writes_a_report(self):
         with tempfile.TemporaryDirectory() as directory:
             report = Path(directory) / "ui.json"

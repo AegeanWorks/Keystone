@@ -7,6 +7,7 @@ from typing import Protocol, runtime_checkable
 
 from keystone.input import ActionState
 from keystone.scene import Scene
+from keystone.schema import SCENE_SCHEMA_VERSION, WEB_API_VERSION
 
 
 @runtime_checkable
@@ -37,6 +38,11 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "human_ui": {"overlay": True, "toggle": "h", "pause": "p", "menu": ["resume", "toggle_ui", "quit"]},
             "game_ui": callable(getattr(game, "draw_ui", None)),
             "report_schema": REPORT_SCHEMA,
+            "web": {
+                "api_version": WEB_API_VERSION,
+                "scene_schema": SCENE_SCHEMA_VERSION,
+                "endpoints": ["/api/describe", "/api/scene", "/api/simulate"],
+            },
         },
     }
 
