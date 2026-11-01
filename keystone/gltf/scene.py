@@ -92,12 +92,16 @@ def build_scene(
         raise TypeError("glTF nodes must be a list")
     raw_nodes = raw_nodes or []
     built: dict[int, Node] = {}
+    visiting: set[int] = set()
 
     def build(index: int) -> Node:
         if index in built:
             return built[index]
+        if index in visiting:
+            raise ValueError("glTF node hierarchy contains a cycle")
         if index < 0 or index >= len(raw_nodes):
             raise ValueError("glTF node index is out of range")
+        visiting.add(index)
         raw = raw_nodes[index]
         if not isinstance(raw, Mapping):
             raise TypeError("glTF node must be an object")
@@ -126,8 +130,11 @@ def build_scene(
                     if primitive_material is not None and 0 <= primitive_material < len(materials):
                         child.material = materials[primitive_material]
                     node.add_child(child)
-        for child_index in raw.get("children", []):
-            node.add_child(build(int(child_index)))
+        try:
+            for child_index in raw.get("children", []):
+                node.add_child(build(int(child_index)))
+        finally:
+            visiting.discard(index)
         built[index] = node
         return node
 

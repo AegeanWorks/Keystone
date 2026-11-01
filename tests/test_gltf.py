@@ -12,10 +12,14 @@ from keystone.math3d import Vec3
 from keystone.png import write_png
 
 
+def _data_uri(data):
+    return "data:application/octet-stream;base64," + base64.b64encode(data).decode("ascii")
+
+
 def _triangle_gltf(*, translation=(0.0, 0.0, 0.0), color=(0.2, 0.4, 0.6), roughness=0.25):
     positions = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
     buffer_data = struct.pack("<" + "f" * len(positions), *positions)
-    uri = "data:application/octet-stream;base64," + base64.b64encode(buffer_data).decode("ascii")
+    uri = _data_uri(buffer_data)
     return {
         "asset": {"version": "2.0"},
         "scene": 0,
@@ -101,6 +105,84 @@ class GltfImportTest(unittest.TestCase):
         load_gltf(_triangle_gltf(), registry=registry)
         self.assertGreater(len(registry), 0)
         self.assertIn("gltf.mesh.0", registry)
+
+    def test_generated_normals_use_triangle_indices(self):
+        positions = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0]
+        indices = [0, 1, 2, 0, 2, 3]
+        position_data = struct.pack("<" + "f" * len(positions), *positions)
+        index_data = struct.pack("<" + "I" * len(indices), *indices)
+        document = {
+            "asset": {"version": "2.0"},
+            "scene": 0,
+            "scenes": [{"nodes": [0]}],
+            "nodes": [{"mesh": 0}],
+            "meshes": [{"primitives": [{"attributes": {"POSITION": 0}, "indices": 1}]}],
+            "accessors": [
+                {"bufferView": 0, "componentType": 5126, "count": 4, "type": "VEC3"},
+                {"bufferView": 1, "componentType": 5125, "count": 6, "type": "SCALAR"},
+            ],
+            "bufferViews": [
+                {"buffer": 0, "byteOffset": 0, "byteLength": len(position_data)},
+                {"buffer": 1, "byteOffset": 0, "byteLength": len(index_data)},
+            ],
+            "buffers": [
+                {"uri": _data_uri(position_data), "byteLength": len(position_data)},
+                {"uri": _data_uri(index_data), "byteLength": len(index_data)},
+            ],
+        }
+        mesh = load_gltf(document).meshes[0]
+        self.assertEqual(mesh.normals[3], (0.0, 0.0, 1.0))
+        self.assertEqual(mesh.triangle_count(), 2)
+
+    def test_normalized_integer_colors_are_converted_to_unit_range(self):
+        document = _triangle_gltf()
+        colors = bytes((255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255))
+        document["buffers"].append({"uri": _data_uri(colors), "byteLength": len(colors)})
+        document["bufferViews"].append({"buffer": 1, "byteOffset": 0, "byteLength": len(colors)})
+        document["accessors"].append(
+            {
+                "bufferView": 1,
+                "componentType": 5121,
+                "count": 3,
+                "type": "VEC4",
+                "normalized": True,
+            }
+        )
+        document["meshes"][0]["primitives"][0]["attributes"]["COLOR_0"] = 1
+        mesh = load_gltf(document).meshes[0]
+        self.assertEqual(mesh.colors[0], (1.0, 0.0, 0.0))
+
+    def test_rejects_non_triangle_primitive_modes(self):
+        document = _triangle_gltf()
+        document["meshes"][0]["primitives"][0]["mode"] = 1
+        with self.assertRaises(ValueError):
+            load_gltf(document)
+
+    def test_rejects_unknown_material_indices(self):
+        document = _triangle_gltf()
+        document["meshes"][0]["primitives"][0]["material"] = 99
+        with self.assertRaises(ValueError):
+            load_gltf(document)
+
+    def test_rejects_sparse_accessors_instead_of_silently_zeroing(self):
+        document = _triangle_gltf()
+        document["accessors"][0]["sparse"] = {
+            "count": 1,
+            "indices": {"bufferView": 0, "componentType": 5125},
+            "values": {"bufferView": 0},
+        }
+        with self.assertRaises(ValueError):
+            load_gltf(document)
+
+    def test_rejects_cyclic_node_hierarchies(self):
+        document = {
+            "asset": {"version": "2.0"},
+            "scene": 0,
+            "scenes": [{"nodes": [0]}],
+            "nodes": [{"children": [1]}, {"children": [0]}],
+        }
+        with self.assertRaises(ValueError):
+            load_gltf(document)
 
 
 if __name__ == "__main__":

@@ -263,3 +263,16 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
   2. Add `keystone.scene_snapshot` with `SCENE_SNAPSHOT_VERSION = 1`, `scene_to_dict` and `scene_from_dict`. Snapshots store node identity, hierarchy, tags, layer, visibility, transforms and camera state, plus mesh/material asset ids when an `AssetRegistry` is supplied.
   3. Rebuild parents through `Node.add_child`, validate the snapshot version and reattach assets from the registry on load.
 - **Consequences**: Games and AI clients can save, restore and roll back scene graphs without OpenGL or a GPU. Mesh and material payloads are referenced by asset id rather than embedded, so a snapshot is small and a missing asset leaves the node without that payload. Undo/redo state is caller-owned and in memory.
+
+### ADR-031: Harden glTF import and scene snapshot correctness
+
+- **Date**: 2026-11-01
+- **Status**: Accepted
+- **Context**: Review of the v0.23-v0.25 additions found silent correctness failures. Generated glTF normals followed vertex order instead of triangle indices, non-triangle primitive modes were treated as triangles, cyclic node hierarchies recursed until `RecursionError`, normalized integer accessors returned raw byte values, sparse accessors decoded as zeros, snapshots dropped lighting and atmosphere, and snapshot loaders accepted duplicate ids and dangling parents.
+- **Decision**:
+  1. Decode indices before normals and generate normals from the actual triangle list; reject primitive modes other than TRIANGLES and reject unknown material indices.
+  2. Apply glTF normalization rules to signed and unsigned integer accessors and refuse sparse accessors with a clear error instead of returning base or zero data.
+  3. Track visiting nodes during hierarchy construction so a cycle raises `ValueError`.
+  4. Extend scene snapshot schema 1 with optional camera lens and environment fields (ambient, background, sky, fog, directional and point lights) and reject duplicate ids, unknown parents and self-parenting. Older schema-1 documents still load with engine defaults.
+  5. Make a material graph's `texture_name` fail when it cannot resolve, matching texture nodes.
+- **Consequences**: Malformed or unsupported glTF and snapshot documents fail early with actionable errors instead of producing wrong geometry or state. Snapshots round-trip the visible environment, and schema 1 stays backwards compatible because every new field is optional.

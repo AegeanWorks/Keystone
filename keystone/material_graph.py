@@ -294,7 +294,11 @@ def _evaluate_node(
                     raise TypeError(f"asset {asset!r} is not a texture")
                 texture = record.payload
             texture_name = node.param("texture_name")
-            if texture_name is not None and textures is not None and texture_name in textures:
+            if texture_name is not None:
+                if textures is None or texture_name not in textures:
+                    raise ValueError(
+                        f"material node references unknown texture {texture_name!r}"
+                    )
                 texture = textures[texture_name]
         specular = float(node.param("specular", 0.35))
         if len(node.inputs) >= 3 and isinstance(values[node.inputs[2]], (int, float, bool)):

@@ -13,7 +13,7 @@ from keystone.scene import Node, Scene, Transform
 from keystone.scene_snapshot import scene_from_dict, scene_to_dict
 from keystone.texture import TextureData
 
-__version__ = "0.25.0"
+__version__ = "0.25.1"
 __all__ = [
     "ActionState",
     "AssetRegistry",

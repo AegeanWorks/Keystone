@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `84`
 - **Total Classes**: `106`
-- **Total Top-Level Functions**: `110`
-- **Total Class Methods**: `553`
-- **Total Source Lines**: `9613`
+- **Total Top-Level Functions**: `117`
+- **Total Class Methods**: `564`
+- **Total Source Lines**: `9886`
 
 ---
 
@@ -242,7 +242,7 @@
 ### [`keystone/gltf/io.py`](keystone/gltf/io.py)
 > *glTF source reading, buffers and typed accessor decoding.*
 
-**Size**: `121` lines (`4634` bytes)
+**Size**: `136` lines (`5442` bytes)
 
 **Functions:**
 - `def read_source(source)` - *Return (json text, base directory) for a path, JSON text or bytes.*
@@ -278,7 +278,7 @@
 ### [`keystone/gltf/meshes.py`](keystone/gltf/meshes.py)
 > *glTF mesh and primitive decoding.*
 
-**Size**: `167` lines (`7135` bytes)
+**Size**: `174` lines (`7515` bytes)
 
 **Functions:**
 - `def _as_vec3(value)`
@@ -291,7 +291,7 @@
 ### [`keystone/gltf/scene.py`](keystone/gltf/scene.py)
 > *glTF node, transform and scene construction.*
 
-**Size**: `148` lines (`5863` bytes)
+**Size**: `155` lines (`6095` bytes)
 
 **Functions:**
 - `def _matrix_to_transform(matrix)`
@@ -486,7 +486,7 @@
 ### [`keystone/material_graph.py`](keystone/material_graph.py)
 > *Declarative, deterministic material graphs that evaluate to a Material.*
 
-**Size**: `312` lines (`13250` bytes)
+**Size**: `316` lines (`13410` bytes)
 
 **Classes:**
 - `class MaterialGraphNode` - *One node in a material graph: a kind, parameters and input node ids.*
@@ -747,9 +747,15 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `155` lines (`6557` bytes)
+**Size**: `253` lines (`10776` bytes)
 
 **Functions:**
+- `def _vec3_to_list(value)`
+- `def _vec3_from_value(value, label, default)`
+- `def _light_to_dict(light)`
+- `def _light_from_dict(data)`
+- `def _point_light_to_dict(light)`
+- `def _point_light_from_dict(data)`
 - `def _transform_to_dict(transform)`
 - `def _transform_from_dict(data)`
 - `def _asset_id(payload, registry)`
@@ -1173,7 +1179,7 @@
 ### [`tests/test_gltf.py`](tests/test_gltf.py)
 > *Unit tests for dependency-free glTF 2.0 import.*
 
-**Size**: `107` lines (`4871` bytes)
+**Size**: `189` lines (`8238` bytes)
 
 **Classes:**
 - `class GltfImportTest`
@@ -1185,8 +1191,15 @@
   - Method `.test_loads_an_embedded_png_texture()`
   - Method `.test_loads_an_external_buffer_file()`
   - Method `.test_registers_assets_when_registry_is_provided()`
+  - Method `.test_generated_normals_use_triangle_indices()`
+  - Method `.test_normalized_integer_colors_are_converted_to_unit_range()`
+  - Method `.test_rejects_non_triangle_primitive_modes()`
+  - Method `.test_rejects_unknown_material_indices()`
+  - Method `.test_rejects_sparse_accessors_instead_of_silently_zeroing()`
+  - Method `.test_rejects_cyclic_node_hierarchies()`
 
 **Functions:**
+- `def _data_uri(data)`
 - `def _triangle_gltf(*, translation, color, roughness)`
 
 ---
@@ -1246,7 +1259,7 @@
 ### [`tests/test_material_graph.py`](tests/test_material_graph.py)
 > *Unit tests for declarative material graphs.*
 
-**Size**: `118` lines (`4551` bytes)
+**Size**: `126` lines (`4843` bytes)
 
 **Classes:**
 - `class MaterialGraphCoreTest`
@@ -1258,6 +1271,7 @@
 - `class MaterialGraphSerializationTest`
   - Method `.test_round_trip_preserves_evaluation()`
   - Method `.test_texture_node_resolves_by_name()`
+  - Method `.test_material_texture_name_must_resolve()`
 
 **Functions:**
 - `def _node(node_id, kind, *, params, inputs)`
@@ -1445,12 +1459,16 @@
 ### [`tests/test_scene_snapshot.py`](tests/test_scene_snapshot.py)
 > *Unit tests for versioned scene snapshots.*
 
-**Size**: `76` lines (`3173` bytes)
+**Size**: `128` lines (`5416` bytes)
 
 **Classes:**
 - `class SceneSnapshotTest`
   - Method `._scene()`
   - Method `.test_round_trip_preserves_structure_and_transforms()`
+  - Method `.test_round_trip_preserves_camera_lens_and_environment()`
+  - Method `.test_older_schema_one_documents_keep_engine_defaults()`
+  - Method `.test_rejects_duplicate_node_ids()`
+  - Method `.test_rejects_unknown_parent_reference()`
   - Method `.test_rejects_unknown_version()`
   - Method `.test_asset_registry_round_trip_attaches_mesh_and_material()`
 

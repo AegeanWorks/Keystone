@@ -8,7 +8,7 @@ from keystone.assets import AssetRegistry
 from keystone.geometry import Material
 from keystone.math3d import Vec3
 from keystone.primitives import cube, plane
-from keystone.scene import Node, Scene
+from keystone.scene import DirectionalLight, Node, PointLight, Scene
 from keystone.scene_snapshot import (
     SCENE_SNAPSHOT_VERSION,
     scene_from_dict,
@@ -46,7 +46,59 @@ class SceneSnapshotTest(unittest.TestCase):
         self.assertEqual(restored_child.tags, {"marker"})
         self.assertEqual(restored_child.layer, "props")
         self.assertEqual(restored.camera.position, Vec3(1.0, 2.0, 3.0))
+        self.assertEqual(restored.camera.yaw, 0.5)
+        self.assertEqual(restored.camera.pitch, -0.25)
+        self.assertEqual(restored.background, Vec3(0.1, 0.2, 0.3))
         json.dumps(document)
+
+    def test_round_trip_preserves_camera_lens_and_environment(self):
+        scene = self._scene()
+        scene.camera.near = 0.25
+        scene.camera.far = 250.0
+        scene.ambient = Vec3(0.2, 0.3, 0.4)
+        scene.sky = Vec3(0.5, 0.6, 0.7)
+        scene.fog_density = 0.045
+        scene.light = DirectionalLight(
+            direction=Vec3(0.0, -1.0, 0.0), color=Vec3(0.9, 0.8, 0.7), intensity=2.5
+        )
+        scene.point_light = PointLight(
+            position=Vec3(1.0, 2.0, 3.0), color=Vec3(0.4, 0.5, 0.6), intensity=1.5, radius=9.0
+        )
+        restored = scene_from_dict(scene_to_dict(scene))
+        self.assertEqual(restored.camera.near, 0.25)
+        self.assertEqual(restored.camera.far, 250.0)
+        self.assertEqual(restored.ambient, Vec3(0.2, 0.3, 0.4))
+        self.assertEqual(restored.sky, Vec3(0.5, 0.6, 0.7))
+        self.assertEqual(restored.fog_density, 0.045)
+        self.assertEqual(restored.light, scene.light)
+        self.assertEqual(restored.point_light, scene.point_light)
+
+    def test_older_schema_one_documents_keep_engine_defaults(self):
+        scene = self._scene()
+        document = scene_to_dict(scene)
+        del document["environment"]
+        del document["camera"]["near"]
+        del document["camera"]["far"]
+        restored = scene_from_dict(document)
+        self.assertIsNone(restored.point_light)
+        self.assertEqual(restored.camera.near, Scene().camera.near)
+        self.assertEqual(restored.camera.far, Scene().camera.far)
+
+    def test_rejects_duplicate_node_ids(self):
+        document = {
+            "schema": SCENE_SNAPSHOT_VERSION,
+            "nodes": [{"id": "dup"}, {"id": "dup"}],
+        }
+        with self.assertRaises(ValueError):
+            scene_from_dict(document)
+
+    def test_rejects_unknown_parent_reference(self):
+        document = {
+            "schema": SCENE_SNAPSHOT_VERSION,
+            "nodes": [{"id": "child", "parent_id": "absent"}],
+        }
+        with self.assertRaises(ValueError):
+            scene_from_dict(document)
 
     def test_rejects_unknown_version(self):
         document = scene_to_dict(self._scene())

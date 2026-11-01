@@ -1,55 +1,16 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-state-history-v1",
-    "last_phase": "phase 3",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1793441667.793494,
-    "owner": "opencode:keystone",
-    "started_by": "opencode:keystone",
-    "continuations": [],
-    "completed_at": 1793441691.8001983
+    "task_id": "keystone-review-hardening-v1",
+    "last_phase": "phase 4",
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1793520292.554651,
+    "owner": "kilo:review",
+    "started_by": "kilo:review",
+    "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-physics-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/4] Physics primitives and broadphase: AABB low/high/contains/overlaps, RayHit/raycast with predicate, deterministic SpatialGrid insert/update/remove/query/pairs; unit tests green",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793432759.379312,
-      "timestamp_str": "2026-10-31 10:45:59",
-      "agent": "opencode:keystone-physics"
-    },
-    {
-      "task_id": "keystone-physics-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[4/4] Delivery ready: 210 tests, 6/6 project gates, ruff clean, README physics section, architecture/roadmap/acceptance and ADR-026 updated, codebase map current; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793432759.7334838,
-      "timestamp_str": "2026-10-31 10:45:59",
-      "agent": "opencode:keystone-physics",
-      "handoff": {
-        "state": "v0.21.0 broadphase, character controller, triggers and filtered raycasts",
-        "next": "asset registry/material graphs or renderer instancing",
-        "evidence": "210 tests, aikit check 6/6"
-      }
-    },
-    {
-      "task_id": "keystone-physics-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[3/4] Character and triggers: AABB character with wish velocity, gravity, swept X/Z/Y response, ground state and skin; TriggerVolume/Tracker sorted enter/exit/active; floor, wall, jump and trigger tests green",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793432760.4661477,
-      "timestamp_str": "2026-10-31 10:46:00",
-      "agent": "opencode:keystone-physics"
-    },
     {
       "task_id": "keystone-physics-v1",
       "phase": "completed",
@@ -255,6 +216,52 @@
       "timestamp": 1793441691.8001997,
       "timestamp_str": "2026-10-31 13:14:51",
       "agent": "opencode:keystone"
+    },
+    {
+      "task_id": "keystone-review-hardening-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan a correctness pass over the recent glTF, material-graph and scene-snapshot work: fix indexed normal generation, primitive-mode validation, node-cycle detection, normalized/sparse accessor handling, snapshot environment fidelity and malformed-document validation; sync docs and roadmap; ship with tests and gates",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793518951.2301283,
+      "timestamp_str": "2026-11-01 10:42:31",
+      "agent": "kilo:review",
+      "impact_assessment": {
+        "why": "The recent v0.23-v0.25 features were delivered without a focused adversarial review, and inspection found real correctness gaps: glTF normals are generated from vertex order rather than triangle indices, non-triangle primitives are misread as triangles, cyclic node graphs recurse instead of failing cleanly, normalized integer accessors yield unnormalized colors, sparse accessors silently decode as zeros, and scene snapshots drop environment/lighting state while accepting duplicate ids and dangling parents.",
+        "benefits": "Imported meshes shade correctly and malformed files fail with clear validation errors instead of wrong geometry, recursion or silent zeros; saved scenes restore their full visual environment and reject corrupt hierarchies; documentation stops claiming shipped features are future work.",
+        "risks": "contract: same public modules and schema versions, stricter validation may reject documents that previously loaded silently; dependency: stdlib only; concurrency: none, all pure decoding; state: scene snapshot documents gain optional camera and environment fields while staying schema 1 and backwards compatible",
+        "mitigation": "Failing-first tests for each bug, full pytest suite plus the project 6/6 Phase 4 gate, ruff and secret scan before commit"
+      }
+    },
+    {
+      "task_id": "keystone-review-hardening-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/3] glTF and snapshot correctness: normals now follow triangle indices; non-triangle modes, unknown material indices, sparse accessors and node cycles fail with ValueError; normalized integer accessors scale to unit range; snapshots preserve camera lens, ambient/background/sky, fog and lights and reject duplicate ids, dangling parents and self-parenting; material texture_name must resolve; 7 glTF, 6 snapshot and 1 material-graph regression tests added",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793520292.2136192,
+      "timestamp_str": "2026-11-01 11:04:52",
+      "agent": "kilo:review"
+    },
+    {
+      "task_id": "keystone-review-hardening-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Delivery ready: v0.25.1, full pytest and ruff clean, 6/6 project gates, codebase map refreshed, README snapshot section and roadmap corrected, ARCHITECTURE and ADR-031 updated; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793520292.554651,
+      "timestamp_str": "2026-11-01 11:04:52",
+      "agent": "kilo:review",
+      "handoff": {
+        "state": "v0.25.1 hardened glTF import and scene snapshots",
+        "next": "renderer instancing/PBR or replay runner",
+        "failed": "none",
+        "open": "no git remote configured for push",
+        "evidence": "full pytest, ruff, aikit check keystone 6/6"
+      }
     }
   ]
 }

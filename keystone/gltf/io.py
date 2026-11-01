@@ -19,6 +19,8 @@ _COMPONENT_FORMATS = {
     5126: ("f", 4),
 }
 _TYPE_COUNTS = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4, "MAT4": 16}
+_NORMALIZE_DIVISORS = {5120: 127.0, 5121: 255.0, 5122: 32767.0, 5123: 65535.0}
+_SIGNED_COMPONENTS = (5120, 5122)
 
 
 def read_source(source: object) -> tuple[str, Path]:
@@ -79,6 +81,8 @@ def read_accessor(
 ) -> list[Any]:
     if not isinstance(accessor, Mapping):
         raise TypeError("glTF accessor must be an object")
+    if "sparse" in accessor:
+        raise ValueError("glTF sparse accessors are not supported")
     if "bufferView" not in accessor:
         count = int(accessor.get("count", 0))
         return [0] * count
@@ -100,6 +104,12 @@ def read_accessor(
         raise ValueError(f"unsupported glTF accessor type {type_name}")
     comp_format, comp_size = _COMPONENT_FORMATS[component_type]
     type_count = _TYPE_COUNTS[type_name]
+    normalized = bool(accessor.get("normalized", False))
+    if normalized and component_type not in _NORMALIZE_DIVISORS:
+        raise ValueError(
+            f"glTF accessor component type {component_type} cannot be normalized"
+        )
+    normalize_divisor = _NORMALIZE_DIVISORS.get(component_type) if normalized else None
     count = int(accessor.get("count", 0))
     if count < 0:
         raise ValueError("glTF accessor count must be non-negative")
@@ -117,5 +127,10 @@ def read_accessor(
         if offset + comp_size * type_count > len(buffer):
             raise ValueError("glTF accessor reads past the end of its buffer")
         values = list(struct.unpack_from(f"<{type_count}{comp_format}", buffer, offset))
+        if normalize_divisor is not None:
+            if component_type in _SIGNED_COMPONENTS:
+                values = [max(-1.0, value / normalize_divisor) for value in values]
+            else:
+                values = [value / normalize_divisor for value in values]
         result.append(values[0] if type_count == 1 else tuple(values))
     return result

@@ -113,6 +113,14 @@ class MaterialGraphSerializationTest(unittest.TestCase):
         material = graph.evaluate(textures={"named": texture})
         self.assertEqual(material.texture, texture)
 
+    def test_material_texture_name_must_resolve(self):
+        graph = MaterialGraph(
+            nodes=(_node("out", "material", params=(("texture_name", "absent"),)),),
+            output="out",
+        )
+        with self.assertRaises(ValueError):
+            graph.evaluate(textures={})
+
 
 if __name__ == "__main__":
     unittest.main()

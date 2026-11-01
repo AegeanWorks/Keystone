@@ -82,6 +82,26 @@ def load_meshes(
             positions = [_as_vec3(value) for value in positions_raw]
             if len(positions) < 3:
                 raise ValueError(f"glTF mesh {mesh_index} needs at least three vertices")
+            mode = primitive.get("mode")
+            if mode is not None and int(mode) != 4:
+                raise ValueError(
+                    f"glTF mesh {mesh_index} primitive mode {mode} is not TRIANGLES"
+                )
+            indices_raw = None
+            if "indices" in primitive:
+                indices_raw = read_accessor(
+                    _accessor(document, int(primitive["indices"])),
+                    buffer_views,
+                    buffers,
+                )
+            if indices_raw is None:
+                indices = list(range(len(positions)))
+            else:
+                indices = [int(value) for value in indices_raw]
+            if not indices or len(indices) % 3 != 0:
+                raise ValueError(f"glTF mesh {mesh_index} indices must contain complete triangles")
+            if any(index < 0 or index >= len(positions) for index in indices):
+                raise ValueError(f"glTF mesh {mesh_index} has an out-of-range index")
             normals_raw = None
             if "NORMAL" in attributes:
                 normals_raw = read_accessor(
@@ -90,7 +110,7 @@ def load_meshes(
                     buffers,
                 )
             if normals_raw is None:
-                normals = _compute_normals(positions, list(range(len(positions))))
+                normals = _compute_normals(positions, indices)
             else:
                 normals = [_as_vec3(value) for value in normals_raw]
             if len(normals) != len(positions):
@@ -127,24 +147,11 @@ def load_meshes(
                         colors.append((1.0, 1.0, 1.0))
                 if len(colors) != len(positions):
                     raise ValueError(f"glTF mesh {mesh_index} color count does not match position count")
-            indices_raw = None
-            if "indices" in primitive:
-                indices_raw = read_accessor(
-                    _accessor(document, int(primitive["indices"])),
-                    buffer_views,
-                    buffers,
-                )
-            if indices_raw is None:
-                indices = list(range(len(positions)))
-            else:
-                indices = [int(value) for value in indices_raw]
-            if not indices or len(indices) % 3 != 0:
-                raise ValueError(f"glTF mesh {mesh_index} indices must contain complete triangles")
-            if any(index < 0 or index >= len(positions) for index in indices):
-                raise ValueError(f"glTF mesh {mesh_index} has an out-of-range index")
             material_index = primitive.get("material")
             if material_index is not None:
                 material_index = int(material_index)
+                if material_index < 0 or material_index >= len(materials):
+                    raise ValueError(f"glTF mesh {mesh_index} references an unknown material")
             mesh = MeshData(
                 positions=tuple(positions),
                 normals=tuple(normals),
