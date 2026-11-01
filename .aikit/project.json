@@ -22,7 +22,7 @@
   "ui_evidence": [
     "keystone/web/static/index.html"
   ],
-  "ui_checked_at": "2026-10-31",
+  "ui_checked_at": "2026-11-02",
   "ui_source": "detected",
   "mechanics": {
     "core": [

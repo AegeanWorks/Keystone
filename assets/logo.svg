@@ -1,13 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc" data-motif="pulse" data-layout="center">
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc" data-motif="cube" data-layout="grid">
   <title id="title">Keystone logo</title>
-  <desc id="desc">Project-specific pulse mark for Keystone; AegeanWorks identity.</desc>
+  <desc id="desc">Project-specific cube mark for Keystone; AegeanWorks identity.</desc>
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#07120d"/><stop offset="1" stop-color="#123030"/></linearGradient>
-    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#66f5bc"/><stop offset="1" stop-color="#8eaaf5"/></linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#130f07"/><stop offset="1" stop-color="#2b3012"/></linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <circle cx="256" cy="238" r="170" fill="none" stroke="#66f5bc" stroke-opacity="0.22" stroke-width="2"/><circle cx="256" cy="238" r="136" fill="none" stroke="#8eaaf5" stroke-opacity="0.20" stroke-width="2"/>
-  <g transform="translate(256 232) scale(1.62)" opacity="1.0"><path d="M-62 4H-36L-24 -34L-4 38L16 -24L30 4H62" fill="none" stroke="#66f5bc" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="-24" r="5" fill="#8eaaf5"/></g>
-  <text x="256" y="404" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="62" font-weight="700" fill="url(#mark)" letter-spacing="3">KE</text>
-  <text x="256" y="458" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="17" letter-spacing="6" fill="#F8FAFC" fill-opacity="0.55">AEGEANWORKS</text>
+  <g transform="translate(256 210) scale(1.45)" opacity="1.0"><path d="M0 -56L50 -28V28L0 56L-50 28V-28Z" fill="none" stroke="#f3da5e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 -56V0M-50 -28L0 0L50 -28M0 0V56" fill="none" stroke="#f3da5e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M-50 -28L0 0L0 56L-50 28Z" fill="#f3da5e" fill-opacity="0.10"/><path d="M50 -28L0 0L0 56L50 28Z" fill="#93f490" fill-opacity="0.10"/><circle cx="0" cy="0" r="6" fill="#93f490"/></g>
+  <text x="256" y="400" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="64" font-weight="700" fill="#F8FAFC" letter-spacing="2">KE</text><text x="256" y="438" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" letter-spacing="5" fill="#F8FAFC" fill-opacity="0.62">AEGEANWORKS</text>
 </svg>

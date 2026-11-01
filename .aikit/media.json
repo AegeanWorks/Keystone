@@ -5,40 +5,40 @@
   "has_ui": true,
   "ui_kind": "web",
   "palette": [
-    "#07120d",
-    "#123030",
-    "#66f5bc",
-    "#8eaaf5"
+    "#130f07",
+    "#2b3012",
+    "#f3da5e",
+    "#93f490"
   ],
-  "motif": "pulse",
-  "layout": "center",
+  "motif": "cube",
+  "layout": "grid",
   "assets": {
     "logo": {
       "path": "assets/logo.svg",
       "status": "approved",
       "commit": "",
-      "generated_at": "2026-11-01T10:45:47",
+      "generated_at": "2026-11-02T00:55:06",
       "review": {
         "status": "approved",
-        "reviewer": "agent:gemini",
+        "reviewer": "agent:kilo",
         "method": "structural",
-        "notes": "Keystone 3D game engine logo",
-        "score": null,
-        "reviewed_at": "2026-11-01T10:45:51"
+        "notes": "Reseed cube identity for the 3D engine: crisp isometric mark, KE monogram, valid SVG.",
+        "score": 89,
+        "reviewed_at": "2026-11-02T00:56:35"
       }
     },
     "social_preview": {
       "path": "assets/social-preview.svg",
       "status": "approved",
       "commit": "",
-      "generated_at": "2026-11-01T10:45:47",
+      "generated_at": "2026-11-02T00:55:06",
       "review": {
         "status": "approved",
-        "reviewer": "agent:gemini",
+        "reviewer": "agent:kilo",
         "method": "structural",
-        "notes": "Keystone 3D engine social preview",
-        "score": null,
-        "reviewed_at": "2026-11-01T10:45:51"
+        "notes": "Grid card: Keystone title, ENGINE kicker, tagline and chips legible, correct URL.",
+        "score": 89,
+        "reviewed_at": "2026-11-02T00:56:35"
       }
     }
   },
