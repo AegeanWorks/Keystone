@@ -1,6 +1,10 @@
 # Keystone
 
-[![Built with AIKit](https://img.shields.io/badge/built%20with-AIKit-6f42c1)](https://github.com/AegeanWorks/AIKit)
+<!-- aegean:media:start -->
+<p align="center"><img src="assets/social-preview.svg" alt="Keystone social preview" width="100%"></p>
+<p align="center"><a href="LICENSE"><img src="https://img.shields.io/badge/license-AL--1.1-2f9e44" alt="License"></a> <a href="https://github.com/AegeanWorks/AIKit"><img src="https://img.shields.io/badge/AIKit-integrated-6f42c1" alt="AIKit Integrated"></a></p>
+<!-- aegean:media:end -->
+
 
 ![Keystone engine sample](assets/engine.png)
 
@@ -499,16 +503,33 @@ assets.register_file("texture.logo", "assets/logo.png")  # PNG -> texture
 assets.refresh()  # re-reads changed files; keeps the last good payload on failure
 ```
 
-Each asset has a stable id, kind, content digest, source path and dependency list. `refresh()` returns a `ReloadReport` naming reloaded, unchanged, failed and missing ids, so a game can surface broken assets without crashing. The registry is synchronous and starts no thread; a game calls `refresh()` from its own loop. Material graphs and glTF import remain future work.
+Each asset has a stable id, kind, content digest, source path and dependency list. `refresh()` returns a `ReloadReport` naming reloaded, unchanged, failed and missing ids, so a game can surface broken assets without crashing. The registry is synchronous and starts no thread; a game calls `refresh()` from its own loop. Declarative material graphs and glTF 2.0 import build on the same payloads.
+
+## 💾 Scene Snapshots and Undo/Redo
+
+`scene_to_dict()` writes a versioned, JSON-safe snapshot; `scene_from_dict()` validates it and rebuilds the graph. Snapshots keep camera lens and orientation, ambient/background/sky colors, fog, directional and point lights, node identity, hierarchy, tags, layers, visibility and transforms, and reference meshes and materials by `AssetRegistry` id instead of embedding them. Duplicate ids, dangling parents and cyclic hierarchies are rejected.
+
+```python
+from keystone.history import History
+from keystone.scene_snapshot import scene_from_dict, scene_to_dict
+
+history = History(capacity=32)
+history.push(scene_to_dict(scene))
+snapshot = history.undo()
+if snapshot is not None:
+    restored = scene_from_dict(snapshot, registry=assets)
+```
+
+`History` deep-copies every snapshot, drops the oldest entries past capacity and clears the redo branch on a new push. Snapshot schema 1 accepts documents written before the environment fields were added and refuses unknown versions instead of guessing. The glTF importer similarly refuses sparse accessors rather than decoding them as zeros.
 
 ## 🗺️ Core Roadmap
 
 1. ~~Scene identity and optional ECS/component queries.~~ Implemented in v0.19.0.
 2. ~~Broadphase physics, character controller and trigger volumes.~~ Implemented in v0.21.0.
-3. ~~Asset registry and hot reload.~~ Implemented in v0.22.0; material graphs and glTF import remain.
+3. ~~Asset registry and hot reload.~~ Implemented in v0.22.0; ~~material graphs~~ in v0.23.0; ~~glTF import~~ in v0.24.0.
 4. Renderer instancing, shadows, PBR and post-processing.
 5. Input rebinding, audio mixer and buses.
-6. Scene/save schema versioning and replay/undo tooling.
+6. ~~Scene/save schema versioning and replay/undo tooling.~~ Implemented in v0.25.0.
 7. Editor/inspector, asset browser and profiler; the v0.20.0 web console covers discovery, simulation and scene preview.
 8. AI observation/action adapters that consume the frame report and command log.
 
@@ -524,6 +545,12 @@ python aikit.py check keystone --strict
 ```
 
 The project gate covers tests, lint, mechanics, hygiene, guidelines and secrets.
+
+<!-- aegean:brand-assets:start -->
+## 🎨 Brand Assets
+
+> **AI-Generated Brand Artwork.** The banner and logo are **AI-generated brand assets**. They are illustrative and may not literally depict every feature or the full project scope.
+<!-- aegean:brand-assets:end -->
 
 ## 📜 License
 

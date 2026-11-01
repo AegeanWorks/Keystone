@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "name": "keystone",
+  "repo": "Keystone",
+  "has_ui": true,
+  "ui_kind": "web",
+  "palette": [
+    "#07120d",
+    "#123030",
+    "#66f5bc",
+    "#8eaaf5"
+  ],
+  "motif": "pulse",
+  "layout": "center",
+  "assets": {
+    "logo": {
+      "path": "assets/logo.svg",
+      "status": "approved",
+      "commit": "",
+      "generated_at": "2026-11-01T10:45:47",
+      "review": {
+        "status": "approved",
+        "reviewer": "agent:gemini",
+        "method": "structural",
+        "notes": "Keystone 3D game engine logo",
+        "score": null,
+        "reviewed_at": "2026-11-01T10:45:51"
+      }
+    },
+    "social_preview": {
+      "path": "assets/social-preview.svg",
+      "status": "approved",
+      "commit": "",
+      "generated_at": "2026-11-01T10:45:47",
+      "review": {
+        "status": "approved",
+        "reviewer": "agent:gemini",
+        "method": "structural",
+        "notes": "Keystone 3D engine social preview",
+        "score": null,
+        "reviewed_at": "2026-11-01T10:45:51"
+      }
+    }
+  },
+  "screenshots": []
+}
