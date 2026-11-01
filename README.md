@@ -415,7 +415,9 @@ keystone/
 ├── assets/
 │   ├── octahedron.obj        <- generic sample OBJ
 │   ├── engine.png            <- sample frame
-│   └── engine.json           <- schema-4 sample frame report
+│   ├── engine.json           <- schema-4 sample frame report
+│   ├── logo.svg              <- project logo
+│   └── social-preview.svg    <- repository social preview
 ├── docs/
 │   ├── ARCHITECTURE.md       <- core layers, contract and roadmap
 │   └── AI_GUIDE.md           <- discover, simulate, verify, render and compare
