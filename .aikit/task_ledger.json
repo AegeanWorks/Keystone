@@ -3,25 +3,15 @@
   "active_task": {
     "task_id": "keystone-format-hardening-v2",
     "last_phase": "phase 4",
-    "active_phase": 4,
-    "status": "in_progress",
+    "active_phase": 5,
+    "status": "completed",
     "updated_at": 1793545281.4674802,
     "owner": "kilo:review",
     "started_by": "kilo:review",
-    "continuations": []
+    "continuations": [],
+    "completed_at": 1793545482.2394297
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-asset-registry-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[3/4] Asset file sources and hot reload: asset_io module with AssetSource, Fingerprint, ReloadReport, default loaders for OBJ/PNG, kind_from_suffix, load_asset and refresh; registry.register_file binds sources; refresh reports reloaded/unchanged/failed/missing with persistent last-good fallback; dependencies survive reload; 228 tests, ruff clean, 6/6 gates; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793439041.8088284,
-      "timestamp_str": "2026-10-31 12:30:41",
-      "agent": "opencode:keystone"
-    },
     {
       "task_id": "keystone-asset-registry-v1",
       "phase": "phase 4",
@@ -269,6 +259,16 @@
         "open": "none",
         "evidence": "full pytest, ruff, aikit check keystone 6/6"
       }
+    },
+    {
+      "task_id": "keystone-format-hardening-v2",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-format-hardening-v2' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793545482.2394314,
+      "timestamp_str": "2026-11-01 18:04:42",
+      "agent": "kilo:review"
     }
   ]
 }
