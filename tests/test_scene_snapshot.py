@@ -100,6 +100,38 @@ class SceneSnapshotTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             scene_from_dict(document)
 
+    def test_rejects_asset_kind_mismatch(self):
+        registry = AssetRegistry()
+        registry.register("material.only", Material(color=Vec3(1.0, 0.0, 0.0)))
+        document = {
+            "schema": SCENE_SNAPSHOT_VERSION,
+            "nodes": [{"id": "node", "mesh": "material.only"}],
+        }
+        with self.assertRaises(ValueError):
+            scene_from_dict(document, registry=registry)
+
+    def test_rejects_non_string_node_ids_and_asset_references(self):
+        with self.assertRaises(TypeError):
+            scene_from_dict({"schema": SCENE_SNAPSHOT_VERSION, "nodes": [{"id": 5}]})
+        with self.assertRaises(TypeError):
+            scene_from_dict(
+                {
+                    "schema": SCENE_SNAPSHOT_VERSION,
+                    "nodes": [{"id": "node", "mesh": 5}],
+                }
+            )
+
+    def test_rejects_non_mapping_camera_and_transform(self):
+        with self.assertRaises(TypeError):
+            scene_from_dict({"schema": SCENE_SNAPSHOT_VERSION, "camera": []})
+        with self.assertRaises(TypeError):
+            scene_from_dict(
+                {
+                    "schema": SCENE_SNAPSHOT_VERSION,
+                    "nodes": [{"id": "node", "transform": []}],
+                }
+            )
+
     def test_rejects_unknown_version(self):
         document = scene_to_dict(self._scene())
         document["schema"] = 99

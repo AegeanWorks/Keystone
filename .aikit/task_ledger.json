@@ -1,56 +1,16 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-review-hardening-v1",
+    "task_id": "keystone-format-hardening-v2",
     "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1793520292.554651,
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1793545281.4674802,
     "owner": "kilo:review",
     "started_by": "kilo:review",
-    "continuations": [],
-    "completed_at": 1793520670.9658668
+    "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-asset-registry-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/4] Plan an asset registry with stable IDs and content hashes, disk loaders for textures and OBJ meshes, dependency-aware records, and last-good hot reload; then wire the cube demo and docs/ADR",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793438042.1767063,
-      "timestamp_str": "2026-10-31 12:14:02",
-      "agent": "opencode:keystone",
-      "impact_assessment": {
-        "why": "The roadmap's next core system is assets: meshes, materials and textures are anonymous objects passed directly to nodes, so games cannot address, deduplicate, inspect or hot-reload them, and the demo cannot prove asset identity or refresh.",
-        "benefits": "Games get one registry for mesh/material/texture assets with stable IDs, content digests, duplicate detection, dependency tracking and a refresh report; PNG and OBJ files load through the same contract; a broken or missing file keeps the last good payload; no new dependencies.",
-        "risks": "contract: new public keystone.assets module plus AssetRegistry/AssetRecord/ReloadReport exports and version 0.22.0, no report or web schema change; dependency: stdlib plus the existing geometry, texture, obj_loader and png modules only; concurrency: registry is caller-owned, refresh is synchronous and swaps one record per successful load, no background thread; state: no persisted files, source fingerprints live in memory, missing or broken files keep the last good payload",
-        "mitigation": "Failing-first tests for ID validation, kind inference, conflicts, digests, duplicates, dependencies, unchanged/reload/failure/missing/recovery refresh paths, custom loaders and wrong payloads; wire the demo through the registry; run the full 6/6 project gate and deterministic simulation before delivery"
-      }
-    },
-    {
-      "task_id": "keystone-asset-registry-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/4] Asset registry core: stable ids, kind inference, content digests for mesh/material/texture, duplicate groups, sorted dependencies with missing reports, JSON-safe describe, remove/clear and public keystone.AssetRegistry export; 219 tests, ruff clean, 6/6 gates, codebase map refreshed; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793438187.192473,
-      "timestamp_str": "2026-10-31 12:16:27",
-      "agent": "opencode:keystone"
-    },
-    {
-      "task_id": "keystone-asset-registry-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/4] Asset registry core: stable ids, kind inference, content digests for mesh/material/texture, duplicate groups, sorted dependencies with missing reports, JSON-safe describe, remove/clear and public keystone.AssetRegistry export; README tree updated for assets.py and test_assets.py after strict verification caught the drift; 219 tests, ruff clean, 6/6 gates; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793438248.769191,
-      "timestamp_str": "2026-10-31 12:17:28",
-      "agent": "opencode:keystone"
-    },
     {
       "task_id": "keystone-asset-registry-v1",
       "phase": "phase 3",
@@ -263,6 +223,52 @@
       "timestamp": 1793520670.9658682,
       "timestamp_str": "2026-11-01 11:11:10",
       "agent": "kilo:review"
+    },
+    {
+      "task_id": "keystone-format-hardening-v2",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan a second format pass over the last three commits: add GLB container import, validate glTF material texture indices and accessor view bounds, enforce snapshot asset kinds and field types, and remove the quadratic asset lookup; tests, ADR, docs and version bump",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793534741.5368292,
+      "timestamp_str": "2026-11-01 15:05:41",
+      "agent": "kilo:review",
+      "impact_assessment": {
+        "why": "The recent glTF and snapshot hardening still leaves real gaps: binary .glb files are rejected as invalid UTF-8 JSON, material baseColorTexture indices are silently dropped when out of range, accessor byte offsets can read outside their declared bufferView, and scene snapshots accept a material asset as a node mesh and coerce non-string ids. These failures are silent or surface as confusing downstream errors.",
+        "benefits": "Keystone imports standard GLB bundles and fails malformed glTF and snapshot documents early with precise errors; asset references are type-checked, and snapshot serialization scales linearly instead of scanning the whole registry per node.",
+        "risks": "contract: same public modules, GLB added to load_gltf input and version 0.26.0; stricter validation may reject previously accepted malformed documents; dependency: stdlib only; concurrency: none, pure decoding; state: no persisted format change beyond accepting GLB input",
+        "mitigation": "Failing-first tests for GLB JSON and BIN chunks, texture index validation, accessor bounds, snapshot kind mismatch and non-string ids; full pytest, ruff and 6/6 project gates before commit"
+      }
+    },
+    {
+      "task_id": "keystone-format-hardening-v2",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/3] GLB and validation: load_gltf accepts GLB v2 JSON and BIN chunks from bytes or files; material texture indices, accessor/bufferView offsets and view bounds are validated; snapshots require string ids, reject non-mapping camera/transform, enforce mesh/material asset kinds and use a linear payload-to-id index; 8 glTF and 3 snapshot regressions added",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793545281.0847957,
+      "timestamp_str": "2026-11-01 18:01:21",
+      "agent": "kilo:review"
+    },
+    {
+      "task_id": "keystone-format-hardening-v2",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Delivery ready: v0.26.0, full pytest and ruff clean, 6/6 project gates, codebase map refreshed, README glTF/GLB section and roadmap corrected, ARCHITECTURE and ADR-032 updated; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793545281.4674802,
+      "timestamp_str": "2026-11-01 18:01:21",
+      "agent": "kilo:review",
+      "handoff": {
+        "state": "v0.26.0 GLB import and stricter glTF/snapshot validation",
+        "next": "renderer instancing/PBR or replay runner",
+        "failed": "none",
+        "open": "none",
+        "evidence": "full pytest, ruff, aikit check keystone 6/6"
+      }
     }
   ]
 }

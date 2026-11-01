@@ -16,6 +16,15 @@ def _data_uri(data):
     return "data:application/octet-stream;base64," + base64.b64encode(data).decode("ascii")
 
 
+def _glb_bytes(document, binary_chunk):
+    json_data = json.dumps(document).encode("utf-8")
+    json_data += b" " * ((4 - len(json_data) % 4) % 4)
+    binary_data = binary_chunk + b"\x00" * ((4 - len(binary_chunk) % 4) % 4)
+    chunks = struct.pack("<II", len(json_data), 0x4E4F534A) + json_data
+    chunks += struct.pack("<II", len(binary_data), 0x004E4942) + binary_data
+    return struct.pack("<4sII", b"glTF", 2, 12 + len(chunks)) + chunks
+
+
 def _triangle_gltf(*, translation=(0.0, 0.0, 0.0), color=(0.2, 0.4, 0.6), roughness=0.25):
     positions = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
     buffer_data = struct.pack("<" + "f" * len(positions), *positions)
@@ -181,6 +190,47 @@ class GltfImportTest(unittest.TestCase):
             "scenes": [{"nodes": [0]}],
             "nodes": [{"children": [1]}, {"children": [0]}],
         }
+        with self.assertRaises(ValueError):
+            load_gltf(document)
+
+    def test_loads_a_glb_container(self):
+        document = _triangle_gltf()
+        positions = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+        buffer_data = struct.pack("<" + "f" * len(positions), *positions)
+        document["buffers"] = [{"byteLength": len(buffer_data)}]
+        imported = load_gltf(_glb_bytes(document, buffer_data))
+        self.assertEqual(imported.meshes[0].triangle_count(), 1)
+
+    def test_loads_a_glb_file(self):
+        document = _triangle_gltf()
+        positions = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+        buffer_data = struct.pack("<" + "f" * len(positions), *positions)
+        document["buffers"] = [{"byteLength": len(buffer_data)}]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "sample.glb"
+            path.write_bytes(_glb_bytes(document, buffer_data))
+            imported = load_gltf(path)
+            self.assertEqual(imported.meshes[0].triangle_count(), 1)
+
+    def test_rejects_truncated_glb_data(self):
+        with self.assertRaises(ValueError):
+            load_gltf(b"glTF\x02\x00\x00\x00\xff\xff\xff\xff")
+
+    def test_rejects_unknown_material_texture_indices(self):
+        document = _triangle_gltf()
+        document["materials"][0]["pbrMetallicRoughness"]["baseColorTexture"] = {"index": 7}
+        with self.assertRaises(ValueError):
+            load_gltf(document)
+
+    def test_rejects_negative_accessor_offsets(self):
+        document = _triangle_gltf()
+        document["accessors"][0]["byteOffset"] = -4
+        with self.assertRaises(ValueError):
+            load_gltf(document)
+
+    def test_rejects_accessor_reads_outside_the_buffer_view(self):
+        document = _triangle_gltf()
+        document["bufferViews"][0]["byteLength"] = 8
         with self.assertRaises(ValueError):
             load_gltf(document)
 

@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `84`
 - **Total Classes**: `106`
-- **Total Top-Level Functions**: `117`
-- **Total Class Methods**: `564`
-- **Total Source Lines**: `9886`
+- **Total Top-Level Functions**: `122`
+- **Total Class Methods**: `573`
+- **Total Source Lines**: `10072`
 
 ---
 
@@ -242,12 +242,14 @@
 ### [`keystone/gltf/io.py`](keystone/gltf/io.py)
 > *glTF source reading, buffers and typed accessor decoding.*
 
-**Size**: `136` lines (`5442` bytes)
+**Size**: `210` lines (`8510` bytes)
 
 **Functions:**
-- `def read_source(source)` - *Return (json text, base directory) for a path, JSON text or bytes.*
+- `def _decode_glb(data)`
+- `def _decode_text(data)`
+- `def read_source(source)` - *Return (json text, base directory, GLB binary chunk) for a source.*
 - `def decode_data_uri(uri)`
-- `def load_buffers(document, base_dir)`
+- `def load_buffers(document, base_dir, binary_chunk)`
 - `def read_accessor(accessor, buffer_views, buffers)`
 
 ---
@@ -255,7 +257,7 @@
 ### [`keystone/gltf/loader.py`](keystone/gltf/loader.py)
 > *Top-level glTF import orchestration.*
 
-**Size**: `77` lines (`2759` bytes)
+**Size**: `77` lines (`2792` bytes)
 
 **Classes:**
 - `class GltfImport` - *The result of importing one glTF document.*
@@ -268,7 +270,7 @@
 ### [`keystone/gltf/materials.py`](keystone/gltf/materials.py)
 > *glTF material conversion.*
 
-**Size**: `46` lines (`1799` bytes)
+**Size**: `49` lines (`1953` bytes)
 
 **Functions:**
 - `def load_materials(document, textures)`
@@ -747,7 +749,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `253` lines (`10776` bytes)
+**Size**: `280` lines (`11480` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)`
@@ -758,7 +760,9 @@
 - `def _point_light_from_dict(data)`
 - `def _transform_to_dict(transform)`
 - `def _transform_from_dict(data)`
-- `def _asset_id(payload, registry)`
+- `def _payload_asset_ids(registry)`
+- `def _required_node_id(raw)`
+- `def _restore_asset(registry, asset_id, expected_kind, label)`
 - `def scene_to_dict(scene, registry)` - *Serialize a scene to a versioned, JSON-safe dictionary.*
 - `def scene_from_dict(data, registry)` - *Rebuild a scene from a versioned snapshot.*
 
@@ -1179,7 +1183,7 @@
 ### [`tests/test_gltf.py`](tests/test_gltf.py)
 > *Unit tests for dependency-free glTF 2.0 import.*
 
-**Size**: `189` lines (`8238` bytes)
+**Size**: `239` lines (`10529` bytes)
 
 **Classes:**
 - `class GltfImportTest`
@@ -1197,9 +1201,16 @@
   - Method `.test_rejects_unknown_material_indices()`
   - Method `.test_rejects_sparse_accessors_instead_of_silently_zeroing()`
   - Method `.test_rejects_cyclic_node_hierarchies()`
+  - Method `.test_loads_a_glb_container()`
+  - Method `.test_loads_a_glb_file()`
+  - Method `.test_rejects_truncated_glb_data()`
+  - Method `.test_rejects_unknown_material_texture_indices()`
+  - Method `.test_rejects_negative_accessor_offsets()`
+  - Method `.test_rejects_accessor_reads_outside_the_buffer_view()`
 
 **Functions:**
 - `def _data_uri(data)`
+- `def _glb_bytes(document, binary_chunk)`
 - `def _triangle_gltf(*, translation, color, roughness)`
 
 ---
@@ -1459,7 +1470,7 @@
 ### [`tests/test_scene_snapshot.py`](tests/test_scene_snapshot.py)
 > *Unit tests for versioned scene snapshots.*
 
-**Size**: `128` lines (`5416` bytes)
+**Size**: `160` lines (`6678` bytes)
 
 **Classes:**
 - `class SceneSnapshotTest`
@@ -1469,6 +1480,9 @@
   - Method `.test_older_schema_one_documents_keep_engine_defaults()`
   - Method `.test_rejects_duplicate_node_ids()`
   - Method `.test_rejects_unknown_parent_reference()`
+  - Method `.test_rejects_asset_kind_mismatch()`
+  - Method `.test_rejects_non_string_node_ids_and_asset_references()`
+  - Method `.test_rejects_non_mapping_camera_and_transform()`
   - Method `.test_rejects_unknown_version()`
   - Method `.test_asset_registry_round_trip_attaches_mesh_and_material()`
 

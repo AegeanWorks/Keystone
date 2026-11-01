@@ -437,7 +437,7 @@ keystone/
 │   ├── test_triggers.py      <- enter/exit tracking and multiple volumes
 │   ├── test_assets.py        <- registry ids, digests, dependencies and reload
 │   ├── test_material_graph.py <- declarative material graph evaluation
-│   ├── test_gltf.py           <- glTF 2.0 import and texture loading
+│   ├── test_gltf.py           <- glTF/GLB import and texture loading
 │   ├── test_history.py        <- bounded undo/redo history
 │   ├── test_scene_snapshot.py <- versioned scene save/load
 │   ├── test_plugin.py        <- GameModule contract and loader
@@ -505,11 +505,22 @@ assets.register_file("texture.logo", "assets/logo.png")  # PNG -> texture
 assets.refresh()  # re-reads changed files; keeps the last good payload on failure
 ```
 
-Each asset has a stable id, kind, content digest, source path and dependency list. `refresh()` returns a `ReloadReport` naming reloaded, unchanged, failed and missing ids, so a game can surface broken assets without crashing. The registry is synchronous and starts no thread; a game calls `refresh()` from its own loop. Declarative material graphs and glTF 2.0 import build on the same payloads.
+Each asset has a stable id, kind, content digest, source path and dependency list. `refresh()` returns a `ReloadReport` naming reloaded, unchanged, failed and missing ids, so a game can surface broken assets without crashing. The registry is synchronous and starts no thread; a game calls `refresh()` from its own loop.
+
+## 🧱 glTF and GLB Import
+
+`load_gltf()` accepts a `.gltf`/`.glb` path, JSON text or a parsed document:
+
+```python
+from keystone.gltf import load_gltf
+imported = load_gltf("assets/robot.glb", registry=assets)
+```
+
+It decodes external, base64 and GLB buffers, typed and normalized accessors, indexed triangle meshes, PBR materials, PNG textures and TRS or matrix node hierarchies. Non-triangle modes, sparse accessors, bad indices/offsets and cyclic hierarchies raise instead of producing wrong geometry.
 
 ## 💾 Scene Snapshots and Undo/Redo
 
-`scene_to_dict()` writes a versioned, JSON-safe snapshot; `scene_from_dict()` validates it and rebuilds the graph. Snapshots keep camera lens and orientation, ambient/background/sky colors, fog, directional and point lights, node identity, hierarchy, tags, layers, visibility and transforms, and reference meshes and materials by `AssetRegistry` id instead of embedding them. Duplicate ids, dangling parents and cyclic hierarchies are rejected.
+`scene_to_dict()` writes a versioned JSON snapshot; `scene_from_dict()` validates and rebuilds it. Snapshots keep camera, environment, lights, node identity, hierarchy, tags, layers, visibility and transforms, and reference meshes/materials by `AssetRegistry` id. Duplicate ids, dangling parents, unknown asset kinds and cycles are rejected.
 
 ```python
 from keystone.history import History
@@ -518,17 +529,15 @@ from keystone.scene_snapshot import scene_from_dict, scene_to_dict
 history = History(capacity=32)
 history.push(scene_to_dict(scene))
 snapshot = history.undo()
-if snapshot is not None:
-    restored = scene_from_dict(snapshot, registry=assets)
 ```
 
-`History` deep-copies every snapshot, drops the oldest entries past capacity and clears the redo branch on a new push. Snapshot schema 1 accepts documents written before the environment fields were added and refuses unknown versions instead of guessing. The glTF importer similarly refuses sparse accessors rather than decoding them as zeros.
+`History` deep-copies snapshots, drops the oldest past capacity and clears redo on push; schema 1 accepts older documents and refuses unknown versions.
 
 ## 🗺️ Core Roadmap
 
 1. ~~Scene identity and optional ECS/component queries.~~ Implemented in v0.19.0.
 2. ~~Broadphase physics, character controller and trigger volumes.~~ Implemented in v0.21.0.
-3. ~~Asset registry and hot reload.~~ Implemented in v0.22.0; ~~material graphs~~ in v0.23.0; ~~glTF import~~ in v0.24.0.
+3. ~~Asset registry and hot reload.~~ Implemented in v0.22.0; ~~material graphs~~ in v0.23.0; ~~glTF import~~ in v0.24.0; ~~GLB containers~~ in v0.26.0.
 4. Renderer instancing, shadows, PBR and post-processing.
 5. Input rebinding, audio mixer and buses.
 6. ~~Scene/save schema versioning and replay/undo tooling.~~ Implemented in v0.25.0.

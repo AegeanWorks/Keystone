@@ -30,7 +30,7 @@ class GltfImport:
 
 def load_gltf(source: object, registry: Any = None) -> GltfImport:
     """Load a glTF 2.0 document from a path, JSON text or bytes."""
-    text, base_dir = read_source(source)
+    text, base_dir, binary_chunk = read_source(source)
     try:
         document = json.loads(text)
     except json.JSONDecodeError as exc:
@@ -41,10 +41,10 @@ def load_gltf(source: object, registry: Any = None) -> GltfImport:
     version = ""
     if isinstance(asset, Mapping):
         version = str(asset.get("version", ""))
-    if not version.startswith("2"):
+    if version.split(".", 1)[0] != "2":
         raise ValueError("glTF asset version must be 2.x")
 
-    buffers = load_buffers(document, base_dir)
+    buffers = load_buffers(document, base_dir, binary_chunk)
     buffer_views = document.get("bufferViews", [])
     if not isinstance(buffer_views, list):
         raise TypeError("glTF bufferViews must be a list")

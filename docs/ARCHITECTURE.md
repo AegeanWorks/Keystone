@@ -1,6 +1,6 @@
 # Keystone Architecture
 
-**Status:** implemented in v0.25.1 - core-only engine with scene identity, textured materials, physics systems, human UI, a local web console, an asset registry with hot reload, material graphs, glTF 2.0 import and versioned scene snapshots with undo/redo
+**Status:** implemented in v0.26.0 - core-only engine with scene identity, textured materials, physics systems, human UI, a local web console, an asset registry with hot reload, material graphs, glTF 2.0 import and versioned scene snapshots with undo/redo
 **Boundary:** `keystone/` is game-agnostic; games are external modules.
 
 ## 1. What Keystone Is
@@ -145,7 +145,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Assets | Implemented | indexed meshes, materials, RGBA textures, OBJ, PNG; asset registry with stable ids, digests, dependencies and hot reload |
 | State snapshots | Implemented | versioned scene save/load with camera, environment, asset references and bounded undo/redo history; duplicate ids, dangling parents and cycles rejected |
 | Material graphs | Implemented | declarative node graphs evaluating to Material: color, float, checker, texture, mix and material nodes, cycle detection, JSON serialization |
-| glTF 2.0 | Implemented | dependency-free importer for meshes, materials, textures and scenes; external and embedded buffers, normalized accessors, PNG textures, TRS and matrix transforms; sparse accessors and non-triangle primitives rejected |
+| glTF 2.0 | Implemented | dependency-free importer for meshes, materials, textures and scenes; GLB containers, external and embedded buffers, normalized accessors, PNG textures, TRS and matrix transforms; sparse accessors and non-triangle primitives rejected |
 | Renderer | Implemented | OpenGL 3.3, sky, lights, fog, textures, readback |
 | Runtime | Implemented | fixed clock, input, loop, screenshots |
 | Plugin | Implemented | GameModule + loader |
@@ -166,7 +166,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 
 1. **Scene identity and components** — implemented in v0.19.0; stable node IDs, tags/layers and typed component queries.
 2. **Physics** — implemented in v0.21.0; broadphase, AABB character controller, triggers and filtered raycasts.
-3. **Assets** — asset registry and hot reload in v0.22.0; material graphs in v0.23.0; glTF 2.0 import in v0.24.0; snapshots and undo/redo in v0.25.0, hardened in v0.25.1.
+3. **Assets** — asset registry and hot reload in v0.22.0; material graphs in v0.23.0; glTF 2.0 import in v0.24.0; snapshots and undo/redo in v0.25.0; GLB containers and stricter format validation in v0.26.0.
 4. **Renderer** — instancing/batching, shadows, PBR, post-processing, sRGB/linear color.
 5. **Input/audio** — rebinding, action contexts, mixer and buses.
 6. **Serialization/replay** — versioned scene snapshot format and undo/redo in v0.25.0; replay runner remains.

@@ -32,8 +32,11 @@ def load_materials(document: Mapping[str, Any], textures: list[Any]) -> list[Mat
         base_texture = pbr.get("baseColorTexture")
         if isinstance(base_texture, Mapping) and "index" in base_texture:
             texture_index = int(base_texture["index"])
-            if 0 <= texture_index < len(textures):
-                texture = textures[texture_index]
+            if texture_index < 0 or texture_index >= len(textures):
+                raise ValueError(
+                    f"glTF material {index} references unknown texture {texture_index}"
+                )
+            texture = textures[texture_index]
         materials.append(
             Material(
                 color=color,

@@ -276,3 +276,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
   4. Extend scene snapshot schema 1 with optional camera lens and environment fields (ambient, background, sky, fog, directional and point lights) and reject duplicate ids, unknown parents and self-parenting. Older schema-1 documents still load with engine defaults.
   5. Make a material graph's `texture_name` fail when it cannot resolve, matching texture nodes.
 - **Consequences**: Malformed or unsupported glTF and snapshot documents fail early with actionable errors instead of producing wrong geometry or state. Snapshots round-trip the visible environment, and schema 1 stays backwards compatible because every new field is optional.
+
+### ADR-032: Add GLB containers and tighten glTF and snapshot validation
+
+- **Date**: 2026-11-01
+- **Status**: Accepted
+- **Context**: A second review of the v0.25.1 format work found that binary `.glb` files failed as invalid UTF-8 JSON, out-of-range material texture indices were silently ignored, accessor offsets and bufferView bounds were not checked, snapshots could attach a material asset as a node mesh, non-string ids were coerced, and asset lookup scanned the whole registry once per distinct payload.
+- **Decision**:
+  1. Parse GLB version 2 headers and chunks in `keystone.gltf.io`, feed the first buffer without a uri from the BIN chunk, and reject truncated containers, wrong versions, duplicate JSON chunks and invalid buffer lengths.
+  2. Validate accessor and bufferView offsets against the declared bufferView byteLength and reject material texture indices that do not resolve.
+  3. Require string snapshot node ids, reject non-mapping camera and transform fields, validate asset kinds on reattachment, and build one payload-to-id index per snapshot instead of scanning the registry per node.
+- **Consequences**: Standard GLB bundles import through the same path as JSON glTF. Malformed glTF and snapshot documents fail with precise errors instead of silently losing textures or attaching the wrong payload. Snapshot schema 1 is unchanged; only validation is stricter and serialization is linear in registry size.
