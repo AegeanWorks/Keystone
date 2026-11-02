@@ -338,13 +338,12 @@ The report contains:
 
 - `schema`, report field schema and a stable report `hash`;
 - image path, dimensions, PNG and RGBA SHA-256, plus an optional pixel-diff summary;
-- mean RGB/luminance, content pixels/ratio, content bounding box, dominant colors and an 8×8 luminance grid;
-- camera parameters;
-- every scene node's world position, visibility, triangle count and projected screen center/bounding box;
-- each material's color, specular, shininess, checker scale and optional texture name/dimensions/SHA-256;
+- mean RGB/luminance, content box/ratio, dominant colors, 8×8 grid;
+- camera plus per-node world/screen box, visibility and triangles;
+- material color/specular/shininess/checker plus texture metadata;
 - when `--ui` is active: `ui.visible`, `ui.paused`, every label's text/position/scale/color and every button's label, action, rect, selection and hover state. `ui` is `null` for clean captures.
 
-This lets an AI model compare a frame, a scene graph, a deterministic simulation and the human interface without guessing from pixels alone. `keystone.analysis.compare_reports(before, after)` returns image/report equality, luminance and content-ratio deltas, bbox changes, added/removed/changed nodes, and added/removed/moved labels and buttons. It does not claim to measure visual quality.
+AI clients diff frames/scenes/sim/UI via `compare_reports(before, after)` (image/report equality, stat/node/label deltas; no visual-quality claim).
 
 ## 📦 What's Inside
 
@@ -418,6 +417,7 @@ keystone/
 │       ├── context.py        <- GLFW window and OpenGL 3.3 context
 │       ├── shader.py         <- GLSL compilation and uniforms
 │       ├── mesh_buffer.py    <- VAO/VBO/EBO upload and drawing
+│       ├── instancing.py     <- deterministic instancing groups
 │       ├── texture_buffer.py <- 2D texture upload, mipmaps and cleanup
 │       ├── ui_renderer.py    <- screen-space alpha-blended UI draw
 │       └── renderer.py       <- forward renderer, sky, lights, readback
@@ -442,12 +442,19 @@ keystone/
 │   ├── test_clock.py         <- fixed-step clock
 │   ├── test_physics.py       <- rays, AABB, sphere queries and raycasts
 │   ├── test_broadphase.py    <- spatial-grid queries, updates and pairs
+│   ├── test_particles.py     <- seeded emitters, forces and reports
+│   ├── test_pbr.py           <- metallic/roughness/emissive shading
 │   ├── test_character.py     <- floor, wall, jump and validation behavior
 │   ├── test_triggers.py      <- enter/exit tracking and multiple volumes
+│   ├── test_agents.py        <- AI adapters, validation and audit trail
+│   ├── test_animation.py     <- clips, blending and timed events
 │   ├── test_assets.py        <- registry ids, digests, dependencies and reload
+│   ├── test_audio.py         <- synth, mixer buses and WAV I/O
+│   ├── test_batch.py         <- batch planning and world-space merge
 │   ├── test_material_graph.py <- declarative material graph evaluation
 │   ├── test_gltf.py           <- glTF/GLB import and texture loading
 │   ├── test_history.py        <- bounded undo/redo history
+│   ├── test_instancing.py     <- hardware-instancing groups and draws
 │   ├── test_scene_snapshot.py <- versioned scene save/load
 │   ├── test_plugin.py        <- GameModule contract and loader
 │   ├── test_replay.py        <- command log and hashes
@@ -484,13 +491,10 @@ Engine
   -> UiRenderer.draw(HumanOverlay.build(state))
 ```
 
-- `keystone.*` imports only the standard library, declared dependencies and other core modules.
-- A game imports the public `keystone` API; it never reaches into another game.
-- `GameModule` is a five-method Protocol, not an inheritance tree.
-- `ActionState` is a frozen DTO; bindings live in `InputMap`.
-- `HudState` is a frozen DTO; the overlay reads it and never writes game state.
-- `CommandLog` records deterministic action frames; `stable_hash()` fingerprints snapshots.
-- `write_json_atomic()` replaces state with a temp file, fsync, `.bak` and `os.replace`.
+- `keystone.*` uses stdlib plus declared deps only.
+- Games use the public API and never reach into another game.
+- `GameModule` is a five-method Protocol; `ActionState`/`HudState` are frozen DTOs.
+- `CommandLog`/`stable_hash()` fingerprint deterministic frames; `write_json_atomic()` uses temp+fsync+replace.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the dependency rules, module responsibilities, acceptance criteria and core roadmap.
 
@@ -500,21 +504,12 @@ Keystone keeps meshes, materials and textures in a caller-owned `AssetRegistry`:
 
 ```python
 from keystone.assets import AssetRegistry
-from keystone.geometry import Material
-from keystone.primitives import cube
-from keystone.texture import TextureData
-
 assets = AssetRegistry()
-assets.register("mesh.cube", cube(1.4))
-checker = TextureData.checker(64, name="floor-checker")
-assets.register("texture.floor", checker)
-assets.register("material.floor", Material(texture=checker), dependencies=("texture.floor",))
-
-assets.register_file("texture.logo", "assets/logo.png")  # PNG -> texture
-assets.refresh()  # re-reads changed files; keeps the last good payload on failure
+assets.register_file("texture.logo", "assets/logo.png")
+assets.refresh()  # sync reload; keeps last good payload on failure
 ```
 
-Each asset has a stable id, kind, content digest, source path and dependency list. `refresh()` returns a `ReloadReport` naming reloaded, unchanged, failed and missing ids, so a game can surface broken assets without crashing. The registry is synchronous and starts no thread; a game calls `refresh()` from its own loop.
+Each asset has a stable id, kind, digest and dependencies. `refresh()` returns a `ReloadReport` (reloaded/unchanged/failed/missing) without crashing; it is synchronous with no thread.
 
 ## 🧱 glTF and GLB Import
 
@@ -525,11 +520,11 @@ from keystone.gltf import load_gltf
 imported = load_gltf("assets/robot.glb", registry=assets)
 ```
 
-It decodes external, base64 and GLB buffers, typed and normalized accessors, indexed triangle meshes, PBR materials, PNG textures and TRS or matrix node hierarchies. Non-triangle modes, sparse accessors, bad indices/offsets and cyclic hierarchies raise instead of producing wrong geometry.
+It decodes external/base64/GLB buffers, typed accessors, indexed triangles, PBR materials, PNG textures and TRS/matrix hierarchies. Bad modes/offsets/cycles raise.
 
 ## 💾 Scene Snapshots and Undo/Redo
 
-`scene_to_dict()` writes a versioned JSON snapshot; `scene_from_dict()` validates and rebuilds it. Snapshots keep camera, environment, lights, node identity, hierarchy, tags, layers, visibility and transforms, and reference meshes/materials by `AssetRegistry` id. Duplicate ids, dangling parents, unknown asset kinds and cycles are rejected.
+`scene_to_dict()`/`scene_from_dict()` round-trip versioned snapshots (camera, environment, hierarchy, tags, layers, asset ids). Bad ids/parents/kinds/cycles are rejected.
 
 ```python
 from keystone.history import History
@@ -540,19 +535,19 @@ history.push(scene_to_dict(scene))
 snapshot = history.undo()
 ```
 
-`History` deep-copies snapshots, drops the oldest past capacity and clears redo on push; schema 1 accepts older documents and refuses unknown versions.
+`History` deep-copies snapshots with bounded capacity; schema 1 stays compatible.
 
 ## 🗺️ Core Roadmap
 
-1. ~~Scene identity and optional ECS/component queries.~~ Implemented in v0.19.0.
-2. ~~Broadphase physics, character controller and trigger volumes.~~ Implemented in v0.21.0.
-3. ~~Asset registry and hot reload.~~ Implemented in v0.22.0; ~~material graphs~~ in v0.23.0; ~~glTF import~~ in v0.24.0; ~~GLB containers~~ in v0.26.0; ~~PBR material core~~ in v0.27.0.
-4. Renderer PBR shading, emissive and scene schema 2 in v0.27.0; static batch planning in v0.28.0 and ~~world-space batch merging~~ in v0.29.0; GPU instancing, shadows, post-processing and sRGB/linear color remain.
-5. ~~Input rebinding persistence~~ in v0.27.0; ~~action contexts~~ and ~~deterministic audio mixer with buses~~ in v0.28.0; live device playback remains out of scope.
-6. ~~Deterministic animation core~~ in v0.29.0 (keyframe clips, looping controller, pose application, JSON round trips); ~~crossfade blending and timed events~~ in v0.30.0; skinning remains; ~~deterministic CPU particles~~ in v0.31.0 (seeded emitters, gravity/drag, HUD/inspector/AI reports); GPU point sprites and particle collision remain.
-6. ~~Scene/save schema versioning and replay/undo tooling.~~ Implemented in v0.25.0; ~~deterministic replay runner (`run_log`/`verify_log`, `--replay`)~~ in v0.30.0.
-7. ~~Profiler HUD~~ in v0.27.0 with ~~audio voices~~ in v0.28.0 and ~~animation clips~~ in v0.29.0; ~~web inspector (`/api/inspector`) with batch plan~~ in v0.28.0 plus ~~merge summary and animation state~~ in v0.29.0 plus ~~asset inventory~~ in v0.30.0; editor, richer HUD widgets and editor hooks remain; the v0.20.0 web console covers discovery, simulation and scene preview.
-8. ~~AI observation/action adapters~~ in v0.27.0 (`keystone.agents`: validated actions, fused observations, report summaries, hash-chained audit trail).
+1. ~~Scene identity/ECS.~~ Done in v0.19.0.
+2. ~~Broadphase/character/triggers.~~ Done in v0.21.0.
+3. ~~Assets~~ v0.22.0; ~~material graphs~~ v0.23.0; ~~glTF~~ v0.24.0; ~~GLB~~ v0.26.0; ~~PBR core~~ v0.27.0.
+4. Renderer PBR/emissive and schema 2 in v0.27.0; batch planning in v0.28.0, merge in v0.29.0 and ~~GPU instancing~~ in v0.32.0; shadows/post/sRGB remain.
+5. ~~Input persistence~~ v0.27.0; ~~contexts/audio mixer~~ v0.28.0; live playback out of scope.
+6. ~~Animation core~~ in v0.29.0; ~~blending/events~~ in v0.30.0; skinning remains; ~~CPU particles~~ in v0.31.0; GPU sprites/collision remain.
+6. ~~Schema versioning~~ v0.25.0; ~~replay runner~~ v0.30.0.
+7. ~~Profiler HUD~~ in v0.27.0; ~~web inspector~~ in v0.28.0-0.30.0 (batches, merge, assets) plus ~~instancing~~ in v0.32.0; editor/HUD hooks remain.
+8. ~~AI adapters~~ in v0.27.0 (`keystone.agents`).
 
 Games are external modules; they are not added to this repository.
 

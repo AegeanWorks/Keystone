@@ -10,7 +10,7 @@
 - **Total Classes**: `126`
 - **Total Top-Level Functions**: `147`
 - **Total Class Methods**: `687`
-- **Total Source Lines**: `12616`
+- **Total Source Lines**: `12617`
 
 ---
 
@@ -196,7 +196,7 @@
 ### [`keystone/audio.py`](keystone/audio.py)
 > *Game-agnostic audio core: synth clips, bus mixer and WAV I/O.*
 
-**Size**: `225` lines (`8967` bytes)
+**Size**: `226` lines (`9037` bytes)
 
 **Classes:**
 - `class AudioClip` - *Immutable mono PCM clip in [-1, 1] with a fixed sample rate.*

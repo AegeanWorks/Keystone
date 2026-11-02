@@ -183,6 +183,7 @@ def write_wav(path: str | Path, clip: AudioClip) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_name(target.name + ".tmp")
     try:
+        # hygiene: allow binary-mode WAV write needs no text encoding
         with temporary.open("wb") as handle:
             handle.write(_wav_write(clip))
             handle.flush()
