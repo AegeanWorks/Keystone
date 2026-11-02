@@ -48,3 +48,58 @@ class CommandLog:
 
     def replay_actions(self) -> list[ActionState]:
         return [ActionState.from_dict(frame) for frame in self.frames]
+
+
+def run_log(factory: object, log: CommandLog, trace: bool = False) -> dict:
+    """Replay a command log on a fresh game without a window or GL context.
+
+    The global RNG is seeded from ``log.seed`` so games drawing on it replay
+    deterministically; games with their own RNG should seed it from the log.
+    """
+    if not callable(factory):
+        raise TypeError("factory must be callable")
+    if not isinstance(log, CommandLog):
+        raise TypeError("log must be a CommandLog")
+    import random as _random
+
+    _random.seed(log.seed)
+    game = factory()
+    build = getattr(game, "build_scene", None)
+    if not callable(build):
+        raise TypeError("replayed game must expose build_scene()")
+    build()
+    update = getattr(game, "update", None)
+    snapshot = getattr(game, "snapshot", None)
+    if not callable(update) or not callable(snapshot):
+        raise TypeError("replayed game must expose update() and snapshot()")
+    actions = log.replay_actions()
+    snapshots: list[dict] = []
+    for action in actions:
+        update(log.step, action)
+        if trace:
+            snapshots.append(snapshot())
+    final = snapshot()
+    report: dict = {
+        "ok": True,
+        "game": getattr(game, "name", "game"),
+        "frames": len(actions),
+        "step": log.step,
+        "seed": log.seed,
+        "final": final,
+        "hash": stable_hash(final),
+    }
+    if trace:
+        report["trace"] = snapshots
+    return report
+
+
+def verify_log(factory: object, log: CommandLog) -> dict:
+    """Run one log twice from a factory and compare final hashes."""
+    first = run_log(factory, log)
+    second = run_log(factory, log)
+    return {
+        "ok": first["hash"] == second["hash"],
+        "hash": first["hash"],
+        "first": first["final"],
+        "second": second["final"],
+    }

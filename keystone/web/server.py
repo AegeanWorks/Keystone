@@ -78,6 +78,97 @@ class GameSession:
                 scene = self.game.build_scene()
             return scene_document(scene, game=self.name)
 
+    def inspector(self) -> dict:
+        from keystone.batch import merge_batches, plan_batches
+
+        with self.lock:
+            scene = getattr(self.game, "scene", None)
+            if not isinstance(scene, Scene) or not scene.root.children:
+                scene = self.game.build_scene()
+            document = scene_document(scene, game=self.name)
+            try:
+                batches = plan_batches(scene)
+            except (AttributeError, TypeError, ValueError):
+                batches = {"schema": 1, "groups": 0, "draw_calls": 0, "batched_calls": 0, "saved_calls": 0, "triangles": 0, "batches": []}
+            try:
+                merged = merge_batches(scene)
+                merged_summary = {
+                    "groups": merged["groups"],
+                    "merged_calls": merged["merged_calls"],
+                    "saved_calls": merged["saved_calls"],
+                    "triangles": merged["triangles"],
+                }
+            except (AttributeError, TypeError, ValueError):
+                merged_summary = None
+            mixer = getattr(self.game, "mixer", None)
+            audio = None
+            if mixer is not None and hasattr(mixer, "voice_count"):
+                try:
+                    from keystone.audio import audio_report
+
+                    clip = mixer.render() if hasattr(mixer, "render") else None
+                    voices = mixer.voice_count() if callable(mixer.voice_count) else 0
+                    buses = dict(mixer.buses) if isinstance(getattr(mixer, "buses", None), dict) else {}
+                    audio = audio_report(clip, voices=voices, buses=buses) if clip is not None else {"voices": voices, "buses": buses}
+                except (AttributeError, TypeError, ValueError):
+                    audio = None
+            animation = None
+            for attribute in ("animations", "animator", "controller"):
+                try:
+                    controller = getattr(self.game, attribute, None)
+                    clips = getattr(controller, "clips", None) if controller is not None else None
+                    if not isinstance(clips, dict):
+                        continue
+                    from keystone.animation import animation_report
+
+                    animation = animation_report(controller)
+                except (AttributeError, TypeError, ValueError, KeyError):
+                    animation = None
+                    continue
+                break
+            particles = None
+            for attribute in ("particles", "fx", "particle_system"):
+                try:
+                    system = getattr(self.game, attribute, None)
+                    if system is None or not hasattr(system, "alive_count"):
+                        continue
+                    from keystone.particles import particles_report
+
+                    particles = particles_report(system)
+                except (AttributeError, TypeError, ValueError):
+                    particles = None
+                    continue
+                break
+            assets = None
+            registry = getattr(self.game, "assets", None)
+            if registry is not None and hasattr(registry, "describe"):
+                try:
+                    inventory = registry.describe()
+                    counts = inventory.get("stats", {}) if isinstance(inventory, dict) else {}
+                    items = inventory.get("assets", []) if isinstance(inventory, dict) else []
+                    assets = {
+                        "total": counts.get("total", len(items) if isinstance(items, list) else 0),
+                        "kinds": counts.get("kinds", {}),
+                        "ids": sorted(item.get("id", "") for item in items if isinstance(item, dict))[:64],
+                        "truncated": isinstance(items, list) and len(items) > 64,
+                    }
+                except (AttributeError, TypeError, ValueError):
+                    assets = None
+            return {
+                "schema": 1,
+                "game": self.name,
+                "node_count": document["node_count"],
+                "mesh_count": document["mesh_count"],
+                "texture_count": document["texture_count"],
+                "batches": batches,
+                "merged": merged_summary,
+                "audio": audio,
+                "animation": animation,
+                "particles": particles,
+                "assets": assets,
+                "scene_schema": SCENE_SCHEMA["version"],
+            }
+
 
 class KeystoneHTTPServer(ThreadingHTTPServer):
     """Threaded server carrying one game session for the request handler."""
@@ -123,8 +214,10 @@ class ConsoleHandler(BaseHTTPRequestHandler):
                 self._send_json(200, self.session.describe())
             elif path == "/api/scene":
                 self._send_json(200, self.session.scene())
+            elif path == "/api/inspector":
+                self._send_json(200, self.session.inspector())
             else:
-                raise WebProblem(404, f"no route for {path}", "use /, /api, /api/describe, /api/scene or /api/simulate")
+                raise WebProblem(404, f"no route for {path}", "use /, /api, /api/describe, /api/scene, /api/inspector or /api/simulate")
         except WebProblem as exc:
             self._send_problem(exc)
         except Exception as exc:  # noqa: BLE001 - HTTP must never leak a traceback
@@ -171,6 +264,7 @@ class ConsoleHandler(BaseHTTPRequestHandler):
                 "health": {"method": "GET", "path": "/api/health"},
                 "describe": {"method": "GET", "path": "/api/describe"},
                 "scene": {"method": "GET", "path": "/api/scene"},
+                "inspector": {"method": "GET", "path": "/api/inspector"},
                 "simulate": {
                     "method": "POST",
                     "path": "/api/simulate",

@@ -61,11 +61,19 @@ def scene_document(scene: Scene, game: str = "game") -> dict:
                     texture_ids[key] = texture_id
                     textures[texture_id] = _texture_document(texture)
                 texture_id = texture_ids[key]
+            emissive = getattr(node.material, "emissive", None)
+            from keystone.math3d import Vec3 as _Vec3
+
+            if not isinstance(emissive, _Vec3):
+                emissive = _Vec3()
             material = {
                 "color": [node.material.color.x, node.material.color.y, node.material.color.z],
                 "specular": node.material.specular,
                 "shininess": node.material.shininess,
                 "checker_scale": node.material.checker_scale,
+                "metallic": float(getattr(node.material, "metallic", 0.0)),
+                "roughness": float(getattr(node.material, "roughness", 0.7)),
+                "emissive": [emissive.x, emissive.y, emissive.z],
                 "texture": texture_id,
             }
         nodes.append(

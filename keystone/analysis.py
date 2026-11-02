@@ -16,13 +16,13 @@ from keystone.texture import TextureData
 GRID = 8
 
 REPORT_SCHEMA = {
-    "version": 4,
+    "version": 5,
     "fields": {
         "image": ["path", "width", "height", "rgba_sha256", "png_sha256"],
         "stats": ["mean_rgb", "mean_luma", "content_pixels", "content_ratio", "content_bbox", "dominant_colors", "grid_luma"],
         "scene": ["camera", "node_count", "nodes"],
         "node": ["id", "name", "parent", "parent_id", "visible", "tags", "layer", "components", "world", "screen", "bbox", "triangles", "material"],
-        "material": ["color", "specular", "shininess", "checker_scale", "texture"],
+        "material": ["color", "specular", "shininess", "checker_scale", "metallic", "roughness", "emissive", "texture"],
         "texture": ["name", "width", "height", "sha256"],
         "ui": ["visible", "paused", "labels", "buttons"],
         "ui_label": ["text", "x", "y", "scale", "color"],
@@ -35,7 +35,8 @@ REPORT_SCHEMA = {
         "hash covers image metadata, stats, projected nodes with identity/materials and ui when present, not visual quality.",
         "ui is null unless the human overlay was rendered; schema-2 added it.",
         "schema-3 adds material and texture metadata; schema-4 adds node id, tags, layer and components.",
-        "schema-1/2/3 reports remain comparable; nodes are keyed by id only when both reports are schema 4.",
+        "schema-5 adds PBR material fields (metallic, roughness, emissive).",
+        "schema-1/2/3 reports remain comparable; nodes are keyed by id when both reports are schema 4 or newer.",
         "ui labels and button rects are presentation metadata in top-left pixels.",
     ],
 }
@@ -98,11 +99,19 @@ def _material_report(material: object) -> dict | None:
     if not isinstance(material, Material):
         return None
     texture = material.texture if isinstance(material.texture, TextureData) else None
+    metallic = getattr(material, "metallic", 0.0)
+    roughness = getattr(material, "roughness", 0.7)
+    emissive = getattr(material, "emissive", Vec3())
+    if not isinstance(emissive, Vec3):
+        emissive = Vec3()
     return {
         "color": [round(material.color.x, 3), round(material.color.y, 3), round(material.color.z, 3)],
         "specular": material.specular,
         "shininess": material.shininess,
         "checker_scale": material.checker_scale,
+        "metallic": round(float(metallic), 3),
+        "roughness": round(float(roughness), 3),
+        "emissive": [round(emissive.x, 3), round(emissive.y, 3), round(emissive.z, 3)],
         "texture": (
             {
                 "name": texture.name,
@@ -198,7 +207,7 @@ def analyze_frame(
         image["png_sha256"] = hashlib.sha256(Path(image_path).read_bytes()).hexdigest()
     camera = scene.camera
     report = {
-        "schema": 4,
+        "schema": 5,
         "image": image,
         "stats": stats,
         "scene": {
@@ -253,12 +262,12 @@ def _compare_ui(before: dict | None, after: dict | None) -> dict:
 
 
 def compare_reports(before: dict, after: dict) -> dict:
-    """Compare schema-1/2/3/4 frame reports for AI-driven regression checks."""
-    if before.get("schema") not in (1, 2, 3, 4) or after.get("schema") not in (1, 2, 3, 4):
-        raise ValueError("both reports must use schema 1, 2, 3 or 4")
+    """Compare schema-1/2/3/4/5 frame reports for AI-driven regression checks."""
+    if before.get("schema") not in (1, 2, 3, 4, 5) or after.get("schema") not in (1, 2, 3, 4, 5):
+        raise ValueError("both reports must use schema 1, 2, 3, 4 or 5")
     first_stats = before["stats"]
     second_stats = after["stats"]
-    key = "id" if before.get("schema") == 4 and after.get("schema") == 4 else "name"
+    key = "id" if before.get("schema", 0) >= 4 and after.get("schema", 0) >= 4 else "name"
     first_nodes = {(node.get(key) or node["name"]): node for node in before["scene"]["nodes"]}
     second_nodes = {(node.get(key) or node["name"]): node for node in after["scene"]["nodes"]}
     changed = []
@@ -293,7 +302,7 @@ def compare_reports(before: dict, after: dict) -> dict:
             changed.append(name)
     ui_diff = _compare_ui(before.get("ui"), after.get("ui"))
     return {
-        "schema": 4,
+        "schema": 5,
         "same_image": before["image"]["rgba_sha256"] == after["image"]["rgba_sha256"],
         "same_report": before.get("hash") == after.get("hash"),
         "same_ui": ui_diff["same"],

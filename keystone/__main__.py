@@ -60,6 +60,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--compare-baseline", type=Path, default=None, help="compare the current report with a baseline report")
     parser.add_argument("--diff-out", type=Path, default=None, help="write a visual pixel-diff PNG with --compare-baseline")
     parser.add_argument("--actions", type=Path, default=None, help="JSON action list for --simulate/--verify-determinism")
+    parser.add_argument("--replay", type=Path, default=None, help="replay a CommandLog JSON without OpenGL")
     parser.add_argument("--trace", action="store_true", help="include per-frame snapshots in simulation output")
     parser.add_argument("--frames", type=_frames, default=0, help="frame count (default: 1 headless, or until close)")
     parser.add_argument("--size", type=_size, default=(960, 540), metavar="WxH", help="framebuffer size, e.g. 1280x720")
@@ -75,7 +76,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.serve and (
         args.describe or args.headless or args.simulate or args.verify_determinism or args.expect_hash
         or args.compare_baseline or args.diff_out or args.actions or args.trace or args.ui or args.no_ui
-        or args.start_paused or args.out or args.report
+        or args.start_paused or args.out or args.report or args.replay
     ):
         parser.error("--serve is a standalone web-console command")
     if (args.host is not None or args.port is not None) and not args.serve:
@@ -83,21 +84,27 @@ def main(argv: list[str] | None = None) -> int:
     if args.describe and (
         args.headless or args.simulate or args.verify_determinism or args.expect_hash
         or args.compare_baseline or args.out or args.report or args.actions or args.trace
-        or args.ui or args.no_ui or args.start_paused
+        or args.ui or args.no_ui or args.start_paused or args.replay
     ):
         parser.error("--describe is a standalone discovery command")
     if args.headless and args.simulate:
         parser.error("--headless and --simulate are mutually exclusive")
+    if args.replay and (args.headless or args.simulate or args.verify_determinism or args.describe or args.serve):
+        parser.error("--replay is a standalone no-GL command")
+    if args.replay and (args.actions or args.compare_baseline or args.diff_out or args.report or args.ui or args.no_ui or args.start_paused):
+        parser.error("--replay takes a CommandLog; --actions/--compare-baseline/--report/--ui do not apply")
+    if args.replay and (args.frames or args.size != (960, 540)):
+        parser.error("--replay uses the log frame count and needs no window; --frames/--size do not apply")
     if args.ui and args.no_ui:
         parser.error("--ui and --no-ui are mutually exclusive")
     if (args.ui or args.no_ui) and (args.describe or args.simulate or args.verify_determinism):
         parser.error("--ui/--no-ui apply to rendered runs, not discovery or simulation commands")
     if args.start_paused and (args.simulate or args.verify_determinism):
         parser.error("--start-paused applies to rendered runs, not simulation commands")
-    if args.verify_determinism and (args.headless or args.simulate or args.report or args.compare_baseline):
+    if args.verify_determinism and (args.headless or args.simulate or args.report or args.compare_baseline or args.replay):
         parser.error("--verify-determinism is a standalone no-GL command")
-    if args.expect_hash and not (args.simulate or args.verify_determinism):
-        parser.error("--expect-hash requires --simulate or --verify-determinism")
+    if args.expect_hash and not (args.simulate or args.verify_determinism or args.replay):
+        parser.error("--expect-hash requires --simulate, --verify-determinism or --replay")
     if args.simulate and args.report:
         parser.error("--report requires the rendered --headless path")
     if args.report and not args.headless:
@@ -106,12 +113,12 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--compare-baseline requires --headless and --report")
     if args.diff_out and not args.compare_baseline:
         parser.error("--diff-out requires --compare-baseline")
-    if args.out and not (args.headless or args.simulate or args.verify_determinism):
-        parser.error("--out requires --headless, --simulate or --verify-determinism")
+    if args.out and not (args.headless or args.simulate or args.verify_determinism or args.replay):
+        parser.error("--out requires --headless, --simulate, --verify-determinism or --replay")
     if args.actions and not (args.simulate or args.verify_determinism):
         parser.error("--actions requires --simulate or --verify-determinism")
-    if args.trace and not args.simulate:
-        parser.error("--trace requires --simulate")
+    if args.trace and not (args.simulate or args.replay):
+        parser.error("--trace requires --simulate or --replay")
 
     from keystone.plugin import describe_game, load_game
 
@@ -146,6 +153,22 @@ def main(argv: list[str] | None = None) -> int:
             actions = load_actions(args.actions) if args.actions else []
             frames = args.frames if args.frames else (len(actions) or 1)
             result = run_simulation(game, frames, actions, trace=args.trace)
+            if args.expect_hash:
+                result["expected_hash"] = args.expect_hash
+                result["ok"] = result["hash"] == args.expect_hash
+            if args.out:
+                write_json_atomic(args.out, result)
+            print(json.dumps(result, indent=2, sort_keys=True))
+            return 0 if result["ok"] else 1
+        if args.replay:
+            from keystone.replay import CommandLog, run_log
+            from keystone.serialization import write_json_atomic
+
+            try:
+                log = CommandLog.load(args.replay)
+            except (OSError, ValueError, TypeError, KeyError) as exc:
+                parser.error(f"could not read replay log {args.replay}: {exc}")
+            result = run_log(lambda: load_game(args.game), log, trace=args.trace)
             if args.expect_hash:
                 result["expected_hash"] = args.expect_hash
                 result["ok"] = result["hash"] == args.expect_hash

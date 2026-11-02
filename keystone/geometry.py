@@ -10,13 +10,16 @@ from keystone.texture import TextureData
 
 @dataclass(frozen=True, slots=True)
 class Material:
-    """Blinn-Phong surface parameters used by the renderer."""
+    """Blinn-Phong surface parameters with PBR extensions used by the renderer."""
 
     color: Vec3 = Vec3(0.78, 0.78, 0.82)
     specular: float = 0.35
     shininess: float = 32.0
     checker_scale: float = 0.0
     texture: TextureData | None = None
+    metallic: float = 0.0
+    roughness: float = 0.7
+    emissive: Vec3 = Vec3(0.0, 0.0, 0.0)
 
     def __post_init__(self) -> None:
         if self.specular < 0.0:
@@ -25,6 +28,10 @@ class Material:
             raise ValueError("shininess must be positive")
         if self.checker_scale < 0.0:
             raise ValueError("checker_scale must be non-negative")
+        if not 0.0 <= self.metallic <= 1.0:
+            raise ValueError("metallic must be within [0, 1]")
+        if not 0.0 <= self.roughness <= 1.0:
+            raise ValueError("roughness must be within [0, 1]")
 
 
 @dataclass(frozen=True, slots=True)

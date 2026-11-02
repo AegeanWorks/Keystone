@@ -68,6 +68,37 @@ class InputMapTest(unittest.TestCase):
         context.mouse = True
         self.assertTrue(mapping.sample(context).mouse_clicked)
 
+    def test_contexts_isolate_menu_and_gameplay(self):
+        mapping = InputMap()
+        mapping.bind("confirm", "enter", context="menu")
+        mapping.bind("confirm", "space", context="gameplay")
+        mapping.set_context("menu")
+        self.assertEqual(mapping.bindings["confirm"], "enter")
+        mapping.set_context("gameplay")
+        self.assertEqual(mapping.bindings["confirm"], "space")
+        self.assertIn("menu", mapping.list_contexts())
+        restored = InputMap.from_dict(mapping.to_dict())
+        self.assertEqual(restored.bindings["confirm"], "space")
+        restored.set_context("menu")
+        self.assertEqual(restored.bindings["confirm"], "enter")
+        legacy = InputMap.from_dict({"bindings": {"forward": "i"}})
+        self.assertEqual(legacy.bindings["forward"], "i")
+
+    def test_unbind_survives_context_round_trip(self):
+        mapping = InputMap()
+        mapping.bind("dash", "left_shift")
+        mapping.set_context("menu")
+        mapping.set_context("gameplay")
+        self.assertTrue(mapping.unbind("dash"))
+        self.assertNotIn("dash", mapping.bindings)
+        mapping.set_context("menu")
+        mapping.set_context("gameplay")
+        self.assertNotIn("dash", mapping.bindings)
+        restored = InputMap.from_dict(mapping.to_dict())
+        restored.set_context("menu")
+        restored.set_context("gameplay")
+        self.assertNotIn("dash", restored.bindings)
+
     def test_action_state_round_trip_and_clear(self):
         state = ActionState(
             forward=1.0,

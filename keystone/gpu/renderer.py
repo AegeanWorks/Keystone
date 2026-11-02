@@ -47,6 +47,9 @@ uniform sampler2D u_texture;
 uniform float u_has_texture;
 uniform float u_specular;
 uniform float u_shininess;
+uniform float u_metallic;
+uniform float u_roughness;
+uniform vec3 u_emissive;
 uniform vec3 u_camera_pos;
 uniform vec3 u_light_dir;
 uniform vec3 u_light_color;
@@ -66,18 +69,22 @@ void main() {
     vec3 light = normalize(-u_light_dir);
     float diffuse = max(dot(normal, light), 0.0);
     vec3 halfway = normalize(light + view);
-    float specular = pow(max(dot(normal, halfway), 0.0), u_shininess) * u_specular;
+    float dielectric_spec = pow(max(dot(normal, halfway), 0.0), u_shininess) * u_specular;
+    float pbr_spec = pow(max(dot(normal, halfway), 0.0), mix(8.0, 128.0, 1.0 - u_roughness));
+    float spec_strength = mix(dielectric_spec, pbr_spec, u_metallic);
+    spec_strength *= (1.0 - u_roughness * 0.85);
     vec3 base_color = u_color * v_color;
     if (u_has_texture > 0.5) {
         base_color *= texture(u_texture, v_uv).rgb;
     }
-    vec3 color = base_color * (u_ambient + u_light_color * diffuse) + u_light_color * specular;
+    vec3 diffuse_color = base_color * (1.0 - u_metallic * 0.8);
+    vec3 color = diffuse_color * (u_ambient + u_light_color * diffuse) + u_light_color * spec_strength + u_emissive;
     if (u_point_radius > 0.0) {
         vec3 to_point = u_point_pos - v_world;
         float point_distance = length(to_point);
         float attenuation = max(0.0, 1.0 - point_distance / u_point_radius);
         float point_diffuse = max(dot(normal, normalize(to_point)), 0.0);
-        color += base_color * u_point_color * attenuation * attenuation * point_diffuse;
+        color += diffuse_color * u_point_color * attenuation * attenuation * point_diffuse;
     }
     if (u_checker_scale > 0.0) {
         float tile = mod(floor(v_world.x * u_checker_scale) + floor(v_world.z * u_checker_scale), 2.0);
@@ -139,6 +146,7 @@ class Renderer:
         self._sky_program = sky_program
         self._meshes: dict[int, tuple[MeshData, GpuMesh]] = {}
         self._textures: dict[int, tuple[TextureData, GpuTexture]] = {}
+        self.last_stats: dict[str, int] = {"draw_calls": 0, "triangles": 0}
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glDepthFunc(GL.GL_LESS)
         GL.glEnable(GL.GL_CULL_FACE)
@@ -178,7 +186,9 @@ class Renderer:
         GL.glDepthMask(GL.GL_TRUE)
         GL.glEnable(GL.GL_DEPTH_TEST)
 
-    def render(self, scene: Scene) -> None:
+    def render(self, scene: Scene) -> dict[str, int]:
+        draw_calls = 0
+        triangles = 0
         GL.glViewport(0, 0, self.width, self.height)
         background = scene.background
         GL.glClearColor(background.x, background.y, background.z, 1.0)
@@ -217,6 +227,9 @@ class Renderer:
             self._program.set_vec3("u_color", material.color)
             self._program.set_float("u_specular", material.specular)
             self._program.set_float("u_shininess", material.shininess)
+            self._program.set_float("u_metallic", material.metallic)
+            self._program.set_float("u_roughness", material.roughness)
+            self._program.set_vec3("u_emissive", material.emissive)
             self._program.set_float("u_checker_scale", material.checker_scale)
             texture = material.texture if isinstance(material.texture, TextureData) else None
             if texture is None:
@@ -227,7 +240,11 @@ class Renderer:
                 self._program.set_int("u_texture", 0)
                 self._program.set_float("u_has_texture", 1.0)
             self._gpu_mesh(mesh).draw()
+            draw_calls += 1
+            triangles += mesh.triangle_count()
         GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
+        self.last_stats = {"draw_calls": draw_calls, "triangles": triangles}
+        return dict(self.last_stats)
 
     def read_pixels(self) -> bytes:
         GL.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1)

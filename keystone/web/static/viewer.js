@@ -31,6 +31,9 @@ uniform sampler2D u_texture;
 uniform float u_has_texture;
 uniform float u_specular;
 uniform float u_shininess;
+uniform float u_metallic;
+uniform float u_roughness;
+uniform vec3 u_emissive;
 uniform float u_checker_scale;
 uniform vec3 u_camera_pos;
 uniform vec3 u_light_dir;
@@ -50,18 +53,21 @@ void main() {
   vec3 light = normalize(-u_light_dir);
   float diffuse = max(dot(normal, light), 0.0);
   vec3 halfway = normalize(light + view);
-  float specular = pow(max(dot(normal, halfway), 0.0), max(u_shininess, 1.0)) * u_specular;
+  float dielectric_spec = pow(max(dot(normal, halfway), 0.0), max(u_shininess, 1.0)) * u_specular;
+  float pbr_spec = pow(max(dot(normal, halfway), 0.0), mix(8.0, 128.0, 1.0 - u_roughness));
+  float spec_strength = mix(dielectric_spec, pbr_spec, u_metallic) * (1.0 - u_roughness * 0.85);
   vec3 base_color = u_color * v_color;
   if (u_has_texture > 0.5) {
     base_color *= texture(u_texture, v_uv).rgb;
   }
-  vec3 color = base_color * (u_ambient + u_light_color * diffuse) + u_light_color * specular;
+  vec3 diffuse_color = base_color * (1.0 - u_metallic * 0.8);
+  vec3 color = diffuse_color * (u_ambient + u_light_color * diffuse) + u_light_color * spec_strength + u_emissive;
   if (u_point_radius > 0.0) {
     vec3 to_point = u_point_pos - v_world;
     float point_distance = length(to_point);
     float attenuation = max(0.0, 1.0 - point_distance / u_point_radius);
     float point_diffuse = max(dot(normal, normalize(to_point)), 0.0);
-    color += base_color * u_point_color * attenuation * attenuation * point_diffuse;
+    color += diffuse_color * u_point_color * attenuation * attenuation * point_diffuse;
   }
   if (u_checker_scale > 0.0) {
     float tile = mod(floor(v_world.x * u_checker_scale) + floor(v_world.z * u_checker_scale), 2.0);
@@ -174,7 +180,8 @@ export class SceneViewer {
     this.uniforms = {};
     for (const name of [
       "world", "view_proj", "normal", "color", "texture", "has_texture", "specular",
-      "shininess", "checker_scale", "camera_pos", "light_dir", "light_color", "ambient",
+      "shininess", "metallic", "roughness", "emissive", "checker_scale", "camera_pos",
+      "light_dir", "light_color", "ambient",
       "fog_color", "fog_density", "point_pos", "point_color", "point_radius",
     ]) {
       this.uniforms[name] = this.gl.getUniformLocation(this.program, `u_${name}`);
@@ -334,10 +341,14 @@ export class SceneViewer {
       }
       const material = node.material || {
         color: [1, 1, 1], specular: 0, shininess: 1, checker_scale: 0, texture: null,
+        metallic: 0, roughness: 0.7, emissive: [0, 0, 0],
       };
       gl.uniform3fv(this.uniforms.color, material.color);
       gl.uniform1f(this.uniforms.specular, material.specular);
       gl.uniform1f(this.uniforms.shininess, material.shininess);
+      gl.uniform1f(this.uniforms.metallic, material.metallic || 0);
+      gl.uniform1f(this.uniforms.roughness, material.roughness ?? 0.7);
+      gl.uniform3fv(this.uniforms.emissive, material.emissive || [0, 0, 0]);
       gl.uniform1f(this.uniforms.checker_scale, material.checker_scale || 0);
       const texture = material.texture ? this.textures.get(material.texture) : null;
       gl.activeTexture(gl.TEXTURE0);

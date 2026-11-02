@@ -19,6 +19,7 @@ The JSON response contains:
 
 ```bash
 python -m keystone --simulate --frames 120 --actions actions.json --out run.json
+python -m keystone --replay run-log.json --out replay.json
 ```
 
 Actions are a JSON list of `ActionState` objects. If the list is shorter than `frames`, the last action repeats. Each object may set movement axes, `pressed`, `held`, `pointer` and `mouse_clicked`. The result includes:
@@ -45,7 +46,7 @@ python -m keystone --headless --frames 1 --size 1280x720 \
   --out frame.png --report frame.json
 ```
 
-The schema-4 report contains:
+The schema-5 report contains:
 
 - image path, dimensions and PNG/RGBA SHA-256;
 - mean RGB/luminance, content pixels/ratio and bbox;
@@ -64,7 +65,7 @@ python -m keystone --headless --frames 1 --size 1280x720 \
   --compare-baseline baseline.json --diff-out diff.png
 ```
 
-The diff reports image/report equality, luminance and content-ratio deltas, bbox changes, added/removed/changed nodes (keyed by scene ID when both reports are schema 4, otherwise by name), added/removed/moved UI labels and buttons, and material/texture metadata. `--diff-out` additionally writes a visual PNG and reports changed pixels, ratio, bbox, mean delta and max delta. Exit code 0 means the image hash matched; 1 means it changed.
+The diff reports image/report equality, luminance and content-ratio deltas, bbox changes, added/removed/changed nodes (keyed by scene ID when both reports are schema 4 or newer, otherwise by name), added/removed/moved UI labels and buttons, and PBR material/texture metadata. `--diff-out` additionally writes a visual PNG and reports changed pixels, ratio, bbox, mean delta and max delta. Exit code 0 means the image hash matched; 1 means it changed.
 
 ## 6. Capture the human UI
 
@@ -120,13 +121,78 @@ All responses carry `Access-Control-Allow-Origin: *` so a local frontend or AI c
 ## Python helpers
 
 ```python
+from keystone.agents import AuditTrail, observe, parse_actions, summarize_report
 from keystone.analysis import compare_reports
-from keystone.input import ActionState
+from keystone.input import ActionState, InputMap
 from keystone.samples import CubeDemo
 from keystone.testing import assert_deterministic, run_script
 
 result = run_script(CubeDemo(), [ActionState(forward=1.0)], frames=60)
 assert_deterministic(lambda: CubeDemo(), [ActionState(forward=1.0)], frames=60)
+
+# AI-first workflow: validate LLM JSON, fuse discovery + simulation, audit it.
+actions = parse_actions([{"forward": 1.0}])
+observation = observe(CubeDemo(), frames=60, actions=actions)
+trail = AuditTrail()
+trail.record("observe", {"hash": observation["hash"]})
+
+# Persist rebindable input with contexts for human + AI clients.
+bindings = InputMap()
+bindings.bind("dash", "left_shift")
+bindings.bind("confirm", "enter", context="menu")
+bindings.save_bindings("bindings.json")
+
+# Deterministic audio: synth, mix, audit, export.
+from keystone.audio import Mixer, audio_report, sine, write_wav
+
+mixer = Mixer()
+mixer.play(sine(440.0, 0.2), bus="sfx")
+clip = mixer.render()
+write_wav("mix.wav", clip)
+print(audio_report(clip, voices=mixer.voice_count(), buses=mixer.buses))
+
+# Static batching + inspector for humans and AI.
+from keystone.batch import merge_batches, plan_batches
+
+print(plan_batches(CubeDemo().build_scene()))
+print(merge_batches(CubeDemo().build_scene())["saved_calls"])
+
+# Deterministic animation: author clips, drive nodes, audit state.
+from keystone.animation import AnimationClip, AnimationController, Track, apply_pose
+from keystone.math3d import Vec3
+
+clip = AnimationClip(
+    name="bob",
+    position_tracks=(("cube-0", Track(times=(0.0, 1.0), values=(Vec3(0, 0, 0), Vec3(0, 2, 0)))),),
+)
+controller = AnimationController()
+controller.add(clip)
+controller.play("bob")
+apply_pose(CubeDemo().build_scene(), controller.advance(0.016))
+
+# Timed events, crossfade blending and file-based replay for audit trails.
+from keystone.animation import blend_poses
+
+eventful = AnimationClip(name="fx", events=((0.5, "hit"),))
+print(eventful.events_in_range(0.0, 0.75))
+controller.crossfade("bob", 0.25)
+pose, fired = controller.advance_with_events(0.016)
+
+from keystone.input import ActionState
+from keystone.replay import CommandLog, run_log
+
+log = CommandLog(seed=11)
+log.record(ActionState(forward=1.0))
+print(run_log(CubeDemo, log)["hash"])
+
+# Deterministic particles: seeded emitters, HUD/inspector/AI reports.
+from keystone.particles import Emitter, ParticleSystem, particles_report
+
+fx = ParticleSystem()
+fx.add(Emitter(name="sparks", rate=60.0, seed=5))
+fx.burst("sparks", 8)
+fx.step(0.016)
+print(particles_report(fx))
 ```
 
 ## AIKit

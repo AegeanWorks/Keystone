@@ -112,6 +112,30 @@ class EngineTest(unittest.TestCase):
             main(["--simulate", "--start-paused"])
         self.assertEqual(caught.exception.code, 2)
 
+    def test_replay_cli_replays_a_log_without_opening_a_window(self):
+        from keystone.input import ActionState
+        from keystone.replay import CommandLog
+
+        with tempfile.TemporaryDirectory() as directory:
+            log = Path(directory) / "run.json"
+            out = Path(directory) / "result.json"
+            record = CommandLog(seed=11)
+            record.record(ActionState(forward=1.0))
+            record.save(log)
+            with contextlib.redirect_stdout(io.StringIO()):
+                code = main(["--replay", str(log), "--out", str(out)])
+            self.assertEqual(code, 0)
+            payload = json.loads(out.read_text(encoding="utf-8"))
+            self.assertEqual(payload["frames"], 1)
+            self.assertEqual(payload["seed"], 11)
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+                main(["--replay", str(log), "--simulate"])
+            self.assertEqual(caught.exception.code, 2)
+            for argv in (["--replay", str(log), "--frames", "2"], ["--replay", str(log), "--size", "320x180"]):
+                with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+                    main(argv)
+                self.assertEqual(caught.exception.code, 2)
+
     def test_serve_is_a_standalone_web_command(self):
         for argv in (
             ["--serve", "--headless"],
@@ -141,7 +165,7 @@ class EngineTest(unittest.TestCase):
                 code = main(["--headless", "--frames", "1", "--size", "160x120", "--ui", "--report", str(report)])
             self.assertEqual(code, 0)
             payload = json.loads(report.read_text(encoding="utf-8"))
-            self.assertEqual(payload["schema"], 4)
+            self.assertEqual(payload["schema"], 5)
             self.assertTrue(payload["ui"]["visible"])
             self.assertIn("KEYSTONE", [label["text"] for label in payload["ui"]["labels"]])
 
@@ -266,7 +290,7 @@ class EngineTest(unittest.TestCase):
             engine.capture(image, report)
             self.assertTrue(image.exists())
             payload = json.loads(report.read_text(encoding="utf-8"))
-            self.assertEqual(payload["schema"], 4)
+            self.assertEqual(payload["schema"], 5)
             self.assertIsNone(payload["ui"])
             self.assertEqual(payload["image"]["path"], Path(image).as_posix())
             self.assertGreater(payload["stats"]["mean_luma"], 0.0)

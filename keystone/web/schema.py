@@ -15,13 +15,14 @@ SCENE_SCHEMA = {
         "atmosphere": ["ambient", "background", "sky", "fog_density"],
         "node": ["id", "name", "parent_id", "visible", "tags", "layer", "components", "world", "mesh", "material"],
         "mesh": ["positions", "normals", "uvs", "colors", "indices"],
-        "material": ["color", "specular", "shininess", "checker_scale", "texture"],
+        "material": ["color", "specular", "shininess", "checker_scale", "metallic", "roughness", "emissive", "texture"],
         "texture": ["name", "width", "height", "rgba_base64", "sha256"],
     },
     "notes": [
         "world is a column-major 4x4 matrix ready for WebGL uniformMatrix4fv.",
         "nodes reference shared meshes and textures by id; geometry is never duplicated per node.",
         "positions, normals, uvs and colors are flat arrays in vertex order.",
+        "schema 2 adds PBR material fields (metallic, roughness, emissive).",
         "the browser viewer is an approximation; the OpenGL renderer remains the pixel authority.",
     ],
 }

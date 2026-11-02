@@ -74,9 +74,22 @@ class ActionState:
 
 
 class InputMap:
-    """Maps keys and pointer motion to action names and continuous axes."""
+    """Maps keys and pointer motion to action names and continuous axes.
 
-    def __init__(self, bindings: dict[str, str] | None = None, look_speed: float = 1.6, mouse_sensitivity: float = 0.0025) -> None:
+    Bindings are additive overlays on the defaults: a context map that omits
+    a default key inherits it, so removed defaults reappear after a
+    save/load round-trip. Schema-1 documents predate contexts and always
+    load into the ``gameplay`` context.
+    """
+
+    def __init__(
+        self,
+        bindings: dict[str, str] | None = None,
+        look_speed: float = 1.6,
+        mouse_sensitivity: float = 0.0025,
+        contexts: dict[str, dict[str, str]] | None = None,
+        context: str = "gameplay",
+    ) -> None:
         self.bindings = dict(DEFAULT_BINDINGS)
         if bindings:
             self.bindings.update(bindings)
@@ -86,9 +99,124 @@ class InputMap:
         self._held: frozenset[str] = frozenset()
         self._last_pointer: tuple[float, float] | None = None
         self._mouse_held = False
+        self.contexts: dict[str, dict[str, str]] = {"gameplay": dict(self.bindings)}
+        if contexts:
+            for name, mapping in contexts.items():
+                if not isinstance(name, str) or not name.strip():
+                    raise ValueError("context names must be non-blank strings")
+                if not isinstance(mapping, dict):
+                    raise TypeError("context bindings must be mappings")
+                merged = dict(DEFAULT_BINDINGS)
+                for action, key in mapping.items():
+                    if not isinstance(action, str) or not isinstance(key, str):
+                        raise TypeError("context bindings must map action names to key names")
+                    merged[action] = key
+                self.contexts[name] = merged
+        if not isinstance(context, str) or not context.strip():
+            raise ValueError("context must be a non-blank string")
+        self.context = context
+        if context in self.contexts:
+            self.bindings = dict(self.contexts[context])
+        else:
+            self.contexts[context] = dict(self.bindings)
 
-    def bind(self, action: str, key: str) -> None:
-        self.bindings[action] = key
+    def bind(self, action: str, key: str, context: str | None = None) -> None:
+        if not isinstance(action, str) or not action.strip():
+            raise ValueError("action name must be a non-blank string")
+        if not isinstance(key, str) or not key.strip():
+            raise ValueError("key name must be a non-blank string")
+        target = context or self.context
+        if not isinstance(target, str) or not target.strip():
+            raise ValueError("context must be a non-blank string")
+        if target not in self.contexts:
+            self.contexts[target] = dict(self.bindings)
+        self.contexts[target][action] = key
+        if target == self.context:
+            self.bindings[action] = key
+
+    def set_context(self, context: str) -> None:
+        if not isinstance(context, str) or not context.strip():
+            raise ValueError("context must be a non-blank string")
+        if context not in self.contexts:
+            self.contexts[context] = dict(self.bindings)
+        self.context = context
+        self.bindings = dict(self.contexts[context])
+        self._held = frozenset()
+
+    def get_context(self) -> str:
+        return self.context
+
+    def list_contexts(self) -> list[str]:
+        return sorted(self.contexts)
+
+    def unbind(self, action: str) -> bool:
+        """Remove a custom binding from the active context; returns False when not bound."""
+        removed = self.bindings.pop(action, None) is not None
+        context_map = self.contexts.get(self.context)
+        if context_map is not None:
+            context_map.pop(action, None)
+        return removed
+
+    def list_actions(self) -> dict[str, str]:
+        """Return a copy of the current action-to-key map for UI and AI clients."""
+        return dict(self.bindings)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema": 2,
+            "bindings": dict(self.bindings),
+            "contexts": {name: dict(mapping) for name, mapping in self.contexts.items()},
+            "context": self.context,
+            "look_speed": self.look_speed,
+            "mouse_sensitivity": self.mouse_sensitivity,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> InputMap:
+        if not isinstance(data, dict):
+            raise TypeError("input bindings document must be a mapping")
+        schema = data.get("schema", 1)
+        if schema not in (1, 2):
+            raise ValueError("unsupported input bindings schema")
+        raw_bindings = data.get("bindings", {})
+        if not isinstance(raw_bindings, dict):
+            raise TypeError("input bindings must hold a bindings mapping")
+        merged = dict(DEFAULT_BINDINGS)
+        for action, key in raw_bindings.items():
+            if not isinstance(action, str) or not isinstance(key, str):
+                raise TypeError("input bindings must map action names to key names")
+            merged[action] = key
+        raw_contexts = data.get("contexts", {})
+        if not isinstance(raw_contexts, dict):
+            raise TypeError("input contexts must hold a mapping")
+        context = str(data.get("context", "gameplay"))
+        instance = cls(
+            bindings=merged,
+            look_speed=float(data.get("look_speed", 1.6)),
+            mouse_sensitivity=float(data.get("mouse_sensitivity", 0.0025)),
+            contexts={name: mapping for name, mapping in raw_contexts.items()} if raw_contexts else None,
+            context=context if raw_contexts or "context" in data else "gameplay",
+        )
+        if schema == 1 and not raw_contexts:
+            instance.contexts = {"gameplay": dict(instance.bindings)}
+            instance.context = "gameplay"
+        return instance
+
+    def save_bindings(self, path: object) -> None:
+        from keystone.serialization import write_json_atomic
+
+        write_json_atomic(path, self.to_dict(), backup=False)
+
+    @classmethod
+    def load_bindings(cls, path: object) -> InputMap:
+        import json
+        from pathlib import Path
+
+        try:
+            payload = json.loads(Path(str(path)).read_text(encoding="utf-8-sig"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(f"could not read input bindings from {path}: {exc}") from exc
+        return cls.from_dict(payload)
 
     def set_mouse_enabled(self, enabled: bool) -> None:
         self.mouse_enabled = enabled

@@ -127,6 +127,37 @@ class Engine:
     def _draw_ui(self) -> Canvas | None:
         if self.overlay is None or self.ui_renderer is None:
             return None
+        stats = getattr(self.renderer, "last_stats", {"draw_calls": 0, "triangles": 0})
+        mixer = getattr(self.game, "mixer", None)
+        voices = 0
+        if mixer is not None and hasattr(mixer, "voice_count"):
+            try:
+                voices = int(mixer.voice_count())
+            except (AttributeError, TypeError, ValueError):
+                voices = 0
+        anim_clips = 0
+        for attribute in ("animations", "animator", "controller"):
+            controller = getattr(self.game, attribute, None)
+            clips = getattr(controller, "clips", None) if controller is not None else None
+            if isinstance(clips, dict):
+                anim_clips = len(clips)
+                break
+        live_fx = 0
+        for attribute in ("particles", "fx", "particle_system"):
+            system = getattr(self.game, attribute, None)
+            if system is None:
+                continue
+            count = getattr(system, "alive_count", None)
+            if callable(count):
+                try:
+                    live_fx = int(count())
+                except (AttributeError, TypeError, ValueError):
+                    live_fx = 0
+                break
+            items = getattr(system, "particles", None)
+            if isinstance(items, list):
+                live_fx = len(items)
+                break
         state = HudState(
             game=getattr(self.game, "name", "game"),
             status=self.game.status(),
@@ -137,6 +168,11 @@ class Engine:
             height=self.renderer.height,
             paused=self.paused,
             pointer=self._pointer,
+            draw_calls=int(stats.get("draw_calls", 0)),
+            triangles=int(stats.get("triangles", 0)),
+            audio_voices=voices,
+            anim_clips=anim_clips,
+            particles=live_fx,
         )
         draw_game_ui = getattr(self.game, "draw_ui", None)
         canvas = self.overlay.build(state, draw_game_ui if callable(draw_game_ui) else None)

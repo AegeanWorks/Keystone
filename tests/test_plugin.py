@@ -21,7 +21,7 @@ class PluginTest(unittest.TestCase):
         self.assertTrue(payload["capabilities"]["human_ui"]["overlay"])
         self.assertIn("resume", payload["capabilities"]["human_ui"]["menu"])
         self.assertFalse(payload["capabilities"]["game_ui"])
-        self.assertEqual(payload["capabilities"]["report_schema"]["version"], 4)
+        self.assertEqual(payload["capabilities"]["report_schema"]["version"], 5)
         self.assertEqual(payload["capabilities"]["web"]["api_version"], 1)
         self.assertIn("/api/scene", payload["capabilities"]["web"]["endpoints"])
         self.assertIn("axes", payload["actions"])

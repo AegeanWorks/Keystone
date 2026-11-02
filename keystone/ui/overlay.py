@@ -27,6 +27,11 @@ class HudState:
     height: int
     paused: bool = False
     pointer: tuple[float, float] | None = None
+    draw_calls: int = 0
+    triangles: int = 0
+    audio_voices: int = 0
+    anim_clips: int = 0
+    particles: int = 0
 
 
 class HumanOverlay:
@@ -111,14 +116,19 @@ class HumanOverlay:
         canvas.text(margin + 6 * scale, margin + 4 * scale + line, game, TEXT, scale)
         canvas.text(margin + 6 * scale, margin + 4 * scale + line * 2, status, DIM, scale)
 
-        values = (
-            f"FPS {state.fps:.0f}" if state.fps > 0 else "FPS --",
-            f"FRAME {state.frame}",
-            f"TIME {state.elapsed:.1f}S",
-            f"{state.width}X{state.height}",
+        candidates = (
+            (True, f"FPS {state.fps:.0f}" if state.fps > 0 else "FPS --"),
+            (True, f"FRAME {state.frame}"),
+            (True, f"TIME {state.elapsed:.1f}S"),
+            (True, f"{state.width}X{state.height}"),
+            (state.draw_calls != 0 or state.triangles != 0, f"DRAW {state.draw_calls} TRI {state.triangles}"),
+            (state.audio_voices != 0, f"AUDIO {state.audio_voices} VOX"),
+            (state.anim_clips != 0, f"ANIM {state.anim_clips} CLIP" if state.anim_clips != 1 else "ANIM 1 CLIP"),
+            (state.particles != 0, f"FX {state.particles} LIVE"),
         )
+        values = [value for shown, value in candidates if shown]
         right_width = max(text_width(value, scale) for value in values) + 12 * scale
-        right_height = line * 4 + 6 * scale
+        right_height = line * len(values) + 6 * scale
         right_x = state.width - margin - right_width
         panel(canvas, right_x, margin, right_width, right_height)
         for index, value in enumerate(values):

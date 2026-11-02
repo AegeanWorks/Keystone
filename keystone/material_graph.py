@@ -10,7 +10,7 @@ from keystone.geometry import Material
 from keystone.math3d import Vec3
 from keystone.texture import TextureData
 
-NODE_KINDS = ("color", "float", "checker", "texture", "mix", "material")
+NODE_KINDS = ("color", "float", "checker", "texture", "mix", "material", "pbr")
 _JSON_VALUE = (str, int, float, bool, type(None))
 
 
@@ -116,8 +116,8 @@ class MaterialGraph:
                 raise ValueError(f"texture node {node.id!r} needs an asset or name parameter")
         if not self.output or self.output not in index:
             raise ValueError("material graph output must name an existing node")
-        if index[self.output].kind != "material":
-            raise ValueError("material graph output must be a material node")
+        if index[self.output].kind not in ("material", "pbr"):
+            raise ValueError("material graph output must be a material or pbr node")
 
     def to_dict(self) -> dict[str, object]:
         self.validate()
@@ -265,15 +265,21 @@ def _evaluate_node(
             a.z * (1.0 - factor) + b.z * factor,
         )
 
-    if node.kind == "material":
+    if node.kind in ("material", "pbr"):
         color: Vec3 | None = None
         texture: TextureData | None = None
+        floats: list[float] = []
+        emissive: Vec3 | None = None
         for input_id in node.inputs:
             value = values[input_id]
             if isinstance(value, Vec3) and color is None:
                 color = value
+            elif isinstance(value, Vec3) and node.kind == "pbr" and emissive is None:
+                emissive = value
             elif isinstance(value, TextureData) and texture is None:
                 texture = value
+            elif isinstance(value, (int, float, bool)):
+                floats.append(float(value))
         if color is None:
             raw_color = node.param("color", (0.78, 0.78, 0.82))
             if isinstance(raw_color, (tuple, list)) and len(raw_color) == 3:
@@ -300,10 +306,24 @@ def _evaluate_node(
                         f"material node references unknown texture {texture_name!r}"
                     )
                 texture = textures[texture_name]
+        if emissive is None:
+            raw_emissive = node.param("emissive", (0.0, 0.0, 0.0))
+            if isinstance(raw_emissive, (tuple, list)) and len(raw_emissive) == 3:
+                emissive = Vec3(float(raw_emissive[0]), float(raw_emissive[1]), float(raw_emissive[2]))
+            else:
+                emissive = Vec3(0.0, 0.0, 0.0)
         specular = float(node.param("specular", 0.35))
-        if len(node.inputs) >= 3 and isinstance(values[node.inputs[2]], (int, float, bool)):
-            specular = float(values[node.inputs[2]])
-        shininess = float(node.param("shininess", 32.0))
+        if floats:
+            specular = float(floats[0])
+        metallic = float(node.param("metallic", 0.0))
+        roughness = float(node.param("roughness", 0.7))
+        if len(floats) >= 2:
+            metallic = float(floats[1])
+        if len(floats) >= 3:
+            roughness = float(floats[2])
+        metallic = min(1.0, max(0.0, metallic))
+        roughness = min(1.0, max(0.0, roughness))
+        shininess = float(node.param("shininess", max(1.0, (1.0 - roughness) * 128.0)))
         checker_scale = float(node.param("checker_scale", 0.0))
         return Material(
             color=color,
@@ -311,6 +331,9 @@ def _evaluate_node(
             shininess=shininess,
             checker_scale=checker_scale,
             texture=texture,
+            metallic=metallic,
+            roughness=roughness,
+            emissive=emissive,
         )
 
     raise ValueError(f"unknown material graph node kind {node.kind!r}")

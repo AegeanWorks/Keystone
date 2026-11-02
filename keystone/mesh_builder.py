@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from keystone.geometry import MeshData
-from keystone.math3d import Vec3
+from keystone.math3d import Mat4, Vec3
 
 
 class MeshBuilder:
@@ -54,6 +54,29 @@ class MeshBuilder:
                 (position[0] * scale + ox, position[1] * scale + oy, position[2] * scale + oz)
             )
             self._normals.append(mesh.normals[index])
+            self._uvs.append(mesh.uvs[index] if mesh.uvs else (0.0, 0.0))
+            source = mesh.colors[index] if mesh.colors else (1.0, 1.0, 1.0)
+            self._colors.append(
+                (source[0] * color[0], source[1] * color[1], source[2] * color[2])
+            )
+        self._indices.extend(base + index for index in mesh.indices)
+        return self
+
+    def add_mesh_matrix(
+        self,
+        mesh: MeshData,
+        matrix: Mat4,
+        color: tuple[float, float, float] = (1.0, 1.0, 1.0),
+    ) -> MeshBuilder:
+        """Merge a mesh transformed by a world matrix (positions + normals)."""
+        if not isinstance(matrix, Mat4):
+            raise TypeError("matrix must be a Mat4")
+        base = len(self._positions)
+        for index, position in enumerate(mesh.positions):
+            point = matrix.transform_point(Vec3(*position))
+            normal = matrix.transform_direction(Vec3(*mesh.normals[index])).normalized()
+            self._positions.append((point.x, point.y, point.z))
+            self._normals.append((normal.x, normal.y, normal.z))
             self._uvs.append(mesh.uvs[index] if mesh.uvs else (0.0, 0.0))
             source = mesh.colors[index] if mesh.colors else (1.0, 1.0, 1.0)
             self._colors.append(

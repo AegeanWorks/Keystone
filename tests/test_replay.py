@@ -5,7 +5,8 @@ import unittest
 from pathlib import Path
 
 from keystone.input import ActionState
-from keystone.replay import CommandLog, stable_hash
+from keystone.replay import CommandLog, run_log, stable_hash, verify_log
+from keystone.samples import CubeDemo
 
 
 class ReplayTest(unittest.TestCase):
@@ -26,6 +27,19 @@ class ReplayTest(unittest.TestCase):
     def test_invalid_step_is_rejected(self):
         with self.assertRaises(ValueError):
             CommandLog.from_dict({"seed": 1, "step": 0.0, "frames": []})
+
+    def test_run_log_replays_deterministically(self):
+        log = CommandLog(seed=7)
+        log.record(ActionState(forward=1.0))
+        log.record(ActionState(forward=0.5))
+        result = run_log(CubeDemo, log, trace=True)
+        self.assertEqual(result["frames"], 2)
+        self.assertEqual(result["seed"], 7)
+        self.assertEqual(len(result["trace"]), 2)
+        verified = verify_log(CubeDemo, log)
+        self.assertTrue(verified["ok"])
+        with self.assertRaises(TypeError):
+            run_log(object(), log)
 
 
 if __name__ == "__main__":
