@@ -43,6 +43,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "audio": True,
             "batching": True,
             "static_merge": True,
+            "instancing": True,
             "animation": True,
             "animation_events": True,
             "animation_blend": True,

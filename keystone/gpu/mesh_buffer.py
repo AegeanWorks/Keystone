@@ -54,6 +54,56 @@ class GpuMesh:
         GL.glDrawElements(GL.GL_TRIANGLES, self._count, GL.GL_UNSIGNED_INT, None)
         GL.glBindVertexArray(0)
 
+    def draw_instanced(
+        self,
+        model_flats: list[tuple[float, ...] | list[float]],
+        normal_flats: list[tuple[float, ...] | list[float]],
+    ) -> None:
+        """Draw all instances with per-instance model/normal divisor attributes.
+
+        Locations 4-7 carry the column-major model matrix, locations 8-10 the
+        column-major normal matrix. Temporary VBOs are deleted before return
+        and divisor state is reset so plain draws are unaffected.
+        """
+        count = len(model_flats)
+        if count == 0 or len(normal_flats) != count:
+            raise ValueError("model and normal lists must be non-empty and match")
+        models = numpy.asarray(model_flats, dtype=numpy.float32).reshape(count, 16)
+        normals = numpy.asarray(normal_flats, dtype=numpy.float32).reshape(count, 9)
+        model_vbo = int(GL.glGenBuffers(1))
+        normal_vbo = int(GL.glGenBuffers(1))
+        try:
+            GL.glBindVertexArray(self._vao)
+            GL.glBindBuffer(GL.GL_ARRAY_BUFFER, model_vbo)
+            GL.glBufferData(GL.GL_ARRAY_BUFFER, models.nbytes, models, GL.GL_DYNAMIC_DRAW)
+            for column in range(4):
+                location = 4 + column
+                GL.glEnableVertexAttribArray(location)
+                GL.glVertexAttribPointer(
+                    location, 4, GL.GL_FLOAT, GL.GL_FALSE, 64, ctypes.c_void_p(column * 16)
+                )
+                GL.glVertexAttribDivisor(location, 1)
+            GL.glBindBuffer(GL.GL_ARRAY_BUFFER, normal_vbo)
+            GL.glBufferData(GL.GL_ARRAY_BUFFER, normals.nbytes, normals, GL.GL_DYNAMIC_DRAW)
+            for column in range(3):
+                location = 8 + column
+                GL.glEnableVertexAttribArray(location)
+                GL.glVertexAttribPointer(
+                    location, 3, GL.GL_FLOAT, GL.GL_FALSE, 36, ctypes.c_void_p(column * 12)
+                )
+                GL.glVertexAttribDivisor(location, 1)
+            GL.glDrawElementsInstanced(
+                GL.GL_TRIANGLES, self._count, GL.GL_UNSIGNED_INT, None, count
+            )
+            for location in range(4, 11):
+                GL.glVertexAttribDivisor(location, 0)
+                GL.glDisableVertexAttribArray(location)
+            GL.glBindVertexArray(0)
+            GL.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
+        finally:
+            GL.glDeleteBuffers(1, [model_vbo])
+            GL.glDeleteBuffers(1, [normal_vbo])
+
     def release(self) -> None:
         if self._ebo:
             GL.glDeleteBuffers(1, [self._ebo])

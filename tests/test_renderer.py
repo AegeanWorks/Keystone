@@ -117,6 +117,44 @@ class RendererIntegrationTest(unittest.TestCase):
         self.assertIn("Why:", message)
         self.assertIn("Fix:", message)
 
+    def test_repeated_meshes_render_instanced_with_fewer_calls(self):
+        from keystone.gpu.instancing import plan_instanced
+        from keystone.scene import Transform
+
+        scene = Scene()
+        scene.background = Vec3(0.02, 0.02, 0.03)
+        scene.camera.position = Vec3(0.0, 2.0, 10.0)
+        mesh = cube(1.0)
+        material = Material(color=Vec3(0.8, 0.3, 0.2), specular=0.4)
+        for index in range(6):
+            scene.add(
+                Node(
+                    f"box-{index}",
+                    transform=Transform(position=Vec3((index - 2.5) * 1.6, 0.0, 0.0)),
+                    mesh=mesh,
+                    material=material,
+                )
+            )
+        plan = plan_instanced(scene)
+        self.assertEqual(plan["groups"], 1)
+        self.assertEqual(plan["saved_calls"], 5)
+        self.renderer.render(scene)
+        pixels = self.renderer.read_pixels()
+        stats = dict(self.renderer.last_stats)
+        self.assertEqual(stats["draw_calls"], 1)
+        self.assertEqual(stats["instanced_calls"], 1)
+        self.assertEqual(stats["instances"], 6)
+        self.assertEqual(len(pixels), 64 * 48 * 4)
+        self.assertGreater(sum(pixels[0::4]) / (len(pixels) // 4), 5.0)
+
+    def test_single_nodes_keep_plain_path_and_stats(self):
+        scene = build_scene()
+        self.renderer.render(scene)
+        stats = dict(self.renderer.last_stats)
+        self.assertEqual(stats["draw_calls"], 1)
+        self.assertEqual(stats["instanced_calls"], 0)
+        self.assertEqual(stats["instances"], 0)
+
 
 class VersionGateTest(unittest.TestCase):
     def test_rejects_old_opengl(self):

@@ -7,6 +7,7 @@ from pathlib import Path
 from OpenGL import GL
 
 from keystone.geometry import Material, MeshData
+from keystone.gpu.instancing import group_instances
 from keystone.gpu.mesh_buffer import GpuMesh
 from keystone.gpu.shader import ShaderProgram
 from keystone.gpu.texture_buffer import GpuTexture
@@ -95,6 +96,35 @@ void main() {
 }
 """
 
+VERTEX_SHADER_INSTANCED = """#version 330 core
+layout(location = 0) in vec3 a_position;
+layout(location = 1) in vec3 a_normal;
+layout(location = 2) in vec2 a_uv;
+layout(location = 3) in vec3 a_color;
+layout(location = 4) in vec4 a_inst0;
+layout(location = 5) in vec4 a_inst1;
+layout(location = 6) in vec4 a_inst2;
+layout(location = 7) in vec4 a_inst3;
+layout(location = 8) in vec3 a_nrm0;
+layout(location = 9) in vec3 a_nrm1;
+layout(location = 10) in vec3 a_nrm2;
+uniform mat4 u_view_proj;
+out vec3 v_world;
+out vec3 v_normal;
+out vec2 v_uv;
+out vec3 v_color;
+void main() {
+    mat4 inst = mat4(a_inst0, a_inst1, a_inst2, a_inst3);
+    mat3 nmat = mat3(a_nrm0, a_nrm1, a_nrm2);
+    vec4 world = inst * vec4(a_position, 1.0);
+    v_world = world.xyz;
+    v_normal = normalize(nmat * a_normal);
+    v_uv = a_uv;
+    v_color = a_color;
+    gl_Position = u_view_proj * world;
+}
+"""
+
 SKY_VERTEX_SHADER = """#version 330 core
 out vec2 v_uv;
 void main() {
@@ -134,19 +164,29 @@ class Renderer:
         self.width = width
         self.height = height
         self._program = ShaderProgram(VERTEX_SHADER, FRAGMENT_SHADER)
+        inst_program: ShaderProgram | None = None
         sky_program = None
         try:
+            inst_program = ShaderProgram(VERTEX_SHADER_INSTANCED, FRAGMENT_SHADER)
             sky_program = ShaderProgram(SKY_VERTEX_SHADER, SKY_FRAGMENT_SHADER)
             self._sky_vao = GL.glGenVertexArrays(1)
         except Exception:
             if sky_program is not None:
                 sky_program.release()
+            if inst_program is not None:
+                inst_program.release()
             self._program.release()
             raise
+        self._inst_program = inst_program
         self._sky_program = sky_program
         self._meshes: dict[int, tuple[MeshData, GpuMesh]] = {}
         self._textures: dict[int, tuple[TextureData, GpuTexture]] = {}
-        self.last_stats: dict[str, int] = {"draw_calls": 0, "triangles": 0}
+        self.last_stats: dict[str, int] = {
+            "draw_calls": 0,
+            "triangles": 0,
+            "instanced_calls": 0,
+            "instances": 0,
+        }
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glDepthFunc(GL.GL_LESS)
         GL.glEnable(GL.GL_CULL_FACE)
@@ -186,9 +226,50 @@ class Renderer:
         GL.glDepthMask(GL.GL_TRUE)
         GL.glEnable(GL.GL_DEPTH_TEST)
 
+    def _apply_shared(self, program: ShaderProgram, scene: Scene, view_projection: Mat4) -> None:
+        camera = scene.camera
+        light = scene.light
+        background = scene.background
+        program.use()
+        program.set_mat4("u_view_proj", view_projection)
+        program.set_vec3("u_camera_pos", camera.position)
+        program.set_vec3("u_light_dir", light.unit_direction())
+        program.set_vec3("u_light_color", light.radiance())
+        program.set_vec3("u_ambient", scene.ambient)
+        program.set_vec3("u_fog_color", background)
+        program.set_float("u_fog_density", scene.fog_density)
+        point = scene.point_light
+        if point is None:
+            program.set_vec3("u_point_pos", Vec3())
+            program.set_vec3("u_point_color", Vec3())
+            program.set_float("u_point_radius", 0.0)
+        else:
+            program.set_vec3("u_point_pos", point.position)
+            program.set_vec3("u_point_color", point.color * point.intensity)
+            program.set_float("u_point_radius", point.radius)
+
+    def _apply_material(self, program: ShaderProgram, material: Material) -> None:
+        program.set_vec3("u_color", material.color)
+        program.set_float("u_specular", material.specular)
+        program.set_float("u_shininess", material.shininess)
+        program.set_float("u_metallic", material.metallic)
+        program.set_float("u_roughness", material.roughness)
+        program.set_vec3("u_emissive", material.emissive)
+        program.set_float("u_checker_scale", material.checker_scale)
+        texture = material.texture if isinstance(material.texture, TextureData) else None
+        if texture is None:
+            GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
+            program.set_float("u_has_texture", 0.0)
+        else:
+            self._gpu_texture(texture).bind(0)
+            program.set_int("u_texture", 0)
+            program.set_float("u_has_texture", 1.0)
+
     def render(self, scene: Scene) -> dict[str, int]:
         draw_calls = 0
         triangles = 0
+        instanced_calls = 0
+        instances = 0
         GL.glViewport(0, 0, self.width, self.height)
         background = scene.background
         GL.glClearColor(background.x, background.y, background.z, 1.0)
@@ -196,54 +277,40 @@ class Renderer:
         self._draw_sky(scene)
         camera = scene.camera
         view_projection = camera.view_projection(self.width / self.height)
-        light = scene.light
-        self._program.use()
-        self._program.set_mat4("u_view_proj", view_projection)
-        self._program.set_vec3("u_camera_pos", camera.position)
-        self._program.set_vec3("u_light_dir", light.unit_direction())
-        self._program.set_vec3("u_light_color", light.radiance())
-        self._program.set_vec3("u_ambient", scene.ambient)
-        self._program.set_vec3("u_fog_color", background)
-        self._program.set_float("u_fog_density", scene.fog_density)
-        point = scene.point_light
-        if point is None:
-            self._program.set_vec3("u_point_pos", Vec3())
-            self._program.set_vec3("u_point_color", Vec3())
-            self._program.set_float("u_point_radius", 0.0)
-        else:
-            self._program.set_vec3("u_point_pos", point.position)
-            self._program.set_vec3("u_point_color", point.color * point.intensity)
-            self._program.set_float("u_point_radius", point.radius)
-        for node in scene.traverse():
-            if node.mesh is None or not node.world_visible():
-                continue
-            mesh = node.mesh
+        self._apply_shared(self._program, scene, view_projection)
+        self._apply_shared(self._inst_program, scene, view_projection)
+        for group in group_instances(scene):
+            mesh = group["mesh"]
             if not isinstance(mesh, MeshData):
                 raise TypeError("Node.mesh must be MeshData")
-            material = node.material if isinstance(node.material, Material) else Material()
-            model = node.world_matrix()
-            self._program.set_mat4("u_model", model)
-            self._program.set_mat3("u_normal_matrix", normal_matrix(model))
-            self._program.set_vec3("u_color", material.color)
-            self._program.set_float("u_specular", material.specular)
-            self._program.set_float("u_shininess", material.shininess)
-            self._program.set_float("u_metallic", material.metallic)
-            self._program.set_float("u_roughness", material.roughness)
-            self._program.set_vec3("u_emissive", material.emissive)
-            self._program.set_float("u_checker_scale", material.checker_scale)
-            texture = material.texture if isinstance(material.texture, TextureData) else None
-            if texture is None:
-                GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
-                self._program.set_float("u_has_texture", 0.0)
+            material = group["material"] if isinstance(group["material"], Material) else Material()
+            models = group["models"]
+            if len(models) == 1:
+                model = models[0]
+                self._program.use()
+                self._program.set_mat4("u_model", model)
+                self._program.set_mat3("u_normal_matrix", normal_matrix(model))
+                self._apply_material(self._program, material)
+                self._gpu_mesh(mesh).draw()
+                draw_calls += 1
+                triangles += mesh.triangle_count()
             else:
-                self._gpu_texture(texture).bind(0)
-                self._program.set_int("u_texture", 0)
-                self._program.set_float("u_has_texture", 1.0)
-            self._gpu_mesh(mesh).draw()
-            draw_calls += 1
-            triangles += mesh.triangle_count()
+                self._inst_program.use()
+                self._apply_material(self._inst_program, material)
+                model_flats = [model.flat() for model in models]
+                normal_flats = [normal_matrix(model) for model in models]
+                self._gpu_mesh(mesh).draw_instanced(model_flats, normal_flats)
+                draw_calls += 1
+                instanced_calls += 1
+                instances += len(models)
+                triangles += mesh.triangle_count() * len(models)
         GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
-        self.last_stats = {"draw_calls": draw_calls, "triangles": triangles}
+        self.last_stats = {
+            "draw_calls": draw_calls,
+            "triangles": triangles,
+            "instanced_calls": instanced_calls,
+            "instances": instances,
+        }
         return dict(self.last_stats)
 
     def read_pixels(self) -> bytes:
@@ -264,4 +331,5 @@ class Renderer:
             GL.glDeleteVertexArrays(1, [self._sky_vao])
             self._sky_vao = 0
         self._sky_program.release()
+        self._inst_program.release()
         self._program.release()

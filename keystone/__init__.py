@@ -26,6 +26,7 @@ from keystone.audio import (
 )
 from keystone.batch import merge_batches, plan_batches
 from keystone.gltf import GltfImport, load_gltf
+from keystone.gpu.instancing import group_instances, plan_instanced
 from keystone.history import History
 from keystone.input import ActionState, InputMap
 from keystone.material_graph import MaterialGraph, MaterialGraphNode
@@ -36,7 +37,7 @@ from keystone.scene import Node, Scene, Transform
 from keystone.scene_snapshot import scene_from_dict, scene_to_dict
 from keystone.texture import TextureData
 
-__version__ = "0.31.0"
+__version__ = "0.32.0"
 __all__ = [
     "SAMPLE_RATE",
     "ActionState",
@@ -68,6 +69,7 @@ __all__ = [
     "apply_pose",
     "audio_report",
     "blend_poses",
+    "group_instances",
     "load_gltf",
     "merge_batches",
     "mix_clips",
@@ -76,6 +78,7 @@ __all__ = [
     "parse_actions",
     "particles_report",
     "plan_batches",
+    "plan_instanced",
     "read_wav",
     "scene_from_dict",
     "scene_to_dict",

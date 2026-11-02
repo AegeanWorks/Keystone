@@ -100,6 +100,19 @@ class GameSession:
                 }
             except (AttributeError, TypeError, ValueError):
                 merged_summary = None
+            try:
+                from keystone.gpu.instancing import plan_instanced
+
+                instanced = plan_instanced(scene)
+                instancing_summary = {
+                    "groups": instanced["groups"],
+                    "instanced_calls": instanced["instanced_calls"],
+                    "saved_calls": instanced["saved_calls"],
+                    "instances": instanced["instances"],
+                    "triangles": instanced["triangles"],
+                }
+            except (AttributeError, TypeError, ValueError):
+                instancing_summary = None
             mixer = getattr(self.game, "mixer", None)
             audio = None
             if mixer is not None and hasattr(mixer, "voice_count"):
@@ -162,6 +175,7 @@ class GameSession:
                 "texture_count": document["texture_count"],
                 "batches": batches,
                 "merged": merged_summary,
+                "instancing": instancing_summary,
                 "audio": audio,
                 "animation": animation,
                 "particles": particles,

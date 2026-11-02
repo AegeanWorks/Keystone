@@ -287,3 +287,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
   2. Validate accessor and bufferView offsets against the declared bufferView byteLength and reject material texture indices that do not resolve.
   3. Require string snapshot node ids, reject non-mapping camera and transform fields, validate asset kinds on reattachment, and build one payload-to-id index per snapshot instead of scanning the registry per node.
 - **Consequences**: Standard GLB bundles import through the same path as JSON glTF. Malformed glTF and snapshot documents fail with precise errors instead of silently losing textures or attaching the wrong payload. Snapshot schema 1 is unchanged; only validation is stricter and serialization is linear in registry size.
+
+### ADR-033: Add GPU hardware instancing for repeated static geometry
+
+- **Date**: 2026-11-02
+- **Status**: Accepted
+- **Context**: Static batch merging baked still geometry into one mesh, but repeated rigid nodes (including moving ones sharing a mesh/material) still cost one GL draw call each. Draw-call count limited scene scale while pixels stayed identical.
+- **Decision**: Add `keystone/gpu/instancing.py` with deterministic `group_instances()`/`plan_instanced()` grouping by identical mesh/material payloads, an instanced vertex shader with per-instance model/normal divisor attributes, and a renderer path issuing one `glDrawElementsInstanced` per multi-node group. Single-node groups keep the uniform path. Expose counts via `last_stats`, `/api/inspector` and `capabilities.instancing`. Frame report schema stays at 5.
+- **Consequences**: Repeated meshes render with fewer draw calls and identical pixels; CubeDemo keeps 5 plain draws while a 200-cube test scene collapses to 1 call. Single-instance fallback avoids divisor state leaks. Report hashes and simulation hashes are unchanged. Shadows, post-processing, skinning and editor work remain future.
