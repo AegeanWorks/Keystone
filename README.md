@@ -8,7 +8,7 @@
 
 ![Keystone engine sample](assets/engine.png)
 
-A small, game-agnostic 3D engine core in Python: OpenGL 3.3 rendering with PBR materials, textured materials, scene graph, meshes and OBJ loading, fixed-step loop, rebindable action input with contexts, deterministic animation, particles and audio mixer, collision primitives, deterministic replay, atomic serialization, static batch planning and merging, and a human HUD/help overlay with profiler rendered with an embedded bitmap font.
+A small, game-agnostic 3D engine core in Python: OpenGL 3.3 PBR rendering, scene graph, meshes/OBJ, fixed-step loop, rebindable input, animation, particles, audio, collision, replay, atomic saves, batch planning/merging, and a HUD/profiler overlay with an embedded bitmap font.
 
 Games plug in through one five-operation contract. Keystone ships a **cube demo** only as a smoke test; it contains no combat, puzzles, procedural worlds or other genre rules. External game modules live outside this package and load with `--game package.module:Factory`. Games may also add an optional `draw_ui(canvas, state)` hook for their own HUD.
 
@@ -251,24 +251,24 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 
 ## 🚀 Features
 
-- **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth testing, back-face culling, Blinn-Phong lighting with PBR extensions (metallic, roughness, emissive), vertex colors, fog, gradient sky and an optional point light; per-frame draw-call and triangle stats feed the profiler HUD.
+- **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth/culling, Blinn-Phong + PBR (metallic, roughness, emissive), vertex colors, fog, sky, point light; draw-call/triangle stats feed the profiler.
 - **Scene graph**: named nodes with stable per-scene IDs, tags, layers, optional typed components, local/world transforms, visibility, cycle-safe parenting, linear queries and cached static GPU meshes.
 - **Assets**: immutable `MeshData` with optional UVs and vertex colors, cube/plane/cone/cylinder/sphere primitives, a streaming OBJ loader, and an immutable `TextureData` with PNG and procedural checker sources.
 - **Textured PBR materials**: `Material` keeps Blinn-Phong specular/shininess plus metallic, roughness and emissive channels; `Material.texture` samples an RGBA texture with repeat wrapping and mipmaps; glTF PBR factors and emissive survive import; material graphs add a `pbr` node; the renderer caches one GPU texture per immutable payload.
 - **Fixed-step runtime**: `FixedStepClock` releases whole simulation steps with a bounded catch-up budget; the headless path advances exactly one step per rendered frame for deterministic tests.
 - **Action input**: `InputMap` maps keys and pointer motion to `forward`, `right`, `up`, `look_yaw`, `look_pitch`, `pressed` and `held` with rebindable bindings and named action contexts (`gameplay`, `menu`, custom) that save/load as JSON; games never read GLFW directly.
 - **Audio core**: dependency-free synth (`sine`, `square`, `noise`), named-bus `Mixer` with deterministic mixdown, mono 16-bit WAV read/write and `audio_report()` for AI analysis; no hardware or playback device required.
-- **Animation core**: deterministic keyframe `Track`/`AnimationClip` with linear/step interpolation, `AnimationController` with looping playback, crossfade blending (`crossfade()`, `blend_poses()`) and timed events (`advance_with_events()`), `apply_pose()` writing Transforms by node id, JSON round trips and `animation_report()` for AI audit; static merges exclude animated nodes.
+- **Animation core**: deterministic keyframe `Track`/`AnimationClip` (linear/step), looping `AnimationController`, crossfade blending and timed events, `apply_pose()` by node id, JSON round trips and `animation_report()`; static merges skip animated nodes.
 - **Replay runner**: `run_log()`/`verify_log()` replay a `CommandLog` on a fresh game without a window, and `--replay log.json` (with `--out`, `--expect-hash`, `--trace`) gives AI a file-based deterministic audit trail.
 - **Particles**: dependency-free deterministic CPU `Emitter`/`ParticleSystem` with seeded spawn, gravity/drag integration, burst emission, lifetime culling, JSON round trips and `particles_report()` for AI; HUD, inspector and describe caps expose live counts.
 - **Physics**: ray/AABB/sphere queries, sphere pushout, deterministic spatial-grid broadphase, AABB character movement with gravity and ground detection, trigger enter/exit tracking and filtered raycasts.
 - **Replay and persistence**: `ActionState` command logs, stable hashes and atomic JSON writes with a `.bak` snapshot.
 - **Plugin loading**: `load_game("package.module:Factory")` validates the five-operation contract before the engine starts.
 - **No-GL simulation**: `run_simulation()` and `--simulate` drive `GameModule.update()` directly, with JSON action scripts and deterministic hashes, no window or driver required.
-- **AI discovery and testing**: `--describe`/`describe_game()` expose actions, capabilities (including `pbr`, `agents`, `profiler`, `input_bindings`), report schema and the current snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; `keystone.testing` provides the same evidence as Python helpers; `compare_reports()` diffs two frame reports; `keystone.agents` adds validated action parsing, fused observations, report summaries and a hash-chained audit trail; `keystone.playtest` adds seeded bots, transcript diffing and fairness checks.
+- **AI discovery and testing**: `--describe` exposes actions, capabilities, report/scene schemas and snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; `keystone.testing`/`agents`/`playtest` add scenario helpers, validated actions, fused observations and seeded bots.
 - **Visual regression gate**: `--compare-baseline baseline.json` renders a new report, compares image/report hashes, stats and projected nodes, prints the diff and exits non-zero on image change. `--diff-out diff.png` writes a changed-pixel diff image.
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip image loading, changed-pixel counts, bbox and a visual diff without third-party imaging libraries.
-- **Frame reports for AI analysis**: `--report` writes a schema-5 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data, projected screen bounds and identity metadata (ID, parent ID, tags, layer, components) for every scene node, PBR material/texture metadata (metallic, roughness, emissive), and structured UI labels/buttons when the overlay is rendered.
+- **Frame reports for AI analysis**: `--report` writes schema-5 JSON with image hashes, pixel/luminance stats, content box, dominant colors, 8×8 grid, camera, projected bounds and per-node identity/material metadata, plus UI labels/buttons when the overlay is rendered.
 - **Human overlay**: a game-agnostic HUD with game/status, FPS, frame, elapsed time, resolution and profiler lines (draw calls, triangles, audio voices, animation clips, live particles), plus controls help and an interactive pause menu; drawn with an embedded 5×7 bitmap font, no font asset or imaging library. Games can add their own HUD through the optional `draw_ui(canvas, state)` hook and expose a `mixer`, animation controller or particle system for the counts.
 - **Web console and WebGL viewer**: `--serve` starts a loopback-only stdlib JSON API and vanilla browser dashboard; `/api/describe`, `/api/scene`, `/api/inspector` and `/api/simulate` share the CLI contract, and the WebGL2 viewer previews exported scene documents with textures, lights and fog. `/api/inspector` reports node/mesh/texture counts, the static batch plan, merge savings, audio and animation state plus an asset inventory for humans and AI.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
@@ -433,9 +433,10 @@ keystone/
 ├── assets/
 │   ├── octahedron.obj        <- generic sample OBJ
 │   ├── engine.png            <- sample frame
-│   ├── engine.json           <- schema-5 sample frame report
+│   ├── engine.json           <- sample frame report
 │   ├── logo.svg              <- project logo
-│   └── social-preview.svg    <- repository social preview
+│   ├── social-preview.svg    <- social preview
+│   └── screenshots/          <- approved HUD + console keepers
 ├── docs/
 │   ├── ARCHITECTURE.md       <- core layers, contract and roadmap
 │   └── AI_GUIDE.md           <- discover, simulate, verify, render and compare
@@ -590,5 +591,5 @@ Free for personal use under the Aegean License 1.1 (AL-1.1); see [LICENSE](LICEN
 
 <a href="https://github.com/AegeanWorks/Keystone/commit/e6c6318"><img src="assets/screenshots/2026-11-03-console.png" alt="Keystone web console at 2026-11-03"></a>
 
-*commit `e6c6318` · 2026-11-03 · viewports 960x540 (scripted headless) and 1440x900 (web console); sample `assets/engine.png` predates the HUD and stays as legacy art*
+*`e6c6318` · 2026-11-03 · 960x540 headless + 1440x900 console; `engine.png` is legacy art*
 <!-- aegean:screenshots:end -->
