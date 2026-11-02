@@ -331,7 +331,7 @@ assert_deterministic(lambda: CubeDemo(), [ActionState(forward=1.0)], frames=120)
 python -m keystone --playtest --policy random --seed 7 --frames 120 --out report.json
 ```
 
-Seeded `random`/`greedy`/`scripted` bots play headlessly through the five operations; `--expect-hash` pins the transcript, and an `unfair` configuration exits 1 with reasons. Games opt in via `outcome`/`score` snapshot keys.
+Seeded `random`/`greedy`/`scripted` bots play headlessly through the five operations; `--expect-hash` pins the transcript, and an `unfair` configuration exits 1 with reasons.
 
 ### Analyze a rendered frame
 
@@ -474,7 +474,9 @@ keystone/
 │   ├── test_samples.py       <- CubeDemo smoke test
 │   ├── test_boundary.py      <- core has no game modules/imports
 │   ├── test_web.py           <- scene export, JSON API and static assets
-│   └── test_app.py           <- engine loop, CLI, simulate and reports
+│   ├── test_app.py           <- engine loop, CLI, simulate and reports
+│   ├── test_playtest.py      <- seeded bots and fairness
+│   └── support_maze_game.py  <- deterministic grid fixture
 ├── requirements.txt          <- pinned runtime and test dependencies
 ├── pyproject.toml            <- package metadata, pytest and ruff configuration
 ├── .gitignore                <- transient AIKit state excluded
