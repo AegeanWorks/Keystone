@@ -42,5 +42,44 @@
       }
     }
   },
-  "screenshots": []
+  "screenshots": [
+    {
+      "path": "assets/screenshots/2026-11-03-hud.png",
+      "alt": "Keystone headless HUD render at 2026-11-03",
+      "caption": "Scripted smoke-test render (python -m keystone --headless --frames 1 --size 960x540 --ui): cube-demo scene with profiler HUD and controls bar. Deterministic output, re-rendered byte-identical in verification.",
+      "commit": "e6c63182e185aef649368e08a2e436eafae7f7df",
+      "taken_at": "2026-11-03",
+      "viewport": "960x540",
+      "width": 960,
+      "height": 540,
+      "status": "approved",
+      "review": {
+        "status": "approved",
+        "reviewer": "agent:kilo",
+        "method": "vision",
+        "notes": "Real engine framebuffer: three PBR cubes, gold sphere, checkerboard, bitmap-font HUD (labels, profiler, controls). Scripted recipe, no window, no staging possible.",
+        "score": 93,
+        "reviewed_at": "2026-11-03"
+      }
+    },
+    {
+      "path": "assets/screenshots/2026-11-03-console.png",
+      "alt": "Keystone web console at 2026-11-03",
+      "caption": "Local web console (python -m keystone --serve): simulation panel, scene inventory, JSON describe and live WebGL2 viewer rendering the same cube-demo scene.",
+      "commit": "e6c63182e185aef649368e08a2e436eafae7f7df",
+      "taken_at": "2026-11-03",
+      "viewport": "1440x900",
+      "width": 1440,
+      "height": 900,
+      "status": "approved",
+      "review": {
+        "status": "approved",
+        "reviewer": "agent:kilo",
+        "method": "vision",
+        "notes": "Real served console: panels legible, WebGL viewer shows the true scene (not a placeholder); proves the --serve workflow end to end.",
+        "score": 93,
+        "reviewed_at": "2026-11-03"
+      }
+    }
+  ]
 }

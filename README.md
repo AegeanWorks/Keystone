@@ -582,3 +582,13 @@ The project gate covers tests, lint, mechanics, hygiene, guidelines and secrets.
 ## 📜 License
 
 Free for personal use under the Aegean License 1.1 (AL-1.1); see [LICENSE](LICENSE). Any commercial use needs the Aegean Commercial License 1.0 (ACL-1.0); see [COMMERCIAL.md](COMMERCIAL.md).
+
+<!-- aegean:screenshots:start -->
+## Screenshots
+
+<a href="https://github.com/AegeanWorks/Keystone/commit/e6c6318"><img src="assets/screenshots/2026-11-03-hud.png" alt="Keystone headless HUD render at 2026-11-03"></a>
+
+<a href="https://github.com/AegeanWorks/Keystone/commit/e6c6318"><img src="assets/screenshots/2026-11-03-console.png" alt="Keystone web console at 2026-11-03"></a>
+
+*commit `e6c6318` · 2026-11-03 · viewports 960x540 (scripted headless) and 1440x900 (web console); sample `assets/engine.png` predates the HUD and stays as legacy art*
+<!-- aegean:screenshots:end -->
