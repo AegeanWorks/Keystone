@@ -1,6 +1,6 @@
 # Keystone Architecture
 
-**Status:** implemented in v0.31.0 - core-only engine with scene identity, PBR materials, physics systems, human UI with profiler, deterministic animation with blending/events, particles and audio, batch planning and merging, replay runner, a local web console with inspector, asset inventory and particle state, an asset registry with hot reload, material graphs, glTF 2.0 import, versioned scene snapshots with undo/redo and AI observation/action adapters
+**Status:** implemented in v0.33.0 - core-only engine with scene identity, PBR materials, physics systems, human UI with profiler, deterministic animation with blending/events, particles and audio, batch planning and merging, replay runner, seeded bot playtester with transcript diffing and fairness validation, a local web console with inspector, asset inventory and particle state, an asset registry with hot reload, material graphs, glTF 2.0 import, versioned scene snapshots with undo/redo and AI observation/action adapters
 **Boundary:** `keystone/` is game-agnostic; games are external modules.
 
 ## 1. What Keystone Is
@@ -27,6 +27,7 @@ It contains no combat, puzzles, procedural worlds, space simulation or other gen
 keystone/
 ├── app.py            Engine: context, renderer, clock, input, loop, screenshots
 ├── plugin.py         GameModule Protocol and load_game()
+├── playtest.py        seeded bot policies, transcript diffing, fairness validation
 ├── input.py          ActionState + InputMap
 ├── clock.py          FixedStepClock
 ├── replay.py         CommandLog + stable_hash()
@@ -166,6 +167,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Web console | Implemented | scene export, JSON API, CORS, static WebGL2 viewer |
 | Physics | Implemented | rays, AABB, sphere queries, broadphase, character movement and triggers |
 | AI adapters | Implemented | validated action parsing, fused observations, report summaries, hash-chained audit trail |
+| Playtest | Implemented | seeded bot policies, CommandLog-compatible transcripts, transcript diffing, schema-1 reports, fairness validation |
 | Batching | Implemented | static mesh/material grouping with draw-call savings and world-space merge |
 | Inspector | Implemented | web `/api/inspector` with node counts, batch plan, merge summary, audio, animation and particle state, asset inventory |
 | ECS | Optional/missing | evaluate after a real workload |
@@ -180,7 +182,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 5. **Input/audio** — rebindable input with JSON persistence and profiler HUD in v0.27.0; action contexts, deterministic mixer with buses, WAV I/O and HUD voices in v0.28.0; live device playback remains out of scope.
 6. **AI adapters** — implemented in v0.27.0; validated actions, fused observations, report summaries and hash-chained audit trail.
 6. **Animation** — deterministic keyframe clips, looping controller, pose application and JSON round trips in v0.29.0; crossfade blending and timed events in v0.30.0; skinning remains; deterministic CPU particles with HUD/inspector/AI reports in v0.31.0; GPU point sprites and particle collision remain.
-6. **Serialization/replay** — versioned scene snapshot format and undo/redo in v0.25.0; deterministic replay runner with `--replay` in v0.30.0.
+6. **Serialization/replay** — versioned scene snapshot format and undo/redo in v0.25.0; deterministic replay runner with `--replay` in v0.30.0; seeded bot playtester with transcript diffing and fairness validation in v0.33.0.
 7. **Tooling** — the v0.20.0 web console covers discovery, simulation and scene preview; `/api/inspector` with batch plan and audio state in v0.28.0 plus merge summary and animation state in v0.29.0 plus asset inventory in v0.30.0; editor, richer HUD widgets and editor hooks remain.
 
 Each core system must have a game-agnostic test and must not introduce genre vocabulary.
@@ -192,6 +194,8 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - `python -m keystone --simulate --frames 1` runs without OpenGL.
 - `python -m keystone --verify-determinism --frames 2` exits 0 only for matching hashes.
 - `python -m keystone --simulate --frames 1 --expect-hash <hash>` exits 0 only for the pinned hash.
+- `python -m keystone --playtest --policy random --seed 0 --frames 8` exits 0 with a schema-1 transcript and report; the same seed replays to the same hash.
+- `python -m keystone --playtest` on an unfair configuration exits 1 with `fairness.reasons` naming the rejection.
 - `--headless --frames 1 --size 64x48` renders the sample.
 - `--headless --frames 1 --ui --report hud.json` captures the human overlay.
 - `--headless --frames 1 --ui --start-paused --report paused.json` captures the pause menu and its buttons.

@@ -1,55 +1,16 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-format-hardening-v2",
+    "task_id": "keystone-playtester-v1",
     "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1793545281.4674802,
-    "owner": "kilo:review",
-    "started_by": "kilo:review",
-    "continuations": [],
-    "completed_at": 1793545482.2394297
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1793657858.688965,
+    "owner": "kilo:playtester",
+    "started_by": "kilo:playtester",
+    "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-asset-registry-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[4/4] Integration and delivery: CubeDemo built through AssetRegistry, mesh dedup reduces web mesh_count from 5 to 3, README/ARCHITECTURE/ADR-027/version 0.22.0, 228 tests, ruff clean, 6/6 gates; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793439222.1437323,
-      "timestamp_str": "2026-10-31 12:33:42",
-      "agent": "opencode:keystone"
-    },
-    {
-      "task_id": "keystone-asset-registry-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-asset-registry-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793439247.6829464,
-      "timestamp_str": "2026-10-31 12:34:07",
-      "agent": "opencode:keystone"
-    },
-    {
-      "task_id": "keystone-material-graphs-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/4] Plan declarative material graphs: frozen node graph with color/float/checker/texture/mix/material nodes, topological evaluation with cycle detection, JSON serialization, registry texture resolution, tests, docs and ADR-028",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793440400.6847339,
-      "timestamp_str": "2026-10-31 12:53:20",
-      "agent": "opencode:keystone",
-      "impact_assessment": {
-        "why": "Materials are literal Material values, so reusable procedural surfaces, texture references and mixes must be rebuilt by hand in every game and cannot be serialized, inspected or compared by AI clients.",
-        "benefits": "Games and AI clients get an immutable, deterministic, JSON-serializable material graph that evaluates to one Material, resolves textures by name or AssetRegistry id, and needs no OpenGL or new dependency.",
-        "risks": "contract: new public keystone.material_graph module plus MaterialGraph/MaterialGraphNode exports and version 0.23.0, no report or web schema change; dependency: stdlib plus the existing geometry, math3d and texture modules only; concurrency: pure evaluation with no shared state or background work; state: no persisted files, graphs are in-memory documents",
-        "mitigation": "Failing-first tests for constant color/float, checker textures, mix, cycle and bad-graph validation, deterministic evaluation, JSON round trips, texture-by-name resolution and registry resolution; full 6/6 project gate before delivery"
-      }
-    },
     {
       "task_id": "keystone-material-graphs-v1",
       "phase": "phase 3",
@@ -269,6 +230,46 @@
       "timestamp": 1793545482.2394314,
       "timestamp_str": "2026-11-01 18:04:42",
       "agent": "kilo:review"
+    },
+    {
+      "task_id": "keystone-playtester-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/4] Plan bot playtester: transcript/diff/policies/fairness over five ops, maze fixture prover, no contract change",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793657140.6565785,
+      "timestamp_str": "2026-11-03 01:05:40",
+      "agent": "kilo:playtester",
+      "impact_assessment": {
+        "why": "AI clients need seeded bot play, transcript pinning and fairness rejects next to --simulate",
+        "benefits": "headless bot runs with expect-hash parity, shared report schema for future web adapters",
+        "risks": "contract: additive playtest module plus CLI flags, no five-op change; dependency: stdlib plus core input/replay/headless only; concurrency: single-threaded runs, wall-clock cap aborts; state: transcripts/reports via atomic writes, no format change to existing schemas",
+        "mitigation": "failing-first tests per layer, boundary test stays green, full pytest plus 6/6 project gates before commit"
+      },
+      "plan_digest": "f28d54f7a4c9d90fe61654b9a9e01d8fb5b748c92c4fbb940b702c38b6a1e0ba"
+    },
+    {
+      "task_id": "keystone-playtester-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/4] Playtester core: transcript/diff/policies/fairness module, CLI, maze fixture, 31 tests, docs and ADR-034",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793657634.9858332,
+      "timestamp_str": "2026-11-03 01:13:54",
+      "agent": "kilo:playtester"
+    },
+    {
+      "task_id": "keystone-playtester-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/4] Delivery ready: v0.33.0, 357 tests, ruff clean, 6/6 gates; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793657858.688965,
+      "timestamp_str": "2026-11-03 01:17:38",
+      "agent": "kilo:playtester"
     }
   ]
 }

@@ -39,7 +39,17 @@ python -m keystone --simulate --frames 120 --actions actions.json \
 
 Exit code 0 means the final hash matched; 1 means drift. `--verify-determinism` runs the same scenario twice and can also take `--expect-hash`.
 
-## 4. Render and analyze
+## 4. Bot-playtest a game
+
+```bash
+python -m keystone --playtest --policy random --seed 7 --frames 120 \
+  --transcript-out run.json --out report.json
+python -m keystone --playtest --policy scripted --script solution.json --frames 120
+```
+
+`--playtest` runs a seeded bot policy (`random`, `greedy`, `scripted`) headlessly through the same five operations as `--simulate`. The transcript wraps the exact `CommandLog` shape, so its hash pins with `--expect-hash` and replays with `--replay` like any simulation; `diff_transcripts()` reports the first divergent frame between two traced runs. The schema-1 report (`game`, `policy`, `seed`, `outcome`, `final`, `hash`, `coverage`, `fairness`) is the same JSON a thin web adapter emits from `POST /api/simulate` — browser driving stays out. Exit code is 1 when the validator rejects the configuration as `unfair` (spawn-terminal, nondeterministic, no witnessed win, or reference longer than the time limit), with reasons in `report.fairness.reasons`. Games opt into win/lose judgments with `outcome`/`score` snapshot keys; without them the verdict is `unknown`, never a false `fair`.
+
+## 5. Render and analyze
 
 ```bash
 python -m keystone --headless --frames 1 --size 1280x720 \
@@ -57,7 +67,7 @@ The schema-5 report contains:
 - `ui` metadata (`visible`, `paused`, labels and buttons) or `null` for clean captures;
 - a stable report hash.
 
-## 5. Compare against a baseline
+## 6. Compare against a baseline
 
 ```bash
 python -m keystone --headless --frames 1 --size 1280x720 \
@@ -67,7 +77,7 @@ python -m keystone --headless --frames 1 --size 1280x720 \
 
 The diff reports image/report equality, luminance and content-ratio deltas, bbox changes, added/removed/changed nodes (keyed by scene ID when both reports are schema 4 or newer, otherwise by name), added/removed/moved UI labels and buttons, and PBR material/texture metadata. `--diff-out` additionally writes a visual PNG and reports changed pixels, ratio, bbox, mean delta and max delta. Exit code 0 means the image hash matched; 1 means it changed.
 
-## 6. Capture the human UI
+## 7. Capture the human UI
 
 Windowed runs draw the HUD by default. For an AI inspection of what a person sees, add `--ui` to a headless run:
 
@@ -89,7 +99,7 @@ engine.apply_ui_action("toggle_ui") # hide/show the HUD
 engine.apply_ui_action("quit")      # request window close
 ```
 
-## 7. Draw a game HUD
+## 8. Draw a game HUD
 
 A game can implement an optional `draw_ui(canvas, state)` hook. It runs before the engine HUD and uses the same clipped canvas, bitmap font and pause state:
 
@@ -129,6 +139,12 @@ from keystone.testing import assert_deterministic, run_script
 
 result = run_script(CubeDemo(), [ActionState(forward=1.0)], frames=60)
 assert_deterministic(lambda: CubeDemo(), [ActionState(forward=1.0)], frames=60)
+
+# Bot playtesting: seeded policies, transcript reports, fairness verdicts.
+from keystone.playtest import RandomPolicy, make_report, run_bot, validate_fairness
+
+transcript = run_bot(CubeDemo, RandomPolicy(), frames=60, seed=7, trace=True)
+print(make_report(transcript, validate_fairness(CubeDemo, frames=60, seeds=(7,)))["fairness"])
 
 # AI-first workflow: validate LLM JSON, fuse discovery + simulation, audit it.
 actions = parse_actions([{"forward": 1.0}])

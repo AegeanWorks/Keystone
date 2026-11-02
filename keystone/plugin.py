@@ -51,6 +51,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "asset_inventory": True,
             "particles": True,
             "inspector": True,
+            "playtest": True,
             "human_ui": {"overlay": "on", "toggle": "h", "pause": "p", "menu": ["resume", "toggle_ui", "quit"]},
             "game_ui": callable(getattr(game, "draw_ui", None)),
             "report_schema": REPORT_SCHEMA,

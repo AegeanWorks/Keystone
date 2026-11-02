@@ -46,6 +46,13 @@ def _port(text: str) -> int:
     return value
 
 
+def _seed(text: str) -> int:
+    try:
+        return int(text)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("seed must be an integer") from exc
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m keystone",
@@ -61,6 +68,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--diff-out", type=Path, default=None, help="write a visual pixel-diff PNG with --compare-baseline")
     parser.add_argument("--actions", type=Path, default=None, help="JSON action list for --simulate/--verify-determinism")
     parser.add_argument("--replay", type=Path, default=None, help="replay a CommandLog JSON without OpenGL")
+    parser.add_argument("--playtest", action="store_true", help="run a seeded bot policy without OpenGL")
+    parser.add_argument("--policy", choices=("random", "greedy", "scripted"), default="random",
+                        help="bot policy for --playtest (default: random)")
+    parser.add_argument("--seed", type=_seed, default=0, help="bot seed for --playtest (default: 0)")
+    parser.add_argument("--script", type=Path, default=None, help="JSON action list for the scripted --playtest policy")
+    parser.add_argument("--transcript-out", type=Path, default=None, help="write the bot transcript JSON for --playtest")
     parser.add_argument("--trace", action="store_true", help="include per-frame snapshots in simulation output")
     parser.add_argument("--frames", type=_frames, default=0, help="frame count (default: 1 headless, or until close)")
     parser.add_argument("--size", type=_size, default=(960, 540), metavar="WxH", help="framebuffer size, e.g. 1280x720")
@@ -76,7 +89,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.serve and (
         args.describe or args.headless or args.simulate or args.verify_determinism or args.expect_hash
         or args.compare_baseline or args.diff_out or args.actions or args.trace or args.ui or args.no_ui
-        or args.start_paused or args.out or args.report or args.replay
+        or args.start_paused or args.out or args.report or args.replay or args.playtest or args.script
+        or args.transcript_out or args.policy != "random" or args.seed != 0
     ):
         parser.error("--serve is a standalone web-console command")
     if (args.host is not None or args.port is not None) and not args.serve:
@@ -84,13 +98,20 @@ def main(argv: list[str] | None = None) -> int:
     if args.describe and (
         args.headless or args.simulate or args.verify_determinism or args.expect_hash
         or args.compare_baseline or args.out or args.report or args.actions or args.trace
-        or args.ui or args.no_ui or args.start_paused or args.replay
+        or args.ui or args.no_ui or args.start_paused or args.replay or args.playtest
+        or args.script or args.transcript_out or args.policy != "random" or args.seed != 0
     ):
         parser.error("--describe is a standalone discovery command")
     if args.headless and args.simulate:
         parser.error("--headless and --simulate are mutually exclusive")
-    if args.replay and (args.headless or args.simulate or args.verify_determinism or args.describe or args.serve):
+    if args.replay and (args.headless or args.simulate or args.verify_determinism or args.describe or args.serve or args.playtest):
         parser.error("--replay is a standalone no-GL command")
+    if args.playtest and (
+        args.headless or args.simulate or args.verify_determinism or args.describe or args.serve
+        or args.replay or args.report or args.compare_baseline or args.diff_out or args.actions
+        or args.trace or args.ui or args.no_ui or args.start_paused
+    ):
+        parser.error("--playtest is a standalone no-GL command")
     if args.replay and (args.actions or args.compare_baseline or args.diff_out or args.report or args.ui or args.no_ui or args.start_paused):
         parser.error("--replay takes a CommandLog; --actions/--compare-baseline/--report/--ui do not apply")
     if args.replay and (args.frames or args.size != (960, 540)):
@@ -103,8 +124,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--start-paused applies to rendered runs, not simulation commands")
     if args.verify_determinism and (args.headless or args.simulate or args.report or args.compare_baseline or args.replay):
         parser.error("--verify-determinism is a standalone no-GL command")
-    if args.expect_hash and not (args.simulate or args.verify_determinism or args.replay):
-        parser.error("--expect-hash requires --simulate, --verify-determinism or --replay")
+    if args.expect_hash and not (args.simulate or args.verify_determinism or args.replay or args.playtest):
+        parser.error("--expect-hash requires --simulate, --verify-determinism, --replay or --playtest")
     if args.simulate and args.report:
         parser.error("--report requires the rendered --headless path")
     if args.report and not args.headless:
@@ -113,12 +134,18 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--compare-baseline requires --headless and --report")
     if args.diff_out and not args.compare_baseline:
         parser.error("--diff-out requires --compare-baseline")
-    if args.out and not (args.headless or args.simulate or args.verify_determinism or args.replay):
-        parser.error("--out requires --headless, --simulate, --verify-determinism or --replay")
+    if args.out and not (args.headless or args.simulate or args.verify_determinism or args.replay or args.playtest):
+        parser.error("--out requires --headless, --simulate, --verify-determinism, --replay or --playtest")
     if args.actions and not (args.simulate or args.verify_determinism):
         parser.error("--actions requires --simulate or --verify-determinism")
     if args.trace and not (args.simulate or args.replay):
         parser.error("--trace requires --simulate or --replay")
+    if (args.policy != "random" or args.seed != 0 or args.script is not None or args.transcript_out is not None) and not args.playtest:
+        parser.error("--policy, --seed, --script and --transcript-out require --playtest")
+    if args.script is not None and args.policy != "scripted":
+        parser.error("--script requires --policy scripted")
+    if args.policy == "scripted" and args.script is None:
+        parser.error("--policy scripted requires --script")
 
     from keystone.plugin import describe_game, load_game
 
@@ -176,6 +203,51 @@ def main(argv: list[str] | None = None) -> int:
                 write_json_atomic(args.out, result)
             print(json.dumps(result, indent=2, sort_keys=True))
             return 0 if result["ok"] else 1
+
+        if args.playtest:
+            from keystone.headless import load_actions
+            from keystone.playtest import (
+                GreedyPolicy,
+                RandomPolicy,
+                ScriptedPolicy,
+                make_report,
+                run_bot,
+                validate_fairness,
+            )
+            from keystone.serialization import write_json_atomic
+
+            if args.policy == "scripted":
+                script = load_actions(args.script)
+                policy: RandomPolicy | GreedyPolicy | ScriptedPolicy = ScriptedPolicy(script)
+                reference: list | None = list(script)
+            elif args.policy == "greedy":
+                policy = GreedyPolicy()
+                reference = None
+            else:
+                policy = RandomPolicy()
+                reference = None
+            frames = args.frames if args.frames else 120
+            transcript = run_bot(lambda: load_game(args.game), policy, frames=frames, seed=args.seed, trace=True)
+            limit = transcript.get("final", {}).get("time_limit")
+            fairness = validate_fairness(
+                lambda: load_game(args.game),
+                reference_actions=reference,
+                frames=frames,
+                seeds=(args.seed,),
+                time_limit_frames=limit if isinstance(limit, int) else None,
+            )
+            report = make_report(transcript, fairness)
+            if args.expect_hash:
+                report["expected_hash"] = args.expect_hash
+            ok = report["hash"] == args.expect_hash if args.expect_hash else True
+            if fairness["verdict"] == "unfair":
+                ok = False
+            if args.transcript_out:
+                write_json_atomic(args.transcript_out, transcript)
+            if args.out:
+                write_json_atomic(args.out, report)
+            print(json.dumps(report, indent=2, sort_keys=True))
+            return 0 if ok else 1
 
         from keystone.app import Engine
 

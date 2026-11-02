@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `97`
-- **Total Classes**: `126`
-- **Total Top-Level Functions**: `147`
-- **Total Class Methods**: `687`
-- **Total Source Lines**: `12617`
+- **Total Python Modules**: `100`
+- **Total Classes**: `137`
+- **Total Top-Level Functions**: `173`
+- **Total Class Methods**: `735`
+- **Total Source Lines**: `13924`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `97` lines (`2248` bytes)
+**Size**: `125` lines (`2796` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -29,13 +29,14 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `257` lines (`13391` bytes)
+**Size**: `329` lines (`17248` bytes)
 
 **Functions:**
 - `def _size(text)`
 - `def _frames(text)`
 - `def _hash(text)`
 - `def _port(text)`
+- `def _seed(text)`
 - `def main(argv)`
 
 ---
@@ -769,10 +770,48 @@
 
 ---
 
+### [`keystone/playtest.py`](keystone/playtest.py)
+> *Seeded bot playtesting: transcripts, diffing, policies and fairness checks.*
+
+**Size**: `580` lines (`23829` bytes)
+
+**Classes:**
+- `class BotPolicy` - *One seeded decision step over the five-operation game contract.*
+  - Method `.reset(seed)`
+  - Method `.select(snapshot, actions_spec, rng)`
+- `class RandomPolicy` - *Uniform baseline: sample axes in [-1, 1], occasionally press a button.*
+  - Method `.__init__(press_chance)`
+  - Method `.reset(seed)`
+  - Method `.select(snapshot, actions_spec, rng)`
+- `class GreedyPolicy` - *Stateful bandit: repeat the last action while score improves, else resample.*
+  - Method `.__init__()`
+  - Method `.reset(seed)`
+  - Method `.select(snapshot, actions_spec, rng)`
+- `class ScriptedPolicy` - *Replay an action list; hold the final action when the run is longer.*
+  - Method `.__init__(actions)`
+  - Method `.reset(seed)`
+  - Method `.select(snapshot, actions_spec, rng)`
+
+**Functions:**
+- `def _canon_value(value)`
+- `def canon(snapshot)` - *Project a snapshot to its canonical search form.*
+- `def canon_hash(snapshot)` - *Stable hash of the canonical snapshot projection.*
+- `def read_outcome(snapshot)` - *Read the opportunistic outcome signal; ``unknown`` when absent.*
+- `def read_score(snapshot)` - *Read the opportunistic numeric score signal, if present.*
+- `def to_command_log(transcript)` - *Convert a transcript back to a replayable :class:`CommandLog`.*
+- `def run_bot(factory, policy, frames, seed, step, max_wall_seconds, trace)` - *Play one seeded bot run headlessly and record the transcript.*
+- `def diff_transcripts(before, after)` - *Compare two transcripts: hash fast-path, then first divergence.*
+- `def _validate_actions_spec(spec)`
+- `def _sample_action(rng, axes, buttons)`
+- `def make_report(transcript, fairness)` - *Build the frozen schema-1 playtest report shared with web adapters.*
+- `def validate_fairness(factory, reference_actions, frames, seeds, step, max_states, max_wall_seconds, time_limit_frames)` - *Judge whether a configuration is winnable, with reasons.*
+
+---
+
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `86` lines (`3198` bytes)
+**Size**: `87` lines (`3228` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1140,6 +1179,37 @@
 **Functions:**
 - `def create_server(game, host, port)` - *Create a bound server; port 0 asks the OS for a free port.*
 - `def serve(game, host, port)` - *Run the local console until interrupted.*
+
+---
+
+### [`tests/support_maze_game.py`](tests/support_maze_game.py)
+> *Deterministic grid stub used to prove the bot playtester end to end.*
+
+**Size**: `230` lines (`7021` bytes)
+
+**Classes:**
+- `class MazeGame` - *A deterministic grid chase: reach the goal cell before the clock.*
+  - Method `.__init__(config)`
+  - Method `.build_scene()`
+  - Method `.update(dt, actions)`
+  - Method `.snapshot()`
+  - Method `.actions()`
+  - Method `.status()`
+
+**Functions:**
+- `def _step(value)`
+- `def maze_shortest_path(config)` - *Exact grid BFS ground truth: steps from spawn to goal, or None.*
+- `def reachable(config)` - *Fixture-side exact reachability used as fairness ground truth.*
+- `def open_config(width, height, time_limit)`
+- `def walled_goal_config()` - *Goal fully surrounded: provably unwinnable.*
+- `def hazard_spawn_config()` - *Spawn sits on a hazard: terminal loss on frame zero.*
+- `def tight_clock_config()` - *Shortest path needs 8 steps; the clock allows 3.*
+- `def optimal_actions(config)` - *Greedy reference solution: shortest-path actions, or empty when unreachable.*
+- `def Factory(config)`
+- `def FairMaze()`
+- `def WalledMaze()`
+- `def HazardMaze()`
+- `def TightMaze()`
 
 ---
 
@@ -1620,6 +1690,52 @@
   - Method `.test_aabb_helpers_are_consistent_with_overlap()`
   - Method `.test_raycast_returns_the_nearest_hit()`
   - Method `.test_raycast_filter_can_skip_candidates()`
+
+---
+
+### [`tests/test_playtest.py`](tests/test_playtest.py)
+> *Tests for the seeded bot playtester: transcripts, diffs, policies and fairness.*
+
+**Size**: `396` lines (`16516` bytes)
+
+**Classes:**
+- `class TranscriptTest`
+  - Method `.test_run_bot_records_a_command_log_compatible_transcript()`
+  - Method `.test_transcript_hash_matches_simulation_for_the_same_actions()`
+  - Method `.test_same_seed_same_transcript()`
+  - Method `.test_transcript_replays_through_the_command_log()`
+  - Method `.test_terminal_outcome_ends_the_run_early()`
+  - Method `.test_invalid_runner_arguments_are_rejected()`
+  - Method `.test_canon_drops_time_and_rounds_floats()`
+- `class DiffTest`
+  - Method `.test_identical_transcripts_match_with_no_divergence()`
+  - Method `.test_divergent_transcripts_report_the_first_frame()`
+  - Method `.test_schema_mismatches_are_rejected()`
+- `class PolicyTest`
+  - Method `.test_random_policy_is_bounded_and_seeded()`
+  - Method `.test_greedy_policy_repeats_a_winning_action()`
+  - Method `.test_greedy_policy_without_a_score_is_random_equivalent()`
+  - Method `.test_scripted_policy_holds_its_final_action()`
+  - Method `.test_scripted_policy_rejects_an_empty_script()`
+- `class FairnessTest`
+  - Method `.test_fair_configuration_is_accepted_with_a_witness()`
+  - Method `.test_walled_goal_is_rejected()`
+  - Method `.test_hazard_spawn_is_rejected_as_terminal()`
+  - Method `.test_tight_clock_is_rejected_as_infeasible()`
+  - Method `.test_game_without_an_outcome_signal_is_unknown()`
+  - Method `.test_no_reference_without_a_win_is_unknown_not_unfair()`
+  - Method `.test_nondeterministic_game_is_rejected()`
+- `class ReportTest`
+  - Method `.test_report_is_frozen_schema_1_and_web_compatible()`
+  - Method `.test_report_covers_an_untraced_transcript()`
+  - Method `.test_web_simulate_result_assembles_into_the_same_report()` - *A thin adapter wraps POST /api/simulate output; no browser driving.*
+- `class PlaytestCliTest`
+  - Method `.test_playtest_cli_writes_transcript_and_report()`
+  - Method `.test_playtest_cli_rejects_an_unfair_configuration()`
+  - Method `.test_playtest_cli_pins_the_transcript_hash()`
+  - Method `.test_playtest_cli_flag_guards()`
+  - Method `.test_describe_advertises_the_playtest_capability()`
+  - Method `.test_fixture_lives_outside_the_engine_core()`
 
 ---
 

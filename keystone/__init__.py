@@ -32,24 +32,43 @@ from keystone.input import ActionState, InputMap
 from keystone.material_graph import MaterialGraph, MaterialGraphNode
 from keystone.math3d import Mat4, Quat, Vec3
 from keystone.particles import Emitter, Particle, ParticleSystem, particles_report
+from keystone.playtest import (
+    PLAYTEST_REPORT_SCHEMA,
+    TRANSCRIPT_SCHEMA,
+    BotPolicy,
+    GreedyPolicy,
+    RandomPolicy,
+    ScriptedPolicy,
+    canon,
+    canon_hash,
+    diff_transcripts,
+    make_report,
+    run_bot,
+    to_command_log,
+    validate_fairness,
+)
 from keystone.plugin import GameModule
 from keystone.scene import Node, Scene, Transform
 from keystone.scene_snapshot import scene_from_dict, scene_to_dict
 from keystone.texture import TextureData
 
-__version__ = "0.32.0"
+__version__ = "0.33.0"
 __all__ = [
+    "PLAYTEST_REPORT_SCHEMA",
     "SAMPLE_RATE",
+    "TRANSCRIPT_SCHEMA",
     "ActionState",
     "AnimationClip",
     "AnimationController",
     "AssetRegistry",
     "AudioClip",
     "AuditTrail",
+    "BotPolicy",
     "Emitter",
     "Engine",
     "GameModule",
     "GltfImport",
+    "GreedyPolicy",
     "History",
     "InputMap",
     "Mat4",
@@ -60,7 +79,9 @@ __all__ = [
     "Particle",
     "ParticleSystem",
     "Quat",
+    "RandomPolicy",
     "Scene",
+    "ScriptedPolicy",
     "TextureData",
     "Track",
     "Transform",
@@ -69,8 +90,12 @@ __all__ = [
     "apply_pose",
     "audio_report",
     "blend_poses",
+    "canon",
+    "canon_hash",
+    "diff_transcripts",
     "group_instances",
     "load_gltf",
+    "make_report",
     "merge_batches",
     "mix_clips",
     "noise",
@@ -80,11 +105,14 @@ __all__ = [
     "plan_batches",
     "plan_instanced",
     "read_wav",
+    "run_bot",
     "scene_from_dict",
     "scene_to_dict",
     "sine",
     "square",
     "summarize_report",
+    "to_command_log",
+    "validate_fairness",
     "write_wav",
 ]
 

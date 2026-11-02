@@ -265,7 +265,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 - **Replay and persistence**: `ActionState` command logs, stable hashes and atomic JSON writes with a `.bak` snapshot.
 - **Plugin loading**: `load_game("package.module:Factory")` validates the five-operation contract before the engine starts.
 - **No-GL simulation**: `run_simulation()` and `--simulate` drive `GameModule.update()` directly, with JSON action scripts and deterministic hashes, no window or driver required.
-- **AI discovery and testing**: `--describe`/`describe_game()` expose actions, capabilities (including `pbr`, `agents`, `profiler`, `input_bindings`), report schema and the current snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; `keystone.testing` provides the same evidence as Python helpers; `compare_reports()` diffs two frame reports; `keystone.agents` adds validated action parsing, fused observations, report summaries and a hash-chained audit trail.
+- **AI discovery and testing**: `--describe`/`describe_game()` expose actions, capabilities (including `pbr`, `agents`, `profiler`, `input_bindings`), report schema and the current snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; `keystone.testing` provides the same evidence as Python helpers; `compare_reports()` diffs two frame reports; `keystone.agents` adds validated action parsing, fused observations, report summaries and a hash-chained audit trail; `keystone.playtest` adds seeded bots, transcript diffing and fairness checks.
 - **Visual regression gate**: `--compare-baseline baseline.json` renders a new report, compares image/report hashes, stats and projected nodes, prints the diff and exits non-zero on image change. `--diff-out diff.png` writes a changed-pixel diff image.
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip image loading, changed-pixel counts, bbox and a visual diff without third-party imaging libraries.
 - **Frame reports for AI analysis**: `--report` writes a schema-5 JSON document with image hashes, pixel/luminance statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data, projected screen bounds and identity metadata (ID, parent ID, tags, layer, components) for every scene node, PBR material/texture metadata (metallic, roughness, emissive), and structured UI labels/buttons when the overlay is rendered.
@@ -325,6 +325,14 @@ result = run_script(CubeDemo(), [ActionState(forward=1.0)], frames=120)
 assert_deterministic(lambda: CubeDemo(), [ActionState(forward=1.0)], frames=120)
 ```
 
+### Bot-playtest a game
+
+```bash
+python -m keystone --playtest --policy random --seed 7 --frames 120 --out report.json
+```
+
+Seeded `random`/`greedy`/`scripted` bots play headlessly through the five operations; `--expect-hash` pins the transcript, and an `unfair` configuration exits 1 with reasons. Games opt in via `outcome`/`score` snapshot keys.
+
 ### Analyze a rendered frame
 
 `--report` writes a versioned JSON report next to the PNG:
@@ -360,6 +368,7 @@ keystone/
 │   ├── clock.py              <- fixed-step clock
 │   ├── input.py              <- ActionState and InputMap with contexts
 │   ├── plugin.py             <- GameModule protocol and loader
+│   ├── playtest.py           <- seeded bot policies, transcripts, diffing and fairness
 │   ├── replay.py             <- command log and stable hash
 │   ├── history.py            <- bounded undo/redo snapshots
 │   ├── scene_snapshot.py     <- versioned scene save/load
