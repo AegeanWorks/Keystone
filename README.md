@@ -152,7 +152,7 @@ events = TriggerTracker().update(body.box(), [TriggerVolume("door", AABB(Vec3(0,
 hit = raycast(Ray(Vec3(), Vec3(0, 0, 1)), [("wall", wall)])
 ```
 
-`SpatialGrid` keeps a uniform grid of AABB proxies and returns exact overlaps in insertion order; `cell_size` is a performance trade-off, not a correctness setting. `CharacterController` moves an AABB body with horizontal wish velocity, gravity, wall/floor response, stair step-up, slope-limited climb and platform carry against AABBs, with ground detection; capsules and a physics solver are not included. `TriggerTracker` reports sorted `entered`/`exited`/`active` names, and `raycast()` returns the nearest hit with an optional key/box filter.
+`SpatialGrid` keeps a uniform grid of AABB proxies with exact overlaps in insertion order; `cell_size` trades speed, not correctness. `CharacterController` moves an AABB body with wish velocity, gravity, wall/floor response, stair step-up, slope-limited climb and platform carry; capsules and solvers excluded. `TriggerTracker` reports sorted `entered`/`exited`/`active` names; `raycast()` returns the nearest hit with an optional filter.
 
 ### Optional game UI
 
@@ -258,9 +258,9 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 - **Fixed-step runtime**: `FixedStepClock` releases whole simulation steps with a bounded catch-up budget; the headless path advances exactly one step per rendered frame for deterministic tests.
 - **Action input**: `InputMap` maps keys and pointer motion to `forward`, `right`, `up`, `look_yaw`, `look_pitch`, `pressed` and `held` with rebindable bindings and named action contexts (`gameplay`, `menu`, custom) that save/load as JSON; games never read GLFW directly.
 - **Audio core**: dependency-free synth (`sine`, `square`, `noise`), named-bus `Mixer` with deterministic mixdown, mono 16-bit WAV read/write and `audio_report()` for AI analysis; no hardware or playback device required.
-- **Animation core**: deterministic keyframe `Track`/`AnimationClip` (linear/step), looping `AnimationController`, crossfade blending and timed events, `apply_pose()` by node id, JSON round trips and `animation_report()`; static merges skip animated nodes.
+- **Animation core**: keyframe `Track`/`AnimationClip` (linear/step), looping controller, crossfade blending, timed events, `apply_pose()`, linear-blend skinning (<=4 influences, CPU + GPU, glTF) with merge exclusion, JSON round trips and `animation_report()`.
 - **Replay runner**: `run_log()`/`verify_log()` replay a `CommandLog` on a fresh game without a window, and `--replay log.json` (with `--out`, `--expect-hash`, `--trace`) gives AI a file-based deterministic audit trail.
-- **Particles**: dependency-free deterministic CPU `Emitter`/`ParticleSystem` with seeded spawn, gravity/drag integration, swept AABB collision (stop-at-surface), burst emission, lifetime culling, JSON round trips and `particles_report()` for AI; HUD, inspector and describe caps expose live counts.
+- **Particles**: deterministic CPU `Emitter`/`ParticleSystem` with seeded spawn, gravity/drag, swept AABB collision, burst emission, lifetime culling, JSON round trips and `particles_report()`; HUD/inspector/describe expose live counts.
 - **Physics**: ray/AABB/sphere queries, sphere pushout, deterministic spatial-grid broadphase, AABB character movement with gravity and ground detection, trigger enter/exit tracking and filtered raycasts.
 - **Replay and persistence**: `ActionState` command logs, stable hashes and atomic JSON writes with a `.bak` snapshot.
 - **Plugin loading**: `load_game("package.module:Factory")` validates the five-operation contract before the engine starts.
@@ -387,7 +387,8 @@ keystone/
 │   ├── math3d.py             <- Vec3, Mat4, Quat (column-major, OpenGL-ready)
 │   ├── camera.py             <- perspective camera
 │   ├── scene.py              <- hierarchy, identity, components, transforms and lights
-│   ├── geometry.py           <- MeshData and Material
+│   ├── geometry.py           <- MeshData, Material, skin
+│   ├── skin.py               <- bone palettes, CPU skinning
 │   ├── mesh_builder.py       <- merge boxes, quads and meshes
 │   ├── material_graph.py     <- declarative node graphs evaluating to Material
 │   ├── primitives.py         <- cube, plane, cone, cylinder and sphere
@@ -400,8 +401,9 @@ keystone/
 │   │   ├── io.py             <- source, buffer and accessor decoding
 │   │   ├── textures.py       <- image and texture decoding
 │   │   ├── materials.py      <- PBR to Material conversion
-│   │   ├── meshes.py         <- primitive and mesh decoding
-│   │   ├── scene.py          <- node, transform and scene construction
+│   │   ├── meshes.py         <- primitive, mesh, skin decoding
+│   │   ├── skins.py          <- joints and inverse binds
+│   │   ├── scene.py          <- node, skin and scene construction
 │   │   └── loader.py         <- top-level import orchestration
 │   ├── ui/
 │   │   ├── __init__.py       <- UI package exports
@@ -426,6 +428,7 @@ keystone/
 │       ├── context.py        <- GLFW window and OpenGL 3.3 context
 │       ├── shader.py         <- GLSL compilation and uniforms
 │       ├── mesh_buffer.py    <- VAO/VBO/EBO upload and drawing
+│       ├── skinned_buffer.py <- skinned mesh upload
 │       ├── instancing.py     <- deterministic instancing groups
 │       ├── shadow.py         <- shadow map
 │       ├── post.py           <- post grade math
@@ -462,6 +465,7 @@ keystone/
 │   ├── test_triggers.py      <- enter/exit tracking and multiple volumes
 │   ├── test_agents.py        <- AI adapters, validation and audit trail
 │   ├── test_animation.py     <- clips, blending and timed events
+│   ├── test_skinning.py      <- skin math, GPU path, glTF
 │   ├── test_assets.py        <- registry ids, digests, dependencies and reload
 │   ├── test_audio.py         <- synth, mixer buses and WAV I/O
 │   ├── test_batch.py         <- batch planning and world-space merge
@@ -564,7 +568,7 @@ snapshot = history.undo()
 3. ~~Assets~~ v0.22.0; ~~material graphs~~ v0.23.0; ~~glTF~~ v0.24.0; ~~GLB~~ v0.26.0; ~~PBR core~~ v0.27.0.
 4. Renderer PBR/emissive and schema 2 in v0.27.0; batch plan in v0.28.0, merge in v0.29.0, ~~instancing~~ in v0.32.0, ~~shadows~~ in v0.34.0, ~~sRGB~~ in v0.35.0, ~~post grade~~ in v0.36.0, ~~bloom~~ in v0.37.0 and ~~diffusion~~ in v0.38.0; post chain remains.
 5. ~~Input persistence~~ v0.27.0; ~~contexts/audio mixer~~ v0.28.0; live playback out of scope.
-6. ~~Animation core~~ in v0.29.0; ~~blending/events~~ in v0.30.0; skinning remains; ~~CPU particles~~ in v0.31.0; GPU sprites/collision remain.
+6. ~~Animation core~~ in v0.29.0; ~~blending/events~~ in v0.30.0; ~~skinning~~ in v0.41.0; ~~CPU particles~~ in v0.31.0; GPU sprites/bounce remain.
 6. ~~Schema versioning~~ v0.25.0; ~~replay runner~~ v0.30.0.
 7. ~~Profiler HUD~~ in v0.27.0; ~~web inspector~~ in v0.28.0-0.30.0 (batches, merge, assets) plus ~~instancing~~ in v0.32.0; editor/HUD hooks remain.
 8. ~~AI adapters~~ in v0.27.0 (`keystone.agents`).

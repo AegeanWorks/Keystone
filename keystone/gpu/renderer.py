@@ -19,10 +19,12 @@ from keystone.gpu.mesh_buffer import GpuMesh
 from keystone.gpu.post import POST_EXPOSURE, POST_VIGNETTE
 from keystone.gpu.shader import ShaderProgram
 from keystone.gpu.shadow import SHADOW_BIAS, SHADOW_MAP_SIZE, ShadowMap, light_vp_for
+from keystone.gpu.skinned_buffer import SkinnedGpuMesh
 from keystone.gpu.texture_buffer import GpuTexture
 from keystone.math3d import Mat4, Vec3
 from keystone.png import write_png
 from keystone.scene import Scene
+from keystone.skin import MAX_SKIN_BONES, bone_matrices
 from keystone.texture import TextureData
 
 VERTEX_SHADER = """#version 330 core
@@ -215,6 +217,68 @@ void main() {
 }
 """
 
+SKINNED_VERTEX_SHADER = """#version 330 core
+layout(location = 0) in vec3 a_position;
+layout(location = 1) in vec3 a_normal;
+layout(location = 2) in vec2 a_uv;
+layout(location = 3) in vec3 a_color;
+layout(location = 11) in vec4 a_joints;
+layout(location = 12) in vec4 a_weights;
+uniform mat4 u_model;
+uniform mat4 u_view_proj;
+uniform mat3 u_normal_matrix;
+uniform mat4 u_bones[64];
+out vec3 v_world;
+out vec3 v_normal;
+out vec2 v_uv;
+out vec3 v_color;
+void main() {
+    vec4 skinned = vec4(0.0);
+    vec3 skinned_normal = vec3(0.0);
+    for (int i = 0; i < 4; ++i) {
+        int joint = int(a_joints[i] + 0.5);
+        float weight = a_weights[i];
+        if (weight > 0.0) {
+            skinned += weight * (u_bones[joint] * vec4(a_position, 1.0));
+            skinned_normal += weight * (mat3(u_bones[joint]) * a_normal);
+        }
+    }
+    if (skinned.w < 0.5) {
+        skinned = vec4(a_position, 1.0);
+        skinned_normal = a_normal;
+    }
+    vec4 world = u_model * skinned;
+    v_world = world.xyz;
+    v_normal = normalize(u_normal_matrix * normalize(skinned_normal));
+    v_uv = a_uv;
+    v_color = a_color;
+    gl_Position = u_view_proj * world;
+}
+"""
+
+SKINNED_DEPTH_VERTEX_SHADER = """#version 330 core
+layout(location = 0) in vec3 a_position;
+layout(location = 11) in vec4 a_joints;
+layout(location = 12) in vec4 a_weights;
+uniform mat4 u_model;
+uniform mat4 u_light_vp;
+uniform mat4 u_bones[64];
+void main() {
+    vec4 skinned = vec4(0.0);
+    for (int i = 0; i < 4; ++i) {
+        int joint = int(a_joints[i] + 0.5);
+        float weight = a_weights[i];
+        if (weight > 0.0) {
+            skinned += weight * (u_bones[joint] * vec4(a_position, 1.0));
+        }
+    }
+    if (skinned.w < 0.5) {
+        skinned = vec4(a_position, 1.0);
+    }
+    gl_Position = u_light_vp * u_model * skinned;
+}
+"""
+
 SKY_VERTEX_SHADER = """#version 330 core
 out vec2 v_uv;
 void main() {
@@ -352,6 +416,8 @@ class Renderer:
         inst_program: ShaderProgram | None = None
         sky_program = None
         depth_program: ShaderProgram | None = None
+        skin_program: ShaderProgram | None = None
+        skin_depth_program: ShaderProgram | None = None
         bright_program: ShaderProgram | None = None
         blur_program: ShaderProgram | None = None
         composite_program: ShaderProgram | None = None
@@ -359,6 +425,8 @@ class Renderer:
             inst_program = ShaderProgram(VERTEX_SHADER_INSTANCED, FRAGMENT_SHADER)
             sky_program = ShaderProgram(SKY_VERTEX_SHADER, SKY_FRAGMENT_SHADER)
             depth_program = ShaderProgram(DEPTH_VERTEX_SHADER, DEPTH_FRAGMENT_SHADER)
+            skin_program = ShaderProgram(SKINNED_VERTEX_SHADER, FRAGMENT_SHADER)
+            skin_depth_program = ShaderProgram(SKINNED_DEPTH_VERTEX_SHADER, DEPTH_FRAGMENT_SHADER)
             bright_program = ShaderProgram(BLOOM_QUAD_VERTEX, BLOOM_BRIGHT_FRAGMENT)
             blur_program = ShaderProgram(BLOOM_QUAD_VERTEX, BLOOM_BLUR_FRAGMENT)
             composite_program = ShaderProgram(BLOOM_QUAD_VERTEX, BLOOM_COMPOSITE_FRAGMENT)
@@ -370,6 +438,10 @@ class Renderer:
                 blur_program.release()
             if bright_program is not None:
                 bright_program.release()
+            if skin_depth_program is not None:
+                skin_depth_program.release()
+            if skin_program is not None:
+                skin_program.release()
             if depth_program is not None:
                 depth_program.release()
             if sky_program is not None:
@@ -381,6 +453,8 @@ class Renderer:
         self._inst_program = inst_program
         self._sky_program = sky_program
         self._depth_program = depth_program
+        self._skin_program = skin_program
+        self._skin_depth_program = skin_depth_program
         self._bloom_bright = bright_program
         self._bloom_blur = blur_program
         self._bloom_composite = composite_program
@@ -400,6 +474,8 @@ class Renderer:
             self._bloom_error = str(exc)
             self._release_bloom_fbos()
         self._meshes: dict[int, tuple[MeshData, GpuMesh]] = {}
+        self._skinned_meshes: dict[int, tuple[MeshData, SkinnedGpuMesh]] = {}
+        self._identity_bones: tuple[Mat4, ...] = tuple(Mat4.identity() for _ in range(MAX_SKIN_BONES))
         self._textures: dict[int, tuple[TextureData, GpuTexture]] = {}
         self.last_stats: dict[str, int] = {
             "draw_calls": 0,
@@ -466,6 +542,27 @@ class Renderer:
             cached = (mesh, GpuMesh(mesh))
             self._meshes[id(mesh)] = cached
         return cached[1]
+
+    def _gpu_skinned_mesh(self, mesh: MeshData) -> SkinnedGpuMesh:
+        cached = self._skinned_meshes.get(id(mesh))
+        if cached is None or cached[0] is not mesh:
+            cached = (mesh, SkinnedGpuMesh(mesh))
+            self._skinned_meshes[id(mesh)] = cached
+        return cached[1]
+
+    def _upload_bones(self, program: ShaderProgram, scene: Scene, mesh: MeshData) -> None:
+        bones = bone_matrices(scene, mesh)
+        if len(bones) < len(mesh.skin_joints):
+            raise RuntimeError(
+                "Skin bone palette is incomplete.\n"
+                "Why: the scene is missing joint nodes for this skinned mesh.\n"
+                "Fix: add every skin joint node to the scene before rendering."
+            )
+        palette = list(bones[:MAX_SKIN_BONES])
+        while len(palette) < MAX_SKIN_BONES:
+            palette.append(self._identity_bones[len(palette)])
+        program.use()
+        program.set_mat4_array("u_bones", palette)
 
     def _gpu_texture(self, texture: TextureData) -> GpuTexture:
         cached = self._textures.get(id(texture))
@@ -590,10 +687,18 @@ class Renderer:
             mesh = group["mesh"]
             if not isinstance(mesh, MeshData):
                 raise TypeError("Node.mesh must be MeshData")
+            skinned = bool(getattr(mesh, "skinned", False))
             for model in group["models"]:
-                self._depth_program.use()
-                self._depth_program.set_mat4("u_model", model)
-                self._gpu_mesh(mesh).draw()
+                if skinned:
+                    self._skin_depth_program.use()
+                    self._skin_depth_program.set_mat4("u_light_vp", light_vp)
+                    self._skin_depth_program.set_mat4("u_model", model)
+                    self._upload_bones(self._skin_depth_program, scene, mesh)
+                    self._gpu_skinned_mesh(mesh).draw()
+                else:
+                    self._depth_program.use()
+                    self._depth_program.set_mat4("u_model", model)
+                    self._gpu_mesh(mesh).draw()
                 shadow_calls += 1
         GL.glCullFace(GL.GL_BACK)
         self._shadow.unbind_after_write(self.width, self.height)
@@ -620,16 +725,31 @@ class Renderer:
         instances = 0
         self._apply_shared(self._program, scene, view_projection, light_vp, shadows_on, srgb_on)
         self._apply_shared(self._inst_program, scene, view_projection, light_vp, shadows_on, srgb_on)
+        self._apply_shared(self._skin_program, scene, view_projection, light_vp, shadows_on, srgb_on)
         self._apply_bloom(self._program, bloom_on)
         self._apply_bloom(self._inst_program, bloom_on)
+        self._apply_bloom(self._skin_program, bloom_on)
         self._apply_post(self._program, post_on)
         self._apply_post(self._inst_program, post_on)
+        self._apply_post(self._skin_program, post_on)
         for group in group_instances(scene):
             mesh = group["mesh"]
             if not isinstance(mesh, MeshData):
                 raise TypeError("Node.mesh must be MeshData")
             material = group["material"] if isinstance(group["material"], Material) else Material()
             models = group["models"]
+            skinned = bool(getattr(mesh, "skinned", False))
+            if skinned:
+                for model in models:
+                    self._skin_program.use()
+                    self._skin_program.set_mat4("u_model", model)
+                    self._skin_program.set_mat3("u_normal_matrix", normal_matrix(model))
+                    self._upload_bones(self._skin_program, scene, mesh)
+                    self._apply_material(self._skin_program, material)
+                    self._gpu_skinned_mesh(mesh).draw()
+                    draw_calls += 1
+                    triangles += mesh.triangle_count()
+                continue
             if len(models) == 1:
                 model = models[0]
                 self._program.use()
@@ -784,6 +904,9 @@ class Renderer:
         for _, mesh in self._meshes.values():
             mesh.release()
         self._meshes.clear()
+        for _, mesh in self._skinned_meshes.values():
+            mesh.release()
+        self._skinned_meshes.clear()
         if self._shadow is not None:
             self._shadow.release()
             self._shadow = None
@@ -794,6 +917,8 @@ class Renderer:
         self._sky_program.release()
         self._inst_program.release()
         self._depth_program.release()
+        self._skin_program.release()
+        self._skin_depth_program.release()
         self._bloom_bright.release()
         self._bloom_blur.release()
         self._bloom_composite.release()

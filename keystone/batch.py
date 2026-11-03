@@ -4,7 +4,8 @@ Batching is game-agnostic and CPU-only: it inspects the scene graph, groups
 visible mesh nodes by shared mesh and material payloads, and reports the
 draw-call savings a renderer could realize. `merge_batches()` additionally
 bakes each material group into one world-space mesh without mutating the
-scene. Static merges suit still geometry; animated nodes must be excluded.
+scene. Static merges suit still geometry; animated nodes must be excluded
+and skinned meshes never merge.
 """
 
 from __future__ import annotations
@@ -16,12 +17,19 @@ from keystone.scene import Scene
 __all__ = ["merge_batches", "plan_batches"]
 
 
+def _skinned(mesh: MeshData) -> bool:
+    """Whether a mesh deforms at render time and must never bake or merge."""
+    return bool(getattr(mesh, "skinned", False))
+
+
 def plan_batches(scene: Scene) -> dict:
     groups: dict[tuple[int, int], dict] = {}
     total_triangles = 0
     for node in scene.traverse():
         mesh = node.mesh
         if not isinstance(mesh, MeshData) or not node.world_visible():
+            continue
+        if _skinned(mesh):
             continue
         material = node.material
         key = (id(mesh), id(material) if material is not None else 0)
@@ -53,14 +61,17 @@ def merge_batches(scene: Scene, exclude: set[str] | None = None) -> dict:
     """Bake static groups into world-space meshes; animated ids stay separate.
 
     `exclude` holds node ids (or names) that must not merge, e.g. animated
-    nodes driven by `keystone.animation`. Returns per-group merged meshes
-    plus a summary reusing `plan_batches()` counts.
+    nodes driven by `keystone.animation`. Skinned meshes never merge.
+    Returns per-group merged meshes plus a summary reusing `plan_batches()`
+    counts.
     """
     excluded = set(exclude or ())
     groups: dict[int, dict] = {}
     for node in scene.traverse():
         mesh = node.mesh
         if not isinstance(mesh, MeshData) or not node.world_visible():
+            continue
+        if _skinned(mesh):
             continue
         if node.id in excluded or node.name in excluded:
             continue

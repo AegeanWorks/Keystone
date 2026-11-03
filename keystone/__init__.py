@@ -60,8 +60,9 @@ from keystone.scene import (
     Transform,
 )
 from keystone.scene_snapshot import scene_from_dict, scene_to_dict
+from keystone.skin import bone_matrices, skin_mesh, skin_point
 
-__version__ = "0.40.0"
+__version__ = "0.41.0"
 __all__ = [
     "PLAYTEST_REPORT_SCHEMA",
     "SAMPLE_RATE",
@@ -105,6 +106,7 @@ __all__ = [
     "apply_pose",
     "audio_report",
     "blend_poses",
+    "bone_matrices",
     "canon",
     "canon_hash",
     "diff_transcripts",
@@ -124,6 +126,8 @@ __all__ = [
     "scene_from_dict",
     "scene_to_dict",
     "sine",
+    "skin_mesh",
+    "skin_point",
     "square",
     "summarize_report",
     "to_command_log",

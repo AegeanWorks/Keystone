@@ -12,6 +12,7 @@ from keystone.gltf.io import load_buffers, read_source
 from keystone.gltf.materials import load_materials
 from keystone.gltf.meshes import load_meshes
 from keystone.gltf.scene import build_scene
+from keystone.gltf.skins import load_skins
 from keystone.gltf.textures import load_textures
 from keystone.scene import Scene
 from keystone.texture import TextureData
@@ -51,7 +52,10 @@ def load_gltf(source: object, registry: Any = None) -> GltfImport:
     textures = load_textures(document, buffers, buffer_views, base_dir)
     materials = load_materials(document, textures)
     meshes = load_meshes(document, buffers, buffer_views, materials)
-    scene = build_scene(document, meshes, materials)
+    nodes = document.get("nodes", [])
+    node_count = len(nodes) if isinstance(nodes, list) else 0
+    skins = load_skins(document, buffers, buffer_views, node_count)
+    scene = build_scene(document, meshes, materials, skins)
 
     all_meshes: list[MeshData] = []
     for mesh_primitives in meshes:

@@ -1,6 +1,6 @@
 # Keystone Architecture
 
-**Status:** implemented in v0.40.0 - core-only engine with scene identity, PBR materials, physics systems, human UI with profiler, deterministic animation with blending/events, particles with collision and audio, batch planning and merging, replay runner, seeded bot playtester with transcript diffing and fairness validation, a local web console with inspector, asset inventory and particle state, an asset registry with hot reload, material graphs, glTF 2.0 import, versioned scene snapshots with undo/redo, AI observation/action adapters, a post color-grade, bloom diffusion and character locomotion
+**Status:** implemented in v0.41.0 - core-only engine with scene identity, PBR materials, physics systems, human UI with profiler, deterministic animation with blending/events and skinning, particles with collision and audio, batch planning and merging, replay runner, seeded bot playtester with transcript diffing and fairness validation, a local web console with inspector, asset inventory and particle state, an asset registry with hot reload, material graphs, glTF 2.0 import, versioned scene snapshots with undo/redo, AI observation/action adapters, a post color-grade, bloom diffusion and character locomotion
 **Boundary:** `keystone/` is game-agnostic; games are external modules.
 
 ## 1. What Keystone Is
@@ -181,7 +181,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 4. **Renderer** — PBR shading, emissive and render stats in v0.27.0; static batch planning in v0.28.0 and world-space batch merging in v0.29.0; GPU instancing in v0.32.0, directional shadows in v0.34.0, an sRGB linear pipeline in v0.35.0, a post color-grade in v0.36.0, bloom glow in v0.37.0 and bloom diffusion in v0.38.0; full post chain remains.
 5. **Input/audio** — rebindable input with JSON persistence and profiler HUD in v0.27.0; action contexts, deterministic mixer with buses, WAV I/O and HUD voices in v0.28.0; live device playback remains out of scope.
 6. **AI adapters** — implemented in v0.27.0; validated actions, fused observations, report summaries and hash-chained audit trail.
-6. **Animation** — deterministic keyframe clips, looping controller, pose application and JSON round trips in v0.29.0; crossfade blending and timed events in v0.30.0; skinning remains; deterministic CPU particles with HUD/inspector/AI reports in v0.31.0, swept AABB collision in v0.40.0; GPU point sprites and bounce remain.
+6. **Animation** — deterministic keyframe clips, looping controller, pose application and JSON round trips in v0.29.0; crossfade blending and timed events in v0.30.0; skinning (LBS-4, CPU + GPU, glTF) in v0.41.0; deterministic CPU particles with HUD/inspector/AI reports in v0.31.0, swept AABB collision in v0.40.0; GPU point sprites and bounce remain.
 6. **Serialization/replay** — versioned scene snapshot format and undo/redo in v0.25.0; deterministic replay runner with `--replay` in v0.30.0; seeded bot playtester with transcript diffing and fairness validation in v0.33.0.
 7. **Tooling** — the v0.20.0 web console covers discovery, simulation and scene preview; `/api/inspector` with batch plan and audio state in v0.28.0 plus merge summary and animation state in v0.29.0 plus asset inventory in v0.30.0; editor, richer HUD widgets and editor hooks remain.
 

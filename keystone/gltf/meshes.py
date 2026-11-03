@@ -133,6 +133,34 @@ def load_meshes(
                 raise ValueError(f"glTF mesh {mesh_index} UV count does not match position count")
             if not uvs:
                 uvs = [(0.0, 0.0)] * len(positions)
+            joints: list[tuple[int, ...]] = []
+            weights: list[tuple[float, ...]] = []
+            has_joints = "JOINTS_0" in attributes
+            has_weights = "WEIGHTS_0" in attributes
+            if has_joints != has_weights:
+                raise ValueError(f"glTF mesh {mesh_index} needs JOINTS_0 and WEIGHTS_0 together")
+            if has_joints:
+                joints_accessor = _accessor(document, int(attributes["JOINTS_0"]))
+                _require_joints_accessor(joints_accessor, mesh_index)
+                weights_accessor = _accessor(document, int(attributes["WEIGHTS_0"]))
+                _require_weights_accessor(weights_accessor, mesh_index)
+                joints_raw = read_accessor(joints_accessor, buffer_views, buffers)
+                weights_raw = read_accessor(weights_accessor, buffer_views, buffers)
+                if len(joints_raw) != len(positions) or len(weights_raw) != len(positions):
+                    raise ValueError(f"glTF mesh {mesh_index} skin count does not match position count")
+                for joint_value, weight_value in zip(joints_raw, weights_raw):
+                    if not isinstance(joint_value, (tuple, list)) or len(joint_value) != 4:
+                        raise ValueError(f"glTF mesh {mesh_index} JOINTS_0 must be VEC4")
+                    if not isinstance(weight_value, (tuple, list)) or len(weight_value) != 4:
+                        raise ValueError(f"glTF mesh {mesh_index} WEIGHTS_0 must be VEC4")
+                    joints.append(tuple(int(value) for value in joint_value))
+                    row = tuple(float(value) for value in weight_value)
+                    total = sum(row)
+                    if total <= 1e-9:
+                        row = (1.0, 0.0, 0.0, 0.0)
+                    else:
+                        row = tuple(value / total for value in row)
+                    weights.append(row)
             colors: list[tuple[float, float, float]] = []
             if "COLOR_0" in attributes:
                 colors_raw = read_accessor(
@@ -158,6 +186,8 @@ def load_meshes(
                 uvs=tuple(uvs),
                 indices=tuple(indices),
                 colors=tuple(colors),
+                joints=tuple(joints),
+                weights=tuple(weights),
             )
             mesh_primitives.append((mesh, material_index))
         meshes.append(mesh_primitives)
@@ -172,3 +202,23 @@ def _accessor(document: Mapping[str, Any], index: int) -> Mapping[str, Any]:
     if not isinstance(accessor, Mapping):
         raise TypeError("glTF accessor must be an object")
     return accessor
+
+
+def _require_joints_accessor(accessor: Mapping[str, Any], mesh_index: int) -> None:
+    if accessor.get("normalized", False):
+        raise ValueError(f"glTF mesh {mesh_index} JOINTS_0 must not be normalized")
+    if str(accessor.get("type", "")) != "VEC4":
+        raise ValueError(f"glTF mesh {mesh_index} JOINTS_0 must be VEC4")
+    if int(accessor.get("componentType", 0)) not in (5120, 5121, 5122, 5123, 5126):
+        raise ValueError(f"glTF mesh {mesh_index} JOINTS_0 has an unsupported component type")
+
+
+def _require_weights_accessor(accessor: Mapping[str, Any], mesh_index: int) -> None:
+    if str(accessor.get("type", "")) != "VEC4":
+        raise ValueError(f"glTF mesh {mesh_index} WEIGHTS_0 must be VEC4")
+    component_type = int(accessor.get("componentType", 0))
+    if component_type == 5126:
+        return
+    if component_type in (5121, 5123) and bool(accessor.get("normalized", False)):
+        return
+    raise ValueError(f"glTF mesh {mesh_index} WEIGHTS_0 must be FLOAT or normalized unsigned")

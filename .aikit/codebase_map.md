@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `108`
-- **Total Classes**: `151`
-- **Total Top-Level Functions**: `188`
-- **Total Class Methods**: `819`
-- **Total Source Lines**: `15836`
+- **Total Python Modules**: `112`
+- **Total Classes**: `157`
+- **Total Top-Level Functions**: `200`
+- **Total Class Methods**: `844`
+- **Total Source Lines**: `16674`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `140` lines (`3012` bytes)
+**Size**: `144` lines (`3131` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -233,9 +233,10 @@
 ### [`keystone/batch.py`](keystone/batch.py)
 > *Static batch planner: group draw nodes to cut draw calls without new deps.*
 
-**Size**: `93` lines (`3728` bytes)
+**Size**: `104` lines (`4054` bytes)
 
 **Functions:**
+- `def _skinned(mesh)` - *Whether a mesh deforms at render time and must never bake or merge.*
 - `def plan_batches(scene)`
 - `def merge_batches(scene, exclude)` - *Bake static groups into world-space meshes; animated ids stay separate.*
 
@@ -320,17 +321,19 @@
 ### [`keystone/geometry.py`](keystone/geometry.py)
 > *Indexed triangle mesh data and surface material, independent of any GPU API.*
 
-**Size**: `80` lines (`3184` bytes)
+**Size**: `144` lines (`7143` bytes)
 
 **Classes:**
 - `class Material` - *Blinn-Phong surface parameters with PBR extensions used by the renderer.*
   - Method `.__post_init__()`
-- `class MeshData` - *Immutable indexed triangle mesh with optional UVs.*
+- `class MeshData` - *Immutable indexed triangle mesh with optional UVs and skinning.*
   - Method `.__post_init__()`
+  - Property `.skinned` - *Whether this mesh carries a bound skin palette.*
   - Method `.vertex_count()`
   - Method `.triangle_count()`
   - Method `.bounds()`
   - Method `.interleaved()` - *Pack position, normal and UV into one vertex stream for the GPU.*
+  - Method `.interleaved_skinned()` - *Pack the base stream plus padded joints and weights for the GPU.*
 
 ---
 
@@ -359,7 +362,7 @@
 ### [`keystone/gltf/loader.py`](keystone/gltf/loader.py)
 > *Top-level glTF import orchestration.*
 
-**Size**: `77` lines (`2792` bytes)
+**Size**: `81` lines (`3010` bytes)
 
 **Classes:**
 - `class GltfImport` - *The result of importing one glTF document.*
@@ -382,25 +385,40 @@
 ### [`keystone/gltf/meshes.py`](keystone/gltf/meshes.py)
 > *glTF mesh and primitive decoding.*
 
-**Size**: `174` lines (`7515` bytes)
+**Size**: `224` lines (`10511` bytes)
 
 **Functions:**
 - `def _as_vec3(value)`
 - `def _compute_normals(positions, indices)`
 - `def load_meshes(document, buffers, buffer_views, materials)`
 - `def _accessor(document, index)`
+- `def _require_joints_accessor(accessor, mesh_index)`
+- `def _require_weights_accessor(accessor, mesh_index)`
 
 ---
 
 ### [`keystone/gltf/scene.py`](keystone/gltf/scene.py)
 > *glTF node, transform and scene construction.*
 
-**Size**: `155` lines (`6095` bytes)
+**Size**: `192` lines (`7484` bytes)
 
 **Functions:**
 - `def _matrix_to_transform(matrix)`
 - `def _node_transform(raw)`
-- `def build_scene(document, meshes, materials)`
+- `def _with_skin(mesh, skin)`
+- `def _node_skin(document, raw, skins)`
+- `def build_scene(document, meshes, materials, skins)`
+
+---
+
+### [`keystone/gltf/skins.py`](keystone/gltf/skins.py)
+> *glTF skin parsing: joint nodes and inverse bind matrices.*
+
+**Size**: `65` lines (`2840` bytes)
+
+**Functions:**
+- `def load_skins(document, buffers, buffer_views, node_count)` - *Parse the glTF skins array into joint indices and inverse bind matrices.*
+- `def _accessor(document, index)`
 
 ---
 
@@ -523,7 +541,7 @@
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
 > *Blinn-Phong forward renderer with fog, shadows and screenshot readback.*
 
-**Size**: `800` lines (`31032` bytes)
+**Size**: `925` lines (`36172` bytes)
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
@@ -533,6 +551,8 @@
   - Method `._release_bloom_fbos()`
   - Method `._ensure_bloom_fbos()`
   - Method `._gpu_mesh(mesh)`
+  - Method `._gpu_skinned_mesh(mesh)`
+  - Method `._upload_bones(program, scene, mesh)`
   - Method `._gpu_texture(texture)`
   - Method `._draw_sky(scene, srgb_on, post_on, bloom_on)`
   - Method `._shadows_requested(scene)`
@@ -560,7 +580,7 @@
 ### [`keystone/gpu/shader.py`](keystone/gpu/shader.py)
 > *GLSL program compilation, uniform upload and cleanup.*
 
-**Size**: `86` lines (`3276` bytes)
+**Size**: `93` lines (`3634` bytes)
 
 **Classes:**
 - `class ShaderProgram` - *A linked vertex/fragment program with cached uniform locations.*
@@ -569,6 +589,7 @@
   - Method `.use()`
   - Method `._location(name)`
   - Method `.set_mat4(name, matrix)`
+  - Method `.set_mat4_array(name, matrices)` - *Upload a fixed mat4 array palette (e.g. skinning bones).*
   - Method `.set_mat3(name, values)`
   - Method `.set_vec2(name, x, y)`
   - Method `.set_vec3(name, vector)`
@@ -597,6 +618,19 @@
 - `def light_view(direction)` - *Look from the light direction toward the origin (deterministic).*
 - `def light_vp(direction)` - *Deterministic light view-projection for the fixed ortho box.*
 - `def light_vp_for(light)` - *Convenience wrapper taking the scene directional light.*
+
+---
+
+### [`keystone/gpu/skinned_buffer.py`](keystone/gpu/skinned_buffer.py)
+> *GPU upload for skinned meshes: base stream plus joints and weights.*
+
+**Size**: `72` lines (`2934` bytes)
+
+**Classes:**
+- `class SkinnedGpuMesh` - *VAO/VBO/EBO triple owning one immutable skinned mesh upload.*
+  - Method `.__init__(mesh)`
+  - Method `.draw()`
+  - Method `.release()`
 
 ---
 
@@ -893,7 +927,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `91` lines (`3336` bytes)
+**Size**: `92` lines (`3362` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1059,6 +1093,19 @@
 **Functions:**
 - `def write_json_atomic(path, payload, backup)`
 - `def read_json(path)`
+
+---
+
+### [`keystone/skin.py`](keystone/skin.py)
+> *Deterministic linear-blend skinning: bone palettes and CPU reference math.*
+
+**Size**: `111` lines (`4260` bytes)
+
+**Functions:**
+- `def bone_matrices(scene, mesh)` - *Return world-space bone palettes (joint world matrix times inverse bind).*
+- `def _rotate_normal(bone, normal)`
+- `def skin_point(position, normal, joints, weights, bones)` - *Deform one vertex by its influences; mirrors the vertex shader exactly.*
+- `def skin_mesh(mesh, bones)` - *Return a deformed copy of the mesh in bind-pose layout (CPU oracle).*
 
 ---
 
@@ -1867,7 +1914,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `59` lines (`2322` bytes)
+**Size**: `60` lines (`2379` bytes)
 
 **Classes:**
 - `class PluginTest`
@@ -2071,6 +2118,40 @@
   - Method `.test_snapshot_round_trips_shadow_flag()`
   - Method `.test_scene_document_and_inspector_expose_shadows()`
   - Method `.test_shadow_light_helper_accepts_directional_light()`
+
+---
+
+### [`tests/test_skinning.py`](tests/test_skinning.py)
+> *Tests for deterministic linear-blend skinning (max 4 influences).*
+
+**Size**: `286` lines (`11594` bytes)
+
+**Classes:**
+- `class SkinValidationTest`
+  - Method `.test_unskinned_meshes_stay_legacy()`
+  - Method `.test_skinned_stream_packs_padded_joints_and_weights()`
+  - Method `.test_rejects_partial_and_mismatched_skin()`
+- `class SkinMathTest`
+  - Method `.test_rigid_identity_keeps_bind_pose()`
+  - Method `.test_rigid_translation_moves_vertices()`
+  - Method `.test_half_blend_averages_bones()`
+  - Method `.test_bone_rotation_turns_normals()`
+  - Method `.test_skin_mesh_preserves_layout()`
+  - Method `.test_bone_palette_is_deterministic()`
+  - Method `.test_missing_joint_raises_with_fix()`
+- `class SkinBatchTest`
+  - Method `.test_merge_skips_skinned_meshes()`
+- `class SkinGltfTest`
+  - Method `._skinned_document(bad_joint, normalized_joints)`
+  - Method `.test_loads_a_skin()`
+  - Method `.test_rejects_bad_joint_index()`
+  - Method `.test_rejects_normalized_joints()`
+- `class SkinRenderTest`
+  - Method `._skinned_scene()`
+  - Method `.test_posed_render_differs_from_bind()`
+
+**Functions:**
+- `def _quad_mesh(**overrides)`
 
 ---
 

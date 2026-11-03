@@ -82,10 +82,46 @@ def _node_transform(raw: Mapping[str, Any]) -> Transform:
     )
 
 
+def _with_skin(mesh: MeshData, skin: tuple[tuple[str, ...], tuple[tuple[float, ...], ...]] | None) -> MeshData:
+    if skin is None:
+        return mesh
+    if mesh.skinned:
+        raise ValueError("glTF mesh primitive has skinning influences twice")
+    joint_names, inverse_bind = skin
+    return MeshData(
+        positions=mesh.positions,
+        normals=mesh.normals,
+        uvs=mesh.uvs if mesh.uvs else tuple((0.0, 0.0) for _ in mesh.positions),
+        indices=mesh.indices,
+        colors=mesh.colors,
+        joints=mesh.joints,
+        weights=mesh.weights,
+        skin_joints=joint_names,
+        skin_inverse_bind=inverse_bind,
+    )
+
+
+def _node_skin(
+    document: Mapping[str, Any],
+    raw: Mapping[str, Any],
+    skins: list[dict[str, Any]],
+) -> tuple[tuple[str, ...], tuple[tuple[float, ...], ...]] | None:
+    if "skin" not in raw:
+        return None
+    skin_index = int(raw["skin"])
+    if skin_index < 0 or skin_index >= len(skins):
+        raise ValueError("glTF node references an unknown skin")
+    skin = skins[skin_index]
+    joint_names = tuple(f"node-{joint}" for joint in skin["joints"])
+    inverse_bind = tuple(tuple(matrix) for matrix in skin["inverse_bind"])
+    return joint_names, inverse_bind
+
+
 def build_scene(
     document: Mapping[str, Any],
     meshes: list[list[tuple[MeshData, int | None]]],
     materials: list[Material],
+    skins: list[dict[str, Any]] | None = None,
 ) -> Scene:
     raw_nodes = document.get("nodes", [])
     if raw_nodes and not isinstance(raw_nodes, list):
@@ -108,6 +144,7 @@ def build_scene(
         name = str(raw.get("name", f"node-{index}"))
         node = Node(name, id=f"node-{index}")
         node.transform = _node_transform(raw)
+        node_skin = _node_skin(document, raw, skins or [])
         mesh_index = raw.get("mesh")
         if mesh_index is not None:
             mesh_index = int(mesh_index)
@@ -116,7 +153,7 @@ def build_scene(
             primitives = meshes[mesh_index]
             if primitives:
                 first_mesh, first_material = primitives[0]
-                node.mesh = first_mesh
+                node.mesh = _with_skin(first_mesh, node_skin)
                 if first_material is not None and 0 <= first_material < len(materials):
                     node.material = materials[first_material]
                 elif first_material is None:
@@ -125,7 +162,7 @@ def build_scene(
                     child = Node(
                         f"{name}-primitive-{offset}",
                         id=f"node-{index}-primitive-{offset}",
-                        mesh=primitive_mesh,
+                        mesh=_with_skin(primitive_mesh, node_skin),
                     )
                     if primitive_material is not None and 0 <= primitive_material < len(materials):
                         child.material = materials[primitive_material]

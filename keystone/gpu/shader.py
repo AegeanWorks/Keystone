@@ -64,6 +64,13 @@ class ShaderProgram:
     def set_mat4(self, name: str, matrix: Mat4) -> None:
         GL.glUniformMatrix4fv(self._location(name), 1, GL.GL_FALSE, matrix.flat())
 
+    def set_mat4_array(self, name: str, matrices: list[Mat4] | tuple[Mat4, ...]) -> None:
+        """Upload a fixed mat4 array palette (e.g. skinning bones)."""
+        flat: list[float] = []
+        for matrix in matrices:
+            flat.extend(matrix.flat())
+        GL.glUniformMatrix4fv(self._location(f"{name}[0]"), len(matrices), GL.GL_FALSE, flat)
+
     def set_mat3(self, name: str, values: tuple[float, ...]) -> None:
         GL.glUniformMatrix3fv(self._location(name), 1, GL.GL_FALSE, values)
 
