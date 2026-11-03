@@ -38,9 +38,15 @@ def read_png(path: str | Path) -> tuple[int, int, bytes]:
         length = struct.unpack(">I", data[offset : offset + 4])[0]
         kind = data[offset + 4 : offset + 8]
         payload = data[offset + 8 : offset + 8 + length]
+        stored_crc = struct.unpack(">I", data[offset + 8 + length : offset + 12 + length])[0]
+        if zlib.crc32(kind + payload) & 0xFFFFFFFF != stored_crc:
+            raise ValueError(f"PNG chunk {kind!r} failed CRC check")
         offset += 12 + length
         if kind == b"IHDR":
-            width, height, depth, color, compression, filter_method, interlace = struct.unpack(">IIBBBBB", payload)
+            try:
+                width, height, depth, color, compression, filter_method, interlace = struct.unpack(">IIBBBBB", payload)
+            except struct.error as exc:
+                raise ValueError(f"PNG IHDR is corrupt: {exc}") from exc
             if depth != 8 or color != 6 or compression != 0 or filter_method != 0 or interlace != 0:
                 raise ValueError("only 8-bit non-interlaced RGBA PNGs are supported")
         elif kind == b"IDAT":
@@ -50,7 +56,10 @@ def read_png(path: str | Path) -> tuple[int, int, bytes]:
             break
     if width <= 0 or height <= 0 or not compressed_idat:
         raise ValueError("PNG has no valid IHDR/IDAT")
-    raw = zlib.decompress(bytes(compressed))
+    try:
+        raw = zlib.decompress(bytes(compressed))
+    except zlib.error as exc:
+        raise ValueError(f"PNG IDAT is corrupt: {exc}") from exc
     stride = width * 4
     rows: list[bytes] = []
     previous = bytes(stride)

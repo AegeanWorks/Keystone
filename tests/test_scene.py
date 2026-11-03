@@ -165,6 +165,8 @@ class NodeIdentityTest(unittest.TestCase):
             Node("bad", tags="enemy")
         with self.assertRaises(TypeError):
             Node("bad").add_component(None)
+        with self.assertRaises(TypeError):
+            Node("bad", components={Health: "bad"})
 
 
 class CameraTest(unittest.TestCase):

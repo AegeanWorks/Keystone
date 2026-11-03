@@ -387,3 +387,12 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Decision**: Import TextureData in keystone/__init__ (no new dep); reset _time in CubeDemo.build_scene; strict ActionState.from_dict type/length checks (TypeError/ValueError); clamp PerspectiveCamera pitch in __post_init__ and look_at to +-MAX_PITCH. Five regression tests added (plugin export, samples rebuild, input strict x4 asserts in 1 test, 2 camera). Deferred: cone winding, material-graph Vec3 params, PNG CRC/zlib wrap, broadphase huge-box guard, playtest/global-RNG and other unverified S3-S6 static claims (filed, not implemented).
 - **Consequences**: from keystone import TextureData works; sequential run_simulation on one instance deterministic; malformed action JSON fails fast with indexable TypeError; pitch +-90deg cameras stay usable; 447 tests green, ruff clean, 6/6 aikit gates; public five-op contract, schemas and hashes unchanged (simulate hash 9993994cc8aac268c007e43d0d33c95e). Cone/material/PNG/GPU items remain future.
 
+
+
+### ADR-046: Harden PNG, skin, scene and sample boundaries with failing-first guards
+- **Date**: 2026-11-04
+- **Status**: Accepted
+- **Context**: Second verified-fix iteration over swarm claims: PNG reader ignored CRC and leaked zlib.error, MeshData accepted NaN/Inf skin weights that later poison skin_point, Node accepted mismatched component values splitting query vs get_component, CubeDemo.update crashed with bare StopIteration when orb is missing.
+- **Decision**: Verify per-chunk CRC32 in read_png and wrap IHDR/zlib errors as ValueError; require finite numeric skin weights in MeshData; require isinstance(value, key) for Node components; raise RuntimeError with node name when CubeDemo orb is absent. Six regression tests added (CRC, corrupt-IDAT wrap, NaN/Inf weights, component value, orb-missing).
+- **Consequences**: Corrupt PNGs fail fast with actionable ValueError; NaN weights rejected at construction; hand-built component dicts cannot desync queries; sample update error is diagnosable; 450 tests green, ruff clean, 6/6 aikit gates; simulate hash unchanged (no CubeDemo asset/behavior change on the happy path).
+

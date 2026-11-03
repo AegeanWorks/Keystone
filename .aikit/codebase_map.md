@@ -9,8 +9,8 @@
 - **Total Python Modules**: `114`
 - **Total Classes**: `162`
 - **Total Top-Level Functions**: `206`
-- **Total Class Methods**: `870`
-- **Total Source Lines**: `17294`
+- **Total Class Methods**: `873`
+- **Total Source Lines**: `17349`
 
 ---
 
@@ -325,7 +325,7 @@
 ### [`keystone/geometry.py`](keystone/geometry.py)
 > *Indexed triangle mesh data and surface material, independent of any GPU API.*
 
-**Size**: `144` lines (`7143` bytes)
+**Size**: `146` lines (`7339` bytes)
 
 **Classes:**
 - `class Material` - *Blinn-Phong surface parameters with PBR extensions used by the renderer.*
@@ -968,7 +968,7 @@
 ### [`keystone/png.py`](keystone/png.py)
 > *Minimal dependency-free PNG writer for headless frame captures.*
 
-**Size**: `119` lines (`4463` bytes)
+**Size**: `128` lines (`4934` bytes)
 
 **Functions:**
 - `def _chunk(kind, payload)`
@@ -1017,7 +1017,7 @@
 ### [`keystone/samples.py`](keystone/samples.py)
 > *A minimal game-agnostic sample used to smoke-test the engine.*
 
-**Size**: `153` lines (`5846` bytes)
+**Size**: `155` lines (`5953` bytes)
 
 **Classes:**
 - `class CubeDemo` - *A rotating cube scene; contains no combat, puzzles or genre rules.*
@@ -1033,7 +1033,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `307` lines (`10284` bytes)
+**Size**: `309` lines (`10448` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -1956,7 +1956,7 @@
 ### [`tests/test_png.py`](tests/test_png.py)
 > *Unit tests for the stdlib PNG writer used by headless screenshots.*
 
-**Size**: `82` lines (`2902` bytes)
+**Size**: `104` lines (`3898` bytes)
 
 **Classes:**
 - `class PngTest`
@@ -1965,6 +1965,8 @@
   - Method `.test_reader_round_trips_writer_pixels()`
   - Method `.test_reader_rejects_non_png()`
   - Method `.test_creates_missing_parent_directory()`
+  - Method `.test_reader_rejects_bad_crc()`
+  - Method `.test_reader_wraps_corrupt_idat_as_value_error()`
 
 **Functions:**
 - `def _chunks(data)`
@@ -2034,7 +2036,7 @@
 ### [`tests/test_samples.py`](tests/test_samples.py)
 > *Tests for the engine's sample game.*
 
-**Size**: `53` lines (`1694` bytes)
+**Size**: `63` lines (`2064` bytes)
 
 **Classes:**
 - `class SampleTest`
@@ -2042,13 +2044,14 @@
   - Method `.test_update_rotates_cubes_and_moves_the_camera()`
   - Method `.test_actions_schema_is_generic()`
   - Method `.test_rebuild_resets_time()`
+  - Method `.test_update_without_orb_fails_with_message()`
 
 ---
 
 ### [`tests/test_scene.py`](tests/test_scene.py)
 > *Unit tests for the Keystone scene graph and perspective camera.*
 
-**Size**: `252` lines (`9436` bytes)
+**Size**: `254` lines (`9531` bytes)
 
 **Classes:**
 - `class Health`
@@ -2152,7 +2155,7 @@
 ### [`tests/test_skinning.py`](tests/test_skinning.py)
 > *Tests for deterministic linear-blend skinning (max 4 influences).*
 
-**Size**: `286` lines (`11594` bytes)
+**Size**: `292` lines (`11998` bytes)
 
 **Classes:**
 - `class SkinValidationTest`

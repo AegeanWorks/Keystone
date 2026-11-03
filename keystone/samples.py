@@ -121,7 +121,9 @@ class CubeDemo:
                 node.transform,
                 rotation=Quat.from_axis_angle(Vec3(0.3, 1.0, 0.1).normalized(), self._time * 0.7 + index * 0.8),
             )
-        orb = next(node for node in self.scene.traverse() if node.name == "orb")
+        orb = next((node for node in self.scene.traverse() if node.name == "orb"), None)
+        if orb is None:
+            raise RuntimeError("CubeDemo scene is missing the 'orb' node")
         orb.transform = replace(orb.transform, position=Vec3(0.0, 2.5 + math.sin(self._time * 1.4) * 0.2, 0.0))
         camera = self.scene.camera
         camera.move(

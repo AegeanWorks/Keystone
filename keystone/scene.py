@@ -58,9 +58,11 @@ class Node:
             if not isinstance(tag, str) or not tag:
                 raise ValueError("tags must be non-empty strings")
         self.components = dict(self.components)
-        for component_type in self.components:
+        for component_type, component_value in self.components.items():
             if not isinstance(component_type, type):
                 raise TypeError("component keys must be types")
+            if not isinstance(component_value, component_type):
+                raise TypeError("component value must match its key type")
 
     def add_tag(self, tag: str) -> None:
         if not isinstance(tag, str) or not tag:

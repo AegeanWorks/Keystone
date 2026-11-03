@@ -48,6 +48,16 @@ class SampleTest(unittest.TestCase):
         game.build_scene()
         self.assertEqual(game.snapshot()["time"], 0.0)
 
+    def test_update_without_orb_fails_with_message(self):
+        from keystone.input import ActionState
+
+        game = CubeDemo()
+        game.build_scene()
+        orb = next(node for node in game.scene.traverse() if node.name == "orb")
+        orb.parent.remove_child(orb)
+        with self.assertRaises(RuntimeError):
+            game.update(0.016, ActionState())
+
 
 if __name__ == "__main__":
     unittest.main()

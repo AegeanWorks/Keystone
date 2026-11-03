@@ -77,6 +77,28 @@ class PngTest(unittest.TestCase):
             write_png(path, 1, 1, bytes((1, 2, 3, 4)))
             self.assertTrue(path.exists())
 
+    def test_reader_rejects_bad_crc(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "shot.png"
+            write_png(path, 2, 2, bytes((1, 2, 3, 255)) * 4)
+            data = bytearray(path.read_bytes())
+            data[-1] ^= 0xFF
+            path.write_bytes(bytes(data))
+            with self.assertRaises(ValueError):
+                read_png(path)
+
+    def test_reader_wraps_corrupt_idat_as_value_error(self):
+        from keystone.png import SIGNATURE, _chunk
+
+        header = struct.pack(">IIBBBBB", 2, 2, 8, 6, 0, 0, 0)
+        bad = SIGNATURE + _chunk(b"IHDR", header) + _chunk(b"IDAT", b"not compressed") + _chunk(b"IEND", b"")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "bad.png"
+            path.write_bytes(bad)
+            # zlib.error is not a ValueError subclass, so this also proves the wrap.
+            with self.assertRaises(ValueError):
+                read_png(path)
+
 
 if __name__ == "__main__":
     unittest.main()

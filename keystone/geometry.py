@@ -78,6 +78,8 @@ class MeshData:
                     raise ValueError("joint and weight counts must match per vertex")
                 if any(not isinstance(joint, int) or joint < 0 for joint in vertex_joints):
                     raise ValueError("skin joint indices must be non-negative integers")
+                if any(not isinstance(weight, (int, float)) or not math.isfinite(weight) for weight in vertex_weights):
+                    raise ValueError("skin weights must be finite numbers")
                 if any(weight < 0.0 for weight in vertex_weights):
                     raise ValueError("skin weights must be non-negative")
                 if abs(sum(vertex_weights) - 1.0) > 1e-3:

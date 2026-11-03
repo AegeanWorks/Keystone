@@ -70,6 +70,12 @@ class SkinValidationTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             MeshData(**base, joints=((0,),) * 3, weights=((1.0,),) * 3,
                       skin_joints=("j0", "j0"), skin_inverse_bind=(IDENTITY_16,) * 2)
+        with self.assertRaises(ValueError):
+            MeshData(**base, joints=((0,),) * 3, weights=((float("nan"),),) * 3,
+                      skin_joints=("j0",), skin_inverse_bind=(IDENTITY_16,))
+        with self.assertRaises(ValueError):
+            MeshData(**base, joints=((0,),) * 3, weights=((float("inf"),),) * 3,
+                      skin_joints=("j0",), skin_inverse_bind=(IDENTITY_16,))
 
 
 class SkinMathTest(unittest.TestCase):
