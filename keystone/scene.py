@@ -103,6 +103,20 @@ class Node:
             raise ValueError("adding this child would create a cycle")
         if child.parent is self:
             return
+        new_ids = [node.id for node in child.traverse() if node.id]
+        if len(set(new_ids)) != len(new_ids):
+            raise ValueError("child subtree has a duplicate node id")
+        if new_ids:
+            wanted = set(new_ids)
+            ancestor = self
+            while ancestor.parent is not None:
+                ancestor = ancestor.parent
+            subtree_ids = {id(node) for node in child.traverse()}
+            for node in ancestor.traverse():
+                if id(node) in subtree_ids:
+                    continue
+                if node.id and node.id in wanted:
+                    raise ValueError(f"duplicate node id: {node.id!r}")
         if child.parent is not None:
             child.parent.remove_child(child)
         child.parent = self

@@ -47,6 +47,15 @@ class SpatialGridTest(unittest.TestCase):
         self.assertEqual(grid.query_point(Vec3(2.9, -2.9, 0.0)), ["large"])
         self.assertEqual(grid.query_point(Vec3(3.1, 0, 0)), [])
 
+    def test_enormous_proxy_is_rejected_instead_of_hanging(self):
+        grid = SpatialGrid(cell_size=1.0)
+        huge = AABB(Vec3(0, 0, 0), Vec3(1e6, 1e6, 1e6))
+        with self.assertRaises(ValueError):
+            grid.insert("huge", huge)
+        self.assertNotIn("huge", grid)
+        with self.assertRaises(ValueError):
+            grid.query(huge)
+
     def test_pairs_are_unique_and_ordered_by_insertion(self):
         grid = SpatialGrid(cell_size=2.0)
         box = AABB(Vec3(0, 0, 0), Vec3(1, 1, 1))

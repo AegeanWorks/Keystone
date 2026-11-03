@@ -432,3 +432,12 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Decision**: transform_point (and Mat4*Vec3 through it) raises ValueError for projective matrices directing to project_point, mirroring inverse()'s affine check; analysis/world and builder paths are affine-only so behavior is unchanged. Docs: fix the geometry line, add the inspector endpoint row, correct schema versions to 2, add gltf/ and pbr to ARCHITECTURE.
 - **Consequences**: Projection misuse fails fast with an actionable message; two math regression tests added; README stays within the 32500-char budget (32495) with the duplicated inspector clause folded into the endpoint table; 468 tests green, ruff clean, 6/6 aikit gates; simulate hash unchanged.
 
+
+
+### ADR-051: Fail fast on hierarchy, script, mix and grid boundary misuse
+- **Date**: 2026-11-04
+- **Status**: Accepted
+- **Context**: Node.add_child accepted duplicate ids and deferred the failure to a later read; load_actions accepted command-log documents and silently dropped their seed; mix_clips clamped per voice, making mixes order-dependent and losing headroom (+1,+1,-1 mixed to 0 instead of 1); SpatialGrid._cells_for iterated an unbounded cell range (a 4001^3-cell box projects to ~87 minutes) and insert() stored the proxy before the iteration could fail, leaving partial state.
+- **Decision**: Validate duplicate ids in add_child at write time (blank ids still defer to Scene assignment); reject seed/step-shaped documents in load_actions with a --replay pointer; sum voices then clamp once in mix_clips; cap proxies at 100k cells with a finite-bounds check and materialize the cell list before mutating grid state. Six regression tests added.
+- **Consequences**: Hierarchy, script, mix and grid misuse fail at the boundary with actionable messages; mixes are order-independent; enormous proxies raise instead of hanging; 472 tests green, ruff clean, 6/6 aikit gates; simulate hash unchanged. Deferred: unbind-resurrect schema, snapshot missing-asset strictness, hold-last semantics, UI pause-capture semantics, UV-orientation decision, skin oracle purity, sphere pole topology, digest coverage.
+

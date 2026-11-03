@@ -118,7 +118,8 @@ def mix_clips(clips: list[tuple[AudioClip, float, float]]) -> AudioClip:
             raise ValueError("gain must be non-negative")
         for index in range(int(len(clip.samples) / pitch)):
             source = clip.samples[int(index * pitch)]
-            mixed[index] = max(-1.0, min(1.0, mixed[index] + source * gain))
+            mixed[index] += source * gain
+    mixed = [max(-1.0, min(1.0, value)) for value in mixed]
     return AudioClip(samples=tuple(mixed), sample_rate=rate, name="mix")
 
 

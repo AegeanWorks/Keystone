@@ -56,6 +56,19 @@ class AudioTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             mix_clips([(first, 1.0, 1.0), (second, 1.0, 1.0)])
 
+    def test_mix_clips_clamps_once_at_the_end(self):
+        rate = 22050
+
+        def voice(value):
+            return AudioClip(samples=(value,), sample_rate=rate, name="v")
+
+        mixed = mix_clips([(voice(1.0), 1.0, 1.0), (voice(1.0), 1.0, 1.0), (voice(-1.0), 1.0, 1.0)])
+        self.assertEqual(mixed.samples, (1.0,))
+        self.assertEqual(
+            mix_clips([(voice(-1.0), 1.0, 1.0), (voice(1.0), 1.0, 1.0), (voice(1.0), 1.0, 1.0)]).samples,
+            mixed.samples,
+        )
+
     def test_wav_round_trip(self):
         clip = sine(440.0, 0.05, name="tone")
         with tempfile.TemporaryDirectory() as directory:

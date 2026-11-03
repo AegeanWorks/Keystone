@@ -10,6 +10,10 @@ from keystone.physics import AABB, aabb_overlap
 
 Cell = tuple[int, int, int]
 
+#: A single proxy may not span more cells than this; beyond it the grid
+#: degrades into a hang and callers should use a larger cell_size.
+MAX_PROXY_CELLS = 100_000
+
 
 class SpatialGrid:
     """A uniform grid of AABB proxies with exact overlap filtering.
@@ -39,12 +43,13 @@ class SpatialGrid:
 
     def insert(self, key: Hashable, box: AABB) -> None:
         """Insert or replace a proxy and its current bounds."""
+        cells = list(self._cells_for(box))
         if key in self._boxes:
             self.remove(key)
         self._boxes[key] = box
         self._order[key] = self._next_order
         self._next_order += 1
-        for cell in self._cells_for(box):
+        for cell in cells:
             self._cells.setdefault(cell, set()).add(key)
 
     def update(self, key: Hashable, box: AABB) -> None:
@@ -104,9 +109,20 @@ class SpatialGrid:
     def _cells_for(self, box: AABB) -> Iterator[Cell]:
         low = box.low() / self.cell_size
         high = box.high() / self.cell_size
-        for x in range(math.floor(low.x), math.floor(high.x) + 1):
-            for y in range(math.floor(low.y), math.floor(high.y) + 1):
-                for z in range(math.floor(low.z), math.floor(high.z) + 1):
+        corners = (low.x, low.y, low.z, high.x, high.y, high.z)
+        if not all(math.isfinite(value) for value in corners):
+            raise ValueError("broadphase bounds must be finite")
+        low_cell = (math.floor(low.x), math.floor(low.y), math.floor(low.z))
+        high_cell = (math.floor(high.x), math.floor(high.y), math.floor(high.z))
+        total = (high_cell[0] - low_cell[0] + 1) * (high_cell[1] - low_cell[1] + 1) * (high_cell[2] - low_cell[2] + 1)
+        if total > MAX_PROXY_CELLS:
+            raise ValueError(
+                f"broadphase box spans {total} cells (limit {MAX_PROXY_CELLS}); "
+                "use a larger cell_size or a smaller proxy"
+            )
+        for x in range(low_cell[0], high_cell[0] + 1):
+            for y in range(low_cell[1], high_cell[1] + 1):
+                for z in range(low_cell[2], high_cell[2] + 1):
                     yield (x, y, z)
 
     def _candidates(self, box: AABB) -> set[Hashable]:

@@ -9,8 +9,8 @@
 - **Total Python Modules**: `114`
 - **Total Classes**: `162`
 - **Total Top-Level Functions**: `208`
-- **Total Class Methods**: `891`
-- **Total Source Lines**: `17620`
+- **Total Class Methods**: `895`
+- **Total Source Lines**: `17693`
 
 ---
 
@@ -204,7 +204,7 @@
 ### [`keystone/audio.py`](keystone/audio.py)
 > *Game-agnostic audio core: synth clips, bus mixer and WAV I/O.*
 
-**Size**: `226` lines (`9037` bytes)
+**Size**: `227` lines (`9062` bytes)
 
 **Classes:**
 - `class AudioClip` - *Immutable mono PCM clip in [-1, 1] with a fixed sample rate.*
@@ -248,7 +248,7 @@
 ### [`keystone/broadphase.py`](keystone/broadphase.py)
 > *Deterministic spatial-grid broadphase for nearby AABB candidates.*
 
-**Size**: `116` lines (`4333` bytes)
+**Size**: `132` lines (`5182` bytes)
 
 **Classes:**
 - `class SpatialGrid` - *A uniform grid of AABB proxies with exact overlap filtering.*
@@ -689,7 +689,7 @@
 ### [`keystone/headless.py`](keystone/headless.py)
 > *Simulation without a window: JSON action scripts and deterministic traces.*
 
-**Size**: `66` lines (`2179` bytes)
+**Size**: `68` lines (`2325` bytes)
 
 **Functions:**
 - `def load_actions(path)`
@@ -1037,7 +1037,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `309` lines (`10448` bytes)
+**Size**: `323` lines (`11110` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -1516,7 +1516,7 @@
 ### [`tests/test_audio.py`](tests/test_audio.py)
 > *Tests for the game-agnostic audio core.*
 
-**Size**: `77` lines (`2851` bytes)
+**Size**: `90` lines (`3347` bytes)
 
 **Classes:**
 - `class AudioTest`
@@ -1524,6 +1524,7 @@
   - Method `.test_validation_rejects_bad_params()`
   - Method `.test_mixer_applies_buses_and_renders()`
   - Method `.test_mix_clips_requires_shared_rate()`
+  - Method `.test_mix_clips_clamps_once_at_the_end()`
   - Method `.test_wav_round_trip()`
   - Method `.test_clip_json_round_trip()`
 
@@ -1587,7 +1588,7 @@
 ### [`tests/test_broadphase.py`](tests/test_broadphase.py)
 > *Tests for the deterministic spatial-grid broadphase.*
 
-**Size**: `68` lines (`2910` bytes)
+**Size**: `77` lines (`3269` bytes)
 
 **Classes:**
 - `class SpatialGridTest`
@@ -1595,6 +1596,7 @@
   - Method `.test_same_cell_candidates_are_still_filtered()`
   - Method `.test_update_moves_a_proxy_and_remove_deletes_it()`
   - Method `.test_negative_coordinates_and_large_boxes_use_multiple_cells()`
+  - Method `.test_enormous_proxy_is_rejected_instead_of_hanging()`
   - Method `.test_pairs_are_unique_and_ordered_by_insertion()`
   - Method `.test_clear_and_validation()`
 
@@ -1719,7 +1721,7 @@
 ### [`tests/test_headless.py`](tests/test_headless.py)
 > *Tests for no-OpenGL simulation and action scripts.*
 
-**Size**: `55` lines (`2238` bytes)
+**Size**: `65` lines (`2642` bytes)
 
 **Classes:**
 - `class HeadlessTest`
@@ -1728,6 +1730,7 @@
   - Method `.test_trace_contains_each_frame()`
   - Method `.test_load_actions_accepts_list_and_object()`
   - Method `.test_load_actions_pins_bad_item_index()`
+  - Method `.test_load_actions_rejects_command_logs()`
   - Method `.test_invalid_frames_and_step()`
 
 ---
@@ -2071,7 +2074,7 @@
 ### [`tests/test_scene.py`](tests/test_scene.py)
 > *Unit tests for the Keystone scene graph and perspective camera.*
 
-**Size**: `254` lines (`9531` bytes)
+**Size**: `262` lines (`9883` bytes)
 
 **Classes:**
 - `class Health`
@@ -2081,6 +2084,7 @@
 - `class NodeTest`
   - Method `.test_child_world_matrix_composes_with_parent()`
   - Method `.test_add_child_reparents_instead_of_duplicating()`
+  - Method `.test_add_child_rejects_duplicate_ids_at_write_time()`
   - Method `.test_remove_child_clears_parent()`
   - Method `.test_traverse_is_depth_first_in_insertion_order()`
   - Method `.test_add_child_rejects_self_and_cycles()`

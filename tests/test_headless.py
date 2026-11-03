@@ -44,6 +44,16 @@ class HeadlessTest(unittest.TestCase):
                 load_actions(path)
             self.assertIn("actions[1]", str(caught.exception))
 
+    def test_load_actions_rejects_command_logs(self):
+        from keystone.replay import CommandLog
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "log.json"
+            CommandLog(seed=9).save(path)
+            with self.assertRaises(ValueError) as caught:
+                load_actions(path)
+            self.assertIn("--replay", str(caught.exception))
+
     def test_invalid_frames_and_step(self):
         with self.assertRaises(ValueError):
             run_simulation(CubeDemo(), -1)

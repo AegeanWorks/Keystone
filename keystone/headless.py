@@ -17,6 +17,8 @@ def load_actions(path: str | Path) -> list[ActionState]:
     except (OSError, json.JSONDecodeError) as exc:
         raise ValueError(f"could not read actions from {path}: {exc}") from exc
     if isinstance(payload, dict):
+        if "seed" in payload or "step" in payload:
+            raise ValueError("actions file looks like a command log; replay it with --replay")
         payload = payload.get("actions", payload.get("frames"))
     if not isinstance(payload, list):
         raise TypeError("actions file must hold a list or an object with an 'actions' list")

@@ -48,6 +48,14 @@ class NodeTest(unittest.TestCase):
         self.assertIs(child.parent, second)
         self.assertEqual(second.children, [child])
 
+    def test_add_child_rejects_duplicate_ids_at_write_time(self):
+        parent = Node("parent")
+        parent.add_child(Node("a", id="dup"))
+        with self.assertRaises(ValueError):
+            parent.add_child(Node("b", id="dup"))
+        with self.assertRaises(ValueError):
+            Node("root", id="dup").add_child(Node("leaf", id="dup"))
+
     def test_remove_child_clears_parent(self):
         parent = Node("parent")
         child = Node("child")
