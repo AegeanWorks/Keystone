@@ -48,11 +48,18 @@ from keystone.playtest import (
     validate_fairness,
 )
 from keystone.plugin import GameModule
-from keystone.scene import Node, Scene, Transform
+from keystone.scene import (
+    DirectionalLight,
+    Node,
+    PointLight,
+    Scene,
+    ShadowSettings,
+    Transform,
+)
 from keystone.scene_snapshot import scene_from_dict, scene_to_dict
 from keystone.texture import TextureData
 
-__version__ = "0.33.0"
+__version__ = "0.34.0"
 __all__ = [
     "PLAYTEST_REPORT_SCHEMA",
     "SAMPLE_RATE",
@@ -64,6 +71,7 @@ __all__ = [
     "AudioClip",
     "AuditTrail",
     "BotPolicy",
+    "DirectionalLight",
     "Emitter",
     "Engine",
     "GameModule",
@@ -78,10 +86,12 @@ __all__ = [
     "Node",
     "Particle",
     "ParticleSystem",
+    "PointLight",
     "Quat",
     "RandomPolicy",
     "Scene",
     "ScriptedPolicy",
+    "ShadowSettings",
     "TextureData",
     "Track",
     "Transform",

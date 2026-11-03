@@ -35,6 +35,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
         "capabilities": {
             "simulate": True,
             "render": True,
+            "shadows": True,
             "pbr": True,
             "agents": True,
             "profiler": True,

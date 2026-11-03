@@ -14,7 +14,7 @@
     "python"
   ],
   "gates": {},
-  "ui_required": false,
+  "ui_required": true,
   "mechanics_required": true,
   "created": "2026-10-30",
   "has_ui": true,
@@ -22,7 +22,7 @@
   "ui_evidence": [
     "keystone/web/static/index.html"
   ],
-  "ui_checked_at": "2026-11-02",
+  "ui_checked_at": "2026-11-03",
   "ui_source": "detected",
   "mechanics": {
     "core": [

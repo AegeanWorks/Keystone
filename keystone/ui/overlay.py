@@ -29,6 +29,7 @@ class HudState:
     pointer: tuple[float, float] | None = None
     draw_calls: int = 0
     triangles: int = 0
+    shadow_calls: int = 0
     audio_voices: int = 0
     anim_clips: int = 0
     particles: int = 0
@@ -122,6 +123,7 @@ class HumanOverlay:
             (True, f"TIME {state.elapsed:.1f}S"),
             (True, f"{state.width}X{state.height}"),
             (state.draw_calls != 0 or state.triangles != 0, f"DRAW {state.draw_calls} TRI {state.triangles}"),
+            (state.shadow_calls != 0, f"SHADOW {state.shadow_calls} PASS"),
             (state.audio_voices != 0, f"AUDIO {state.audio_voices} VOX"),
             (state.anim_clips != 0, f"ANIM {state.anim_clips} CLIP" if state.anim_clips != 1 else "ANIM 1 CLIP"),
             (state.particles != 0, f"FX {state.particles} LIVE"),

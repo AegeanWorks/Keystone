@@ -1,4 +1,4 @@
-"""Blinn-Phong forward renderer with fog, depth testing and screenshot readback."""
+"""Blinn-Phong forward renderer with fog, shadows and screenshot readback."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from keystone.geometry import Material, MeshData
 from keystone.gpu.instancing import group_instances
 from keystone.gpu.mesh_buffer import GpuMesh
 from keystone.gpu.shader import ShaderProgram
+from keystone.gpu.shadow import SHADOW_BIAS, SHADOW_MAP_SIZE, ShadowMap, light_vp_for
 from keystone.gpu.texture_buffer import GpuTexture
 from keystone.math3d import Mat4, Vec3
 from keystone.png import write_png
@@ -61,7 +62,35 @@ uniform float u_checker_scale;
 uniform vec3 u_point_pos;
 uniform vec3 u_point_color;
 uniform float u_point_radius;
+uniform mat4 u_light_vp;
+uniform sampler2D u_shadow_map;
+uniform float u_shadow_bias;
+uniform float u_shadows_enabled;
 out vec4 frag_color;
+float shadow_factor(vec3 world_pos) {
+    if (u_shadows_enabled < 0.5) {
+        return 1.0;
+    }
+    vec4 sc = u_light_vp * vec4(world_pos, 1.0);
+    if (sc.w <= 0.0) {
+        return 1.0;
+    }
+    vec3 ndc = sc.xyz / sc.w;
+    if (ndc.x < -1.0 || ndc.x > 1.0 || ndc.y < -1.0 || ndc.y > 1.0 || ndc.z < -1.0 || ndc.z > 1.0) {
+        return 1.0;
+    }
+    vec2 uv = ndc.xy * 0.5 + 0.5;
+    float depth = ndc.z * 0.5 + 0.5;
+    float texel = 1.0 / 1024.0;
+    float lit = 0.0;
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            float stored = texture(u_shadow_map, uv + vec2(float(x), float(y)) * texel).r;
+            lit += (depth - u_shadow_bias > stored) ? 0.0 : 1.0;
+        }
+    }
+    return lit / 9.0;
+}
 void main() {
     vec3 normal = normalize(v_normal);
     vec3 to_eye = u_camera_pos - v_world;
@@ -79,7 +108,9 @@ void main() {
         base_color *= texture(u_texture, v_uv).rgb;
     }
     vec3 diffuse_color = base_color * (1.0 - u_metallic * 0.8);
-    vec3 color = diffuse_color * (u_ambient + u_light_color * diffuse) + u_light_color * spec_strength + u_emissive;
+    float shadow = shadow_factor(v_world);
+    vec3 direct = (diffuse_color * u_light_color * diffuse + u_light_color * spec_strength) * shadow;
+    vec3 color = diffuse_color * u_ambient + direct + u_emissive;
     if (u_point_radius > 0.0) {
         vec3 to_point = u_point_pos - v_world;
         float point_distance = length(to_point);
@@ -144,6 +175,20 @@ void main() {
 }
 """
 
+DEPTH_VERTEX_SHADER = """#version 330 core
+layout(location = 0) in vec3 a_position;
+uniform mat4 u_model;
+uniform mat4 u_light_vp;
+void main() {
+    gl_Position = u_light_vp * u_model * vec4(a_position, 1.0);
+}
+"""
+
+DEPTH_FRAGMENT_SHADER = """#version 330 core
+void main() {
+}
+"""
+
 
 def normal_matrix(model: Mat4) -> tuple[float, ...]:
     """Return transpose(inverse(upper 3x3)) in column-major order."""
@@ -166,11 +211,15 @@ class Renderer:
         self._program = ShaderProgram(VERTEX_SHADER, FRAGMENT_SHADER)
         inst_program: ShaderProgram | None = None
         sky_program = None
+        depth_program: ShaderProgram | None = None
         try:
             inst_program = ShaderProgram(VERTEX_SHADER_INSTANCED, FRAGMENT_SHADER)
             sky_program = ShaderProgram(SKY_VERTEX_SHADER, SKY_FRAGMENT_SHADER)
+            depth_program = ShaderProgram(DEPTH_VERTEX_SHADER, DEPTH_FRAGMENT_SHADER)
             self._sky_vao = GL.glGenVertexArrays(1)
         except Exception:
+            if depth_program is not None:
+                depth_program.release()
             if sky_program is not None:
                 sky_program.release()
             if inst_program is not None:
@@ -179,6 +228,13 @@ class Renderer:
             raise
         self._inst_program = inst_program
         self._sky_program = sky_program
+        self._depth_program = depth_program
+        self._shadow: ShadowMap | None = None
+        self._shadow_error: str | None = None
+        try:
+            self._shadow = ShadowMap()
+        except (RuntimeError, ValueError) as exc:
+            self._shadow_error = str(exc)
         self._meshes: dict[int, tuple[MeshData, GpuMesh]] = {}
         self._textures: dict[int, tuple[TextureData, GpuTexture]] = {}
         self.last_stats: dict[str, int] = {
@@ -186,6 +242,9 @@ class Renderer:
             "triangles": 0,
             "instanced_calls": 0,
             "instances": 0,
+            "shadow_calls": 0,
+            "shadow_map_size": SHADOW_MAP_SIZE,
+            "shadows_enabled": 0,
         }
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glDepthFunc(GL.GL_LESS)
@@ -226,7 +285,18 @@ class Renderer:
         GL.glDepthMask(GL.GL_TRUE)
         GL.glEnable(GL.GL_DEPTH_TEST)
 
-    def _apply_shared(self, program: ShaderProgram, scene: Scene, view_projection: Mat4) -> None:
+    def _shadows_requested(self, scene: Scene) -> bool:
+        shadow = getattr(scene, "shadow", None)
+        return bool(getattr(shadow, "enabled", True))
+
+    def _apply_shared(
+        self,
+        program: ShaderProgram,
+        scene: Scene,
+        view_projection: Mat4,
+        light_vp: Mat4,
+        shadows_on: bool,
+    ) -> None:
         camera = scene.camera
         light = scene.light
         background = scene.background
@@ -238,6 +308,10 @@ class Renderer:
         program.set_vec3("u_ambient", scene.ambient)
         program.set_vec3("u_fog_color", background)
         program.set_float("u_fog_density", scene.fog_density)
+        program.set_mat4("u_light_vp", light_vp)
+        program.set_float("u_shadow_bias", SHADOW_BIAS)
+        program.set_float("u_shadows_enabled", 1.0 if shadows_on else 0.0)
+        program.set_int("u_shadow_map", 1)
         point = scene.point_light
         if point is None:
             program.set_vec3("u_point_pos", Vec3())
@@ -258,6 +332,7 @@ class Renderer:
         program.set_float("u_checker_scale", material.checker_scale)
         texture = material.texture if isinstance(material.texture, TextureData) else None
         if texture is None:
+            GL.glActiveTexture(GL.GL_TEXTURE0)
             GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
             program.set_float("u_has_texture", 0.0)
         else:
@@ -265,11 +340,46 @@ class Renderer:
             program.set_int("u_texture", 0)
             program.set_float("u_has_texture", 1.0)
 
+    def _render_shadow_pass(self, scene: Scene, light_vp: Mat4) -> int:
+        shadow_calls = 0
+        assert self._shadow is not None
+        self._shadow.bind_for_write()
+        GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glDepthFunc(GL.GL_LESS)
+        GL.glCullFace(GL.GL_FRONT)
+        self._depth_program.use()
+        self._depth_program.set_mat4("u_light_vp", light_vp)
+        for group in group_instances(scene):
+            mesh = group["mesh"]
+            if not isinstance(mesh, MeshData):
+                raise TypeError("Node.mesh must be MeshData")
+            for model in group["models"]:
+                self._depth_program.use()
+                self._depth_program.set_mat4("u_model", model)
+                self._gpu_mesh(mesh).draw()
+                shadow_calls += 1
+        GL.glCullFace(GL.GL_BACK)
+        self._shadow.unbind_after_write(self.width, self.height)
+        return shadow_calls
+
     def render(self, scene: Scene) -> dict[str, int]:
         draw_calls = 0
         triangles = 0
         instanced_calls = 0
         instances = 0
+        shadow_calls = 0
+        requested = self._shadows_requested(scene)
+        if requested and self._shadow is None:
+            raise RuntimeError(
+                f"{self._shadow_error or 'Shadow framebuffer unavailable.'}\n"
+                "Why: directional shadows are enabled but the depth FBO failed.\n"
+                "Fix: update the GPU driver, or re-run with --no-shadows."
+            )
+        shadows_on = bool(requested and self._shadow is not None)
+        light_vp = light_vp_for(scene.light)
+        if shadows_on:
+            shadow_calls = self._render_shadow_pass(scene, light_vp)
+            self._shadow.bind_for_read(1)
         GL.glViewport(0, 0, self.width, self.height)
         background = scene.background
         GL.glClearColor(background.x, background.y, background.z, 1.0)
@@ -277,8 +387,8 @@ class Renderer:
         self._draw_sky(scene)
         camera = scene.camera
         view_projection = camera.view_projection(self.width / self.height)
-        self._apply_shared(self._program, scene, view_projection)
-        self._apply_shared(self._inst_program, scene, view_projection)
+        self._apply_shared(self._program, scene, view_projection, light_vp, shadows_on)
+        self._apply_shared(self._inst_program, scene, view_projection, light_vp, shadows_on)
         for group in group_instances(scene):
             mesh = group["mesh"]
             if not isinstance(mesh, MeshData):
@@ -305,11 +415,18 @@ class Renderer:
                 instances += len(models)
                 triangles += mesh.triangle_count() * len(models)
         GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
+        if shadows_on:
+            assert self._shadow is not None
+            self._shadow.unbind_after_read(1)
+        GL.glActiveTexture(GL.GL_TEXTURE0)
         self.last_stats = {
             "draw_calls": draw_calls,
             "triangles": triangles,
             "instanced_calls": instanced_calls,
             "instances": instances,
+            "shadow_calls": shadow_calls,
+            "shadow_map_size": SHADOW_MAP_SIZE if shadows_on else 0,
+            "shadows_enabled": 1 if shadows_on else 0,
         }
         return dict(self.last_stats)
 
@@ -327,9 +444,13 @@ class Renderer:
         for _, mesh in self._meshes.values():
             mesh.release()
         self._meshes.clear()
+        if self._shadow is not None:
+            self._shadow.release()
+            self._shadow = None
         if self._sky_vao:
             GL.glDeleteVertexArrays(1, [self._sky_vao])
             self._sky_vao = 0
         self._sky_program.release()
         self._inst_program.release()
+        self._depth_program.release()
         self._program.release()

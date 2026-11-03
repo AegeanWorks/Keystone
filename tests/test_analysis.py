@@ -111,7 +111,7 @@ class AnalysisTest(unittest.TestCase):
         self.assertIn("changed_nodes", diff)
 
     def test_ui_metadata_is_hashed_and_compared(self):
-        self.assertEqual(REPORT_SCHEMA["version"], 5)
+        self.assertEqual(REPORT_SCHEMA["version"], 6)
         game = CubeDemo()
         pixels = bytes((0, 0, 0, 255)) * 4
         first = analyze_frame(
@@ -157,13 +157,13 @@ class AnalysisTest(unittest.TestCase):
 
     def test_compare_reports_accepts_older_schemas(self):
         report = analyze_frame(CubeDemo().build_scene(), bytes((0, 0, 0, 255)) * 4, 2, 2)
-        for version in (1, 2, 3, 4):
+        for version in (1, 2, 3, 4, 5):
             legacy = dict(report)
             legacy["schema"] = version
             legacy.pop("ui")
             diff = compare_reports(legacy, report)
             self.assertTrue(diff["same_ui"])
-            self.assertEqual(diff["schema"], 5)
+            self.assertEqual(diff["schema"], 6)
 
     def test_compare_reports_detects_identity_metadata_changes(self):
         first_scene = Scene()

@@ -16,11 +16,12 @@ from keystone.texture import TextureData
 GRID = 8
 
 REPORT_SCHEMA = {
-    "version": 5,
+    "version": 6,
     "fields": {
         "image": ["path", "width", "height", "rgba_sha256", "png_sha256"],
         "stats": ["mean_rgb", "mean_luma", "content_pixels", "content_ratio", "content_bbox", "dominant_colors", "grid_luma"],
-        "scene": ["camera", "node_count", "nodes"],
+        "scene": ["camera", "node_count", "nodes", "shadows"],
+        "shadows": ["enabled", "size"],
         "node": ["id", "name", "parent", "parent_id", "visible", "tags", "layer", "components", "world", "screen", "bbox", "triangles", "material"],
         "material": ["color", "specular", "shininess", "checker_scale", "metallic", "roughness", "emissive", "texture"],
         "texture": ["name", "width", "height", "sha256"],
@@ -32,10 +33,11 @@ REPORT_SCHEMA = {
     "notes": [
         "grid_luma is an 8x8 backward-compatible luminance summary.",
         "screen and bbox are top-down image coordinates; screen may be null behind the camera.",
-        "hash covers image metadata, stats, projected nodes with identity/materials and ui when present, not visual quality.",
+        "hash covers image metadata, stats, projected nodes with identity/materials, shadows and ui when present, not visual quality.",
         "ui is null unless the human overlay was rendered; schema-2 added it.",
         "schema-3 adds material and texture metadata; schema-4 adds node id, tags, layer and components.",
         "schema-5 adds PBR material fields (metallic, roughness, emissive).",
+        "schema-6 adds scene shadows metadata (enabled, size).",
         "schema-1/2/3 reports remain comparable; nodes are keyed by id when both reports are schema 4 or newer.",
         "ui labels and button rects are presentation metadata in top-left pixels.",
     ],
@@ -206,8 +208,13 @@ def analyze_frame(
     if image_path is not None:
         image["png_sha256"] = hashlib.sha256(Path(image_path).read_bytes()).hexdigest()
     camera = scene.camera
+    shadow = getattr(scene, "shadow", None)
+    shadows = {
+        "enabled": bool(getattr(shadow, "enabled", True)),
+        "size": 1024 if bool(getattr(shadow, "enabled", True)) else 0,
+    }
     report = {
-        "schema": 5,
+        "schema": 6,
         "image": image,
         "stats": stats,
         "scene": {
@@ -221,10 +228,11 @@ def analyze_frame(
             },
             "node_count": len(nodes),
             "nodes": nodes,
+            "shadows": shadows,
         },
         "ui": ui,
     }
-    hashed = {"image": image, "stats": stats, "nodes": nodes}
+    hashed = {"image": image, "stats": stats, "nodes": nodes, "shadows": shadows}
     if ui is not None:
         hashed["ui"] = ui
     report["hash"] = stable_hash(hashed)
@@ -261,10 +269,21 @@ def _compare_ui(before: dict | None, after: dict | None) -> dict:
     }
 
 
+def _shadows_of(report: dict) -> dict | None:
+    scene = report.get("scene", {})
+    shadows = scene.get("shadows") if isinstance(scene, dict) else None
+    if isinstance(shadows, dict):
+        return {
+            "enabled": bool(shadows.get("enabled", True)),
+            "size": int(shadows.get("size", 0)),
+        }
+    return None
+
+
 def compare_reports(before: dict, after: dict) -> dict:
-    """Compare schema-1/2/3/4/5 frame reports for AI-driven regression checks."""
-    if before.get("schema") not in (1, 2, 3, 4, 5) or after.get("schema") not in (1, 2, 3, 4, 5):
-        raise ValueError("both reports must use schema 1, 2, 3, 4 or 5")
+    """Compare schema-1/2/3/4/5/6 frame reports for AI-driven regression checks."""
+    if before.get("schema") not in (1, 2, 3, 4, 5, 6) or after.get("schema") not in (1, 2, 3, 4, 5, 6):
+        raise ValueError("both reports must use schema 1, 2, 3, 4, 5 or 6")
     first_stats = before["stats"]
     second_stats = after["stats"]
     key = "id" if before.get("schema", 0) >= 4 and after.get("schema", 0) >= 4 else "name"
@@ -301,11 +320,23 @@ def compare_reports(before: dict, after: dict) -> dict:
         ):
             changed.append(name)
     ui_diff = _compare_ui(before.get("ui"), after.get("ui"))
+    before_shadows = _shadows_of(before)
+    after_shadows = _shadows_of(after)
+    if before_shadows is None or after_shadows is None:
+        same_shadows = True
+        shown_before = before_shadows or {"enabled": True, "size": 1024}
+        shown_after = after_shadows or {"enabled": True, "size": 1024}
+    else:
+        same_shadows = before_shadows == after_shadows
+        shown_before = before_shadows
+        shown_after = after_shadows
     return {
-        "schema": 5,
+        "schema": 6,
         "same_image": before["image"]["rgba_sha256"] == after["image"]["rgba_sha256"],
         "same_report": before.get("hash") == after.get("hash"),
         "same_ui": ui_diff["same"],
+        "same_shadows": same_shadows,
+        "shadows": {"before": shown_before, "after": shown_after},
         "mean_luma_delta": round(second_stats["mean_luma"] - first_stats["mean_luma"], 3),
         "content_ratio_delta": round(second_stats["content_ratio"] - first_stats["content_ratio"], 4),
         "content_bbox": {"before": first_stats["content_bbox"], "after": second_stats["content_bbox"]},

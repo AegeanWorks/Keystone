@@ -93,12 +93,14 @@ def scene_document(scene: Scene, game: str = "game") -> dict:
     camera = scene.camera
     light = scene.light
     point_light = scene.point_light
+    shadow = getattr(scene, "shadow", None)
     return {
         "schema": SCENE_SCHEMA["version"],
         "game": game,
         "node_count": len(nodes),
         "mesh_count": len(meshes),
         "texture_count": len(textures),
+        "shadows": {"enabled": bool(getattr(shadow, "enabled", True)), "size": 1024},
         "camera": {
             "position": list(camera.position),
             "yaw": camera.yaw,

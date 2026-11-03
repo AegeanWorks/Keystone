@@ -251,7 +251,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 
 ## 🚀 Features
 
-- **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth/culling, Blinn-Phong + PBR (metallic, roughness, emissive), vertex colors, fog, sky, point light; draw-call/triangle stats feed the profiler.
+- **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth/culling, Blinn-Phong + PBR (metallic, roughness, emissive), directional shadow mapping (fixed 1024 map, PCF, `--shadows/--no-shadows`), vertex colors, fog, sky, point light; draw-call/triangle/shadow stats feed the profiler.
 - **Scene graph**: named nodes with stable per-scene IDs, tags, layers, optional typed components, local/world transforms, visibility, cycle-safe parenting, linear queries and cached static GPU meshes.
 - **Assets**: immutable `MeshData` with optional UVs and vertex colors, cube/plane/cone/cylinder/sphere primitives, a streaming OBJ loader, and an immutable `TextureData` with PNG and procedural checker sources.
 - **Textured PBR materials**: `Material` keeps Blinn-Phong specular/shininess plus metallic, roughness and emissive channels; `Material.texture` samples an RGBA texture with repeat wrapping and mipmaps; glTF PBR factors and emissive survive import; material graphs add a `pbr` node; the renderer caches one GPU texture per immutable payload.
@@ -554,7 +554,7 @@ snapshot = history.undo()
 1. ~~Scene identity/ECS.~~ Done in v0.19.0.
 2. ~~Broadphase/character/triggers.~~ Done in v0.21.0.
 3. ~~Assets~~ v0.22.0; ~~material graphs~~ v0.23.0; ~~glTF~~ v0.24.0; ~~GLB~~ v0.26.0; ~~PBR core~~ v0.27.0.
-4. Renderer PBR/emissive and schema 2 in v0.27.0; batch planning in v0.28.0, merge in v0.29.0 and ~~GPU instancing~~ in v0.32.0; shadows/post/sRGB remain.
+4. Renderer PBR/emissive and schema 2 in v0.27.0; batch planning in v0.28.0, merge in v0.29.0, ~~GPU instancing~~ in v0.32.0 and ~~directional shadows~~ in v0.34.0; post-processing and sRGB/linear color remain.
 5. ~~Input persistence~~ v0.27.0; ~~contexts/audio mixer~~ v0.28.0; live playback out of scope.
 6. ~~Animation core~~ in v0.29.0; ~~blending/events~~ in v0.30.0; skinning remains; ~~CPU particles~~ in v0.31.0; GPU sprites/collision remain.
 6. ~~Schema versioning~~ v0.25.0; ~~replay runner~~ v0.30.0.

@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `100`
-- **Total Classes**: `137`
-- **Total Top-Level Functions**: `173`
-- **Total Class Methods**: `736`
-- **Total Source Lines**: `13937`
+- **Total Python Modules**: `102`
+- **Total Classes**: `141`
+- **Total Top-Level Functions**: `178`
+- **Total Class Methods**: `757`
+- **Total Source Lines**: `14416`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `125` lines (`2796` bytes)
+**Size**: `135` lines (`2935` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `329` lines (`17248` bytes)
+**Size**: `342` lines (`18228` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -61,7 +61,7 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `363` lines (`15286` bytes)
+**Size**: `394` lines (`16563` bytes)
 
 **Functions:**
 - `def _rows(pixels, width, height, flip)`
@@ -70,7 +70,8 @@
 - `def _node_report(scene, width, height)`
 - `def analyze_frame(scene, pixels, width, height, image_path, ui)`
 - `def _compare_ui(before, after)`
-- `def compare_reports(before, after)` - *Compare schema-1/2/3/4/5 frame reports for AI-driven regression checks.*
+- `def _shadows_of(report)`
+- `def compare_reports(before, after)` - *Compare schema-1/2/3/4/5/6 frame reports for AI-driven regression checks.*
 - `def diff_images(before, after, output, threshold)` - *Write a visual diff PNG and return changed-pixel statistics.*
 - `def write_report(path, report)`
 
@@ -115,7 +116,7 @@
 ### [`keystone/app.py`](keystone/app.py)
 > *Game-agnostic engine runtime: window, fixed step, input, render and capture.*
 
-**Size**: `263` lines (`9977` bytes)
+**Size**: `264` lines (`10037` bytes)
 
 **Classes:**
 - `class Engine` - *Owns the runtime around one external GameModule.*
@@ -476,9 +477,9 @@
 ---
 
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
-> *Blinn-Phong forward renderer with fog, depth testing and screenshot readback.*
+> *Blinn-Phong forward renderer with fog, shadows and screenshot readback.*
 
-**Size**: `335` lines (`12742` bytes)
+**Size**: `456` lines (`17274` bytes)
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
@@ -487,8 +488,10 @@
   - Method `._gpu_mesh(mesh)`
   - Method `._gpu_texture(texture)`
   - Method `._draw_sky(scene)`
-  - Method `._apply_shared(program, scene, view_projection)`
+  - Method `._shadows_requested(scene)`
+  - Method `._apply_shared(program, scene, view_projection, light_vp, shadows_on)`
   - Method `._apply_material(program, material)`
+  - Method `._render_shadow_pass(scene, light_vp)`
   - Method `.render(scene)`
   - Method `.read_pixels()`
   - Method `.save_png(path)`
@@ -517,6 +520,28 @@
   - Method `.set_float(name, value)`
   - Method `.set_int(name, value)`
   - Method `.release()`
+
+---
+
+### [`keystone/gpu/shadow.py`](keystone/gpu/shadow.py)
+> *Deterministic directional shadow mapping (fixed 1024 depth map, 3x3 PCF).*
+
+**Size**: `153` lines (`5374` bytes)
+
+**Classes:**
+- `class ShadowMap` - *Fixed-size depth FBO owned by the renderer (one GL context).*
+  - Method `.__init__(size)`
+  - Method `.bind_for_write()`
+  - Method `.unbind_after_write(width, height)`
+  - Method `.bind_for_read(unit)`
+  - Method `.unbind_after_read(unit)`
+  - Method `.release()`
+
+**Functions:**
+- `def orthographic(left, right, bottom, top, near, far)` - *Build a deterministic orthographic projection (column-major).*
+- `def light_view(direction)` - *Look from the light direction toward the origin (deterministic).*
+- `def light_vp(direction)` - *Deterministic light view-projection for the fixed ortho box.*
+- `def light_vp_for(light)` - *Convenience wrapper taking the scene directional light.*
 
 ---
 
@@ -811,7 +836,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `87` lines (`3228` bytes)
+**Size**: `88` lines (`3257` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -895,7 +920,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `267` lines (`9130` bytes)
+**Size**: `275` lines (`9367` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -922,6 +947,7 @@
   - Method `.radiance()`
 - `class PointLight` - *A local light with quadratic falloff, used for torches and lamps.*
   - Method `.__post_init__()`
+- `class ShadowSettings` - *Deterministic directional shadow-map toggle (fixed 1024 map, bias 0.005).*
 - `class Scene` - *Root node, identity allocation, queries, camera, lights and atmosphere.*
   - Method `.add(node)`
   - Method `.traverse()`
@@ -939,7 +965,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `280` lines (`11480` bytes)
+**Size**: `286` lines (`11859` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)`
@@ -1076,7 +1102,7 @@
 ### [`keystone/ui/overlay.py`](keystone/ui/overlay.py)
 > *Game-agnostic human overlay: HUD, controls help and pause menu.*
 
-**Size**: `152` lines (`6571` bytes)
+**Size**: `154` lines (`6673` bytes)
 
 **Classes:**
 - `class HudState` - *Presentation-only snapshot the overlay needs for one frame.*
@@ -1123,7 +1149,7 @@
 ### [`keystone/web/scene.py`](keystone/web/scene.py)
 > *Export a game-agnostic scene as a JSON document for the browser viewer.*
 
-**Size**: `135` lines (`4817` bytes)
+**Size**: `137` lines (`4947` bytes)
 
 **Functions:**
 - `def _floats(values)`
@@ -1143,7 +1169,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `392` lines (`17349` bytes)
+**Size**: `397` lines (`17554` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1231,7 +1257,7 @@
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
-**Size**: `245` lines (`10161` bytes)
+**Size**: `245` lines (`10164` bytes)
 
 **Classes:**
 - `class Health`
@@ -1743,7 +1769,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `55` lines (`2090` bytes)
+**Size**: `56` lines (`2150` bytes)
 
 **Classes:**
 - `class PluginTest`
@@ -1902,6 +1928,30 @@
 - `class SerializationTest`
   - Method `.test_round_trip_and_backup()`
   - Method `.test_missing_file_raises()`
+
+---
+
+### [`tests/test_shadows.py`](tests/test_shadows.py)
+> *Tests for deterministic directional shadow mapping (fixed 1024 map, PCF).*
+
+**Size**: `125` lines (`5270` bytes)
+
+**Classes:**
+- `class ShadowMathTest`
+  - Method `.test_orthographic_is_deterministic()`
+  - Method `.test_light_view_and_vp_are_deterministic()`
+  - Method `.test_light_vp_matches_manual_composition()`
+  - Method `.test_parallel_up_vector_uses_fallback()`
+  - Method `.test_shadow_settings_default_enabled()`
+  - Method `.test_only_fixed_size_allowed()`
+- `class ShadowContractsTest`
+  - Method `.test_describe_reports_shadows()`
+  - Method `.test_report_includes_shadow_metadata_and_hash()`
+  - Method `.test_compare_reports_diffs_shadows()`
+  - Method `.test_compare_accepts_legacy_without_shadows()`
+  - Method `.test_snapshot_round_trips_shadow_flag()`
+  - Method `.test_scene_document_and_inspector_expose_shadows()`
+  - Method `.test_shadow_light_helper_accepts_directional_light()`
 
 ---
 

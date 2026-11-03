@@ -170,6 +170,7 @@ class Engine:
             pointer=self._pointer,
             draw_calls=int(stats.get("draw_calls", 0)),
             triangles=int(stats.get("triangles", 0)),
+            shadow_calls=int(stats.get("shadow_calls", 0)),
             audio_voices=voices,
             anim_clips=anim_clips,
             particles=live_fx,

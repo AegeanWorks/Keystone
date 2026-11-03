@@ -167,6 +167,7 @@ class GameSession:
                     }
                 except (AttributeError, TypeError, ValueError):
                     assets = None
+            shadow = getattr(scene, "shadow", None)
             return {
                 "schema": 1,
                 "game": self.name,
@@ -176,6 +177,10 @@ class GameSession:
                 "batches": batches,
                 "merged": merged_summary,
                 "instancing": instancing_summary,
+                "shadows": {
+                    "enabled": bool(getattr(shadow, "enabled", True)),
+                    "size": 1024,
+                },
                 "audio": audio,
                 "animation": animation,
                 "particles": particles,
