@@ -21,6 +21,9 @@ class PerspectiveCamera:
     near: float = 0.1
     far: float = 1000.0
 
+    def __post_init__(self) -> None:
+        self.pitch = max(-MAX_PITCH, min(MAX_PITCH, self.pitch))
+
     def forward(self) -> Vec3:
         cos_pitch = math.cos(self.pitch)
         return Vec3(
@@ -58,4 +61,4 @@ class PerspectiveCamera:
         if direction.length_squared() < 1e-12:
             raise ValueError("camera cannot look at its own position")
         self.yaw = math.atan2(direction.x, -direction.z)
-        self.pitch = math.asin(max(-1.0, min(1.0, direction.y)))
+        self.pitch = max(-MAX_PITCH, min(MAX_PITCH, math.asin(max(-1.0, min(1.0, direction.y)))))

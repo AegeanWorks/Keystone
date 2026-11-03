@@ -38,6 +38,16 @@ class SampleTest(unittest.TestCase):
         self.assertIn("forward", schema["axes"])
         self.assertNotIn("combat", str(schema).lower())
 
+    def test_rebuild_resets_time(self):
+        from keystone.input import ActionState
+
+        game = CubeDemo()
+        game.build_scene()
+        game.update(1.0, ActionState())
+        self.assertNotEqual(game.snapshot()["time"], 0.0)
+        game.build_scene()
+        self.assertEqual(game.snapshot()["time"], 0.0)
+
 
 if __name__ == "__main__":
     unittest.main()

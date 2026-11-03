@@ -9,8 +9,8 @@
 - **Total Python Modules**: `114`
 - **Total Classes**: `162`
 - **Total Top-Level Functions**: `206`
-- **Total Class Methods**: `864`
-- **Total Source Lines**: `17232`
+- **Total Class Methods**: `870`
+- **Total Source Lines**: `17294`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `146` lines (`3173` bytes)
+**Size**: `147` lines (`3214` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -271,10 +271,11 @@
 ### [`keystone/camera.py`](keystone/camera.py)
 > *Perspective camera with yaw/pitch orientation and fly-style movement.*
 
-**Size**: `61` lines (`1967` bytes)
+**Size**: `64` lines (`2103` bytes)
 
 **Classes:**
 - `class PerspectiveCamera` - *A right-handed camera looking down -Z when yaw and pitch are zero.*
+  - Method `.__post_init__()`
   - Method `.forward()`
   - Method `.right()`
   - Method `.view_matrix()`
@@ -717,7 +718,7 @@
 ### [`keystone/input.py`](keystone/input.py)
 > *Generic input mapping: named actions, axes and pointer look.*
 
-**Size**: `256` lines (`10080` bytes)
+**Size**: `278` lines (`11259` bytes)
 
 **Classes:**
 - `class ActionState` - *One sampled input frame; games translate names into their own rules.*
@@ -1016,7 +1017,7 @@
 ### [`keystone/samples.py`](keystone/samples.py)
 > *A minimal game-agnostic sample used to smoke-test the engine.*
 
-**Size**: `152` lines (`5821` bytes)
+**Size**: `153` lines (`5846` bytes)
 
 **Classes:**
 - `class CubeDemo` - *A rotating cube scene; contains no combat, puzzles or genre rules.*
@@ -1735,7 +1736,7 @@
 ### [`tests/test_input.py`](tests/test_input.py)
 > *Tests for input sampling and action state.*
 
-**Size**: `117` lines (`4261` bytes)
+**Size**: `127` lines (`4758` bytes)
 
 **Classes:**
 - `class FakeContext`
@@ -1752,6 +1753,7 @@
   - Method `.test_contexts_isolate_menu_and_gameplay()`
   - Method `.test_unbind_survives_context_round_trip()`
   - Method `.test_action_state_round_trip_and_clear()`
+  - Method `.test_action_state_rejects_string_pressed_and_bad_pointer()`
 
 ---
 
@@ -1936,7 +1938,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `61` lines (`2440` bytes)
+**Size**: `67` lines (`2687` bytes)
 
 **Classes:**
 - `class PluginTest`
@@ -1945,6 +1947,7 @@
   - Method `.test_describe_reports_a_game_ui_hook()`
   - Method `.test_invalid_specs_are_rejected()`
   - Method `.test_missing_methods_are_rejected()`
+  - Method `.test_public_api_exports_texture_data()`
 - `class IncompleteGame`
   - Method `.build_scene()`
 
@@ -2031,20 +2034,21 @@
 ### [`tests/test_samples.py`](tests/test_samples.py)
 > *Tests for the engine's sample game.*
 
-**Size**: `43` lines (`1372` bytes)
+**Size**: `53` lines (`1694` bytes)
 
 **Classes:**
 - `class SampleTest`
   - Method `.test_scene_contains_only_generic_renderables()`
   - Method `.test_update_rotates_cubes_and_moves_the_camera()`
   - Method `.test_actions_schema_is_generic()`
+  - Method `.test_rebuild_resets_time()`
 
 ---
 
 ### [`tests/test_scene.py`](tests/test_scene.py)
 > *Unit tests for the Keystone scene graph and perspective camera.*
 
-**Size**: `243` lines (`9112` bytes)
+**Size**: `252` lines (`9436` bytes)
 
 **Classes:**
 - `class Health`
@@ -2078,6 +2082,8 @@
   - Method `.test_look_at_rejects_its_own_position()`
   - Method `.test_projection_rejects_invalid_aspect()`
   - Method `.test_look_at_points_forward_at_target()`
+  - Method `.test_direct_pitch_construction_stays_usable()`
+  - Method `.test_look_at_straight_up_stays_usable()`
 - `class SceneTest`
   - Method `.test_scene_traverse_starts_at_root()`
   - Method `.test_scene_has_a_sky_color_distinct_from_the_horizon()`

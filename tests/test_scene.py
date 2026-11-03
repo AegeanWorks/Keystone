@@ -216,6 +216,15 @@ class CameraTest(unittest.TestCase):
         self.assertAlmostEqual(forward.x, 1.0, places=6)
         self.assertAlmostEqual(forward.z, 0.0, places=6)
 
+    def test_direct_pitch_construction_stays_usable(self):
+        camera = PerspectiveCamera(pitch=math.pi / 2)
+        camera.view_matrix()
+
+    def test_look_at_straight_up_stays_usable(self):
+        camera = PerspectiveCamera(position=Vec3(0, 0, 5))
+        camera.look_at(Vec3(0, 10, 5))
+        camera.view_matrix()
+
 
 class SceneTest(unittest.TestCase):
     def test_scene_traverse_starts_at_root(self):

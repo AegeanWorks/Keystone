@@ -30,6 +30,7 @@ class CubeDemo:
         self.scene = Scene()
         self.assets = AssetRegistry()
         self.particles = ParticleSystem()
+        self._time = 0.0
         self.particles.add(
             Emitter(
                 name="fountain",

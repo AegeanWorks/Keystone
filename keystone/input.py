@@ -60,15 +60,37 @@ class ActionState:
 
     @classmethod
     def from_dict(cls, data: dict) -> ActionState:
+        pressed = data.get("pressed", ())
+        if isinstance(pressed, (str, bytes)) or not isinstance(pressed, (list, tuple, set, frozenset)):
+            raise TypeError("pressed must be a list of action names")
+        for item in pressed:
+            if not isinstance(item, str):
+                raise TypeError("pressed must be a list of action names")
+        held = data.get("held", ())
+        if isinstance(held, (str, bytes)) or not isinstance(held, (list, tuple, set, frozenset)):
+            raise TypeError("held must be a list of action names")
+        for item in held:
+            if not isinstance(item, str):
+                raise TypeError("held must be a list of action names")
+        pointer_raw = data.get("pointer", (0.0, 0.0))
+        if isinstance(pointer_raw, (str, bytes)) or not isinstance(pointer_raw, (list, tuple)):
+            raise TypeError("pointer must be a pair of numbers")
+        pointer = tuple(pointer_raw)
+        if len(pointer) != 2:
+            raise ValueError("pointer must be a pair of numbers")
+        try:
+            pointer_values = (float(pointer[0]), float(pointer[1]))
+        except (TypeError, ValueError):
+            raise TypeError("pointer must be a pair of numbers")
         return cls(
             forward=float(data.get("forward", 0.0)),
             right=float(data.get("right", 0.0)),
             up=float(data.get("up", 0.0)),
             look_yaw=float(data.get("look_yaw", 0.0)),
             look_pitch=float(data.get("look_pitch", 0.0)),
-            pressed=frozenset(data.get("pressed", ())),
-            held=frozenset(data.get("held", ())),
-            pointer=tuple(data.get("pointer", (0.0, 0.0))),
+            pressed=frozenset(pressed),
+            held=frozenset(held),
+            pointer=pointer_values,
             mouse_clicked=bool(data.get("mouse_clicked", False)),
         )
 

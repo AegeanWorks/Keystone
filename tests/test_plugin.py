@@ -49,6 +49,12 @@ class PluginTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             load_game("tests.test_plugin:IncompleteGame")
 
+    def test_public_api_exports_texture_data(self):
+        import keystone
+
+        self.assertIn("TextureData", keystone.__all__)
+        self.assertIs(keystone.TextureData, __import__("keystone.texture", fromlist=["TextureData"]).TextureData)
+
 
 class IncompleteGame:
     name = "incomplete"

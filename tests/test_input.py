@@ -112,6 +112,16 @@ class InputMapTest(unittest.TestCase):
         self.assertEqual(cleared.pressed, frozenset())
         self.assertFalse(cleared.mouse_clicked)
 
+    def test_action_state_rejects_string_pressed_and_bad_pointer(self):
+        with self.assertRaises(TypeError):
+            ActionState.from_dict({"pressed": "jump"})
+        with self.assertRaises(TypeError):
+            ActionState.from_dict({"held": "jump"})
+        with self.assertRaises((TypeError, ValueError)):
+            ActionState.from_dict({"pointer": [1.0, 2.0, 3.0]})
+        with self.assertRaises((TypeError, ValueError)):
+            ActionState.from_dict({"pointer": "ab"})
+
 
 if __name__ == "__main__":
     unittest.main()

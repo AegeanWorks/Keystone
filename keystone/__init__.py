@@ -62,6 +62,7 @@ from keystone.scene import (
 )
 from keystone.scene_snapshot import scene_from_dict, scene_to_dict
 from keystone.skin import bone_matrices, skin_mesh, skin_point
+from keystone.texture import TextureData
 
 __version__ = "0.42.0"
 __all__ = [
