@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `107`
-- **Total Classes**: `149`
-- **Total Top-Level Functions**: `185`
-- **Total Class Methods**: `789`
-- **Total Source Lines**: `15124`
+- **Total Python Modules**: `108`
+- **Total Classes**: `151`
+- **Total Top-Level Functions**: `187`
+- **Total Class Methods**: `807`
+- **Total Source Lines**: `15554`
 
 ---
 
@@ -426,11 +426,29 @@
 ### [`keystone/gpu/bloom.py`](keystone/gpu/bloom.py)
 > *Deterministic emissive-aware bloom glow (luminance threshold, in-shader, no FBO).*
 
-**Size**: `57` lines (`1820` bytes)
+**Size**: `92` lines (`3146` bytes)
 
 **Functions:**
 - `def bloom_factor(luma, threshold, knee)` - *Return the deterministic smoothstep glow weight for one luminance.*
 - `def bloom_color(color, threshold, knee, intensity)` - *Add the threshold glow to a display-referred 0..1 RGB triple.*
+- `def bloom_blur_size(width, height, downsample)` - *Return the deterministic half-res blur size for a framebuffer.*
+- `def bloom_composite(scene, blurred, intensity)` - *Add blurred light to the scene color with 0..1 clamp.*
+
+---
+
+### [`keystone/gpu/bloom_fbo.py`](keystone/gpu/bloom_fbo.py)
+> *Deterministic RGBA8 color framebuffers for the bloom diffusion chain.*
+
+**Size**: `89` lines (`3778` bytes)
+
+**Classes:**
+- `class BloomFbo` - *One RGBA8 color FBO owned by the renderer (one GL context).*
+  - Method `.__init__(width, height)`
+  - Method `.bind_for_write()`
+  - Method `.unbind_after_write(width, height)`
+  - Method `.bind_for_read(unit)`
+  - Method `.unbind_after_read(unit)`
+  - Method `.release()`
 
 ---
 
@@ -504,12 +522,15 @@
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
 > *Blinn-Phong forward renderer with fog, shadows and screenshot readback.*
 
-**Size**: `586` lines (`22725` bytes)
+**Size**: `800` lines (`31032` bytes)
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
   - Method `.__init__(width, height)`
   - Method `.resize(width, height)`
+  - Method `._create_bloom_fbos()`
+  - Method `._release_bloom_fbos()`
+  - Method `._ensure_bloom_fbos()`
   - Method `._gpu_mesh(mesh)`
   - Method `._gpu_texture(texture)`
   - Method `._draw_sky(scene, srgb_on, post_on, bloom_on)`
@@ -522,6 +543,9 @@
   - Method `._apply_shared(program, scene, view_projection, light_vp, shadows_on, srgb_on)`
   - Method `._apply_material(program, material)`
   - Method `._render_shadow_pass(scene, light_vp)`
+  - Method `._draw_quad()`
+  - Method `._draw_geometry(scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on)`
+  - Method `._run_bloom_chain()`
   - Method `.render(scene)`
   - Method `.read_pixels()`
   - Method `.save_png(path)`
@@ -1444,11 +1468,13 @@
 ### [`tests/test_bloom.py`](tests/test_bloom.py)
 > *Tests for the deterministic bloom glow (in-shader luminance threshold).*
 
-**Size**: `108` lines (`4351` bytes)
+**Size**: `200` lines (`7862` bytes)
 
 **Classes:**
 - `class BloomMathTest`
   - Method `.test_constants_are_fixed()`
+  - Method `.test_blur_size_uses_floor_half_with_min_one()`
+  - Method `.test_composite_adds_and_clamps()`
   - Method `.test_dark_has_no_bloom_and_bright_saturates()`
   - Method `.test_bloom_adds_proportionally_and_clamps()`
 - `class BloomContractsTest`
@@ -1459,6 +1485,11 @@
   - Method `.test_compare_accepts_legacy_without_bloom()`
   - Method `.test_snapshot_round_trips_bloom_flag()`
   - Method `.test_scene_document_and_inspector_expose_bloom()`
+- `class BloomDiffusionIntegrationTest`
+  - Method `._render_cube(bloom_on, width, height)`
+  - Method `.test_diffusion_changes_pixels_without_new_draws()`
+  - Method `.test_no_bloom_legacy_path_is_stable()`
+  - Method `.test_resize_recreates_diffusion_buffers()`
 
 ---
 

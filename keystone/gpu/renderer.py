@@ -7,7 +7,13 @@ from pathlib import Path
 from OpenGL import GL
 
 from keystone.geometry import Material, MeshData
-from keystone.gpu.bloom import BLOOM_INTENSITY, BLOOM_KNEE, BLOOM_THRESHOLD
+from keystone.gpu.bloom import (
+    BLOOM_INTENSITY,
+    BLOOM_KNEE,
+    BLOOM_THRESHOLD,
+    bloom_blur_size,
+)
+from keystone.gpu.bloom_fbo import BloomFbo
 from keystone.gpu.instancing import group_instances
 from keystone.gpu.mesh_buffer import GpuMesh
 from keystone.gpu.post import POST_EXPOSURE, POST_VIGNETTE
@@ -270,6 +276,59 @@ void main() {
 }
 """
 
+BLOOM_QUAD_VERTEX = """#version 330 core
+out vec2 v_uv;
+void main() {
+    vec2 corner = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
+    v_uv = corner;
+    gl_Position = vec4(corner * 2.0 - 1.0, 0.0, 1.0);
+}
+"""
+
+BLOOM_BRIGHT_FRAGMENT = """#version 330 core
+in vec2 v_uv;
+uniform sampler2D u_scene;
+uniform float u_bloom_threshold;
+uniform float u_bloom_knee;
+out vec4 frag_color;
+void main() {
+    vec3 c = texture(u_scene, v_uv).rgb;
+    float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+    float b = smoothstep(u_bloom_threshold, u_bloom_threshold + u_bloom_knee, l);
+    frag_color = vec4(c * b, 1.0);
+}
+"""
+
+BLOOM_BLUR_FRAGMENT = """#version 330 core
+in vec2 v_uv;
+uniform sampler2D u_blur;
+uniform vec2 u_texel;
+uniform vec2 u_direction;
+out vec4 frag_color;
+void main() {
+    vec2 d = u_direction * u_texel;
+    vec3 c = texture(u_blur, v_uv).rgb * 0.227027;
+    c += texture(u_blur, v_uv + d * 1.3846153846).rgb * 0.3162162162;
+    c += texture(u_blur, v_uv - d * 1.3846153846).rgb * 0.3162162162;
+    c += texture(u_blur, v_uv + d * 3.2307692308).rgb * 0.0702702703;
+    c += texture(u_blur, v_uv - d * 3.2307692308).rgb * 0.0702702703;
+    frag_color = vec4(c, 1.0);
+}
+"""
+
+BLOOM_COMPOSITE_FRAGMENT = """#version 330 core
+in vec2 v_uv;
+uniform sampler2D u_scene;
+uniform sampler2D u_bloom;
+uniform float u_bloom_intensity;
+out vec4 frag_color;
+void main() {
+    vec3 scene = texture(u_scene, v_uv).rgb;
+    vec3 blurred = texture(u_bloom, v_uv).rgb;
+    frag_color = vec4(clamp(scene + blurred * u_bloom_intensity, vec3(0.0), vec3(1.0)), 1.0);
+}
+"""
+
 
 def normal_matrix(model: Mat4) -> tuple[float, ...]:
     """Return transpose(inverse(upper 3x3)) in column-major order."""
@@ -293,12 +352,24 @@ class Renderer:
         inst_program: ShaderProgram | None = None
         sky_program = None
         depth_program: ShaderProgram | None = None
+        bright_program: ShaderProgram | None = None
+        blur_program: ShaderProgram | None = None
+        composite_program: ShaderProgram | None = None
         try:
             inst_program = ShaderProgram(VERTEX_SHADER_INSTANCED, FRAGMENT_SHADER)
             sky_program = ShaderProgram(SKY_VERTEX_SHADER, SKY_FRAGMENT_SHADER)
             depth_program = ShaderProgram(DEPTH_VERTEX_SHADER, DEPTH_FRAGMENT_SHADER)
+            bright_program = ShaderProgram(BLOOM_QUAD_VERTEX, BLOOM_BRIGHT_FRAGMENT)
+            blur_program = ShaderProgram(BLOOM_QUAD_VERTEX, BLOOM_BLUR_FRAGMENT)
+            composite_program = ShaderProgram(BLOOM_QUAD_VERTEX, BLOOM_COMPOSITE_FRAGMENT)
             self._sky_vao = GL.glGenVertexArrays(1)
         except Exception:
+            if composite_program is not None:
+                composite_program.release()
+            if blur_program is not None:
+                blur_program.release()
+            if bright_program is not None:
+                bright_program.release()
             if depth_program is not None:
                 depth_program.release()
             if sky_program is not None:
@@ -310,12 +381,24 @@ class Renderer:
         self._inst_program = inst_program
         self._sky_program = sky_program
         self._depth_program = depth_program
+        self._bloom_bright = bright_program
+        self._bloom_blur = blur_program
+        self._bloom_composite = composite_program
         self._shadow: ShadowMap | None = None
         self._shadow_error: str | None = None
         try:
             self._shadow = ShadowMap()
         except (RuntimeError, ValueError) as exc:
             self._shadow_error = str(exc)
+        self._bloom_scene: BloomFbo | None = None
+        self._bloom_a: BloomFbo | None = None
+        self._bloom_b: BloomFbo | None = None
+        self._bloom_error: str | None = None
+        try:
+            self._create_bloom_fbos()
+        except (RuntimeError, ValueError) as exc:
+            self._bloom_error = str(exc)
+            self._release_bloom_fbos()
         self._meshes: dict[int, tuple[MeshData, GpuMesh]] = {}
         self._textures: dict[int, tuple[TextureData, GpuTexture]] = {}
         self.last_stats: dict[str, int] = {
@@ -342,6 +425,40 @@ class Renderer:
             raise ValueError("renderer width and height must be positive")
         self.width = width
         self.height = height
+        if self._bloom_scene is not None or self._bloom_a is not None or self._bloom_b is not None:
+            try:
+                self._create_bloom_fbos()
+            except (RuntimeError, ValueError) as exc:
+                self._bloom_error = str(exc)
+                self._release_bloom_fbos()
+
+    def _create_bloom_fbos(self) -> None:
+        self._release_bloom_fbos()
+        half_w, half_h = bloom_blur_size(self.width, self.height)
+        self._bloom_scene = BloomFbo(self.width, self.height)
+        self._bloom_a = BloomFbo(half_w, half_h)
+        self._bloom_b = BloomFbo(half_w, half_h)
+
+    def _release_bloom_fbos(self) -> None:
+        for fbo in (self._bloom_scene, self._bloom_a, self._bloom_b):
+            if fbo is not None:
+                fbo.release()
+        self._bloom_scene = None
+        self._bloom_a = None
+        self._bloom_b = None
+
+    def _ensure_bloom_fbos(self) -> None:
+        half_w, half_h = bloom_blur_size(self.width, self.height)
+        scene = self._bloom_scene
+        first = self._bloom_a
+        second = self._bloom_b
+        if (
+            scene is None or first is None or second is None
+            or scene.width != self.width or scene.height != self.height
+            or first.width != half_w or first.height != half_h
+            or second.width != half_w or second.height != half_h
+        ):
+            self._create_bloom_fbos()
 
     def _gpu_mesh(self, mesh: MeshData) -> GpuMesh:
         cached = self._meshes.get(id(mesh))
@@ -482,34 +599,25 @@ class Renderer:
         self._shadow.unbind_after_write(self.width, self.height)
         return shadow_calls
 
-    def render(self, scene: Scene) -> dict[str, int]:
+    def _draw_quad(self) -> None:
+        GL.glBindVertexArray(self._sky_vao)
+        GL.glDrawArrays(GL.GL_TRIANGLES, 0, 3)
+        GL.glBindVertexArray(0)
+
+    def _draw_geometry(
+        self,
+        scene: Scene,
+        view_projection: Mat4,
+        light_vp: Mat4,
+        shadows_on: bool,
+        srgb_on: bool,
+        post_on: bool,
+        bloom_on: bool,
+    ) -> tuple[int, int, int, int]:
         draw_calls = 0
         triangles = 0
         instanced_calls = 0
         instances = 0
-        shadow_calls = 0
-        requested = self._shadows_requested(scene)
-        if requested and self._shadow is None:
-            raise RuntimeError(
-                f"{self._shadow_error or 'Shadow framebuffer unavailable.'}\n"
-                "Why: directional shadows are enabled but the depth FBO failed.\n"
-                "Fix: update the GPU driver, or re-run with --no-shadows."
-            )
-        shadows_on = bool(requested and self._shadow is not None)
-        srgb_on = self._srgb_requested(scene)
-        post_on = self._post_requested(scene)
-        bloom_on = self._bloom_requested(scene)
-        light_vp = light_vp_for(scene.light)
-        if shadows_on:
-            shadow_calls = self._render_shadow_pass(scene, light_vp)
-            self._shadow.bind_for_read(1)
-        GL.glViewport(0, 0, self.width, self.height)
-        background = scene.background
-        GL.glClearColor(background.x, background.y, background.z, 1.0)
-        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-        self._draw_sky(scene, srgb_on, post_on, bloom_on)
-        camera = scene.camera
-        view_projection = camera.view_projection(self.width / self.height)
         self._apply_shared(self._program, scene, view_projection, light_vp, shadows_on, srgb_on)
         self._apply_shared(self._inst_program, scene, view_projection, light_vp, shadows_on, srgb_on)
         self._apply_bloom(self._program, bloom_on)
@@ -541,6 +649,108 @@ class Renderer:
                 instanced_calls += 1
                 instances += len(models)
                 triangles += mesh.triangle_count() * len(models)
+        return (draw_calls, triangles, instanced_calls, instances)
+
+    def _run_bloom_chain(self) -> None:
+        assert self._bloom_scene is not None
+        assert self._bloom_a is not None
+        assert self._bloom_b is not None
+        half_w, half_h = bloom_blur_size(self.width, self.height)
+        GL.glDisable(GL.GL_DEPTH_TEST)
+        GL.glDepthMask(GL.GL_FALSE)
+        self._bloom_a.bind_for_write()
+        self._bloom_bright.use()
+        self._bloom_scene.bind_for_read(2)
+        self._bloom_bright.set_int("u_scene", 2)
+        self._bloom_bright.set_float("u_bloom_threshold", BLOOM_THRESHOLD)
+        self._bloom_bright.set_float("u_bloom_knee", BLOOM_KNEE)
+        self._draw_quad()
+        self._bloom_scene.unbind_after_read(2)
+        self._bloom_b.bind_for_write()
+        self._bloom_blur.use()
+        self._bloom_a.bind_for_read(2)
+        self._bloom_blur.set_int("u_blur", 2)
+        self._bloom_blur.set_vec2("u_texel", 1.0 / max(1, half_w), 1.0 / max(1, half_h))
+        self._bloom_blur.set_vec2("u_direction", 1.0, 0.0)
+        self._draw_quad()
+        self._bloom_a.unbind_after_read(2)
+        self._bloom_a.bind_for_write()
+        self._bloom_blur.use()
+        self._bloom_b.bind_for_read(2)
+        self._bloom_blur.set_int("u_blur", 2)
+        self._bloom_blur.set_vec2("u_texel", 1.0 / max(1, half_w), 1.0 / max(1, half_h))
+        self._bloom_blur.set_vec2("u_direction", 0.0, 1.0)
+        self._draw_quad()
+        self._bloom_b.unbind_after_read(2)
+        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
+        GL.glViewport(0, 0, self.width, self.height)
+        self._bloom_composite.use()
+        self._bloom_scene.bind_for_read(2)
+        self._bloom_a.bind_for_read(3)
+        self._bloom_composite.set_int("u_scene", 2)
+        self._bloom_composite.set_int("u_bloom", 3)
+        self._bloom_composite.set_float("u_bloom_intensity", BLOOM_INTENSITY)
+        self._draw_quad()
+        self._bloom_scene.unbind_after_read(2)
+        self._bloom_a.unbind_after_read(3)
+        GL.glDepthMask(GL.GL_TRUE)
+        GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glActiveTexture(GL.GL_TEXTURE0)
+
+    def render(self, scene: Scene) -> dict[str, int]:
+        draw_calls = 0
+        triangles = 0
+        instanced_calls = 0
+        instances = 0
+        shadow_calls = 0
+        requested = self._shadows_requested(scene)
+        if requested and self._shadow is None:
+            raise RuntimeError(
+                f"{self._shadow_error or 'Shadow framebuffer unavailable.'}\n"
+                "Why: directional shadows are enabled but the depth FBO failed.\n"
+                "Fix: update the GPU driver, or re-run with --no-shadows."
+            )
+        shadows_on = bool(requested and self._shadow is not None)
+        srgb_on = self._srgb_requested(scene)
+        post_on = self._post_requested(scene)
+        bloom_on = self._bloom_requested(scene)
+        if bloom_on and (
+            self._bloom_scene is None or self._bloom_a is None or self._bloom_b is None
+        ):
+            raise RuntimeError(
+                f"{self._bloom_error or 'Bloom framebuffers unavailable.'}\n"
+                "Why: bloom diffusion is enabled but the color FBOs failed.\n"
+                "Fix: update the GPU driver, or re-run with --no-bloom."
+            )
+        light_vp = light_vp_for(scene.light)
+        if shadows_on:
+            shadow_calls = self._render_shadow_pass(scene, light_vp)
+            self._shadow.bind_for_read(1)
+        camera = scene.camera
+        view_projection = camera.view_projection(self.width / self.height)
+        background = scene.background
+        if not bloom_on:
+            GL.glViewport(0, 0, self.width, self.height)
+            GL.glClearColor(background.x, background.y, background.z, 1.0)
+            GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+            self._draw_sky(scene, srgb_on, post_on, bloom_on)
+            drawn = self._draw_geometry(
+                scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on
+            )
+            draw_calls, triangles, instanced_calls, instances = drawn
+        else:
+            self._ensure_bloom_fbos()
+            assert self._bloom_scene is not None
+            self._bloom_scene.bind_for_write()
+            GL.glClearColor(background.x, background.y, background.z, 1.0)
+            GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+            self._draw_sky(scene, srgb_on, post_on, bloom_on)
+            drawn = self._draw_geometry(
+                scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on
+            )
+            draw_calls, triangles, instanced_calls, instances = drawn
+            GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
+            self._run_bloom_chain()
         GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
         if shadows_on:
             assert self._shadow is not None
@@ -577,10 +787,14 @@ class Renderer:
         if self._shadow is not None:
             self._shadow.release()
             self._shadow = None
+        self._release_bloom_fbos()
         if self._sky_vao:
             GL.glDeleteVertexArrays(1, [self._sky_vao])
             self._sky_vao = 0
         self._sky_program.release()
         self._inst_program.release()
         self._depth_program.release()
+        self._bloom_bright.release()
+        self._bloom_blur.release()
+        self._bloom_composite.release()
         self._program.release()

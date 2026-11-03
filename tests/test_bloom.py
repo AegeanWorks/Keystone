@@ -4,10 +4,16 @@ import unittest
 
 from keystone.analysis import analyze_frame, compare_reports
 from keystone.gpu.bloom import (
+    BLOOM_DOWNSAMPLE,
     BLOOM_INTENSITY,
     BLOOM_KNEE,
+    BLOOM_PASSES,
+    BLOOM_TAPS,
     BLOOM_THRESHOLD,
+    BLOOM_WEIGHTS,
+    bloom_blur_size,
     bloom_color,
+    bloom_composite,
     bloom_factor,
 )
 from keystone.plugin import describe_game
@@ -21,6 +27,27 @@ class BloomMathTest(unittest.TestCase):
         self.assertAlmostEqual(BLOOM_THRESHOLD, 0.72)
         self.assertAlmostEqual(BLOOM_KNEE, 0.12)
         self.assertAlmostEqual(BLOOM_INTENSITY, 0.35)
+        self.assertEqual(BLOOM_TAPS, 5)
+        self.assertEqual(BLOOM_PASSES, 3)
+        self.assertAlmostEqual(BLOOM_DOWNSAMPLE, 0.5)
+        center, side1, side2 = BLOOM_WEIGHTS
+        self.assertAlmostEqual(center + 2.0 * side1 + 2.0 * side2, 1.0, places=5)
+
+    def test_blur_size_uses_floor_half_with_min_one(self):
+        self.assertEqual(bloom_blur_size(960, 540), (480, 270))
+        self.assertEqual(bloom_blur_size(1, 1), (1, 1))
+        self.assertEqual(bloom_blur_size(3, 3), (1, 1))
+        with self.assertRaises(ValueError):
+            bloom_blur_size(0, 48)
+
+    def test_composite_adds_and_clamps(self):
+        self.assertEqual(
+            bloom_composite((0.2, 0.2, 0.2), (0.0, 0.0, 0.0)), (0.2, 0.2, 0.2)
+        )
+        bright = bloom_composite((0.8, 0.8, 0.8), (0.9, 0.9, 0.9))
+        self.assertGreater(bright[0], 0.8)
+        self.assertLessEqual(bright[0], 1.0)
+        self.assertEqual(bloom_composite((1.0, 1.0, 1.0), (1.0, 1.0, 1.0)), (1.0, 1.0, 1.0))
 
     def test_dark_has_no_bloom_and_bright_saturates(self):
         self.assertAlmostEqual(bloom_factor(0.0), 0.0)
@@ -102,6 +129,71 @@ class BloomContractsTest(unittest.TestCase):
 
         document = scene_document(CubeDemo().build_scene())
         self.assertEqual(document["bloom"], {"enabled": True})
+
+
+class BloomDiffusionIntegrationTest(unittest.TestCase):
+    def _render_cube(self, bloom_on: bool, width: int = 64, height: int = 48) -> bytes:
+        from keystone.gpu.context import GLContext
+        from keystone.gpu.renderer import Renderer
+
+        scene = CubeDemo().build_scene()
+        scene.bloom = BloomSettings(enabled=bloom_on)
+        context = GLContext(width, height, visible=False)
+        try:
+            renderer = Renderer(width, height)
+            try:
+                renderer.render(scene)
+                return bytes(renderer.read_pixels())
+            finally:
+                renderer.release()
+        finally:
+            context.close()
+
+    def test_diffusion_changes_pixels_without_new_draws(self):
+        from keystone.gpu.context import GLContext
+        from keystone.gpu.renderer import Renderer
+
+        scene = CubeDemo().build_scene()
+        context = GLContext(64, 48, visible=False)
+        try:
+            renderer = Renderer(64, 48)
+            try:
+                stats_on = renderer.render(scene)
+                pixels_on = bytes(renderer.read_pixels())
+                scene.bloom = BloomSettings(enabled=False)
+                stats_off = renderer.render(scene)
+                pixels_off = bytes(renderer.read_pixels())
+            finally:
+                renderer.release()
+        finally:
+            context.close()
+        self.assertNotEqual(pixels_on, pixels_off)
+        self.assertEqual(stats_on["draw_calls"], stats_off["draw_calls"])
+        self.assertEqual(stats_on["triangles"], stats_off["triangles"])
+
+    def test_no_bloom_legacy_path_is_stable(self):
+        first = self._render_cube(False)
+        second = self._render_cube(False)
+        self.assertEqual(first, second)
+
+    def test_resize_recreates_diffusion_buffers(self):
+        from keystone.gpu.context import GLContext
+        from keystone.gpu.renderer import Renderer
+
+        context = GLContext(64, 48, visible=False)
+        try:
+            renderer = Renderer(64, 48)
+            try:
+                scene = CubeDemo().build_scene()
+                renderer.render(scene)
+                renderer.resize(80, 60)
+                renderer.render(scene)
+                pixels = renderer.read_pixels()
+                self.assertEqual(len(pixels), 80 * 60 * 4)
+            finally:
+                renderer.release()
+        finally:
+            context.close()
 
 
 if __name__ == "__main__":
