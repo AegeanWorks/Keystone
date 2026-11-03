@@ -12,6 +12,21 @@ MAX_SKIN_INFLUENCES = 4
 MAX_SKIN_BONES = 64
 
 
+def _is_finite_number(value: object) -> bool:
+    return isinstance(value, (int, float)) and math.isfinite(value)
+
+
+def _check_triplets(name: str, values: tuple) -> None:
+    for element in values:
+        if (
+            isinstance(element, (str, bytes))
+            or not isinstance(element, (tuple, list))
+            or len(element) != 3
+            or not all(_is_finite_number(component) for component in element)
+        ):
+            raise ValueError(f"{name} must hold 3 finite numbers")
+
+
 @dataclass(frozen=True, slots=True)
 class Material:
     """Blinn-Phong surface parameters with PBR extensions used by the renderer."""
@@ -56,12 +71,26 @@ class MeshData:
         count = len(self.positions)
         if count < 3:
             raise ValueError("a mesh needs at least three vertices")
+        _check_triplets("positions", self.positions)
+        _check_triplets("normals", self.normals)
         if len(self.normals) != count:
             raise ValueError("every vertex needs exactly one normal")
         if self.uvs and len(self.uvs) != count:
             raise ValueError("UVs, when present, must match the vertex count")
+        for element in self.uvs:
+            if (
+                isinstance(element, (str, bytes))
+                or not isinstance(element, (tuple, list))
+                or len(element) != 2
+                or not all(_is_finite_number(component) for component in element)
+            ):
+                raise ValueError("UVs must hold 2 finite numbers")
         if self.colors and len(self.colors) != count:
             raise ValueError("vertex colors, when present, must match the vertex count")
+        if self.colors:
+            _check_triplets("vertex colors", self.colors)
+        if any(isinstance(index, bool) or not isinstance(index, int) for index in self.indices):
+            raise ValueError("indices must be integers")
         if not self.indices or len(self.indices) % 3 != 0:
             raise ValueError("indices must contain complete triangles")
         if any(index < 0 or index >= count for index in self.indices):

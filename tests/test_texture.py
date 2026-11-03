@@ -46,6 +46,12 @@ class TextureDataTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             TextureData.checker(8, cell=0)
 
+    def test_checker_rejects_bad_channel_counts(self):
+        with self.assertRaises(TypeError):
+            TextureData.checker(8, dark=(0.1, 0.2))
+        with self.assertRaises(TypeError):
+            TextureData.checker(8, light=(0.1, 0.2, 0.3, 0.4))
+
 
 if __name__ == "__main__":
     unittest.main()

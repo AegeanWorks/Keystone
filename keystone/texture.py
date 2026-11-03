@@ -72,6 +72,9 @@ class TextureData:
         """Build a deterministic RGBA checker texture without an image file."""
         if size <= 0 or cell <= 0:
             raise ValueError("checker size and cell must be positive")
+        for label, color in (("dark", dark), ("light", light)):
+            if isinstance(color, (str, bytes)) or not isinstance(color, (tuple, list)) or len(color) != 3:
+                raise TypeError(f"checker {label} color must have three channels")
         dark_rgba = tuple(max(0, min(255, round(channel * 255.0))) for channel in dark) + (255,)
         light_rgba = tuple(max(0, min(255, round(channel * 255.0))) for channel in light) + (255,)
         pixels = bytearray(size * size * 4)

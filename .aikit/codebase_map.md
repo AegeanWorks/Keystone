@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `114`
 - **Total Classes**: `162`
-- **Total Top-Level Functions**: `206`
-- **Total Class Methods**: `878`
-- **Total Source Lines**: `17431`
+- **Total Top-Level Functions**: `208`
+- **Total Class Methods**: `883`
+- **Total Source Lines**: `17516`
 
 ---
 
@@ -325,7 +325,7 @@
 ### [`keystone/geometry.py`](keystone/geometry.py)
 > *Indexed triangle mesh data and surface material, independent of any GPU API.*
 
-**Size**: `146` lines (`7339` bytes)
+**Size**: `175` lines (`8538` bytes)
 
 **Classes:**
 - `class Material` - *Blinn-Phong surface parameters with PBR extensions used by the renderer.*
@@ -338,6 +338,10 @@
   - Method `.bounds()`
   - Method `.interleaved()` - *Pack position, normal and UV into one vertex stream for the GPU.*
   - Method `.interleaved_skinned()` - *Pack the base stream plus padded joints and weights for the GPU.*
+
+**Functions:**
+- `def _is_finite_number(value)`
+- `def _check_triplets(name, values)`
 
 ---
 
@@ -838,7 +842,7 @@
 ### [`keystone/obj_loader.py`](keystone/obj_loader.py)
 > *Streaming Wavefront OBJ loader producing indexed triangle meshes.*
 
-**Size**: `126` lines (`5286` bytes)
+**Size**: `137` lines (`5949` bytes)
 
 **Functions:**
 - `def load_obj(path)` - *Read an OBJ file line by line so file size is never loaded whole.*
@@ -1147,7 +1151,7 @@
 ### [`keystone/texture.py`](keystone/texture.py)
 > *Immutable RGBA texture data and dependency-free texture sources.*
 
-**Size**: `83` lines (`3033` bytes)
+**Size**: `86` lines (`3287` bytes)
 
 **Classes:**
 - `class TextureData` - *Top-down RGBA8 pixels with a stable name for reports and debugging.*
@@ -1631,12 +1635,13 @@
 ### [`tests/test_geometry.py`](tests/test_geometry.py)
 > *Unit tests for indexed meshes, built-in primitives and the OBJ loader.*
 
-**Size**: `234` lines (`8565` bytes)
+**Size**: `270` lines (`10007` bytes)
 
 **Classes:**
 - `class MeshDataTest`
   - Method `.test_rejects_mismatched_attribute_counts()`
   - Method `.test_rejects_out_of_range_index()`
+  - Method `.test_rejects_malformed_position_tuples_at_construction()`
   - Method `.test_bounds_and_counts()`
   - Method `.test_interleaved_has_eleven_floats_per_vertex()`
   - Method `.test_vertex_colors_follow_the_uvs()`
@@ -1662,6 +1667,9 @@
   - Method `.test_negative_indices_are_relative()`
   - Method `.test_missing_file_raises_file_not_found()`
   - Method `.test_bad_index_raises_value_error()`
+  - Method `.test_extra_face_slash_is_rejected()`
+  - Method `.test_vertex_weight_is_applied()`
+  - Method `.test_vertex_junk_is_rejected()`
   - Method `.test_file_round_trip()`
 - `class MaterialTest`
   - Method `.test_defaults_are_valid()`
@@ -2252,13 +2260,14 @@
 ### [`tests/test_texture.py`](tests/test_texture.py)
 > *Tests for immutable texture data and texture sources.*
 
-**Size**: `51` lines (`1776` bytes)
+**Size**: `57` lines (`2033` bytes)
 
 **Classes:**
 - `class TextureDataTest`
   - Method `.test_checker_is_deterministic_and_has_expected_shape()`
   - Method `.test_png_round_trip_keeps_pixels()`
   - Method `.test_bad_texture_data_is_rejected()`
+  - Method `.test_checker_rejects_bad_channel_counts()`
 
 ---
 

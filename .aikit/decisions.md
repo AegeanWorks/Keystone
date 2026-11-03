@@ -405,3 +405,12 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Decision**: Flip cone side cross order and both triangle windings to outward/CCW-consistent; transform merge normals with transpose(inverse(M)) matching gpu.renderer.normal_matrix (singular matrices now raise via Mat4.inverse); accept Vec3 for color, checker dark/light and material/pbr color/emissive params. Five regression tests added (outward normals, winding-vs-normal alignment, inverse-transpose values, Vec3 color, Vec3 checker/material).
 - **Consequences**: Cone lighting and culling are correct; non-uniform merges match GPU shading; graph round-trips preserve Vec3; 455 tests green, ruff clean, 6/6 aikit gates; simulate hash unchanged (CubeDemo uses no cones, merges or graphs). Skin CPU-oracle normals remain a known follow-up.
 
+
+
+### ADR-048: Strict construction-time validation for OBJ, textures and meshes
+- **Date**: 2026-11-04
+- **Status**: Accepted
+- **Context**: OBJ silently dropped face-slash extras, vertex w components and trailing junk; TextureData.checker with a 2-channel color failed deep inside with a byte-count message; MeshData accepted short/NaN tuples and non-integer indices, deferring failure to bounds() with a misleading unpack error.
+- **Decision**: Reject face corners beyond v/vt/vn, require exact v/vn arity while honoring the OBJ homogeneous w coordinate (x/w, y/w, z/w; zero w rejected), accept vt with optional w; validate checker dark/light as 3-channel sequences with a naming TypeError; validate MeshData positions/normals/colors as 3 finite numbers, UVs as 2 finite numbers and indices as integers at construction. Six regression tests added (extra slash, w handling, junk/short vertices, channel counts, malformed tuples).
+- **Consequences**: Malformed assets fail at the boundary with OBJ line numbers instead of silent corruption; 460 tests green, ruff clean, 6/6 aikit gates; simulate hash unchanged (no sample asset changes). Remaining: perspective Mat4*Vec3 guard, builder/primitive UV orientation decision, docs drift, S2 CLI/replay/clock groups.
+

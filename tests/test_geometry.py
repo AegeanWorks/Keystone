@@ -41,6 +41,27 @@ class MeshDataTest(unittest.TestCase):
                 indices=(0, 1, 3),
             )
 
+    def test_rejects_malformed_position_tuples_at_construction(self):
+        with self.assertRaises(ValueError):
+            MeshData(
+                positions=((0, 0), (1, 0), (0, 1)),
+                normals=((0, 0, 1),) * 3,
+                indices=(0, 1, 2),
+            )
+        with self.assertRaises(ValueError):
+            MeshData(
+                positions=((0, 0, float("nan")), (1, 0, 0), (0, 1, 0)),
+                normals=((0, 0, 1),) * 3,
+                indices=(0, 1, 2),
+            )
+        with self.assertRaises(ValueError):
+            MeshData(
+                positions=((0, 0, 0), (1, 0, 0), (0, 1, 0)),
+                normals=((0, 0, 1),) * 3,
+                uvs=((0, 0, 0), (1, 0), (0, 1)),
+                indices=(0, 1, 2),
+            )
+
     def test_bounds_and_counts(self):
         mesh = cube(2.0)
         self.assertEqual(mesh.vertex_count(), 24)
@@ -207,6 +228,21 @@ class ObjLoaderTest(unittest.TestCase):
     def test_bad_index_raises_value_error(self):
         with self.assertRaises(ValueError):
             parse_obj("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 9\n")
+
+    def test_extra_face_slash_is_rejected(self):
+        with self.assertRaises(ValueError):
+            parse_obj("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1/1/1/extra 2 3\n")
+
+    def test_vertex_weight_is_applied(self):
+        mesh = parse_obj("v 0 0 0 1\nv 2 0 0 2\nv 0 2 0 2\nf 1 2 3\n")
+        self.assertEqual(mesh.positions[1], (1.0, 0.0, 0.0))
+        self.assertEqual(mesh.positions[2], (0.0, 1.0, 0.0))
+
+    def test_vertex_junk_is_rejected(self):
+        with self.assertRaises(ValueError):
+            parse_obj("v 0 0 0 extra\nv 1 0 0\nv 0 1 0\nf 1 2 3\n")
+        with self.assertRaises(ValueError):
+            parse_obj("v 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n")
 
     def test_file_round_trip(self):
         with tempfile.TemporaryDirectory() as directory:

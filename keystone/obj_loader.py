@@ -39,6 +39,8 @@ def _resolve_index(raw: str, count: int, kind: str, number: int, line: str) -> i
 
 def _corner(token: str, number: int, line: str, vertices: int, uvs: int, normals: int) -> Corner:
     parts = token.split("/")
+    if len(parts) > 4 or (len(parts) == 4 and parts[3]):
+        raise ValueError(f"OBJ line {number}: bad face corner {token!r} in face '{line}'")
     vertex = _resolve_index(parts[0], vertices, "vertex", number, line)
     uv = _resolve_index(parts[1], uvs, "texture", number, line) if len(parts) > 1 and parts[1] else None
     normal = _resolve_index(parts[2], normals, "normal", number, line) if len(parts) > 2 and parts[2] else None
@@ -58,16 +60,25 @@ def _parse_lines(lines: Iterable[str]) -> MeshData:
         kind = parts[0]
         try:
             if kind == "v":
-                values = tuple(float(value) for value in parts[1:4])
-                if len(values) != 3:
+                if len(parts) not in (4, 5):
                     raise ValueError("vertex needs three coordinates")
+                values = tuple(float(value) for value in parts[1:4])
+                if len(parts) == 5:
+                    weight = float(parts[4])
+                    if weight == 0.0:
+                        raise ValueError("vertex weight w must not be zero")
+                    values = tuple(component / weight for component in values)
                 positions.append(values)
             elif kind == "vn":
+                if len(parts) != 4:
+                    raise ValueError("normal needs three coordinates")
                 values = tuple(float(value) for value in parts[1:4])
                 if len(values) != 3:
                     raise ValueError("normal needs three coordinates")
                 normals.append(values)
             elif kind == "vt":
+                if len(parts) not in (3, 4):
+                    raise ValueError("texture coordinate needs two components")
                 uvs.append((float(parts[1]), float(parts[2])))
             elif kind == "f":
                 corners = [
