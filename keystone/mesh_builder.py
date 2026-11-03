@@ -71,10 +71,17 @@ class MeshBuilder:
         """Merge a mesh transformed by a world matrix (positions + normals)."""
         if not isinstance(matrix, Mat4):
             raise TypeError("matrix must be a Mat4")
+        # Normals need transpose(inverse(M)), matching gpu.renderer.normal_matrix.
+        inverse = matrix.inverse()
         base = len(self._positions)
         for index, position in enumerate(mesh.positions):
             point = matrix.transform_point(Vec3(*position))
-            normal = matrix.transform_direction(Vec3(*mesh.normals[index])).normalized()
+            raw = Vec3(*mesh.normals[index])
+            normal = Vec3(
+                inverse.m[0] * raw.x + inverse.m[1] * raw.y + inverse.m[2] * raw.z,
+                inverse.m[4] * raw.x + inverse.m[5] * raw.y + inverse.m[6] * raw.z,
+                inverse.m[8] * raw.x + inverse.m[9] * raw.y + inverse.m[10] * raw.z,
+            ).normalized()
             self._positions.append((point.x, point.y, point.z))
             self._normals.append((normal.x, normal.y, normal.z))
             self._uvs.append(mesh.uvs[index] if mesh.uvs else (0.0, 0.0))

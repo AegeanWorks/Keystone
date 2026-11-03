@@ -54,6 +54,42 @@ class MaterialGraphCoreTest(unittest.TestCase):
         self.assertAlmostEqual(material.color.x, 0.75)
         self.assertAlmostEqual(material.color.z, 0.25)
 
+    def test_color_node_accepts_vec3_param(self):
+        graph = MaterialGraph(
+            nodes=(
+                _node("c", "color", params=(("color", Vec3(0.2, 0.4, 0.6)),)),
+                _node("out", "material", inputs=("c",)),
+            ),
+            output="out",
+        )
+        self.assertEqual(graph.evaluate().color, Vec3(0.2, 0.4, 0.6))
+
+    def test_checker_and_material_accept_vec3_colors(self):
+        graph = MaterialGraph(
+            nodes=(
+                _node(
+                    "checker",
+                    "checker",
+                    params=(
+                        ("cell", 4),
+                        ("dark", Vec3(0.1, 0.1, 0.1)),
+                        ("light", Vec3(0.9, 0.9, 0.9)),
+                        ("size", 16),
+                    ),
+                ),
+                _node(
+                    "out",
+                    "material",
+                    inputs=("checker",),
+                    params=(("color", Vec3(0.1, 0.2, 0.3)), ("emissive", Vec3(0.0, 0.0, 0.0))),
+                ),
+            ),
+            output="out",
+        )
+        material = graph.evaluate()
+        self.assertEqual(material.color, Vec3(0.1, 0.2, 0.3))
+        self.assertIsNotNone(material.texture)
+
     def test_validation_rejects_cycles_and_bad_graphs(self):
         cycle = MaterialGraph(
             nodes=(

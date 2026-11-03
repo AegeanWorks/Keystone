@@ -108,6 +108,23 @@ class PrimitiveTest(unittest.TestCase):
             self.assertAlmostEqual(low[1], -1.0)
             self.assertAlmostEqual(high[1], 1.0)
 
+    def test_cone_side_normals_point_outward(self):
+        mesh = cone(1.0, 2.0, segments=8)
+        self.assertGreater(mesh.normals[0][0], 0.0)
+        self.assertGreater(mesh.normals[0][1], 0.0)
+
+    def test_cone_winding_matches_stored_normals(self):
+        from keystone.math3d import Vec3
+
+        mesh = cone(1.0, 2.0, segments=4)
+        for tri in range(8):
+            a = Vec3(*mesh.positions[mesh.indices[tri * 3]])
+            b = Vec3(*mesh.positions[mesh.indices[tri * 3 + 1]])
+            c = Vec3(*mesh.positions[mesh.indices[tri * 3 + 2]])
+            winding = (b - a).cross(c - a).normalized()
+            stored = Vec3(*mesh.normals[mesh.indices[tri * 3]])
+            self.assertGreater(winding.dot(stored), 0.0)
+
 
 class MeshBuilderTest(unittest.TestCase):
     def test_box_has_24_vertices_and_36_indices(self):
@@ -150,6 +167,18 @@ class MeshBuilderTest(unittest.TestCase):
         self.assertEqual(low[0], -5.5)
         self.assertEqual(high[0], 6.0)
         self.assertEqual(mesh.colors[0], (0.5, 1.0, 0.5))
+
+    def test_add_mesh_matrix_uses_inverse_transpose_normals(self):
+        from keystone.math3d import Mat4
+
+        diagonal = MeshData(
+            positions=((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)),
+            normals=((0.70710678, 0.70710678, 0.0),) * 3,
+            indices=(0, 1, 2),
+        )
+        mesh = MeshBuilder().add_mesh_matrix(diagonal, Mat4.scale(2.0, 1.0, 1.0)).build()
+        self.assertAlmostEqual(mesh.normals[0][0], 0.44721360, places=5)
+        self.assertAlmostEqual(mesh.normals[0][1], 0.89442719, places=5)
 
 
 class ObjLoaderTest(unittest.TestCase):

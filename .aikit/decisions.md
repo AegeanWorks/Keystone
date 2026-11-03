@@ -396,3 +396,12 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Decision**: Verify per-chunk CRC32 in read_png and wrap IHDR/zlib errors as ValueError; require finite numeric skin weights in MeshData; require isinstance(value, key) for Node components; raise RuntimeError with node name when CubeDemo orb is absent. Six regression tests added (CRC, corrupt-IDAT wrap, NaN/Inf weights, component value, orb-missing).
 - **Consequences**: Corrupt PNGs fail fast with actionable ValueError; NaN weights rejected at construction; hand-built component dicts cannot desync queries; sample update error is diagnosable; 450 tests green, ruff clean, 6/6 aikit gates; simulate hash unchanged (no CubeDemo asset/behavior change on the happy path).
 
+
+
+### ADR-047: Fix cone winding, merge normals and graph color params
+- **Date**: 2026-11-04
+- **Status**: Accepted
+- **Context**: Cone side normals pointed inward with inverted winding and the base cap stored -Y normals with +Y winding; MeshBuilder transformed normals with M instead of transpose(inverse(M)), breaking non-uniform merges while the GPU renderer already used the correct normal matrix; material-graph color/checker/material/pbr params rejected Vec3 even though _json_value serializes Vec3.
+- **Decision**: Flip cone side cross order and both triangle windings to outward/CCW-consistent; transform merge normals with transpose(inverse(M)) matching gpu.renderer.normal_matrix (singular matrices now raise via Mat4.inverse); accept Vec3 for color, checker dark/light and material/pbr color/emissive params. Five regression tests added (outward normals, winding-vs-normal alignment, inverse-transpose values, Vec3 color, Vec3 checker/material).
+- **Consequences**: Cone lighting and culling are correct; non-uniform merges match GPU shading; graph round-trips preserve Vec3; 455 tests green, ruff clean, 6/6 aikit gates; simulate hash unchanged (CubeDemo uses no cones, merges or graphs). Skin CPU-oracle normals remain a known follow-up.
+

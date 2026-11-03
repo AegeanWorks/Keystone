@@ -204,6 +204,8 @@ def _evaluate_node(
     if node.kind == "color":
         if node.param("color") is not None:
             raw = node.param("color")
+            if isinstance(raw, Vec3):
+                return raw
             if not isinstance(raw, (tuple, list)) or len(raw) != 3:
                 raise TypeError("color node needs a three-element color parameter")
             return Vec3(float(raw[0]), float(raw[1]), float(raw[2]))
@@ -221,6 +223,10 @@ def _evaluate_node(
         cell = int(node.param("cell", 8))
         dark_raw = node.param("dark", (0.10, 0.12, 0.16))
         light_raw = node.param("light", (0.18, 0.20, 0.25))
+        if isinstance(dark_raw, Vec3):
+            dark_raw = (dark_raw.x, dark_raw.y, dark_raw.z)
+        if isinstance(light_raw, Vec3):
+            light_raw = (light_raw.x, light_raw.y, light_raw.z)
         if not (isinstance(dark_raw, (tuple, list)) and len(dark_raw) == 3):
             raise TypeError("checker dark color must have three channels")
         if not (isinstance(light_raw, (tuple, list)) and len(light_raw) == 3):
@@ -282,7 +288,9 @@ def _evaluate_node(
                 floats.append(float(value))
         if color is None:
             raw_color = node.param("color", (0.78, 0.78, 0.82))
-            if isinstance(raw_color, (tuple, list)) and len(raw_color) == 3:
+            if isinstance(raw_color, Vec3):
+                color = raw_color
+            elif isinstance(raw_color, (tuple, list)) and len(raw_color) == 3:
                 color = Vec3(float(raw_color[0]), float(raw_color[1]), float(raw_color[2]))
             else:
                 color = Vec3(
@@ -308,7 +316,9 @@ def _evaluate_node(
                 texture = textures[texture_name]
         if emissive is None:
             raw_emissive = node.param("emissive", (0.0, 0.0, 0.0))
-            if isinstance(raw_emissive, (tuple, list)) and len(raw_emissive) == 3:
+            if isinstance(raw_emissive, Vec3):
+                emissive = raw_emissive
+            elif isinstance(raw_emissive, (tuple, list)) and len(raw_emissive) == 3:
                 emissive = Vec3(float(raw_emissive[0]), float(raw_emissive[1]), float(raw_emissive[2]))
             else:
                 emissive = Vec3(0.0, 0.0, 0.0)

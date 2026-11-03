@@ -70,12 +70,12 @@ def cone(radius: float = 0.5, height: float = 1.0, segments: int = 16) -> MeshDa
         a1 = math.tau * (index + 1) / segments
         p0 = (math.cos(a0) * radius, base_y, math.sin(a0) * radius)
         p1 = (math.cos(a1) * radius, base_y, math.sin(a1) * radius)
-        normal = (Vec3(*p1) - Vec3(*p0)).cross(Vec3(*apex) - Vec3(*p0)).normalized()
+        normal = (Vec3(*apex) - Vec3(*p0)).cross(Vec3(*p1) - Vec3(*p0)).normalized()
         base = len(positions)
         positions.extend((p0, p1, apex))
         normals.extend(((normal.x, normal.y, normal.z),) * 3)
         uvs.extend(((index / segments, 0.0), ((index + 1) / segments, 0.0), (0.5, 1.0)))
-        indices.extend((base, base + 1, base + 2))
+        indices.extend((base, base + 2, base + 1))
     center = (0.0, base_y, 0.0)
     for index in range(segments):
         a0 = math.tau * index / segments
@@ -86,7 +86,7 @@ def cone(radius: float = 0.5, height: float = 1.0, segments: int = 16) -> MeshDa
         positions.extend((p0, center, p1))
         normals.extend(((0.0, -1.0, 0.0),) * 3)
         uvs.extend(((0.0, 0.0), (0.5, 0.5), (1.0, 0.0)))
-        indices.extend((base, base + 1, base + 2))
+        indices.extend((base, base + 2, base + 1))
     return MeshData(tuple(positions), tuple(normals), tuple(uvs), tuple(indices))
 
 

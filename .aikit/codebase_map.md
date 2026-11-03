@@ -9,8 +9,8 @@
 - **Total Python Modules**: `114`
 - **Total Classes**: `162`
 - **Total Top-Level Functions**: `206`
-- **Total Class Methods**: `873`
-- **Total Source Lines**: `17349`
+- **Total Class Methods**: `878`
+- **Total Source Lines**: `17431`
 
 ---
 
@@ -745,7 +745,7 @@
 ### [`keystone/material_graph.py`](keystone/material_graph.py)
 > *Declarative, deterministic material graphs that evaluate to a Material.*
 
-**Size**: `339` lines (`14469` bytes)
+**Size**: `349` lines (`14906` bytes)
 
 **Classes:**
 - `class MaterialGraphNode` - *One node in a material graph: a kind, parameters and input node ids.*
@@ -821,7 +821,7 @@
 ### [`keystone/mesh_builder.py`](keystone/mesh_builder.py)
 > *Compose boxes and quads into a single indexed MeshData.*
 
-**Size**: `127` lines (`5055` bytes)
+**Size**: `134` lines (`5436` bytes)
 
 **Classes:**
 - `class MeshBuilder` - *Accumulates flat-shaded quads and boxes, then builds one mesh.*
@@ -1631,7 +1631,7 @@
 ### [`tests/test_geometry.py`](tests/test_geometry.py)
 > *Unit tests for indexed meshes, built-in primitives and the OBJ loader.*
 
-**Size**: `205` lines (`7279` bytes)
+**Size**: `234` lines (`8565` bytes)
 
 **Classes:**
 - `class MeshDataTest`
@@ -1647,11 +1647,14 @@
   - Method `.test_sphere_positions_lie_on_radius_and_normals_are_unit()`
   - Method `.test_primitives_reject_invalid_sizes()`
   - Method `.test_cone_and_cylinder_are_unit_and_bounded()`
+  - Method `.test_cone_side_normals_point_outward()`
+  - Method `.test_cone_winding_matches_stored_normals()`
 - `class MeshBuilderTest`
   - Method `.test_box_has_24_vertices_and_36_indices()`
   - Method `.test_quad_normal_follows_winding()`
   - Method `.test_degenerate_quad_is_rejected()`
   - Method `.test_add_mesh_merges_counts_and_offsets()`
+  - Method `.test_add_mesh_matrix_uses_inverse_transpose_normals()`
 - `class ObjLoaderTest`
   - Method `.test_quad_is_triangulated()`
   - Method `.test_normals_are_computed_when_absent()`
@@ -1779,13 +1782,15 @@
 ### [`tests/test_material_graph.py`](tests/test_material_graph.py)
 > *Unit tests for declarative material graphs.*
 
-**Size**: `126` lines (`4843` bytes)
+**Size**: `162` lines (`6090` bytes)
 
 **Classes:**
 - `class MaterialGraphCoreTest`
   - Method `.test_constant_color_and_float_feed_a_material()`
   - Method `.test_checker_node_builds_a_textured_material()`
   - Method `.test_mix_combines_colors()`
+  - Method `.test_color_node_accepts_vec3_param()`
+  - Method `.test_checker_and_material_accept_vec3_colors()`
   - Method `.test_validation_rejects_cycles_and_bad_graphs()`
   - Method `.test_evaluation_is_deterministic()`
 - `class MaterialGraphSerializationTest`
