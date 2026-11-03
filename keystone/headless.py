@@ -20,7 +20,13 @@ def load_actions(path: str | Path) -> list[ActionState]:
         payload = payload.get("actions", payload.get("frames"))
     if not isinstance(payload, list):
         raise TypeError("actions file must hold a list or an object with an 'actions' list")
-    return [ActionState.from_dict(item) for item in payload]
+    actions: list[ActionState] = []
+    for index, item in enumerate(payload):
+        try:
+            actions.append(ActionState.from_dict(item))
+        except AttributeError as exc:
+            raise TypeError(f"actions[{index}] must be a mapping") from exc
+    return actions
 
 
 def run_simulation(

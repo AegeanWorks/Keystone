@@ -22,6 +22,13 @@ class SerializationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, self.assertRaises(FileNotFoundError):
             read_json(Path(directory) / "missing.json")
 
+    def test_bom_prefixed_file_reads(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            write_json_atomic(path, {"value": 1})
+            path.write_bytes(b"\xef\xbb\xbf" + path.read_bytes())
+            self.assertEqual(read_json(path), {"value": 1})
+
 
 if __name__ == "__main__":
     unittest.main()

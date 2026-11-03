@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -32,12 +33,16 @@ class CommandLog:
 
     @classmethod
     def from_dict(cls, data: dict) -> CommandLog:
-        seed = int(data["seed"])
+        seed_raw = data["seed"]
+        if isinstance(seed_raw, bool) or not isinstance(seed_raw, int):
+            raise TypeError("command-log seed must be an integer")
         step = float(data.get("step", FIXED_STEP))
-        frames = list(data.get("frames", []))
-        if step <= 0.0:
+        if not math.isfinite(step) or step <= 0.0:
             raise ValueError("command-log step must be positive")
-        return cls(seed, step, frames)
+        frames_raw = data.get("frames", [])
+        if not isinstance(frames_raw, (list, tuple)):
+            raise TypeError("command-log frames must be a list")
+        return cls(seed_raw, step, list(frames_raw))
 
     def save(self, path: str | Path) -> None:
         write_json_atomic(path, self.to_dict())
@@ -62,23 +67,27 @@ def run_log(factory: object, log: CommandLog, trace: bool = False) -> dict:
         raise TypeError("log must be a CommandLog")
     import random as _random
 
-    _random.seed(log.seed)
-    game = factory()
-    build = getattr(game, "build_scene", None)
-    if not callable(build):
-        raise TypeError("replayed game must expose build_scene()")
-    build()
-    update = getattr(game, "update", None)
-    snapshot = getattr(game, "snapshot", None)
-    if not callable(update) or not callable(snapshot):
-        raise TypeError("replayed game must expose update() and snapshot()")
-    actions = log.replay_actions()
-    snapshots: list[dict] = []
-    for action in actions:
-        update(log.step, action)
-        if trace:
-            snapshots.append(snapshot())
-    final = snapshot()
+    state = _random.getstate()
+    try:
+        _random.seed(log.seed)
+        game = factory()
+        build = getattr(game, "build_scene", None)
+        if not callable(build):
+            raise TypeError("replayed game must expose build_scene()")
+        build()
+        update = getattr(game, "update", None)
+        snapshot = getattr(game, "snapshot", None)
+        if not callable(update) or not callable(snapshot):
+            raise TypeError("replayed game must expose update() and snapshot()")
+        actions = log.replay_actions()
+        snapshots: list[dict] = []
+        for action in actions:
+            update(log.step, action)
+            if trace:
+                snapshots.append(snapshot())
+        final = snapshot()
+    finally:
+        _random.setstate(state)
     report: dict = {
         "ok": True,
         "game": getattr(game, "name", "game"),

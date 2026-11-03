@@ -142,6 +142,18 @@ class EngineTest(unittest.TestCase):
             ["--serve", "--simulate"],
             ["--serve", "--ui"],
             ["--serve", "--out", "frame.png"],
+            ["--serve", "--frames", "2"],
+            ["--serve", "--size", "320x180"],
+        ):
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+                main(argv)
+            self.assertEqual(caught.exception.code, 2)
+
+    def test_windowless_commands_reject_window_flags(self):
+        for argv in (
+            ["--describe", "--diff-out", "diff.png"],
+            ["--simulate", "--frames", "1", "--size", "320x180"],
+            ["--playtest", "--frames", "8", "--size", "320x180"],
         ):
             with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
                 main(argv)

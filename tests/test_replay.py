@@ -28,6 +28,25 @@ class ReplayTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             CommandLog.from_dict({"seed": 1, "step": 0.0, "frames": []})
 
+    def test_strict_seed_and_frames_are_rejected(self):
+        for bad_seed in (3.7, "3", True):
+            with self.assertRaises(TypeError):
+                CommandLog.from_dict({"seed": bad_seed, "frames": []})
+        for bad_frames in ({"a": 1}, "actions"):
+            with self.assertRaises(TypeError):
+                CommandLog.from_dict({"seed": 1, "frames": bad_frames})
+
+    def test_run_log_restores_global_random_state(self):
+        import random
+
+        log = CommandLog(seed=9)
+        log.record(ActionState(forward=1.0))
+        random.seed(0)
+        expected = random.random()
+        random.seed(0)
+        run_log(CubeDemo, log)
+        self.assertEqual(random.random(), expected)
+
     def test_run_log_replays_deterministically(self):
         log = CommandLog(seed=7)
         log.record(ActionState(forward=1.0))

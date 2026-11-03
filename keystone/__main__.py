@@ -103,13 +103,14 @@ def main(argv: list[str] | None = None) -> int:
         or args.bloom or args.no_bloom or args.sprites or args.no_sprites
         or args.start_paused or args.out or args.report or args.replay or args.playtest or args.script
         or args.transcript_out or args.policy != "random" or args.seed != 0
+        or args.frames or args.size != (960, 540)
     ):
         parser.error("--serve is a standalone web-console command")
     if (args.host is not None or args.port is not None) and not args.serve:
         parser.error("--host and --port require --serve")
     if args.describe and (
         args.headless or args.simulate or args.verify_determinism or args.expect_hash
-        or args.compare_baseline or args.out or args.report or args.actions or args.trace
+        or args.compare_baseline or args.diff_out or args.out or args.report or args.actions or args.trace
         or args.ui or args.no_ui or args.shadows or args.no_shadows
         or args.srgb or args.no_srgb or args.post or args.no_post or args.bloom or args.no_bloom or args.sprites or args.no_sprites or args.start_paused
         or args.replay or args.playtest
@@ -123,10 +124,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.playtest and (
         args.headless or args.simulate or args.verify_determinism or args.describe or args.serve
         or args.replay or args.report or args.compare_baseline or args.diff_out or args.actions
+        or args.size != (960, 540)
         or args.trace or args.ui or args.no_ui or args.shadows or args.no_shadows
         or args.srgb or args.no_srgb or args.post or args.no_post or args.bloom or args.no_bloom or args.sprites or args.no_sprites or args.start_paused
     ):
         parser.error("--playtest is a standalone no-GL command")
+    if args.simulate and args.size != (960, 540):
+        parser.error("--simulate needs no window; --size does not apply")
     if args.replay and (args.actions or args.compare_baseline or args.diff_out or args.report or args.ui or args.no_ui or args.shadows or args.no_shadows or args.srgb or args.no_srgb or args.post or args.no_post or args.bloom or args.no_bloom or args.sprites or args.no_sprites or args.start_paused):
         parser.error("--replay takes a CommandLog; --actions/--compare-baseline/--report/--ui/--shadows/--srgb/--post/--bloom do not apply")
     if args.replay and (args.frames or args.size != (960, 540)):

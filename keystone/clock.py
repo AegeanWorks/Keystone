@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 
 class FixedStepClock:
     """Accumulates wall time and releases whole deterministic simulation steps."""
@@ -17,14 +19,20 @@ class FixedStepClock:
         self._accumulator = 0.0
 
     def reset(self, now: float | None = None) -> None:
+        if now is not None and not math.isfinite(now):
+            raise ValueError("now must be finite")
         self._last = now
         self._accumulator = 0.0
 
     def advance(self, now: float) -> list[float]:
+        if not math.isfinite(now):
+            raise ValueError("now must be finite")
         if self._last is None:
             self._last = now
             return []
-        delta = min(max(now - self._last, 0.0), self.max_frame)
+        if now < self._last:
+            return []
+        delta = min(now - self._last, self.max_frame)
         self._last = now
         self._accumulator += delta
         steps: list[float] = []

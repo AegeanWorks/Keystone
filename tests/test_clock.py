@@ -26,6 +26,19 @@ class FixedStepClockTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             FixedStepClock(step=0.2, max_frame=0.1)
 
+    def test_backwards_time_mints_no_debt(self):
+        clock = FixedStepClock()
+        clock.advance(10.0)
+        self.assertEqual(clock.advance(9.0), [])
+        self.assertEqual(clock.advance(10.0), [])
+
+    def test_non_finite_time_is_rejected(self):
+        clock = FixedStepClock()
+        with self.assertRaises(ValueError):
+            clock.advance(float("nan"))
+        with self.assertRaises(ValueError):
+            clock.advance(float("inf"))
+
 
 if __name__ == "__main__":
     unittest.main()

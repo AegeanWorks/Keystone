@@ -36,6 +36,14 @@ class HeadlessTest(unittest.TestCase):
             path.write_text(json.dumps({"actions": [{"right": 1.0}]}), encoding="utf-8")
             self.assertEqual(load_actions(path)[0].right, 1.0)
 
+    def test_load_actions_pins_bad_item_index(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "actions.json"
+            path.write_text(json.dumps([{"forward": 1.0}, 5]), encoding="utf-8")
+            with self.assertRaises(TypeError) as caught:
+                load_actions(path)
+            self.assertIn("actions[1]", str(caught.exception))
+
     def test_invalid_frames_and_step(self):
         with self.assertRaises(ValueError):
             run_simulation(CubeDemo(), -1)

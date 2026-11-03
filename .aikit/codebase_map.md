@@ -9,8 +9,8 @@
 - **Total Python Modules**: `114`
 - **Total Classes**: `162`
 - **Total Top-Level Functions**: `208`
-- **Total Class Methods**: `883`
-- **Total Source Lines**: `17516`
+- **Total Class Methods**: `890`
+- **Total Source Lines**: `17612`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `391` lines (`21765` bytes)
+**Size**: `395` lines (`21991` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -312,7 +312,7 @@
 ### [`keystone/clock.py`](keystone/clock.py)
 > *Fixed-step clock with a bounded catch-up budget.*
 
-**Size**: `34` lines (`1174` bytes)
+**Size**: `42` lines (`1420` bytes)
 
 **Classes:**
 - `class FixedStepClock` - *Accumulates wall time and releases whole deterministic simulation steps.*
@@ -689,7 +689,7 @@
 ### [`keystone/headless.py`](keystone/headless.py)
 > *Simulation without a window: JSON action scripts and deterministic traces.*
 
-**Size**: `60` lines (`1959` bytes)
+**Size**: `66` lines (`2179` bytes)
 
 **Functions:**
 - `def load_actions(path)`
@@ -1000,7 +1000,7 @@
 ### [`keystone/replay.py`](keystone/replay.py)
 > *Deterministic action logs and stable state hashes.*
 
-**Size**: `105` lines (`3336` bytes)
+**Size**: `114` lines (`3797` bytes)
 
 **Classes:**
 - `class CommandLog`
@@ -1086,7 +1086,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `320` lines (`13379` bytes)
+**Size**: `323` lines (`13517` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)`
@@ -1115,7 +1115,7 @@
 ### [`keystone/serialization.py`](keystone/serialization.py)
 > *Atomic JSON persistence for engine and game state.*
 
-**Size**: `31` lines (`962` bytes)
+**Size**: `31` lines (`966` bytes)
 
 **Functions:**
 - `def write_json_atomic(path, payload, backup)`
@@ -1447,7 +1447,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `300` lines (`13787` bytes)
+**Size**: `312` lines (`14338` bytes)
 
 **Classes:**
 - `class HudCube`
@@ -1463,6 +1463,7 @@
   - Method `.test_ui_flags_are_limited_to_rendered_runs()`
   - Method `.test_replay_cli_replays_a_log_without_opening_a_window()`
   - Method `.test_serve_is_a_standalone_web_command()`
+  - Method `.test_windowless_commands_reject_window_flags()`
   - Method `.test_web_flags_require_serve()`
   - Method `.test_bad_web_port_is_a_usage_error()`
   - Method `.test_headless_ui_capture_writes_a_report()`
@@ -1622,13 +1623,15 @@
 ### [`tests/test_clock.py`](tests/test_clock.py)
 > *Tests for the fixed-step clock.*
 
-**Size**: `31` lines (`965` bytes)
+**Size**: `44` lines (`1425` bytes)
 
 **Classes:**
 - `class FixedStepClockTest`
   - Method `.test_releases_whole_steps_and_bounds_catch_up()`
   - Method `.test_reset_drops_accumulator()`
   - Method `.test_invalid_configuration()`
+  - Method `.test_backwards_time_mints_no_debt()`
+  - Method `.test_non_finite_time_is_rejected()`
 
 ---
 
@@ -1716,7 +1719,7 @@
 ### [`tests/test_headless.py`](tests/test_headless.py)
 > *Tests for no-OpenGL simulation and action scripts.*
 
-**Size**: `47` lines (`1839` bytes)
+**Size**: `55` lines (`2238` bytes)
 
 **Classes:**
 - `class HeadlessTest`
@@ -1724,6 +1727,7 @@
   - Method `.test_same_script_is_deterministic()`
   - Method `.test_trace_contains_each_frame()`
   - Method `.test_load_actions_accepts_list_and_object()`
+  - Method `.test_load_actions_pins_bad_item_index()`
   - Method `.test_invalid_frames_and_step()`
 
 ---
@@ -2035,13 +2039,15 @@
 ### [`tests/test_replay.py`](tests/test_replay.py)
 > *Tests for deterministic action logs and stable hashes.*
 
-**Size**: `46` lines (`1712` bytes)
+**Size**: `65` lines (`2420` bytes)
 
 **Classes:**
 - `class ReplayTest`
   - Method `.test_hash_ignores_mapping_order()`
   - Method `.test_command_log_round_trip()`
   - Method `.test_invalid_step_is_rejected()`
+  - Method `.test_strict_seed_and_frames_are_rejected()`
+  - Method `.test_run_log_restores_global_random_state()`
   - Method `.test_run_log_replays_deterministically()`
 
 ---
@@ -2111,7 +2117,7 @@
 ### [`tests/test_scene_snapshot.py`](tests/test_scene_snapshot.py)
 > *Unit tests for versioned scene snapshots.*
 
-**Size**: `160` lines (`6678` bytes)
+**Size**: `167` lines (`6912` bytes)
 
 **Classes:**
 - `class SceneSnapshotTest`
@@ -2132,12 +2138,13 @@
 ### [`tests/test_serialization.py`](tests/test_serialization.py)
 > *Tests for atomic JSON persistence.*
 
-**Size**: `27` lines (`980` bytes)
+**Size**: `34` lines (`1308` bytes)
 
 **Classes:**
 - `class SerializationTest`
   - Method `.test_round_trip_and_backup()`
   - Method `.test_missing_file_raises()`
+  - Method `.test_bom_prefixed_file_reads()`
 
 ---
 

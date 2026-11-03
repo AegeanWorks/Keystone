@@ -280,7 +280,10 @@ def scene_from_dict(data: Mapping[str, Any], registry: Any = None) -> Scene:
     created: dict[str, Node] = {}
     for raw in raw_nodes:
         node_id = _required_node_id(raw)
-        name = str(raw.get("name", node_id))
+        raw_name = raw.get("name", node_id)
+        if not isinstance(raw_name, str):
+            raise TypeError("scene snapshot node name must be a string")
+        name = raw_name
         layer = raw.get("layer", "default")
         if not isinstance(layer, str) or not layer:
             raise ValueError("scene snapshot node layer must be a non-empty string")

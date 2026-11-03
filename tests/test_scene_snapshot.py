@@ -120,6 +120,13 @@ class SceneSnapshotTest(unittest.TestCase):
                     "nodes": [{"id": "node", "mesh": 5}],
                 }
             )
+        with self.assertRaises(TypeError):
+            scene_from_dict(
+                {
+                    "schema": SCENE_SNAPSHOT_VERSION,
+                    "nodes": [{"id": "node", "name": 5}],
+                }
+            )
 
     def test_rejects_non_mapping_camera_and_transform(self):
         with self.assertRaises(TypeError):

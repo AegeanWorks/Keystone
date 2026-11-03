@@ -27,5 +27,5 @@ def write_json_atomic(path: str | Path, payload: object, backup: bool = True) ->
 
 
 def read_json(path: str | Path) -> object:
-    with Path(path).open("r", encoding="utf-8") as handle:
+    with Path(path).open("r", encoding="utf-8-sig") as handle:
         return json.load(handle)
