@@ -57,12 +57,21 @@ class CharacterController:
 
     gravity: float = 24.0
     skin: float = 1e-4
+    slope_rise: float = 0.55
+    slope_run: float = 1.0
+    step_height: float = 0.45
 
     def __post_init__(self) -> None:
         if self.gravity < 0.0:
             raise ValueError("gravity must be non-negative")
         if self.skin < 0.0:
             raise ValueError("skin must be non-negative")
+        if self.slope_rise < 0.0:
+            raise ValueError("slope rise must be non-negative")
+        if self.slope_run <= 0.0:
+            raise ValueError("slope run must be positive")
+        if self.step_height < 0.0:
+            raise ValueError("step height must be non-negative")
 
     def step(
         self,
@@ -70,15 +79,28 @@ class CharacterController:
         wish_velocity: Vec3,
         dt: float,
         colliders: Iterable[AABB],
+        platform_velocity: Vec3 | None = None,
     ) -> CharacterBody:
         """Advance one step; horizontal speed is the wish velocity, vertical is body velocity."""
         if dt <= 0.0:
             raise ValueError("dt must be positive")
         boxes = list(colliders)
+        carry = platform_velocity if platform_velocity is not None else Vec3()
+        position = body.position
+        if abs(carry.x) >= 1e-12 or abs(carry.y) >= 1e-12 or abs(carry.z) >= 1e-12:
+            position, _ = self._move_axis(position, body.half_extents, "x", carry.x * dt, boxes)
+            position, _ = self._move_axis(position, body.half_extents, "z", carry.z * dt, boxes)
+            position, _ = self._move_axis(position, body.half_extents, "y", carry.y * dt, boxes)
         horizontal = Vec3(wish_velocity.x, 0.0, wish_velocity.z)
         vertical = body.velocity.y - self.gravity * dt
-        position, hit_x = self._move_axis(body.position, body.half_extents, "x", horizontal.x * dt, boxes)
+        position, hit_x = self._move_axis(position, body.half_extents, "x", horizontal.x * dt, boxes)
         position, hit_z = self._move_axis(position, body.half_extents, "z", horizontal.z * dt, boxes)
+        if hit_x or hit_z:
+            stepped = self._try_step_up(position, body.half_extents, horizontal.x * dt, horizontal.z * dt, boxes)
+            if stepped is not None:
+                position = stepped
+                hit_x = False
+                hit_z = False
         position, hit_y = self._move_axis(position, body.half_extents, "y", vertical * dt, boxes)
         return CharacterBody(
             position=position,
@@ -90,6 +112,34 @@ class CharacterController:
             ),
             on_ground=(hit_y and vertical <= 0.0) or (body.on_ground and abs(vertical) < 1e-12),
         )
+
+    def _try_step_up(
+        self,
+        position: Vec3,
+        half: Vec3,
+        amount_x: float,
+        amount_z: float,
+        colliders: list[AABB],
+    ) -> Vec3 | None:
+        if self.step_height < 1e-12:
+            return None
+        base_y = _component(position, "y")
+        raised, blocked_above = self._move_axis(position, half, "y", self.step_height, colliders)
+        if blocked_above:
+            return None
+        moved, _ = self._move_axis(raised, half, "x", amount_x, colliders)
+        moved, _ = self._move_axis(moved, half, "z", amount_z, colliders)
+        run = abs(moved.x - raised.x) + abs(moved.z - raised.z)
+        if run < 1e-9:
+            return None
+        settled, _ = self._move_axis(moved, half, "y", -self.step_height, colliders)
+        rise = _component(settled, "y") - base_y
+        if rise < -1e-9:
+            return None
+        limit = self.slope_rise * (run / self.slope_run + 1.0)
+        if rise > limit + 1e-9:
+            return None
+        return settled
 
     def _move_axis(
         self,

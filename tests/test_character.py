@@ -50,10 +50,75 @@ class CharacterControllerTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             CharacterController(skin=-0.1)
         with self.assertRaises(ValueError):
+            CharacterController(slope_rise=-0.1)
+        with self.assertRaises(ValueError):
+            CharacterController(slope_run=0.0)
+        with self.assertRaises(ValueError):
+            CharacterController(step_height=-0.1)
+        with self.assertRaises(ValueError):
             CharacterBody(Vec3(), Vec3(-1, 1, 1))
         controller = CharacterController()
         with self.assertRaises(ValueError):
             controller.step(CharacterBody(Vec3()), Vec3(), 0.0, [])
+
+    def test_character_steps_onto_a_low_step(self):
+        controller = CharacterController(gravity=24.0)
+        floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+        step = AABB(Vec3(2.0, 0.65, 0), Vec3(0.5, 0.15, 1.0))
+        body = CharacterBody(Vec3(0, 0.5 + 0.9 + controller.skin, 0), Vec3(0.35, 0.9, 0.35))
+        climbed = False
+        for _ in range(120):
+            body = controller.step(body, Vec3(2, 0, 0), 1 / 60, [floor, step])
+            if body.position.y > 0.5 + 0.9 + 0.2:
+                climbed = True
+                break
+        self.assertTrue(climbed)
+        self.assertAlmostEqual(body.position.y, 0.8 + 0.9, delta=0.05)
+
+    def test_character_stops_at_a_tall_step(self):
+        controller = CharacterController(gravity=24.0)
+        floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+        wall = AABB(Vec3(2.0, 1.4, 0), Vec3(0.5, 0.9, 1.0))
+        body = CharacterBody(Vec3(0, 0.5 + 0.9 + controller.skin, 0), Vec3(0.35, 0.9, 0.35))
+        for _ in range(120):
+            body = controller.step(body, Vec3(2, 0, 0), 1 / 60, [floor, wall])
+        self.assertLess(body.position.x, 2.0 - 0.5 - 0.35)
+
+    def test_platform_carry_pushes_out_of_a_wall(self):
+        controller = CharacterController(gravity=0.0)
+        wall = AABB(Vec3(0, 1.4, 0), Vec3(0.2, 0.9, 3))
+        body = CharacterBody(Vec3(-3, 1.4, 0), Vec3(0.4, 0.9, 0.4))
+        carried = controller.step(body, Vec3(), 1.0, [wall], platform_velocity=Vec3(5, 0, 0))
+        self.assertLessEqual(carried.position.x, -0.2 - 0.4 - controller.skin + 1e-9)
+
+    def test_platform_carry_off_a_ledge_then_falls(self):
+        controller = CharacterController(gravity=24.0)
+        floor = AABB(Vec3(0, 0, 0), Vec3(1.0, 0.5, 1.0))
+        body = CharacterBody(Vec3(0, 0.5 + 0.9 + controller.skin, 0), Vec3(0.35, 0.9, 0.35), Vec3(), True)
+        for _ in range(20):
+            body = controller.step(body, Vec3(), 1 / 60, [floor], platform_velocity=Vec3(5, 0, 0))
+        self.assertGreater(body.position.x, 1.0)
+        start_y = body.position.y
+        for _ in range(30):
+            body = controller.step(body, Vec3(), 1 / 60, [floor])
+        self.assertLess(body.position.y, start_y)
+        self.assertFalse(body.on_ground)
+
+    def test_character_steps_are_deterministic(self):
+        controller = CharacterController(gravity=24.0)
+        floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+        step = AABB(Vec3(2.0, 0.65, 0), Vec3(0.5, 0.15, 1.0))
+
+        def run() -> CharacterBody:
+            body = CharacterBody(Vec3(0, 0.5 + 0.9 + controller.skin, 0), Vec3(0.35, 0.9, 0.35))
+            for _ in range(60):
+                body = controller.step(body, Vec3(2, 0, 0), 1 / 60, [floor, step])
+            return body
+
+        first, second = run(), run()
+        self.assertEqual(first.position, second.position)
+        self.assertEqual(first.velocity, second.velocity)
+        self.assertEqual(first.on_ground, second.on_ground)
 
 
 if __name__ == "__main__":

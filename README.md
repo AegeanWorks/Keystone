@@ -152,7 +152,7 @@ events = TriggerTracker().update(body.box(), [TriggerVolume("door", AABB(Vec3(0,
 hit = raycast(Ray(Vec3(), Vec3(0, 0, 1)), [("wall", wall)])
 ```
 
-`SpatialGrid` keeps a uniform grid of AABB proxies and returns exact overlaps in insertion order; `cell_size` is a performance trade-off, not a correctness setting. `CharacterController` moves an AABB body with horizontal wish velocity, gravity, wall/floor response and ground detection against static AABBs; slopes, step-up and moving platforms are not included yet. `TriggerTracker` reports sorted `entered`/`exited`/`active` names, and `raycast()` returns the nearest hit with an optional key/box filter.
+`SpatialGrid` keeps a uniform grid of AABB proxies and returns exact overlaps in insertion order; `cell_size` is a performance trade-off, not a correctness setting. `CharacterController` moves an AABB body with horizontal wish velocity, gravity, wall/floor response, stair step-up, slope-limited climb and platform carry against AABBs, with ground detection; capsules and a physics solver are not included. `TriggerTracker` reports sorted `entered`/`exited`/`active` names, and `raycast()` returns the nearest hit with an optional key/box filter.
 
 ### Optional game UI
 

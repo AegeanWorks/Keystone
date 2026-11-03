@@ -9,8 +9,8 @@
 - **Total Python Modules**: `108`
 - **Total Classes**: `151`
 - **Total Top-Level Functions**: `187`
-- **Total Class Methods**: `807`
-- **Total Source Lines**: `15554`
+- **Total Class Methods**: `813`
+- **Total Source Lines**: `15669`
 
 ---
 
@@ -285,7 +285,7 @@
 ### [`keystone/character.py`](keystone/character.py)
 > *Game-agnostic AABB character movement with gravity and collision response.*
 
-**Size**: `120` lines (`4109` bytes)
+**Size**: `170` lines (`6308` bytes)
 
 **Classes:**
 - `class CharacterBody` - *An axis-aligned character body with velocity and ground state.*
@@ -293,7 +293,8 @@
   - Method `.box()`
 - `class CharacterController` - *Resolve horizontal wish velocity and gravity against static AABBs.*
   - Method `.__post_init__()`
-  - Method `.step(body, wish_velocity, dt, colliders)` - *Advance one step; horizontal speed is the wish velocity, vertical is body velocity.*
+  - Method `.step(body, wish_velocity, dt, colliders, platform_velocity)` - *Advance one step; horizontal speed is the wish velocity, vertical is body velocity.*
+  - Method `._try_step_up(position, half, amount_x, amount_z, colliders)`
   - Method `._move_axis(position, half, axis, amount, colliders)`
 
 **Functions:**
@@ -1525,7 +1526,7 @@
 ### [`tests/test_character.py`](tests/test_character.py)
 > *Tests for the AABB character controller.*
 
-**Size**: `60` lines (`2475` bytes)
+**Size**: `125` lines (`5688` bytes)
 
 **Classes:**
 - `class CharacterControllerTest`
@@ -1534,6 +1535,11 @@
   - Method `.test_character_stops_at_a_wall_without_tunneling()`
   - Method `.test_jump_leaves_the_ground()`
   - Method `.test_character_rejects_invalid_configuration_and_step()`
+  - Method `.test_character_steps_onto_a_low_step()`
+  - Method `.test_character_stops_at_a_tall_step()`
+  - Method `.test_platform_carry_pushes_out_of_a_wall()`
+  - Method `.test_platform_carry_off_a_ledge_then_falls()`
+  - Method `.test_character_steps_are_deterministic()`
 
 ---
 

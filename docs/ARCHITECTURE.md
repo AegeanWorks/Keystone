@@ -204,7 +204,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - A game's optional `draw_ui(canvas, state)` contributes pixels to the same capture.
 - `compare_reports()` detects UI label/button changes when `ui` metadata is present.
 - `SpatialGrid` returns exact overlapping proxies after updates/removals, without duplicates.
-- `CharacterController` rests on a floor, stops at walls and leaves the ground on a jump.
+- `CharacterController` rests on a floor, stops at walls, leaves the ground on a jump, steps onto low stairs and rides caller-supplied platform velocity with swept pushout.
 - `TriggerTracker` reports sorted enter, stay and exit sets; `raycast()` filters candidates and returns the nearest hit.
 - `Scene` assigns unique IDs, preserves them across reparenting and rejects duplicate explicit IDs.
 - `Scene.query()`/`find()` filter by name, tag, layer and component; `find_by_id()` resolves an ID.
