@@ -45,6 +45,17 @@ class PhysicsTest(unittest.TestCase):
         sphere = Sphere(Vec3(10, 0, 0), 0.5)
         self.assertEqual(resolve_sphere_aabb(sphere, box), sphere.center)
 
+    def test_pushout_lands_exactly_outside_the_face(self):
+        box = AABB(Vec3(0, 0, 0), Vec3(1, 1, 1))
+        pushed = resolve_sphere_aabb(Sphere(Vec3(1.5, 0, 0), 0.6), box)
+        self.assertAlmostEqual(pushed.x, 1.6)
+        self.assertAlmostEqual(pushed.y, 0.0)
+        self.assertAlmostEqual(pushed.z, 0.0)
+        pushed = resolve_sphere_aabb(Sphere(Vec3(0.5, 0, 0), 0.5), box)
+        self.assertAlmostEqual(pushed.x, 1.5)
+        pushed = resolve_sphere_aabb(Sphere(Vec3(0, 0.5, 0), 0.5), box)
+        self.assertAlmostEqual(pushed.y, 1.5)
+
     def test_aabb_helpers_are_consistent_with_overlap(self):
         box = AABB(Vec3(0, 0, 0), Vec3(1, 2, 3))
         self.assertEqual(box.low(), Vec3(-1, -2, -3))

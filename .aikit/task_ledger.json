@@ -1,54 +1,16 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-playtester-v1",
-    "last_phase": "phase 4",
+    "task_id": "keystone-audit-waves-0-30-v1",
+    "last_phase": "in_progress",
     "active_phase": 4,
     "status": "in_progress",
-    "updated_at": 1793658112.1060724,
-    "owner": "kilo:playtester",
-    "started_by": "kilo:playtester",
+    "updated_at": 1793722642.2562025,
+    "owner": "kilo:audit",
+    "started_by": "kilo:audit",
     "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-material-graphs-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/4] Integration: exported MaterialGraph and MaterialGraphNode from keystone, README tree, ARCHITECTURE system row/roadmap, ADR-028, version 0.23.0; 235 tests, ruff clean, 6/6 gates; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793440408.160761,
-      "timestamp_str": "2026-10-31 12:53:28",
-      "agent": "opencode:keystone"
-    },
-    {
-      "task_id": "keystone-material-graphs-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-material-graphs-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793440433.577631,
-      "timestamp_str": "2026-10-31 12:53:53",
-      "agent": "opencode:keystone"
-    },
-    {
-      "task_id": "keystone-gltf-import-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/4] Plan dependency-free glTF 2.0 import: package with io, textures, materials, meshes, scene and loader modules; buffers, accessors, meshes, PBR materials, PNG textures, node/scene hierarchy, TRS and matrix transforms; tests, docs and ADR-029",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793441352.8092163,
-      "timestamp_str": "2026-10-31 13:09:12",
-      "agent": "opencode:keystone",
-      "impact_assessment": {
-        "why": "Keystone could load OBJ and PNG assets but had no path for modern glTF scenes, forcing asset conversion or hand-built meshes.",
-        "benefits": "Games and AI clients can import glTF 2.0 scenes, meshes, materials and textures without new dependencies or OpenGL, with optional AssetRegistry registration.",
-        "risks": "contract: new public keystone.gltf package plus GltfImport/load_gltf exports and version 0.24.0, no report or web schema change; dependency: stdlib plus existing geometry, math3d, scene and texture modules only; concurrency: pure import with no shared state; state: no persisted files, inputs are read-only",
-        "mitigation": "Failing-first tests for triangle meshes, materials, translation, files, version validation, missing positions, embedded PNG textures, external buffers and registry registration; full 6/6 project gate before delivery"
-      }
-    },
     {
       "task_id": "keystone-gltf-import-v1",
       "phase": "phase 3",
@@ -270,6 +232,46 @@
       "timestamp": 1793658112.1060724,
       "timestamp_str": "2026-11-03 01:21:52",
       "agent": "kilo:playtester"
+    },
+    {
+      "task_id": "keystone-audit-waves-0-30-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/2] Audit waves 0-30 (commits 1-30): survey log plus diffstat, verify CC-029 25-vs-28 absent in keystone, boundary-proof resolve_sphere_aabb pushout drift",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793722551.6562421,
+      "timestamp_str": "2026-11-03 19:15:51",
+      "agent": "kilo:audit",
+      "impact_assessment": {
+        "why": "First-30 audit found surviving pushout position bug in physics.py while CC-029 threshold does not reproduce in keystone",
+        "benefits": "Pushout contract becomes exact and boundary-covered; audit drops unverifiable cross-project claim",
+        "risks": "contract: physics-only position fix plus additive exact tests; dependency: none; concurrency: none; state: no save change",
+        "mitigation": "Failing-first exact pushout tests for exterior and interior cases, then fix, then full gates"
+      },
+      "plan_digest": "9d55833341b7796de3a510f98042f3935352c001b7eec0b6b1418d07c09f731d"
+    },
+    {
+      "task_id": "keystone-playtester-v1",
+      "phase": "superseded",
+      "phase_num": 4,
+      "description": "Superseded by 'keystone-audit-waves-0-30-v1' without --complete or --reset",
+      "status": "superseded",
+      "timestamp": 1793722551.6562421,
+      "timestamp_str": "2026-11-03 19:15:51",
+      "agent": "kilo:audit",
+      "continued_from": "kilo:playtester"
+    },
+    {
+      "task_id": "keystone-audit-waves-0-30-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/2] Pushout fix delivered: resolve_sphere_aabb targets low-r/high+r with minimal displacement, 3 exact boundary tests, 358 tests ruff clean 6/6 gates; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793722642.2562025,
+      "timestamp_str": "2026-11-03 19:17:22",
+      "agent": "kilo:audit"
     }
   ]
 }

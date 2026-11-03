@@ -147,12 +147,14 @@ def resolve_sphere_aabb(sphere: Sphere, box: AABB) -> Vec3:
         return sphere.center
     low = Vec3(box.center.x - box.half_extents.x, box.center.y - box.half_extents.y, box.center.z - box.half_extents.z)
     high = Vec3(box.center.x + box.half_extents.x, box.center.y + box.half_extents.y, box.center.z + box.half_extents.z)
+    center = sphere.center
+    radius = sphere.radius
     candidates = (
-        (abs(sphere.center.x - low.x), Vec3(sphere.center.x - (low.x - sphere.radius), sphere.center.y, sphere.center.z)),
-        (abs(high.x - sphere.center.x), Vec3(sphere.center.x + (high.x + sphere.radius), sphere.center.y, sphere.center.z)),
-        (abs(sphere.center.y - low.y), Vec3(sphere.center.x, sphere.center.y - (low.y - sphere.radius), sphere.center.z)),
-        (abs(high.y - sphere.center.y), Vec3(sphere.center.x, sphere.center.y + (high.y + sphere.radius), sphere.center.z)),
-        (abs(sphere.center.z - low.z), Vec3(sphere.center.x, sphere.center.y, sphere.center.z - (low.z - sphere.radius))),
-        (abs(high.z - sphere.center.z), Vec3(sphere.center.x, sphere.center.y, sphere.center.z + (high.z + sphere.radius))),
+        (abs((low.x - radius) - center.x), Vec3(low.x - radius, center.y, center.z)),
+        (abs((high.x + radius) - center.x), Vec3(high.x + radius, center.y, center.z)),
+        (abs((low.y - radius) - center.y), Vec3(center.x, low.y - radius, center.z)),
+        (abs((high.y + radius) - center.y), Vec3(center.x, high.y + radius, center.z)),
+        (abs((low.z - radius) - center.z), Vec3(center.x, center.y, low.z - radius)),
+        (abs((high.z + radius) - center.z), Vec3(center.x, center.y, high.z + radius)),
     )
     return min(candidates, key=lambda item: item[0])[1]

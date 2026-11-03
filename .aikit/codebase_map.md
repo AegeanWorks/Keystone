@@ -9,8 +9,8 @@
 - **Total Python Modules**: `100`
 - **Total Classes**: `137`
 - **Total Top-Level Functions**: `173`
-- **Total Class Methods**: `735`
-- **Total Source Lines**: `13924`
+- **Total Class Methods**: `736`
+- **Total Source Lines**: `13937`
 
 ---
 
@@ -745,7 +745,7 @@
 ### [`keystone/physics.py`](keystone/physics.py)
 > *Generic collision primitives and ray queries for the engine core.*
 
-**Size**: `158` lines (`5921` bytes)
+**Size**: `160` lines (`5753` bytes)
 
 **Classes:**
 - `class Ray`
@@ -1678,7 +1678,7 @@
 ### [`tests/test_physics.py`](tests/test_physics.py)
 > *Tests for generic ray and collision primitives.*
 
-**Size**: `77` lines (`2972` bytes)
+**Size**: `88` lines (`3527` bytes)
 
 **Classes:**
 - `class PhysicsTest`
@@ -1687,6 +1687,7 @@
   - Method `.test_ray_validation()`
   - Method `.test_overlap_and_sphere_pushout()`
   - Method `.test_non_overlapping_sphere_is_unchanged()`
+  - Method `.test_pushout_lands_exactly_outside_the_face()`
   - Method `.test_aabb_helpers_are_consistent_with_overlap()`
   - Method `.test_raycast_returns_the_nearest_hit()`
   - Method `.test_raycast_filter_can_skip_candidates()`
