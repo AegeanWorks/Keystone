@@ -63,7 +63,7 @@ class ShadowContractsTest(unittest.TestCase):
     def test_report_includes_shadow_metadata_and_hash(self):
         scene = CubeDemo().build_scene()
         report = analyze_frame(scene, bytes((0, 0, 0, 255)) * 4, 2, 2)
-        self.assertEqual(report["schema"], 6)
+        self.assertEqual(report["schema"], 7)
         self.assertEqual(report["scene"]["shadows"], {"enabled": True, "size": 1024})
         scene.shadow = ShadowSettings(enabled=False)
         off = analyze_frame(scene, bytes((0, 0, 0, 255)) * 4, 2, 2)
@@ -93,7 +93,7 @@ class ShadowContractsTest(unittest.TestCase):
         legacy["scene"].pop("shadows", None)
         diff = compare_reports(legacy, report)
         self.assertTrue(diff["same_shadows"])
-        self.assertEqual(diff["schema"], 6)
+        self.assertEqual(diff["schema"], 7)
 
     def test_snapshot_round_trips_shadow_flag(self):
         scene = CubeDemo().build_scene()

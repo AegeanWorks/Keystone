@@ -66,7 +66,14 @@ uniform mat4 u_light_vp;
 uniform sampler2D u_shadow_map;
 uniform float u_shadow_bias;
 uniform float u_shadows_enabled;
+uniform float u_srgb_enabled;
 out vec4 frag_color;
+vec3 srgb_to_linear(vec3 c) {
+    return pow(max(c, vec3(0.0)), vec3(2.2));
+}
+vec3 linear_to_srgb(vec3 c) {
+    return pow(max(c, vec3(0.0)), vec3(1.0 / 2.2));
+}
 float shadow_factor(vec3 world_pos) {
     if (u_shadows_enabled < 0.5) {
         return 1.0;
@@ -107,23 +114,40 @@ void main() {
     if (u_has_texture > 0.5) {
         base_color *= texture(u_texture, v_uv).rgb;
     }
+    vec3 ambient = u_ambient;
+    vec3 light_color = u_light_color;
+    vec3 emissive = u_emissive;
+    vec3 fog_color = u_fog_color;
+    vec3 point_color = u_point_color;
+    if (u_srgb_enabled > 0.5) {
+        base_color = srgb_to_linear(base_color);
+        ambient = srgb_to_linear(ambient);
+        light_color = srgb_to_linear(light_color);
+        emissive = srgb_to_linear(emissive);
+        fog_color = srgb_to_linear(fog_color);
+        point_color = srgb_to_linear(point_color);
+    }
     vec3 diffuse_color = base_color * (1.0 - u_metallic * 0.8);
     float shadow = shadow_factor(v_world);
-    vec3 direct = (diffuse_color * u_light_color * diffuse + u_light_color * spec_strength) * shadow;
-    vec3 color = diffuse_color * u_ambient + direct + u_emissive;
+    vec3 direct = (diffuse_color * light_color * diffuse + light_color * spec_strength) * shadow;
+    vec3 color = diffuse_color * ambient + direct + emissive;
     if (u_point_radius > 0.0) {
         vec3 to_point = u_point_pos - v_world;
         float point_distance = length(to_point);
         float attenuation = max(0.0, 1.0 - point_distance / u_point_radius);
         float point_diffuse = max(dot(normal, normalize(to_point)), 0.0);
-        color += diffuse_color * u_point_color * attenuation * attenuation * point_diffuse;
+        color += diffuse_color * point_color * attenuation * attenuation * point_diffuse;
     }
     if (u_checker_scale > 0.0) {
         float tile = mod(floor(v_world.x * u_checker_scale) + floor(v_world.z * u_checker_scale), 2.0);
         color *= mix(0.62, 1.0, tile);
     }
     float fog = 1.0 - exp(-u_fog_density * u_fog_density * distance * distance);
-    frag_color = vec4(mix(color, u_fog_color, clamp(fog, 0.0, 1.0)), 1.0);
+    color = mix(color, fog_color, clamp(fog, 0.0, 1.0));
+    if (u_srgb_enabled > 0.5) {
+        color = linear_to_srgb(color);
+    }
+    frag_color = vec4(color, 1.0);
 }
 """
 
@@ -169,9 +193,20 @@ SKY_FRAGMENT_SHADER = """#version 330 core
 in vec2 v_uv;
 uniform vec3 u_sky_top;
 uniform vec3 u_sky_bottom;
+uniform float u_srgb_enabled;
 out vec4 frag_color;
 void main() {
-    frag_color = vec4(mix(u_sky_bottom, u_sky_top, smoothstep(0.0, 1.0, v_uv.y)), 1.0);
+    vec3 top = u_sky_top;
+    vec3 bottom = u_sky_bottom;
+    if (u_srgb_enabled > 0.5) {
+        top = pow(max(top, vec3(0.0)), vec3(2.2));
+        bottom = pow(max(bottom, vec3(0.0)), vec3(2.2));
+    }
+    vec3 color = mix(bottom, top, smoothstep(0.0, 1.0, v_uv.y));
+    if (u_srgb_enabled > 0.5) {
+        color = pow(max(color, vec3(0.0)), vec3(1.0 / 2.2));
+    }
+    frag_color = vec4(color, 1.0);
 }
 """
 
@@ -245,6 +280,7 @@ class Renderer:
             "shadow_calls": 0,
             "shadow_map_size": SHADOW_MAP_SIZE,
             "shadows_enabled": 0,
+            "srgb_enabled": 0,
         }
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glDepthFunc(GL.GL_LESS)
@@ -273,12 +309,13 @@ class Renderer:
             self._textures[id(texture)] = cached
         return cached[1]
 
-    def _draw_sky(self, scene: Scene) -> None:
+    def _draw_sky(self, scene: Scene, srgb_on: bool = True) -> None:
         GL.glDisable(GL.GL_DEPTH_TEST)
         GL.glDepthMask(GL.GL_FALSE)
         self._sky_program.use()
         self._sky_program.set_vec3("u_sky_top", scene.sky)
         self._sky_program.set_vec3("u_sky_bottom", scene.background)
+        self._sky_program.set_float("u_srgb_enabled", 1.0 if srgb_on else 0.0)
         GL.glBindVertexArray(self._sky_vao)
         GL.glDrawArrays(GL.GL_TRIANGLES, 0, 3)
         GL.glBindVertexArray(0)
@@ -289,6 +326,10 @@ class Renderer:
         shadow = getattr(scene, "shadow", None)
         return bool(getattr(shadow, "enabled", True))
 
+    def _srgb_requested(self, scene: Scene) -> bool:
+        color = getattr(scene, "color", None)
+        return bool(getattr(color, "enabled", True))
+
     def _apply_shared(
         self,
         program: ShaderProgram,
@@ -296,6 +337,7 @@ class Renderer:
         view_projection: Mat4,
         light_vp: Mat4,
         shadows_on: bool,
+        srgb_on: bool = True,
     ) -> None:
         camera = scene.camera
         light = scene.light
@@ -311,6 +353,7 @@ class Renderer:
         program.set_mat4("u_light_vp", light_vp)
         program.set_float("u_shadow_bias", SHADOW_BIAS)
         program.set_float("u_shadows_enabled", 1.0 if shadows_on else 0.0)
+        program.set_float("u_srgb_enabled", 1.0 if srgb_on else 0.0)
         program.set_int("u_shadow_map", 1)
         point = scene.point_light
         if point is None:
@@ -376,6 +419,7 @@ class Renderer:
                 "Fix: update the GPU driver, or re-run with --no-shadows."
             )
         shadows_on = bool(requested and self._shadow is not None)
+        srgb_on = self._srgb_requested(scene)
         light_vp = light_vp_for(scene.light)
         if shadows_on:
             shadow_calls = self._render_shadow_pass(scene, light_vp)
@@ -384,11 +428,11 @@ class Renderer:
         background = scene.background
         GL.glClearColor(background.x, background.y, background.z, 1.0)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-        self._draw_sky(scene)
+        self._draw_sky(scene, srgb_on)
         camera = scene.camera
         view_projection = camera.view_projection(self.width / self.height)
-        self._apply_shared(self._program, scene, view_projection, light_vp, shadows_on)
-        self._apply_shared(self._inst_program, scene, view_projection, light_vp, shadows_on)
+        self._apply_shared(self._program, scene, view_projection, light_vp, shadows_on, srgb_on)
+        self._apply_shared(self._inst_program, scene, view_projection, light_vp, shadows_on, srgb_on)
         for group in group_instances(scene):
             mesh = group["mesh"]
             if not isinstance(mesh, MeshData):
@@ -427,6 +471,7 @@ class Renderer:
             "shadow_calls": shadow_calls,
             "shadow_map_size": SHADOW_MAP_SIZE if shadows_on else 0,
             "shadows_enabled": 1 if shadows_on else 0,
+            "srgb_enabled": 1 if srgb_on else 0,
         }
         return dict(self.last_stats)
 

@@ -168,6 +168,7 @@ class GameSession:
                 except (AttributeError, TypeError, ValueError):
                     assets = None
             shadow = getattr(scene, "shadow", None)
+            color = getattr(scene, "color", None)
             return {
                 "schema": 1,
                 "game": self.name,
@@ -181,6 +182,7 @@ class GameSession:
                     "enabled": bool(getattr(shadow, "enabled", True)),
                     "size": 1024,
                 },
+                "color": {"enabled": bool(getattr(color, "enabled", True))},
                 "audio": audio,
                 "animation": animation,
                 "particles": particles,

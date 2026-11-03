@@ -16,12 +16,13 @@ from keystone.texture import TextureData
 GRID = 8
 
 REPORT_SCHEMA = {
-    "version": 6,
+    "version": 7,
     "fields": {
         "image": ["path", "width", "height", "rgba_sha256", "png_sha256"],
         "stats": ["mean_rgb", "mean_luma", "content_pixels", "content_ratio", "content_bbox", "dominant_colors", "grid_luma"],
-        "scene": ["camera", "node_count", "nodes", "shadows"],
+        "scene": ["camera", "node_count", "nodes", "shadows", "color"],
         "shadows": ["enabled", "size"],
+        "color": ["enabled"],
         "node": ["id", "name", "parent", "parent_id", "visible", "tags", "layer", "components", "world", "screen", "bbox", "triangles", "material"],
         "material": ["color", "specular", "shininess", "checker_scale", "metallic", "roughness", "emissive", "texture"],
         "texture": ["name", "width", "height", "sha256"],
@@ -38,6 +39,7 @@ REPORT_SCHEMA = {
         "schema-3 adds material and texture metadata; schema-4 adds node id, tags, layer and components.",
         "schema-5 adds PBR material fields (metallic, roughness, emissive).",
         "schema-6 adds scene shadows metadata (enabled, size).",
+        "schema-7 adds scene color metadata (sRGB pipeline enabled).",
         "schema-1/2/3 reports remain comparable; nodes are keyed by id when both reports are schema 4 or newer.",
         "ui labels and button rects are presentation metadata in top-left pixels.",
     ],
@@ -213,8 +215,10 @@ def analyze_frame(
         "enabled": bool(getattr(shadow, "enabled", True)),
         "size": 1024 if bool(getattr(shadow, "enabled", True)) else 0,
     }
+    color_setting = getattr(scene, "color", None)
+    color = {"enabled": bool(getattr(color_setting, "enabled", True))}
     report = {
-        "schema": 6,
+        "schema": 7,
         "image": image,
         "stats": stats,
         "scene": {
@@ -229,10 +233,11 @@ def analyze_frame(
             "node_count": len(nodes),
             "nodes": nodes,
             "shadows": shadows,
+            "color": color,
         },
         "ui": ui,
     }
-    hashed = {"image": image, "stats": stats, "nodes": nodes, "shadows": shadows}
+    hashed = {"image": image, "stats": stats, "nodes": nodes, "shadows": shadows, "color": color}
     if ui is not None:
         hashed["ui"] = ui
     report["hash"] = stable_hash(hashed)
@@ -280,10 +285,18 @@ def _shadows_of(report: dict) -> dict | None:
     return None
 
 
+def _color_of(report: dict) -> dict | None:
+    scene = report.get("scene", {})
+    color = scene.get("color") if isinstance(scene, dict) else None
+    if isinstance(color, dict):
+        return {"enabled": bool(color.get("enabled", True))}
+    return None
+
+
 def compare_reports(before: dict, after: dict) -> dict:
-    """Compare schema-1/2/3/4/5/6 frame reports for AI-driven regression checks."""
-    if before.get("schema") not in (1, 2, 3, 4, 5, 6) or after.get("schema") not in (1, 2, 3, 4, 5, 6):
-        raise ValueError("both reports must use schema 1, 2, 3, 4, 5 or 6")
+    """Compare schema-1/2/3/4/5/6/7 frame reports for AI-driven regression checks."""
+    if before.get("schema") not in (1, 2, 3, 4, 5, 6, 7) or after.get("schema") not in (1, 2, 3, 4, 5, 6, 7):
+        raise ValueError("both reports must use schema 1, 2, 3, 4, 5, 6 or 7")
     first_stats = before["stats"]
     second_stats = after["stats"]
     key = "id" if before.get("schema", 0) >= 4 and after.get("schema", 0) >= 4 else "name"
@@ -330,13 +343,25 @@ def compare_reports(before: dict, after: dict) -> dict:
         same_shadows = before_shadows == after_shadows
         shown_before = before_shadows
         shown_after = after_shadows
+    before_color = _color_of(before)
+    after_color = _color_of(after)
+    if before_color is None or after_color is None:
+        same_color = True
+        color_before = before_color or {"enabled": True}
+        color_after = after_color or {"enabled": True}
+    else:
+        same_color = before_color == after_color
+        color_before = before_color
+        color_after = after_color
     return {
-        "schema": 6,
+        "schema": 7,
         "same_image": before["image"]["rgba_sha256"] == after["image"]["rgba_sha256"],
         "same_report": before.get("hash") == after.get("hash"),
         "same_ui": ui_diff["same"],
         "same_shadows": same_shadows,
         "shadows": {"before": shown_before, "after": shown_after},
+        "same_color": same_color,
+        "color": {"before": color_before, "after": color_after},
         "mean_luma_delta": round(second_stats["mean_luma"] - first_stats["mean_luma"], 3),
         "content_ratio_delta": round(second_stats["content_ratio"] - first_stats["content_ratio"], 4),
         "content_bbox": {"before": first_stats["content_bbox"], "after": second_stats["content_bbox"]},

@@ -129,7 +129,7 @@ class WebServerTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(payload["game"], "cube-demo")
         self.assertEqual(payload["capabilities"]["web"]["api_version"], 1)
-        self.assertEqual(payload["capabilities"]["report_schema"]["version"], 6)
+        self.assertEqual(payload["capabilities"]["report_schema"]["version"], 7)
 
     def test_scene_endpoint_returns_the_scene_document(self):
         status, _, payload = self._json("/api/scene")

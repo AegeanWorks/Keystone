@@ -165,7 +165,7 @@ class EngineTest(unittest.TestCase):
                 code = main(["--headless", "--frames", "1", "--size", "160x120", "--ui", "--report", str(report)])
             self.assertEqual(code, 0)
             payload = json.loads(report.read_text(encoding="utf-8"))
-            self.assertEqual(payload["schema"], 6)
+            self.assertEqual(payload["schema"], 7)
             self.assertTrue(payload["ui"]["visible"])
             self.assertIn("KEYSTONE", [label["text"] for label in payload["ui"]["labels"]])
 
@@ -290,7 +290,7 @@ class EngineTest(unittest.TestCase):
             engine.capture(image, report)
             self.assertTrue(image.exists())
             payload = json.loads(report.read_text(encoding="utf-8"))
-            self.assertEqual(payload["schema"], 6)
+            self.assertEqual(payload["schema"], 7)
             self.assertIsNone(payload["ui"])
             self.assertEqual(payload["image"]["path"], Path(image).as_posix())
             self.assertGreater(payload["stats"]["mean_luma"], 0.0)

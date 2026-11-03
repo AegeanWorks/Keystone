@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `102`
-- **Total Classes**: `141`
-- **Total Top-Level Functions**: `178`
-- **Total Class Methods**: `757`
-- **Total Source Lines**: `14416`
+- **Total Python Modules**: `103`
+- **Total Classes**: `143`
+- **Total Top-Level Functions**: `179`
+- **Total Class Methods**: `765`
+- **Total Source Lines**: `14604`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `135` lines (`2935` bytes)
+**Size**: `136` lines (`2934` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `342` lines (`18228` bytes)
+**Size**: `354` lines (`19104` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -61,7 +61,7 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `394` lines (`16563` bytes)
+**Size**: `419` lines (`17598` bytes)
 
 **Functions:**
 - `def _rows(pixels, width, height, flip)`
@@ -71,7 +71,8 @@
 - `def analyze_frame(scene, pixels, width, height, image_path, ui)`
 - `def _compare_ui(before, after)`
 - `def _shadows_of(report)`
-- `def compare_reports(before, after)` - *Compare schema-1/2/3/4/5/6 frame reports for AI-driven regression checks.*
+- `def _color_of(report)`
+- `def compare_reports(before, after)` - *Compare schema-1/2/3/4/5/6/7 frame reports for AI-driven regression checks.*
 - `def diff_images(before, after, output, threshold)` - *Write a visual diff PNG and return changed-pixel statistics.*
 - `def write_report(path, report)`
 
@@ -479,7 +480,7 @@
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
 > *Blinn-Phong forward renderer with fog, shadows and screenshot readback.*
 
-**Size**: `456` lines (`17274` bytes)
+**Size**: `501` lines (`18897` bytes)
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
@@ -487,9 +488,10 @@
   - Method `.resize(width, height)`
   - Method `._gpu_mesh(mesh)`
   - Method `._gpu_texture(texture)`
-  - Method `._draw_sky(scene)`
+  - Method `._draw_sky(scene, srgb_on)`
   - Method `._shadows_requested(scene)`
-  - Method `._apply_shared(program, scene, view_projection, light_vp, shadows_on)`
+  - Method `._srgb_requested(scene)`
+  - Method `._apply_shared(program, scene, view_projection, light_vp, shadows_on, srgb_on)`
   - Method `._apply_material(program, material)`
   - Method `._render_shadow_pass(scene, light_vp)`
   - Method `.render(scene)`
@@ -836,7 +838,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `88` lines (`3257` bytes)
+**Size**: `89` lines (`3283` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -920,7 +922,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `275` lines (`9367` bytes)
+**Size**: `283` lines (`9598` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -948,6 +950,7 @@
 - `class PointLight` - *A local light with quadratic falloff, used for torches and lamps.*
   - Method `.__post_init__()`
 - `class ShadowSettings` - *Deterministic directional shadow-map toggle (fixed 1024 map, bias 0.005).*
+- `class ColorSettings` - *Deterministic sRGB-correct linear pipeline toggle (in-shader, pow 2.2).*
 - `class Scene` - *Root node, identity allocation, queries, camera, lights and atmosphere.*
   - Method `.add(node)`
   - Method `.traverse()`
@@ -965,7 +968,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `286` lines (`11859` bytes)
+**Size**: `299` lines (`12256` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)`
@@ -1149,7 +1152,7 @@
 ### [`keystone/web/scene.py`](keystone/web/scene.py)
 > *Export a game-agnostic scene as a JSON document for the browser viewer.*
 
-**Size**: `137` lines (`4947` bytes)
+**Size**: `139` lines (`5058` bytes)
 
 **Functions:**
 - `def _floats(values)`
@@ -1169,7 +1172,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `397` lines (`17554` bytes)
+**Size**: `399` lines (`17681` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1257,7 +1260,7 @@
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
-**Size**: `245` lines (`10164` bytes)
+**Size**: `245` lines (`10167` bytes)
 
 **Classes:**
 - `class Health`
@@ -1769,7 +1772,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `56` lines (`2150` bytes)
+**Size**: `57` lines (`2207` bytes)
 
 **Classes:**
 - `class PluginTest`
@@ -1952,6 +1955,23 @@
   - Method `.test_snapshot_round_trips_shadow_flag()`
   - Method `.test_scene_document_and_inspector_expose_shadows()`
   - Method `.test_shadow_light_helper_accepts_directional_light()`
+
+---
+
+### [`tests/test_srgb.py`](tests/test_srgb.py)
+> *Tests for the deterministic sRGB-correct linear pipeline (in-shader, pow 2.2).*
+
+**Size**: `78` lines (`3289` bytes)
+
+**Classes:**
+- `class SrgbContractsTest`
+  - Method `.test_color_settings_default_enabled()`
+  - Method `.test_describe_reports_srgb()`
+  - Method `.test_report_includes_color_metadata_and_hash()`
+  - Method `.test_compare_reports_diffs_color()`
+  - Method `.test_compare_accepts_legacy_without_color()`
+  - Method `.test_snapshot_round_trips_color_flag()`
+  - Method `.test_scene_document_and_snapshot_expose_color()`
 
 ---
 

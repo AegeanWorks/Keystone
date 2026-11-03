@@ -49,6 +49,7 @@ from keystone.playtest import (
 )
 from keystone.plugin import GameModule
 from keystone.scene import (
+    ColorSettings,
     DirectionalLight,
     Node,
     PointLight,
@@ -57,9 +58,8 @@ from keystone.scene import (
     Transform,
 )
 from keystone.scene_snapshot import scene_from_dict, scene_to_dict
-from keystone.texture import TextureData
 
-__version__ = "0.34.0"
+__version__ = "0.35.0"
 __all__ = [
     "PLAYTEST_REPORT_SCHEMA",
     "SAMPLE_RATE",
@@ -71,6 +71,7 @@ __all__ = [
     "AudioClip",
     "AuditTrail",
     "BotPolicy",
+    "ColorSettings",
     "DirectionalLight",
     "Emitter",
     "Engine",

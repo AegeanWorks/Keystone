@@ -251,7 +251,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 
 ## 🚀 Features
 
-- **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth/culling, Blinn-Phong + PBR (metallic, roughness, emissive), directional shadow mapping (fixed 1024 map, PCF, `--shadows/--no-shadows`), vertex colors, fog, sky, point light; draw-call/triangle/shadow stats feed the profiler.
+- **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth/culling, Blinn-Phong + PBR (metallic, roughness, emissive), directional shadows (1024 PCF, `--shadows/--no-shadows`), sRGB linear pipeline (`--srgb/--no-srgb`), vertex colors, fog, sky, point light; draw/triangle/shadow stats feed the profiler.
 - **Scene graph**: named nodes with stable per-scene IDs, tags, layers, optional typed components, local/world transforms, visibility, cycle-safe parenting, linear queries and cached static GPU meshes.
 - **Assets**: immutable `MeshData` with optional UVs and vertex colors, cube/plane/cone/cylinder/sphere primitives, a streaming OBJ loader, and an immutable `TextureData` with PNG and procedural checker sources.
 - **Textured PBR materials**: `Material` keeps Blinn-Phong specular/shininess plus metallic, roughness and emissive channels; `Material.texture` samples an RGBA texture with repeat wrapping and mipmaps; glTF PBR factors and emissive survive import; material graphs add a `pbr` node; the renderer caches one GPU texture per immutable payload.
@@ -427,10 +427,10 @@ keystone/
 │       ├── shader.py         <- GLSL compilation and uniforms
 │       ├── mesh_buffer.py    <- VAO/VBO/EBO upload and drawing
 │       ├── instancing.py     <- deterministic instancing groups
-│       ├── shadow.py         <- shadow map and light VP
+│       ├── shadow.py         <- shadow map
 │       ├── texture_buffer.py <- 2D texture upload, mipmaps and cleanup
 │       ├── ui_renderer.py    <- screen-space alpha-blended UI draw
-│       └── renderer.py       <- forward renderer, sky, lights, shadows, readback
+│       └── renderer.py       <- forward renderer, sky, lights, shadows
 ├── assets/
 │   ├── octahedron.obj        <- generic sample OBJ
 │   ├── engine.png            <- sample frame
@@ -439,8 +439,8 @@ keystone/
 │   ├── social-preview.svg    <- social preview
 │   └── screenshots/          <- approved HUD + console keepers
 ├── docs/
-│   ├── ARCHITECTURE.md       <- core layers, contract and roadmap
-│   └── AI_GUIDE.md           <- discover, simulate, verify, render and compare
+│   ├── ARCHITECTURE.md       <- core layers and contract
+│   └── AI_GUIDE.md           <- discover, simulate and verify
 ├── tests/
 │   ├── test_math3d.py        <- math core
 │   ├── test_scene.py         <- hierarchy, camera and lights
@@ -466,7 +466,8 @@ keystone/
 │   ├── test_gltf.py           <- glTF/GLB import and texture loading
 │   ├── test_history.py        <- bounded undo/redo history
 │   ├── test_instancing.py     <- hardware-instancing groups and draws
-│   ├── test_shadows.py        <- shadow map and contracts
+│   ├── test_shadows.py        <- shadow map
+│   ├── test_srgb.py           <- sRGB pipeline
 │   ├── test_scene_snapshot.py <- versioned scene save/load
 │   ├── test_plugin.py        <- GameModule contract and loader
 │   ├── test_replay.py        <- command log and hashes
@@ -556,7 +557,7 @@ snapshot = history.undo()
 1. ~~Scene identity/ECS.~~ Done in v0.19.0.
 2. ~~Broadphase/character/triggers.~~ Done in v0.21.0.
 3. ~~Assets~~ v0.22.0; ~~material graphs~~ v0.23.0; ~~glTF~~ v0.24.0; ~~GLB~~ v0.26.0; ~~PBR core~~ v0.27.0.
-4. Renderer PBR/emissive and schema 2 in v0.27.0; batch planning in v0.28.0, merge in v0.29.0, ~~GPU instancing~~ in v0.32.0 and ~~directional shadows~~ in v0.34.0; post-processing and sRGB/linear color remain.
+4. Renderer PBR/emissive and schema 2 in v0.27.0; batch planning in v0.28.0, merge in v0.29.0, ~~GPU instancing~~ in v0.32.0, ~~shadows~~ in v0.34.0 and ~~sRGB~~ in v0.35.0; post-processing remains.
 5. ~~Input persistence~~ v0.27.0; ~~contexts/audio mixer~~ v0.28.0; live playback out of scope.
 6. ~~Animation core~~ in v0.29.0; ~~blending/events~~ in v0.30.0; skinning remains; ~~CPU particles~~ in v0.31.0; GPU sprites/collision remain.
 6. ~~Schema versioning~~ v0.25.0; ~~replay runner~~ v0.30.0.
