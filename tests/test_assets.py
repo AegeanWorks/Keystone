@@ -87,12 +87,43 @@ class AssetRegistryTest(unittest.TestCase):
         self.assertEqual([record.id for record in self.registry.find_by_digest(first.sha256)], ["a", "b"])
 
     def test_texture_and_material_digests_follow_their_content(self):
+        from keystone.math3d import Vec3
+
         texture = TextureData.checker(8, cell=4, name="grid")
         texture_record = self.registry.register("texture.grid", texture)
+        same_pixels = TextureData(4, 16, texture.rgba, name="same-pixels")
+        reshaped_record = self.registry.register("texture.reshaped", same_pixels)
+        self.assertNotEqual(texture_record.sha256, reshaped_record.sha256)
         plain = self.registry.register("material.plain", Material())
         textured = self.registry.register("material.textured", Material(texture=texture))
-        self.assertEqual(texture_record.sha256, texture.sha256())
+        metallic = self.registry.register("material.metallic", Material(metallic=1.0))
+        rough = self.registry.register("material.rough", Material(roughness=0.1))
+        glowing = self.registry.register("material.glowing", Material(emissive=Vec3(1.0, 0.0, 0.0)))
         self.assertNotEqual(plain.sha256, textured.sha256)
+        self.assertNotEqual(plain.sha256, metallic.sha256)
+        self.assertNotEqual(plain.sha256, rough.sha256)
+        self.assertNotEqual(plain.sha256, glowing.sha256)
+
+    def test_mesh_digest_covers_skinning(self):
+        from dataclasses import replace
+
+        from keystone.primitives import cube
+
+        base = cube()
+        count = base.vertex_count()
+        bind = ((1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1),) * 2
+        rigid = replace(
+            base,
+            joints=((0, 1),) * count,
+            weights=((1.0, 0.0),) * count,
+            skin_joints=("j0", "j1"),
+            skin_inverse_bind=bind,
+        )
+        blended = replace(rigid, weights=((0.5, 0.5),) * count)
+        rigid_record = self.registry.register("mesh.rigid", rigid)
+        blended_record = self.registry.register("mesh.blended", blended)
+        self.assertNotEqual(rigid_record.sha256, blended_record.sha256)
+        self.assertEqual(self.registry.duplicates(), ())
 
     def test_dependencies_are_sorted_and_missing_ones_reported(self):
         self.registry.register("texture.grid", TextureData.checker(8))
@@ -122,7 +153,7 @@ class AssetRegistryTest(unittest.TestCase):
         self.assertEqual(document["schema"], 1)
         self.assertEqual([entry["id"] for entry in document["assets"]], ["a.mesh", "b.texture"])
         self.assertEqual(document["assets"][1]["source"], "textures/grid.png")
-        self.assertEqual(document["assets"][1]["sha256"], texture.sha256())
+        self.assertEqual(len(document["assets"][1]["sha256"]), 64)
         self.assertEqual(document["stats"], self.registry.stats())
         json.dumps(document)
 

@@ -441,3 +441,12 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Decision**: Validate duplicate ids in add_child at write time (blank ids still defer to Scene assignment); reject seed/step-shaped documents in load_actions with a --replay pointer; sum voices then clamp once in mix_clips; cap proxies at 100k cells with a finite-bounds check and materialize the cell list before mutating grid state. Six regression tests added.
 - **Consequences**: Hierarchy, script, mix and grid misuse fail at the boundary with actionable messages; mixes are order-independent; enormous proxies raise instead of hanging; 472 tests green, ruff clean, 6/6 aikit gates; simulate hash unchanged. Deferred: unbind-resurrect schema, snapshot missing-asset strictness, hold-last semantics, UI pause-capture semantics, UV-orientation decision, skin oracle purity, sphere pole topology, digest coverage.
 
+
+
+### ADR-052: Cover full material, texture and skin identity in asset digests
+- **Date**: 2026-11-04
+- **Status**: Accepted
+- **Context**: Asset digests feed duplicates() and refresh() change detection, but _digest_material ignored metallic/roughness/emissive, texture digests ignored dimensions (a 2x8 and a 4x4 with identical bytes collided), and _digest_mesh ignored all skinning (joints/weights/names/bind matrices), so variants shared one digest. The parallel claim that refresh() only handles the first record was refuted by reading (it iterates every source) and dropped.
+- **Decision**: Hash metallic/roughness/emissive into material digests, width/height plus pixel sha into texture digests, and joint/weight/skin-joint/bind-matrix groups into mesh digests with length-prefixed packing. Two existing assertions that pinned pixel-only texture digests were updated to the new contract. Four regression tests added (metallic/roughness/emissive divergence, reshaped-texture divergence, skin-weight divergence with no false duplicates).
+- **Consequences**: Content-distinct assets no longer collide in duplicates()/find_by_digest() and refresh() detects their changes; 473 tests green, ruff clean, 6/6 aikit gates; simulate hash unchanged. apply_ui_action resume idempotence kept as-is (idempotent success, no harm reproduced); texture names stay out of digests by content-addressing design.
+

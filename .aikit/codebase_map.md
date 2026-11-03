@@ -9,8 +9,8 @@
 - **Total Python Modules**: `114`
 - **Total Classes**: `162`
 - **Total Top-Level Functions**: `208`
-- **Total Class Methods**: `895`
-- **Total Source Lines**: `17693`
+- **Total Class Methods**: `896`
+- **Total Source Lines**: `17750`
 
 ---
 
@@ -165,7 +165,7 @@
 ### [`keystone/assets.py`](keystone/assets.py)
 > *Game-agnostic asset registry with stable ids, content hashes and dependencies.*
 
-**Size**: `339` lines (`12964` bytes)
+**Size**: `365` lines (`13978` bytes)
 
 **Classes:**
 - `class AssetRecord` - *One registered asset: a stable id, kind, immutable payload and content digest.*
@@ -1483,7 +1483,7 @@
 ### [`tests/test_assets.py`](tests/test_assets.py)
 > *Unit tests for the asset registry: identity, digests and dependencies.*
 
-**Size**: `313` lines (`14484` bytes)
+**Size**: `344` lines (`15932` bytes)
 
 **Classes:**
 - `class AssetRegistryTest`
@@ -1493,6 +1493,7 @@
   - Method `.test_duplicate_id_requires_replace()`
   - Method `.test_digest_is_content_based_and_duplicates_are_reported()`
   - Method `.test_texture_and_material_digests_follow_their_content()`
+  - Method `.test_mesh_digest_covers_skinning()`
   - Method `.test_dependencies_are_sorted_and_missing_ones_reported()`
   - Method `.test_stats_and_describe_are_json_safe()`
   - Method `.test_public_package_exports_the_registry()`
