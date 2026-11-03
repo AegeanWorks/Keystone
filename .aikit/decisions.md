@@ -354,5 +354,12 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Date**: 2026-11-03
 - **Status**: Accepted
 - **Context**: The controller stopped at axis-aligned walls, so stairs blocked movement and platforms could not carry bodies without per-game teleports that bypass swept pushout and fork determinism.
-- **Decision**: Extend frozen `CharacterController` with `slope_rise 0.55`, `slope_run 1.0`, `step_height 0.45` and `step(..., platform_velocity=Vec3())` (defaults preserve all 4-arg call sites). Fixed order: swept platform carry, X, Z, swept step-up probe (headroom, horizontal retry, settle, rise within `slope_rise*(run/slope_run+1)`), gravity Y. No new collider types (stairs, not ramps), no snapshot/report/CLI/web/GPU changes; character stays runtime-only and GL-free.
+- **Decision**: Extend frozen `CharacterController` with `slope_rise 0.55`, `slope_run 1.0`, `step_height 0.45` and `step(..., platform_velocity=None→zero)` (defaults preserve all 4-arg call sites). Fixed order: swept platform carry, X, Z, swept step-up probe (headroom, horizontal retry, settle, rise within `slope_rise*(run/slope_run+1)`), gravity Y. No new collider types (stairs, not ramps), no snapshot/report/CLI/web/GPU changes; character stays runtime-only and GL-free.
 - **Consequences**: Low stairs climb, tall walls stop, carry respects walls and ledges; `--simulate --frames 120` hash `772cac5232a0947b8f6d1914a5cf0cde` unchanged (CubeDemo never calls `step`). Perf budget: no-hit path unchanged, hit path ≤2 extra sweeps, `<=1.10x` over 10k steps/32 AABBs manual. Capsules, solvers, ladders remain future.
+
+### ADR-042: Add deterministic particle-vs-AABB collision
+- **Date**: 2026-11-03
+- **Status**: Accepted
+- **Context**: Particles fell through floors and tunneled walls, so every game hand-rolled FX collision with divergent results.
+- **Decision**: Extend `ParticleSystem.step` with `step(dt, colliders=())` and a swept point-vs-AABB pass (X→Z→Y, caller list order, `POINT_SKIN 1e-9`), response stop-at-surface with hit-axis velocity zeroed and lifetime continuing; zero colliders runs the legacy code verbatim. No `Emitter`/`Particle`/`particles_report` changes (both schema 1 frozen), no snapshot/CLI/web/GPU changes; colliders are per-step args, never state.
+- **Consequences**: Sparks rest on floors, fast shots stop at walls without tunneling; `--simulate --frames 120` hash `772cac5232a0947b8f6d1914a5cf0cde` unchanged (CubeDemo uses no particles). Perf budget (measured, steady-state medians): `<=2.0x` stress (1k particles × 8 AABBs, observed ~1.8x) and `<=1.8x` typical (200 × 2, observed ~1.7x); zero-collider path is byte-identical legacy code. Bounce, friction, kill modes, GPU sprites and broadphase acceleration remain future.

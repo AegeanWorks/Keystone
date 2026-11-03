@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `108`
 - **Total Classes**: `151`
-- **Total Top-Level Functions**: `187`
-- **Total Class Methods**: `813`
-- **Total Source Lines**: `15669`
+- **Total Top-Level Functions**: `188`
+- **Total Class Methods**: `819`
+- **Total Source Lines**: `15836`
 
 ---
 
@@ -797,7 +797,7 @@
 ### [`keystone/particles.py`](keystone/particles.py)
 > *Deterministic, game-agnostic CPU particles: emitters, systems and reports.*
 
-**Size**: `216` lines (`8552` bytes)
+**Size**: `311` lines (`12294` bytes)
 
 **Classes:**
 - `class Particle` - *One live particle: position, velocity, age, lifetime and size.*
@@ -812,12 +812,14 @@
   - Method `.__post_init__()`
   - Method `.add(emitter)`
   - Method `.burst(emitter_name, count, origin)` - *Emit count particles immediately; returns the number actually added.*
-  - Method `.step(dt)` - *Advance all particles by dt; returns the live count afterwards.*
+  - Method `.step(dt, colliders)` - *Advance all particles by dt; returns the live count afterwards.*
+  - Method `._step_free(dt)`
   - Method `.alive_count()`
   - Method `.clear()`
   - Method `._emitter_for(particle)`
 
 **Functions:**
+- `def _move_point_flat(px, py, pz, axis, amount, flat)` - *Float-only swept point move; axis is 0/1/2 for x/y/z.*
 - `def particles_report(system)`
 
 ---
@@ -1759,7 +1761,7 @@
 ### [`tests/test_particles.py`](tests/test_particles.py)
 > *Tests for the deterministic particle core.*
 
-**Size**: `101` lines (`3876` bytes)
+**Size**: `173` lines (`6797` bytes)
 
 **Classes:**
 - `class EmitterTest`
@@ -1774,6 +1776,11 @@
   - Method `.test_errors()`
   - Method `.test_multi_emitter_systems_use_per_emitter_forces()`
   - Method `.test_report()`
+  - Method `.test_particle_rests_on_a_floor()`
+  - Method `.test_particle_stops_at_a_wall_without_tunneling()`
+  - Method `.test_empty_colliders_match_legacy_path()`
+  - Method `.test_collision_is_deterministic()`
+  - Method `.test_collision_rejects_bad_colliders()`
 
 ---
 

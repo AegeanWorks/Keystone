@@ -61,7 +61,7 @@ from keystone.scene import (
 )
 from keystone.scene_snapshot import scene_from_dict, scene_to_dict
 
-__version__ = "0.39.0"
+__version__ = "0.40.0"
 __all__ = [
     "PLAYTEST_REPORT_SCHEMA",
     "SAMPLE_RATE",

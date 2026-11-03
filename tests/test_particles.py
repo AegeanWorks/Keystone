@@ -96,6 +96,78 @@ class SystemTest(unittest.TestCase):
         self.assertEqual(report["alive"], 3)
         self.assertEqual(report["emitters"], ["sparks"])
 
+    def test_particle_rests_on_a_floor(self):
+        from keystone.physics import AABB
+
+        system = ParticleSystem()
+        system.add(Emitter(name="rain", speed=0.0, gravity=Vec3(0.0, -10.0, 0.0), lifetime=5.0, seed=9))
+        system.burst("rain", 1, origin=Vec3(0, 3, 0))
+        floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+        for _ in range(120):
+            system.step(1 / 60, [floor])
+        self.assertEqual(system.alive_count(), 1)
+        resting = system.particles[0]
+        self.assertAlmostEqual(resting.position.y, 0.5, places=6)
+        self.assertAlmostEqual(resting.velocity.y, 0.0, places=9)
+
+    def test_particle_stops_at_a_wall_without_tunneling(self):
+        from keystone.physics import AABB
+
+        system = ParticleSystem()
+        system.add(Emitter(name="shot", speed=0.0, gravity=Vec3(0.0, 0.0, 0.0), seed=3))
+        system.burst("shot", 1)
+        system.particles[0] = Particle(Vec3(-3, 0, 0), Vec3(60, 0, 0), 0.0, 10.0, 1.0, 0, "shot")
+        wall = AABB(Vec3(0, 0, 0), Vec3(0.5, 5, 5))
+        system.step(1.0, [wall])
+        stopped = system.particles[0]
+        self.assertLessEqual(stopped.position.x, -0.5)
+        self.assertAlmostEqual(stopped.velocity.x, 0.0, places=9)
+        self.assertAlmostEqual(stopped.velocity.y, 0.0, places=9)
+
+    def test_empty_colliders_match_legacy_path(self):
+        from keystone.physics import AABB
+
+        first, second = self._system(), self._system()
+        for system in (first, second):
+            system.burst("sparks", 8)
+        first.step(0.5)
+        second.step(0.5, [])
+        self.assertEqual(
+            [(p.position.x, p.position.y) for p in first.particles],
+            [(p.position.x, p.position.y) for p in second.particles],
+        )
+        floor = AABB(Vec3(0, -10, 0), Vec3(5, 0.5, 5))
+        first.step(0.5)
+        second.step(0.5, [floor])
+        self.assertEqual(
+            [(p.position.x, p.position.y) for p in first.particles],
+            [(p.position.x, p.position.y) for p in second.particles],
+        )
+
+    def test_collision_is_deterministic(self):
+        from keystone.physics import AABB
+
+        def run() -> ParticleSystem:
+            system = ParticleSystem()
+            system.add(Emitter(name="rain", speed=0.0, gravity=Vec3(0.0, -10.0, 0.0), seed=9))
+            system.burst("rain", 4)
+            floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+            for _ in range(60):
+                system.step(1 / 60, [floor])
+            return system
+
+        first, second = run(), run()
+        self.assertEqual(
+            [(p.position.x, p.position.y) for p in first.particles],
+            [(p.position.x, p.position.y) for p in second.particles],
+        )
+
+    def test_collision_rejects_bad_colliders(self):
+        system = self._system()
+        system.burst("sparks", 1)
+        with self.assertRaises(TypeError):
+            system.step(1 / 60, ["not-a-box"])
+
 
 if __name__ == "__main__":
     unittest.main()
