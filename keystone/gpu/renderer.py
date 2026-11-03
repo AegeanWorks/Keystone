@@ -9,6 +9,7 @@ from OpenGL import GL
 from keystone.geometry import Material, MeshData
 from keystone.gpu.instancing import group_instances
 from keystone.gpu.mesh_buffer import GpuMesh
+from keystone.gpu.post import POST_EXPOSURE, POST_VIGNETTE
 from keystone.gpu.shader import ShaderProgram
 from keystone.gpu.shadow import SHADOW_BIAS, SHADOW_MAP_SIZE, ShadowMap, light_vp_for
 from keystone.gpu.texture_buffer import GpuTexture
@@ -67,6 +68,10 @@ uniform sampler2D u_shadow_map;
 uniform float u_shadow_bias;
 uniform float u_shadows_enabled;
 uniform float u_srgb_enabled;
+uniform float u_post_enabled;
+uniform float u_post_exposure;
+uniform float u_post_vignette;
+uniform vec2 u_resolution;
 out vec4 frag_color;
 vec3 srgb_to_linear(vec3 c) {
     return pow(max(c, vec3(0.0)), vec3(2.2));
@@ -97,6 +102,15 @@ float shadow_factor(vec3 world_pos) {
         }
     }
     return lit / 9.0;
+}
+vec3 apply_post(vec3 c) {
+    if (u_post_enabled < 0.5) {
+        return c;
+    }
+    vec2 uv = gl_FragCoord.xy / max(u_resolution, vec2(1.0, 1.0));
+    vec2 d = uv - vec2(0.5);
+    float v = 1.0 - u_post_vignette * dot(d, d) * 2.0;
+    return clamp(c * u_post_exposure * clamp(v, 0.0, 1.0), vec3(0.0), vec3(1.0));
 }
 void main() {
     vec3 normal = normalize(v_normal);
@@ -147,6 +161,7 @@ void main() {
     if (u_srgb_enabled > 0.5) {
         color = linear_to_srgb(color);
     }
+    color = apply_post(color);
     frag_color = vec4(color, 1.0);
 }
 """
@@ -194,6 +209,9 @@ in vec2 v_uv;
 uniform vec3 u_sky_top;
 uniform vec3 u_sky_bottom;
 uniform float u_srgb_enabled;
+uniform float u_post_enabled;
+uniform float u_post_exposure;
+uniform float u_post_vignette;
 out vec4 frag_color;
 void main() {
     vec3 top = u_sky_top;
@@ -205,6 +223,11 @@ void main() {
     vec3 color = mix(bottom, top, smoothstep(0.0, 1.0, v_uv.y));
     if (u_srgb_enabled > 0.5) {
         color = pow(max(color, vec3(0.0)), vec3(1.0 / 2.2));
+    }
+    if (u_post_enabled > 0.5) {
+        vec2 d = v_uv - vec2(0.5);
+        float v = 1.0 - u_post_vignette * dot(d, d) * 2.0;
+        color = clamp(color * u_post_exposure * clamp(v, 0.0, 1.0), vec3(0.0), vec3(1.0));
     }
     frag_color = vec4(color, 1.0);
 }
@@ -281,6 +304,7 @@ class Renderer:
             "shadow_map_size": SHADOW_MAP_SIZE,
             "shadows_enabled": 0,
             "srgb_enabled": 0,
+            "post_enabled": 0,
         }
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glDepthFunc(GL.GL_LESS)
@@ -309,13 +333,16 @@ class Renderer:
             self._textures[id(texture)] = cached
         return cached[1]
 
-    def _draw_sky(self, scene: Scene, srgb_on: bool = True) -> None:
+    def _draw_sky(self, scene: Scene, srgb_on: bool = True, post_on: bool = True) -> None:
         GL.glDisable(GL.GL_DEPTH_TEST)
         GL.glDepthMask(GL.GL_FALSE)
         self._sky_program.use()
         self._sky_program.set_vec3("u_sky_top", scene.sky)
         self._sky_program.set_vec3("u_sky_bottom", scene.background)
         self._sky_program.set_float("u_srgb_enabled", 1.0 if srgb_on else 0.0)
+        self._sky_program.set_float("u_post_enabled", 1.0 if post_on else 0.0)
+        self._sky_program.set_float("u_post_exposure", POST_EXPOSURE)
+        self._sky_program.set_float("u_post_vignette", POST_VIGNETTE)
         GL.glBindVertexArray(self._sky_vao)
         GL.glDrawArrays(GL.GL_TRIANGLES, 0, 3)
         GL.glBindVertexArray(0)
@@ -329,6 +356,17 @@ class Renderer:
     def _srgb_requested(self, scene: Scene) -> bool:
         color = getattr(scene, "color", None)
         return bool(getattr(color, "enabled", True))
+
+    def _post_requested(self, scene: Scene) -> bool:
+        post = getattr(scene, "post", None)
+        return bool(getattr(post, "enabled", True))
+
+    def _apply_post(self, program: ShaderProgram, post_on: bool) -> None:
+        program.use()
+        program.set_float("u_post_enabled", 1.0 if post_on else 0.0)
+        program.set_float("u_post_exposure", POST_EXPOSURE)
+        program.set_float("u_post_vignette", POST_VIGNETTE)
+        program.set_vec2("u_resolution", float(self.width), float(self.height))
 
     def _apply_shared(
         self,
@@ -420,6 +458,7 @@ class Renderer:
             )
         shadows_on = bool(requested and self._shadow is not None)
         srgb_on = self._srgb_requested(scene)
+        post_on = self._post_requested(scene)
         light_vp = light_vp_for(scene.light)
         if shadows_on:
             shadow_calls = self._render_shadow_pass(scene, light_vp)
@@ -428,11 +467,13 @@ class Renderer:
         background = scene.background
         GL.glClearColor(background.x, background.y, background.z, 1.0)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-        self._draw_sky(scene, srgb_on)
+        self._draw_sky(scene, srgb_on, post_on)
         camera = scene.camera
         view_projection = camera.view_projection(self.width / self.height)
         self._apply_shared(self._program, scene, view_projection, light_vp, shadows_on, srgb_on)
         self._apply_shared(self._inst_program, scene, view_projection, light_vp, shadows_on, srgb_on)
+        self._apply_post(self._program, post_on)
+        self._apply_post(self._inst_program, post_on)
         for group in group_instances(scene):
             mesh = group["mesh"]
             if not isinstance(mesh, MeshData):
@@ -472,6 +513,7 @@ class Renderer:
             "shadow_map_size": SHADOW_MAP_SIZE if shadows_on else 0,
             "shadows_enabled": 1 if shadows_on else 0,
             "srgb_enabled": 1 if srgb_on else 0,
+            "post_enabled": 1 if post_on else 0,
         }
         return dict(self.last_stats)
 

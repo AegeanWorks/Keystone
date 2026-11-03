@@ -53,13 +53,14 @@ from keystone.scene import (
     DirectionalLight,
     Node,
     PointLight,
+    PostSettings,
     Scene,
     ShadowSettings,
     Transform,
 )
 from keystone.scene_snapshot import scene_from_dict, scene_to_dict
 
-__version__ = "0.35.0"
+__version__ = "0.36.0"
 __all__ = [
     "PLAYTEST_REPORT_SCHEMA",
     "SAMPLE_RATE",
@@ -88,6 +89,7 @@ __all__ = [
     "Particle",
     "ParticleSystem",
     "PointLight",
+    "PostSettings",
     "Quat",
     "RandomPolicy",
     "Scene",

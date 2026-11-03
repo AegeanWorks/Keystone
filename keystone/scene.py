@@ -182,6 +182,13 @@ class ColorSettings:
     enabled: bool = True
 
 
+@dataclass(frozen=True, slots=True)
+class PostSettings:
+    """Deterministic post color-grade toggle (in-shader exposure + vignette)."""
+
+    enabled: bool = True
+
+
 def _root_node() -> Node:
     return Node("", id="root")
 
@@ -196,6 +203,7 @@ class Scene:
     point_light: PointLight | None = None
     shadow: ShadowSettings = field(default_factory=ShadowSettings)
     color: ColorSettings = field(default_factory=ColorSettings)
+    post: PostSettings = field(default_factory=PostSettings)
     ambient: Vec3 = Vec3(0.16, 0.17, 0.2)
     background: Vec3 = Vec3(0.045, 0.055, 0.075)
     sky: Vec3 = Vec3(0.01, 0.015, 0.04)

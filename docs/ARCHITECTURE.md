@@ -1,6 +1,6 @@
 # Keystone Architecture
 
-**Status:** implemented in v0.33.0 - core-only engine with scene identity, PBR materials, physics systems, human UI with profiler, deterministic animation with blending/events, particles and audio, batch planning and merging, replay runner, seeded bot playtester with transcript diffing and fairness validation, a local web console with inspector, asset inventory and particle state, an asset registry with hot reload, material graphs, glTF 2.0 import, versioned scene snapshots with undo/redo and AI observation/action adapters
+**Status:** implemented in v0.36.0 - core-only engine with scene identity, PBR materials, physics systems, human UI with profiler, deterministic animation with blending/events, particles and audio, batch planning and merging, replay runner, seeded bot playtester with transcript diffing and fairness validation, a local web console with inspector, asset inventory and particle state, an asset registry with hot reload, material graphs, glTF 2.0 import, versioned scene snapshots with undo/redo, AI observation/action adapters and a post color-grade
 **Boundary:** `keystone/` is game-agnostic; games are external modules.
 
 ## 1. What Keystone Is
@@ -178,7 +178,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 1. **Scene identity and components** — implemented in v0.19.0; stable node IDs, tags/layers and typed component queries.
 2. **Physics** — implemented in v0.21.0; broadphase, AABB character controller, triggers and filtered raycasts.
 3. **Assets** — asset registry and hot reload in v0.22.0; material graphs in v0.23.0; glTF 2.0 import in v0.24.0; snapshots and undo/redo in v0.25.0; GLB containers and stricter format validation in v0.26.0; PBR material core, `pbr` graph nodes and full glTF PBR preservation in v0.27.0.
-4. **Renderer** — PBR shading, emissive and render stats in v0.27.0; static batch planning in v0.28.0 and world-space batch merging in v0.29.0; GPU instancing in v0.32.0, directional shadows in v0.34.0 and an sRGB linear pipeline in v0.35.0; post-processing remains.
+4. **Renderer** — PBR shading, emissive and render stats in v0.27.0; static batch planning in v0.28.0 and world-space batch merging in v0.29.0; GPU instancing in v0.32.0, directional shadows in v0.34.0, an sRGB linear pipeline in v0.35.0 and a post color-grade in v0.36.0; bloom/full post chain remains.
 5. **Input/audio** — rebindable input with JSON persistence and profiler HUD in v0.27.0; action contexts, deterministic mixer with buses, WAV I/O and HUD voices in v0.28.0; live device playback remains out of scope.
 6. **AI adapters** — implemented in v0.27.0; validated actions, fused observations, report summaries and hash-chained audit trail.
 6. **Animation** — deterministic keyframe clips, looping controller, pose application and JSON round trips in v0.29.0; crossfade blending and timed events in v0.30.0; skinning remains; deterministic CPU particles with HUD/inspector/AI reports in v0.31.0; GPU point sprites and particle collision remain.

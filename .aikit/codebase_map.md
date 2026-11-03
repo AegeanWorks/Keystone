@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `103`
-- **Total Classes**: `143`
-- **Total Top-Level Functions**: `179`
-- **Total Class Methods**: `765`
-- **Total Source Lines**: `14604`
+- **Total Python Modules**: `105`
+- **Total Classes**: `146`
+- **Total Top-Level Functions**: `182`
+- **Total Class Methods**: `777`
+- **Total Source Lines**: `14849`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `136` lines (`2934` bytes)
+**Size**: `138` lines (`2972` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `354` lines (`19104` bytes)
+**Size**: `364` lines (`19935` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -61,7 +61,7 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `419` lines (`17598` bytes)
+**Size**: `444` lines (`18597` bytes)
 
 **Functions:**
 - `def _rows(pixels, width, height, flip)`
@@ -72,7 +72,8 @@
 - `def _compare_ui(before, after)`
 - `def _shadows_of(report)`
 - `def _color_of(report)`
-- `def compare_reports(before, after)` - *Compare schema-1/2/3/4/5/6/7 frame reports for AI-driven regression checks.*
+- `def _post_of(report)`
+- `def compare_reports(before, after)` - *Compare schema-1/2/3/4/5/6/7/8 frame reports for AI-driven regression checks.*
 - `def diff_images(before, after, output, threshold)` - *Write a visual diff PNG and return changed-pixel statistics.*
 - `def write_report(path, report)`
 
@@ -117,7 +118,7 @@
 ### [`keystone/app.py`](keystone/app.py)
 > *Game-agnostic engine runtime: window, fixed step, input, render and capture.*
 
-**Size**: `264` lines (`10037` bytes)
+**Size**: `265` lines (`10097` bytes)
 
 **Classes:**
 - `class Engine` - *Owns the runtime around one external GameModule.*
@@ -477,10 +478,21 @@
 
 ---
 
+### [`keystone/gpu/post.py`](keystone/gpu/post.py)
+> *Deterministic post color-grade (exposure + vignette, in-shader, no FBO).*
+
+**Size**: `42` lines (`1264` bytes)
+
+**Functions:**
+- `def vignette_factor(nx, ny, strength)` - *Return the deterministic vignette multiplier for normalized coords 0..1.*
+- `def grade_color(color, nx, ny, exposure, strength)` - *Apply exposure then vignette to a display-referred 0..1 RGB triple.*
+
+---
+
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
 > *Blinn-Phong forward renderer with fog, shadows and screenshot readback.*
 
-**Size**: `501` lines (`18897` bytes)
+**Size**: `543` lines (`20733` bytes)
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
@@ -488,9 +500,11 @@
   - Method `.resize(width, height)`
   - Method `._gpu_mesh(mesh)`
   - Method `._gpu_texture(texture)`
-  - Method `._draw_sky(scene, srgb_on)`
+  - Method `._draw_sky(scene, srgb_on, post_on)`
   - Method `._shadows_requested(scene)`
   - Method `._srgb_requested(scene)`
+  - Method `._post_requested(scene)`
+  - Method `._apply_post(program, post_on)`
   - Method `._apply_shared(program, scene, view_projection, light_vp, shadows_on, srgb_on)`
   - Method `._apply_material(program, material)`
   - Method `._render_shadow_pass(scene, light_vp)`
@@ -838,7 +852,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `89` lines (`3283` bytes)
+**Size**: `90` lines (`3309` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -922,7 +936,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `283` lines (`9598` bytes)
+**Size**: `291` lines (`9824` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -951,6 +965,7 @@
   - Method `.__post_init__()`
 - `class ShadowSettings` - *Deterministic directional shadow-map toggle (fixed 1024 map, bias 0.005).*
 - `class ColorSettings` - *Deterministic sRGB-correct linear pipeline toggle (in-shader, pow 2.2).*
+- `class PostSettings` - *Deterministic post color-grade toggle (in-shader exposure + vignette).*
 - `class Scene` - *Root node, identity allocation, queries, camera, lights and atmosphere.*
   - Method `.add(node)`
   - Method `.traverse()`
@@ -968,7 +983,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `299` lines (`12256` bytes)
+**Size**: `306` lines (`12617` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)`
@@ -1105,7 +1120,7 @@
 ### [`keystone/ui/overlay.py`](keystone/ui/overlay.py)
 > *Game-agnostic human overlay: HUD, controls help and pause menu.*
 
-**Size**: `154` lines (`6673` bytes)
+**Size**: `156` lines (`6752` bytes)
 
 **Classes:**
 - `class HudState` - *Presentation-only snapshot the overlay needs for one frame.*
@@ -1152,7 +1167,7 @@
 ### [`keystone/web/scene.py`](keystone/web/scene.py)
 > *Export a game-agnostic scene as a JSON document for the browser viewer.*
 
-**Size**: `139` lines (`5058` bytes)
+**Size**: `141` lines (`5165` bytes)
 
 **Functions:**
 - `def _floats(values)`
@@ -1172,7 +1187,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `399` lines (`17681` bytes)
+**Size**: `401` lines (`17804` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1260,7 +1275,7 @@
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
-**Size**: `245` lines (`10167` bytes)
+**Size**: `245` lines (`10170` bytes)
 
 **Classes:**
 - `class Health`
@@ -1772,7 +1787,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `57` lines (`2207` bytes)
+**Size**: `58` lines (`2264` bytes)
 
 **Classes:**
 - `class PluginTest`
@@ -1801,6 +1816,27 @@
 
 **Functions:**
 - `def _chunks(data)`
+
+---
+
+### [`tests/test_post.py`](tests/test_post.py)
+> *Tests for the deterministic post color-grade (in-shader exposure + vignette).*
+
+**Size**: `100` lines (`4244` bytes)
+
+**Classes:**
+- `class PostMathTest`
+  - Method `.test_constants_are_fixed()`
+  - Method `.test_vignette_center_is_one_and_corners_dim()`
+  - Method `.test_grade_applies_exposure_then_vignette()`
+- `class PostContractsTest`
+  - Method `.test_post_settings_default_enabled()`
+  - Method `.test_describe_reports_post()`
+  - Method `.test_report_includes_post_metadata_and_hash()`
+  - Method `.test_compare_reports_diffs_post()`
+  - Method `.test_compare_accepts_legacy_without_post()`
+  - Method `.test_snapshot_round_trips_post_flag()`
+  - Method `.test_scene_document_and_inspector_expose_post()`
 
 ---
 

@@ -169,6 +169,7 @@ class GameSession:
                     assets = None
             shadow = getattr(scene, "shadow", None)
             color = getattr(scene, "color", None)
+            post = getattr(scene, "post", None)
             return {
                 "schema": 1,
                 "game": self.name,
@@ -183,6 +184,7 @@ class GameSession:
                     "size": 1024,
                 },
                 "color": {"enabled": bool(getattr(color, "enabled", True))},
+                "post": {"enabled": bool(getattr(post, "enabled", True))},
                 "audio": audio,
                 "animation": animation,
                 "particles": particles,

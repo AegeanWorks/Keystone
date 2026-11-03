@@ -11,6 +11,7 @@ from keystone.scene import (
     DirectionalLight,
     Node,
     PointLight,
+    PostSettings,
     Scene,
     ShadowSettings,
 )
@@ -188,6 +189,7 @@ def scene_to_dict(scene: Scene, registry: Any = None) -> dict[str, Any]:
             "point_light": _point_light_to_dict(scene.point_light) if scene.point_light else None,
             "shadow": {"enabled": bool(getattr(scene.shadow, "enabled", True))},
             "color": {"enabled": bool(getattr(scene.color, "enabled", True))},
+            "post": {"enabled": bool(getattr(scene.post, "enabled", True))},
         },
         "nodes": nodes,
     }
@@ -245,6 +247,11 @@ def scene_from_dict(data: Mapping[str, Any], registry: Any = None) -> Scene:
             if not isinstance(color, Mapping):
                 raise TypeError("scene snapshot color must be a mapping")
             scene.color = ColorSettings(enabled=bool(color.get("enabled", True)))
+        post = environment.get("post")
+        if post is not None:
+            if not isinstance(post, Mapping):
+                raise TypeError("scene snapshot post must be a mapping")
+            scene.post = PostSettings(enabled=bool(post.get("enabled", True)))
     raw_nodes = data.get("nodes", [])
     if not isinstance(raw_nodes, (list, tuple)):
         raise TypeError("scene snapshot nodes must be a list")

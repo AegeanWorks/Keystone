@@ -16,13 +16,14 @@ from keystone.texture import TextureData
 GRID = 8
 
 REPORT_SCHEMA = {
-    "version": 7,
+    "version": 8,
     "fields": {
         "image": ["path", "width", "height", "rgba_sha256", "png_sha256"],
         "stats": ["mean_rgb", "mean_luma", "content_pixels", "content_ratio", "content_bbox", "dominant_colors", "grid_luma"],
-        "scene": ["camera", "node_count", "nodes", "shadows", "color"],
+        "scene": ["camera", "node_count", "nodes", "shadows", "color", "post"],
         "shadows": ["enabled", "size"],
         "color": ["enabled"],
+        "post": ["enabled"],
         "node": ["id", "name", "parent", "parent_id", "visible", "tags", "layer", "components", "world", "screen", "bbox", "triangles", "material"],
         "material": ["color", "specular", "shininess", "checker_scale", "metallic", "roughness", "emissive", "texture"],
         "texture": ["name", "width", "height", "sha256"],
@@ -40,6 +41,7 @@ REPORT_SCHEMA = {
         "schema-5 adds PBR material fields (metallic, roughness, emissive).",
         "schema-6 adds scene shadows metadata (enabled, size).",
         "schema-7 adds scene color metadata (sRGB pipeline enabled).",
+        "schema-8 adds scene post metadata (post color-grade enabled).",
         "schema-1/2/3 reports remain comparable; nodes are keyed by id when both reports are schema 4 or newer.",
         "ui labels and button rects are presentation metadata in top-left pixels.",
     ],
@@ -217,8 +219,10 @@ def analyze_frame(
     }
     color_setting = getattr(scene, "color", None)
     color = {"enabled": bool(getattr(color_setting, "enabled", True))}
+    post_setting = getattr(scene, "post", None)
+    post = {"enabled": bool(getattr(post_setting, "enabled", True))}
     report = {
-        "schema": 7,
+        "schema": 8,
         "image": image,
         "stats": stats,
         "scene": {
@@ -234,10 +238,11 @@ def analyze_frame(
             "nodes": nodes,
             "shadows": shadows,
             "color": color,
+            "post": post,
         },
         "ui": ui,
     }
-    hashed = {"image": image, "stats": stats, "nodes": nodes, "shadows": shadows, "color": color}
+    hashed = {"image": image, "stats": stats, "nodes": nodes, "shadows": shadows, "color": color, "post": post}
     if ui is not None:
         hashed["ui"] = ui
     report["hash"] = stable_hash(hashed)
@@ -293,10 +298,18 @@ def _color_of(report: dict) -> dict | None:
     return None
 
 
+def _post_of(report: dict) -> dict | None:
+    scene = report.get("scene", {})
+    post = scene.get("post") if isinstance(scene, dict) else None
+    if isinstance(post, dict):
+        return {"enabled": bool(post.get("enabled", True))}
+    return None
+
+
 def compare_reports(before: dict, after: dict) -> dict:
-    """Compare schema-1/2/3/4/5/6/7 frame reports for AI-driven regression checks."""
-    if before.get("schema") not in (1, 2, 3, 4, 5, 6, 7) or after.get("schema") not in (1, 2, 3, 4, 5, 6, 7):
-        raise ValueError("both reports must use schema 1, 2, 3, 4, 5, 6 or 7")
+    """Compare schema-1/2/3/4/5/6/7/8 frame reports for AI-driven regression checks."""
+    if before.get("schema") not in (1, 2, 3, 4, 5, 6, 7, 8) or after.get("schema") not in (1, 2, 3, 4, 5, 6, 7, 8):
+        raise ValueError("both reports must use schema 1, 2, 3, 4, 5, 6, 7 or 8")
     first_stats = before["stats"]
     second_stats = after["stats"]
     key = "id" if before.get("schema", 0) >= 4 and after.get("schema", 0) >= 4 else "name"
@@ -353,8 +366,18 @@ def compare_reports(before: dict, after: dict) -> dict:
         same_color = before_color == after_color
         color_before = before_color
         color_after = after_color
+    before_post = _post_of(before)
+    after_post = _post_of(after)
+    if before_post is None or after_post is None:
+        same_post = True
+        post_before = before_post or {"enabled": True}
+        post_after = after_post or {"enabled": True}
+    else:
+        same_post = before_post == after_post
+        post_before = before_post
+        post_after = after_post
     return {
-        "schema": 7,
+        "schema": 8,
         "same_image": before["image"]["rgba_sha256"] == after["image"]["rgba_sha256"],
         "same_report": before.get("hash") == after.get("hash"),
         "same_ui": ui_diff["same"],
@@ -362,6 +385,8 @@ def compare_reports(before: dict, after: dict) -> dict:
         "shadows": {"before": shown_before, "after": shown_after},
         "same_color": same_color,
         "color": {"before": color_before, "after": color_after},
+        "same_post": same_post,
+        "post": {"before": post_before, "after": post_after},
         "mean_luma_delta": round(second_stats["mean_luma"] - first_stats["mean_luma"], 3),
         "content_ratio_delta": round(second_stats["content_ratio"] - first_stats["content_ratio"], 4),
         "content_bbox": {"before": first_stats["content_bbox"], "after": second_stats["content_bbox"]},
