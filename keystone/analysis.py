@@ -16,15 +16,17 @@ from keystone.texture import TextureData
 GRID = 8
 
 REPORT_SCHEMA = {
-    "version": 9,
+    "version": 10,
     "fields": {
         "image": ["path", "width", "height", "rgba_sha256", "png_sha256"],
         "stats": ["mean_rgb", "mean_luma", "content_pixels", "content_ratio", "content_bbox", "dominant_colors", "grid_luma"],
-        "scene": ["camera", "node_count", "nodes", "shadows", "color", "post", "bloom"],
+        "scene": ["camera", "node_count", "nodes", "shadows", "color", "post", "bloom", "sprites"],
         "shadows": ["enabled", "size"],
         "color": ["enabled"],
         "post": ["enabled"],
         "bloom": ["enabled"],
+        "sprites": ["enabled"],
+        "fx": ["alive", "drawn", "enabled"],
         "node": ["id", "name", "parent", "parent_id", "visible", "tags", "layer", "components", "world", "screen", "bbox", "triangles", "material"],
         "material": ["color", "specular", "shininess", "checker_scale", "metallic", "roughness", "emissive", "texture"],
         "texture": ["name", "width", "height", "sha256"],
@@ -44,6 +46,7 @@ REPORT_SCHEMA = {
         "schema-7 adds scene color metadata (sRGB pipeline enabled).",
         "schema-8 adds scene post metadata (post color-grade enabled).",
         "schema-9 adds scene bloom metadata (bloom glow enabled).",
+        "schema-10 adds scene sprite metadata and top-level fx particle counts.",
         "schema-1/2/3 reports remain comparable; nodes are keyed by id when both reports are schema 4 or newer.",
         "ui labels and button rects are presentation metadata in top-left pixels.",
     ],
@@ -199,6 +202,7 @@ def analyze_frame(
     height: int,
     image_path: str | Path | None = None,
     ui: dict | None = None,
+    fx: dict | None = None,
 ) -> dict:
     if width <= 0 or height <= 0:
         raise ValueError("width and height must be positive")
@@ -225,8 +229,18 @@ def analyze_frame(
     post = {"enabled": bool(getattr(post_setting, "enabled", True))}
     bloom_setting = getattr(scene, "bloom", None)
     bloom = {"enabled": bool(getattr(bloom_setting, "enabled", True))}
+    sprite_setting = getattr(scene, "sprite", None)
+    sprites = {"enabled": bool(getattr(sprite_setting, "enabled", True))}
+    if fx is None:
+        fx = {"alive": 0, "drawn": 0, "enabled": sprites["enabled"]}
+    else:
+        fx = {
+            "alive": int(fx.get("alive", 0)),
+            "drawn": int(fx.get("drawn", 0)),
+            "enabled": bool(fx.get("enabled", sprites["enabled"])),
+        }
     report = {
-        "schema": 9,
+        "schema": 10,
         "image": image,
         "stats": stats,
         "scene": {
@@ -244,10 +258,12 @@ def analyze_frame(
             "color": color,
             "post": post,
             "bloom": bloom,
+            "sprites": sprites,
         },
+        "fx": fx,
         "ui": ui,
     }
-    hashed = {"image": image, "stats": stats, "nodes": nodes, "shadows": shadows, "color": color, "post": post, "bloom": bloom}
+    hashed = {"image": image, "stats": stats, "nodes": nodes, "shadows": shadows, "color": color, "post": post, "bloom": bloom, "sprites": sprites, "fx": fx}
     if ui is not None:
         hashed["ui"] = ui
     report["hash"] = stable_hash(hashed)
@@ -319,10 +335,29 @@ def _bloom_of(report: dict) -> dict | None:
     return None
 
 
+def _sprites_of(report: dict) -> dict | None:
+    scene = report.get("scene", {})
+    sprites = scene.get("sprites") if isinstance(scene, dict) else None
+    if isinstance(sprites, dict):
+        return {"enabled": bool(sprites.get("enabled", True))}
+    return None
+
+
+def _fx_of(report: dict) -> dict | None:
+    fx = report.get("fx")
+    if isinstance(fx, dict):
+        return {
+            "alive": int(fx.get("alive", 0)),
+            "drawn": int(fx.get("drawn", 0)),
+            "enabled": bool(fx.get("enabled", True)),
+        }
+    return None
+
+
 def compare_reports(before: dict, after: dict) -> dict:
-    """Compare schema-1/2/3/4/5/6/7/8/9 frame reports for AI-driven regression checks."""
-    if before.get("schema") not in (1, 2, 3, 4, 5, 6, 7, 8, 9) or after.get("schema") not in (1, 2, 3, 4, 5, 6, 7, 8, 9):
-        raise ValueError("both reports must use schema 1, 2, 3, 4, 5, 6, 7, 8 or 9")
+    """Compare schema-1/2/3/4/5/6/7/8/9/10 frame reports for AI-driven regression checks."""
+    if before.get("schema") not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10) or after.get("schema") not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10):
+        raise ValueError("both reports must use schema 1, 2, 3, 4, 5, 6, 7, 8, 9 or 10")
     first_stats = before["stats"]
     second_stats = after["stats"]
     key = "id" if before.get("schema", 0) >= 4 and after.get("schema", 0) >= 4 else "name"
@@ -399,8 +434,28 @@ def compare_reports(before: dict, after: dict) -> dict:
         same_bloom = before_bloom == after_bloom
         bloom_before = before_bloom
         bloom_after = after_bloom
+    before_sprites = _sprites_of(before)
+    after_sprites = _sprites_of(after)
+    if before_sprites is None or after_sprites is None:
+        same_sprites = True
+        sprites_before = before_sprites or {"enabled": True}
+        sprites_after = after_sprites or {"enabled": True}
+    else:
+        same_sprites = before_sprites == after_sprites
+        sprites_before = before_sprites
+        sprites_after = after_sprites
+    before_fx = _fx_of(before)
+    after_fx = _fx_of(after)
+    if before_fx is None or after_fx is None:
+        same_fx = True
+        fx_before = before_fx or {"alive": 0, "drawn": 0, "enabled": True}
+        fx_after = after_fx or {"alive": 0, "drawn": 0, "enabled": True}
+    else:
+        same_fx = before_fx == after_fx
+        fx_before = before_fx
+        fx_after = after_fx
     return {
-        "schema": 9,
+        "schema": 10,
         "same_image": before["image"]["rgba_sha256"] == after["image"]["rgba_sha256"],
         "same_report": before.get("hash") == after.get("hash"),
         "same_ui": ui_diff["same"],
@@ -412,6 +467,10 @@ def compare_reports(before: dict, after: dict) -> dict:
         "post": {"before": post_before, "after": post_after},
         "same_bloom": same_bloom,
         "bloom": {"before": bloom_before, "after": bloom_after},
+        "same_sprites": same_sprites,
+        "sprites": {"before": sprites_before, "after": sprites_after},
+        "same_fx": same_fx,
+        "fx": {"before": fx_before, "after": fx_after},
         "mean_luma_delta": round(second_stats["mean_luma"] - first_stats["mean_luma"], 3),
         "content_ratio_delta": round(second_stats["content_ratio"] - first_stats["content_ratio"], 4),
         "content_bbox": {"before": first_stats["content_bbox"], "after": second_stats["content_bbox"]},

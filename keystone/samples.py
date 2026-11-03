@@ -8,6 +8,7 @@ from dataclasses import replace
 from keystone.assets import AssetRegistry
 from keystone.geometry import Material
 from keystone.math3d import Quat, Vec3
+from keystone.particles import Emitter, ParticleSystem
 from keystone.primitives import cube, plane, sphere
 from keystone.scene import DirectionalLight, Node, PointLight, Scene, Transform
 from keystone.texture import TextureData
@@ -21,12 +22,28 @@ class CubeDemo:
     def __init__(self) -> None:
         self.scene = Scene()
         self.assets = AssetRegistry()
+        self.particles = ParticleSystem()
         self._time = 0.0
         self._cubes: list[Node] = []
 
     def build_scene(self) -> Scene:
         self.scene = Scene()
         self.assets = AssetRegistry()
+        self.particles = ParticleSystem()
+        self.particles.add(
+            Emitter(
+                name="fountain",
+                rate=0.0,
+                lifetime=1.6,
+                speed=1.8,
+                spread=0.45,
+                direction=Vec3(0.0, 1.0, 0.0),
+                gravity=Vec3(0.0, -2.2, 0.0),
+                size=1.0,
+                seed=7,
+            )
+        )
+        self.particles.burst("fountain", 64, Vec3(0.0, 1.5, 0.0))
         self.assets.register("mesh.cube", cube(1.4))
         self.assets.register("mesh.plane", plane(20.0))
         self.assets.register("mesh.sphere", sphere(1.0, segments=24, rings=14))
@@ -97,6 +114,7 @@ class CubeDemo:
 
     def update(self, dt: float, actions: object) -> None:
         self._time += dt
+        self.particles.step(dt)
         for index, node in enumerate(self._cubes):
             node.transform = replace(
                 node.transform,

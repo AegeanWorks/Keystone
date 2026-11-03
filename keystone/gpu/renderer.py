@@ -20,6 +20,7 @@ from keystone.gpu.post import POST_EXPOSURE, POST_VIGNETTE
 from keystone.gpu.shader import ShaderProgram
 from keystone.gpu.shadow import SHADOW_BIAS, SHADOW_MAP_SIZE, ShadowMap, light_vp_for
 from keystone.gpu.skinned_buffer import SkinnedGpuMesh
+from keystone.gpu.sprites import SPRITE_COLOR, sprite_alpha
 from keystone.gpu.texture_buffer import GpuTexture
 from keystone.math3d import Mat4, Vec3
 from keystone.png import write_png
@@ -279,6 +280,61 @@ void main() {
 }
 """
 
+SPRITE_VERTEX_SHADER = """#version 330 core
+layout(location = 0) in vec2 a_corner;
+layout(location = 1) in vec3 a_offset;
+layout(location = 2) in float a_scale;
+layout(location = 3) in float a_alpha;
+uniform mat4 u_view_proj;
+uniform vec3 u_right;
+uniform vec3 u_up;
+out vec2 v_uv;
+out float v_alpha;
+void main() {
+    v_uv = a_corner + vec2(0.5);
+    v_alpha = a_alpha;
+    vec3 world = a_offset + (u_right * a_corner.x + u_up * a_corner.y) * a_scale;
+    gl_Position = u_view_proj * vec4(world, 1.0);
+}
+"""
+
+SPRITE_FRAGMENT_SHADER = """#version 330 core
+in vec2 v_uv;
+in float v_alpha;
+uniform vec3 u_sprite_color;
+uniform float u_bloom_enabled;
+uniform float u_bloom_threshold;
+uniform float u_bloom_knee;
+uniform float u_bloom_intensity;
+uniform float u_post_enabled;
+uniform float u_post_exposure;
+uniform float u_post_vignette;
+uniform vec2 u_resolution;
+out vec4 frag_color;
+void main() {
+    vec2 d = v_uv - vec2(0.5);
+    float r = length(d) * 2.0;
+    float soft = clamp(1.0 - r, 0.0, 1.0);
+    float a = soft * v_alpha;
+    if (a <= 0.001) {
+        discard;
+    }
+    vec3 color = u_sprite_color;
+    float l = dot(color, vec3(0.2126, 0.7152, 0.0722));
+    if (u_bloom_enabled > 0.5) {
+        float b = smoothstep(u_bloom_threshold, u_bloom_threshold + u_bloom_knee, l);
+        color = clamp(color + color * b * u_bloom_intensity, vec3(0.0), vec3(1.0));
+    }
+    if (u_post_enabled > 0.5) {
+        vec2 uv = gl_FragCoord.xy / max(u_resolution, vec2(1.0, 1.0));
+        vec2 dd = uv - vec2(0.5);
+        float v = 1.0 - u_post_vignette * dot(dd, dd) * 2.0;
+        color = clamp(color * u_post_exposure * clamp(v, 0.0, 1.0), vec3(0.0), vec3(1.0));
+    }
+    frag_color = vec4(color, a);
+}
+"""
+
 SKY_VERTEX_SHADER = """#version 330 core
 out vec2 v_uv;
 void main() {
@@ -418,6 +474,7 @@ class Renderer:
         depth_program: ShaderProgram | None = None
         skin_program: ShaderProgram | None = None
         skin_depth_program: ShaderProgram | None = None
+        sprite_program: ShaderProgram | None = None
         bright_program: ShaderProgram | None = None
         blur_program: ShaderProgram | None = None
         composite_program: ShaderProgram | None = None
@@ -427,11 +484,14 @@ class Renderer:
             depth_program = ShaderProgram(DEPTH_VERTEX_SHADER, DEPTH_FRAGMENT_SHADER)
             skin_program = ShaderProgram(SKINNED_VERTEX_SHADER, FRAGMENT_SHADER)
             skin_depth_program = ShaderProgram(SKINNED_DEPTH_VERTEX_SHADER, DEPTH_FRAGMENT_SHADER)
+            sprite_program = ShaderProgram(SPRITE_VERTEX_SHADER, SPRITE_FRAGMENT_SHADER)
             bright_program = ShaderProgram(BLOOM_QUAD_VERTEX, BLOOM_BRIGHT_FRAGMENT)
             blur_program = ShaderProgram(BLOOM_QUAD_VERTEX, BLOOM_BLUR_FRAGMENT)
             composite_program = ShaderProgram(BLOOM_QUAD_VERTEX, BLOOM_COMPOSITE_FRAGMENT)
             self._sky_vao = GL.glGenVertexArrays(1)
         except Exception:
+            if sprite_program is not None:
+                sprite_program.release()
             if composite_program is not None:
                 composite_program.release()
             if blur_program is not None:
@@ -455,6 +515,12 @@ class Renderer:
         self._depth_program = depth_program
         self._skin_program = skin_program
         self._skin_depth_program = skin_depth_program
+        self._sprite_program = sprite_program
+        self._sprite_vao = 0
+        self._sprite_quad_vbo = 0
+        self._sprite_inst_vbo = 0
+        self._sprite_ibo = 0
+        self._init_sprite_buffers()
         self._bloom_bright = bright_program
         self._bloom_blur = blur_program
         self._bloom_composite = composite_program
@@ -488,6 +554,9 @@ class Renderer:
             "srgb_enabled": 0,
             "post_enabled": 0,
             "bloom_enabled": 0,
+            "sprite_calls": 0,
+            "sprites": 0,
+            "sprites_enabled": 0,
         }
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glDepthFunc(GL.GL_LESS)
@@ -606,6 +675,118 @@ class Renderer:
     def _bloom_requested(self, scene: Scene) -> bool:
         bloom = getattr(scene, "bloom", None)
         return bool(getattr(bloom, "enabled", True))
+
+    def _sprites_requested(self, scene: Scene) -> bool:
+        sprite = getattr(scene, "sprite", None)
+        return bool(getattr(sprite, "enabled", True))
+
+    def _init_sprite_buffers(self) -> None:
+        self._sprite_vao = GL.glGenVertexArrays(1)
+        self._sprite_quad_vbo = GL.glGenBuffers(1)
+        self._sprite_inst_vbo = GL.glGenBuffers(1)
+        self._sprite_ibo = GL.glGenBuffers(1)
+        corners = [-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5]
+        indices = [0, 1, 2, 0, 2, 3]
+        GL.glBindVertexArray(self._sprite_vao)
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self._sprite_quad_vbo)
+        GL.glBufferData(GL.GL_ARRAY_BUFFER, len(corners) * 4, (GL.GLfloat * len(corners))(*corners), GL.GL_STATIC_DRAW)
+        GL.glEnableVertexAttribArray(0)
+        GL.glVertexAttribPointer(0, 2, GL.GL_FLOAT, GL.GL_FALSE, 0, None)
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self._sprite_inst_vbo)
+        GL.glBufferData(GL.GL_ARRAY_BUFFER, 0, None, GL.GL_DYNAMIC_DRAW)
+        GL.glEnableVertexAttribArray(1)
+        GL.glVertexAttribPointer(1, 3, GL.GL_FLOAT, GL.GL_FALSE, 5 * 4, GL.GLvoidp(0))
+        GL.glVertexAttribDivisor(1, 1)
+        GL.glEnableVertexAttribArray(2)
+        GL.glVertexAttribPointer(2, 1, GL.GL_FLOAT, GL.GL_FALSE, 5 * 4, GL.GLvoidp(3 * 4))
+        GL.glVertexAttribDivisor(2, 1)
+        GL.glEnableVertexAttribArray(3)
+        GL.glVertexAttribPointer(3, 1, GL.GL_FLOAT, GL.GL_FALSE, 5 * 4, GL.GLvoidp(4 * 4))
+        GL.glVertexAttribDivisor(3, 1)
+        GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, self._sprite_ibo)
+        GL.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, len(indices) * 4, (GL.GLuint * len(indices))(*indices), GL.GL_STATIC_DRAW)
+        GL.glBindVertexArray(0)
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
+
+    def _release_sprite_buffers(self) -> None:
+        if self._sprite_ibo:
+            GL.glDeleteBuffers(1, [self._sprite_ibo])
+            self._sprite_ibo = 0
+        if self._sprite_inst_vbo:
+            GL.glDeleteBuffers(1, [self._sprite_inst_vbo])
+            self._sprite_inst_vbo = 0
+        if self._sprite_quad_vbo:
+            GL.glDeleteBuffers(1, [self._sprite_quad_vbo])
+            self._sprite_quad_vbo = 0
+        if self._sprite_vao:
+            GL.glDeleteVertexArrays(1, [self._sprite_vao])
+            self._sprite_vao = 0
+
+    def _camera_basis(self, scene: Scene) -> tuple[Vec3, Vec3]:
+        flat = scene.camera.view_matrix().flat()
+        return (Vec3(flat[0], flat[4], flat[8]), Vec3(flat[1], flat[5], flat[9]))
+
+    def _draw_sprites(
+        self,
+        scene: Scene,
+        particles: object | None,
+        view_projection: Mat4,
+        post_on: bool,
+        bloom_on: bool,
+    ) -> tuple[int, int]:
+        if not self._sprites_requested(scene) or particles is None:
+            return (0, 0)
+        items = getattr(particles, "particles", None)
+        if not isinstance(items, list) or not items:
+            return (0, 0)
+        rows: list[float] = []
+        for particle in items:
+            try:
+                position = particle.position
+                age = float(particle.age)
+                lifetime = float(particle.lifetime)
+                size = float(particle.size)
+            except (AttributeError, TypeError, ValueError):
+                continue
+            if lifetime <= 0.0 or age >= lifetime:
+                continue
+            try:
+                alpha = sprite_alpha(age, lifetime)
+            except ValueError:
+                continue
+            if alpha <= 0.001:
+                continue
+            rows.extend([float(position.x), float(position.y), float(position.z), max(size * 0.35, 0.05), alpha])
+        count = len(rows) // 5
+        if count == 0:
+            return (0, 0)
+        right, up = self._camera_basis(scene)
+        data = (GL.GLfloat * len(rows))(*rows)
+        GL.glBindVertexArray(self._sprite_vao)
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self._sprite_inst_vbo)
+        GL.glBufferData(GL.GL_ARRAY_BUFFER, len(rows) * 4, data, GL.GL_DYNAMIC_DRAW)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glDepthMask(GL.GL_FALSE)
+        self._sprite_program.use()
+        self._sprite_program.set_mat4("u_view_proj", view_projection)
+        self._sprite_program.set_vec3("u_right", right)
+        self._sprite_program.set_vec3("u_up", up)
+        self._sprite_program.set_vec3("u_sprite_color", Vec3(*SPRITE_COLOR))
+        self._sprite_program.set_float("u_bloom_enabled", 1.0 if bloom_on else 0.0)
+        self._sprite_program.set_float("u_bloom_threshold", BLOOM_THRESHOLD)
+        self._sprite_program.set_float("u_bloom_knee", BLOOM_KNEE)
+        self._sprite_program.set_float("u_bloom_intensity", BLOOM_INTENSITY)
+        self._sprite_program.set_float("u_post_enabled", 1.0 if post_on else 0.0)
+        self._sprite_program.set_float("u_post_exposure", POST_EXPOSURE)
+        self._sprite_program.set_float("u_post_vignette", POST_VIGNETTE)
+        self._sprite_program.set_vec2("u_resolution", float(self.width), float(self.height))
+        GL.glDrawElementsInstanced(GL.GL_TRIANGLES, 6, GL.GL_UNSIGNED_INT, None, count)
+        GL.glBindVertexArray(0)
+        GL.glDepthMask(GL.GL_TRUE)
+        GL.glDisable(GL.GL_BLEND)
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
+        return (1, count)
 
     def _apply_bloom(self, program: ShaderProgram, bloom_on: bool) -> None:
         program.use()
@@ -817,11 +998,13 @@ class Renderer:
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glActiveTexture(GL.GL_TEXTURE0)
 
-    def render(self, scene: Scene) -> dict[str, int]:
+    def render(self, scene: Scene, particles: object | None = None) -> dict[str, int]:
         draw_calls = 0
         triangles = 0
         instanced_calls = 0
         instances = 0
+        sprite_calls = 0
+        sprites = 0
         shadow_calls = 0
         requested = self._shadows_requested(scene)
         if requested and self._shadow is None:
@@ -834,6 +1017,7 @@ class Renderer:
         srgb_on = self._srgb_requested(scene)
         post_on = self._post_requested(scene)
         bloom_on = self._bloom_requested(scene)
+        sprites_on = self._sprites_requested(scene)
         if bloom_on and (
             self._bloom_scene is None or self._bloom_a is None or self._bloom_b is None
         ):
@@ -858,6 +1042,9 @@ class Renderer:
                 scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on
             )
             draw_calls, triangles, instanced_calls, instances = drawn
+            sprite_calls, sprites = self._draw_sprites(scene, particles, view_projection, post_on, bloom_on)
+            draw_calls += sprite_calls
+            triangles += sprites * 2
         else:
             self._ensure_bloom_fbos()
             assert self._bloom_scene is not None
@@ -869,6 +1056,9 @@ class Renderer:
                 scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on
             )
             draw_calls, triangles, instanced_calls, instances = drawn
+            sprite_calls, sprites = self._draw_sprites(scene, particles, view_projection, post_on, bloom_on)
+            draw_calls += sprite_calls
+            triangles += sprites * 2
             GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
             self._run_bloom_chain()
         GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
@@ -887,6 +1077,9 @@ class Renderer:
             "srgb_enabled": 1 if srgb_on else 0,
             "post_enabled": 1 if post_on else 0,
             "bloom_enabled": 1 if bloom_on else 0,
+            "sprite_calls": sprite_calls,
+            "sprites": sprites,
+            "sprites_enabled": 1 if sprites_on else 0,
         }
         return dict(self.last_stats)
 
@@ -911,9 +1104,11 @@ class Renderer:
             self._shadow.release()
             self._shadow = None
         self._release_bloom_fbos()
+        self._release_sprite_buffers()
         if self._sky_vao:
             GL.glDeleteVertexArrays(1, [self._sky_vao])
             self._sky_vao = 0
+        self._sprite_program.release()
         self._sky_program.release()
         self._inst_program.release()
         self._depth_program.release()

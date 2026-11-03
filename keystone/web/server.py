@@ -171,6 +171,7 @@ class GameSession:
             color = getattr(scene, "color", None)
             post = getattr(scene, "post", None)
             bloom = getattr(scene, "bloom", None)
+            sprite = getattr(scene, "sprite", None)
             return {
                 "schema": 1,
                 "game": self.name,
@@ -187,6 +188,7 @@ class GameSession:
                 "color": {"enabled": bool(getattr(color, "enabled", True))},
                 "post": {"enabled": bool(getattr(post, "enabled", True))},
                 "bloom": {"enabled": bool(getattr(bloom, "enabled", True))},
+                "sprites": {"enabled": bool(getattr(sprite, "enabled", True))},
                 "audio": audio,
                 "animation": animation,
                 "particles": particles,

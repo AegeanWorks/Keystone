@@ -15,6 +15,7 @@ from keystone.scene import (
     PostSettings,
     Scene,
     ShadowSettings,
+    SpriteSettings,
 )
 
 SCENE_SNAPSHOT_VERSION = 1
@@ -192,6 +193,7 @@ def scene_to_dict(scene: Scene, registry: Any = None) -> dict[str, Any]:
             "color": {"enabled": bool(getattr(scene.color, "enabled", True))},
             "post": {"enabled": bool(getattr(scene.post, "enabled", True))},
             "bloom": {"enabled": bool(getattr(scene.bloom, "enabled", True))},
+            "sprites": {"enabled": bool(getattr(scene.sprite, "enabled", True))},
         },
         "nodes": nodes,
     }
@@ -259,6 +261,11 @@ def scene_from_dict(data: Mapping[str, Any], registry: Any = None) -> Scene:
             if not isinstance(bloom, Mapping):
                 raise TypeError("scene snapshot bloom must be a mapping")
             scene.bloom = BloomSettings(enabled=bool(bloom.get("enabled", True)))
+        sprites = environment.get("sprites")
+        if sprites is not None:
+            if not isinstance(sprites, Mapping):
+                raise TypeError("scene snapshot sprites must be a mapping")
+            scene.sprite = SpriteSettings(enabled=bool(sprites.get("enabled", True)))
     raw_nodes = data.get("nodes", [])
     if not isinstance(raw_nodes, (list, tuple)):
         raise TypeError("scene snapshot nodes must be a list")

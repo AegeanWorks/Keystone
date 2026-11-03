@@ -1,92 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-audit-waves-0-30-v1",
+    "task_id": "keystone-sprites-v1",
     "last_phase": "in_progress",
-    "active_phase": 4,
-    "status": "in_progress",
-    "updated_at": 1793722642.2562025,
-    "owner": "kilo:audit",
-    "started_by": "kilo:audit",
-    "continuations": []
+    "active_phase": 5,
+    "status": "completed",
+    "updated_at": 1793745446.066002,
+    "owner": "kilo:sprites",
+    "started_by": "kilo:sprites",
+    "continuations": [],
+    "completed_at": 1793745453.3885412
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-gltf-import-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/4] glTF import core: package with io, textures, materials, meshes, scene and loader; typed accessor decoding, PNG textures, PBR material conversion, mesh decoding with normals/UVs/colors/indices, node and scene construction with TRS and matrix transforms; 8 tests, ruff clean, 6/6 gates; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793441355.3031678,
-      "timestamp_str": "2026-10-31 13:09:15",
-      "agent": "opencode:keystone"
-    },
-    {
-      "task_id": "keystone-gltf-import-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-gltf-import-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793441374.947863,
-      "timestamp_str": "2026-10-31 13:09:34",
-      "agent": "opencode:keystone"
-    },
-    {
-      "task_id": "keystone-state-history-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/4] Plan versioned scene snapshots and undo/redo history: History stack, scene_to_dict/scene_from_dict with asset references, tests, docs and ADR-030",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793441665.8231394,
-      "timestamp_str": "2026-10-31 13:14:25",
-      "agent": "opencode:keystone",
-      "impact_assessment": {
-        "why": "The engine had no way to save, restore or roll back a scene graph without OpenGL or a game-specific serializer.",
-        "benefits": "Games and AI clients can save, restore and roll back scene graphs without OpenGL, with asset references and bounded undo/redo.",
-        "risks": "contract: new public keystone.history and keystone.scene_snapshot modules plus exports and version 0.25.0, no report or web schema change; dependency: stdlib plus existing scene, math3d and assets modules only; concurrency: pure in-memory state with no shared locks; state: snapshots are in memory, mesh and material payloads are referenced by asset id",
-        "mitigation": "Failing-first tests for undo/redo, capacity, deep copy, version validation, round trips and asset reattachment; full 6/6 project gate before delivery"
-      }
-    },
-    {
-      "task_id": "keystone-state-history-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/4] History and scene snapshots: History deep-copies snapshots and bounds capacity; scene_to_dict/scene_from_dict version 1 preserve identity, hierarchy, tags, layer, visibility, transforms, camera and asset references; 11 tests, ruff clean, 6/6 gates; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793441667.793494,
-      "timestamp_str": "2026-10-31 13:14:27",
-      "agent": "opencode:keystone"
-    },
-    {
-      "task_id": "keystone-state-history-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-state-history-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793441691.8001997,
-      "timestamp_str": "2026-10-31 13:14:51",
-      "agent": "opencode:keystone"
-    },
-    {
-      "task_id": "keystone-review-hardening-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan a correctness pass over the recent glTF, material-graph and scene-snapshot work: fix indexed normal generation, primitive-mode validation, node-cycle detection, normalized/sparse accessor handling, snapshot environment fidelity and malformed-document validation; sync docs and roadmap; ship with tests and gates",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793518951.2301283,
-      "timestamp_str": "2026-11-01 10:42:31",
-      "agent": "kilo:review",
-      "impact_assessment": {
-        "why": "The recent v0.23-v0.25 features were delivered without a focused adversarial review, and inspection found real correctness gaps: glTF normals are generated from vertex order rather than triangle indices, non-triangle primitives are misread as triangles, cyclic node graphs recurse instead of failing cleanly, normalized integer accessors yield unnormalized colors, sparse accessors silently decode as zeros, and scene snapshots drop environment/lighting state while accepting duplicate ids and dangling parents.",
-        "benefits": "Imported meshes shade correctly and malformed files fail with clear validation errors instead of wrong geometry, recursion or silent zeros; saved scenes restore their full visual environment and reject corrupt hierarchies; documentation stops claiming shipped features are future work.",
-        "risks": "contract: same public modules and schema versions, stricter validation may reject documents that previously loaded silently; dependency: stdlib only; concurrency: none, all pure decoding; state: scene snapshot documents gain optional camera and environment fields while staying schema 1 and backwards compatible",
-        "mitigation": "Failing-first tests for each bug, full pytest suite plus the project 6/6 Phase 4 gate, ruff and secret scan before commit"
-      }
-    },
     {
       "task_id": "keystone-review-hardening-v1",
       "phase": "phase 3",
@@ -272,6 +197,85 @@
       "timestamp": 1793722642.2562025,
       "timestamp_str": "2026-11-03 19:17:22",
       "agent": "kilo:audit"
+    },
+    {
+      "task_id": "keystone-audit-waves-0-30-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-audit-waves-0-30-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793742731.5698416,
+      "timestamp_str": "2026-11-04 00:52:11",
+      "agent": "kilo:sprites",
+      "continued_from": "kilo:audit"
+    },
+    {
+      "task_id": "keystone-sprites-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/4] Plan deterministic GPU point-sprite particle rendering",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793742756.4752958,
+      "timestamp_str": "2026-11-04 00:52:36",
+      "agent": "kilo:sprites",
+      "impact_assessment": {
+        "why": "CPU particles have no GPU path; games hand-roll FX quads with divergent blending and hashes",
+        "benefits": "One instanced billboard draw for all live particles; sim hash unchanged; headless report/diff provable",
+        "risks": "contract: additive SpriteSettings plus renderer(scene,particles=None), report schema 9 to 10, snapshot env optional; dependency: stdlib plus existing GL/renderer only; concurrency: single-threaded render, no shared state; state: snapshot schema 1 unchanged, reports atomic",
+        "mitigation": "Failing-first tests for math, determinism pin, no-sprites pixel parity, schema compat; full pytest plus 6/6 gates before commit"
+      },
+      "plan_digest": "336e53f2a2783658e3ac124257db9c4e2906915e42f80b234763b4effac2d336"
+    },
+    {
+      "task_id": "keystone-sprites-v1",
+      "phase": "in_progress",
+      "phase_num": 3,
+      "description": "[2/4] Sprite implementation: GL-free math plus renderer, scene, report, web, sample, HUD, tests",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793742791.7042336,
+      "timestamp_str": "2026-11-04 00:53:11",
+      "agent": "kilo:sprites"
+    },
+    {
+      "task_id": "keystone-sprites-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[3/4] Delivery ready: v0.42.0 GPU point sprites, 372+14 tests green, ruff clean, 6/6 gates; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793745036.0482557,
+      "timestamp_str": "2026-11-04 01:30:36",
+      "agent": "kilo:sprites",
+      "handoff": {
+        "state": "v0.42.0 sprites implemented uncommitted",
+        "next": "Stage 4 check (cold-start demo, serve console, re-run gates)",
+        "failed": "none",
+        "open": "no push without instruction",
+        "evidence": "pytest green, ruff clean, aikit 6/6, sim hash 772cac5232a0947b8f6d1914a5cf0cde, headless fx 64/64 vs 0"
+      }
+    },
+    {
+      "task_id": "keystone-sprites-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[4/4] Stage 4 check passed: pytest green, determinism ok, aikit 6/6, headless fx 64/64 vs 0, HUD SPRITE line, serve health/describe/scene/inspector ok; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793745446.066002,
+      "timestamp_str": "2026-11-04 01:37:26",
+      "agent": "kilo:sprites"
+    },
+    {
+      "task_id": "keystone-sprites-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-sprites-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793745453.388543,
+      "timestamp_str": "2026-11-04 01:37:33",
+      "agent": "kilo:sprites"
     }
   ]
 }

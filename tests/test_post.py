@@ -44,7 +44,7 @@ class PostContractsTest(unittest.TestCase):
     def test_report_includes_post_metadata_and_hash(self):
         scene = CubeDemo().build_scene()
         report = analyze_frame(scene, bytes((0, 0, 0, 255)) * 4, 2, 2)
-        self.assertEqual(report["schema"], 9)
+        self.assertEqual(report["schema"], 10)
         self.assertEqual(report["scene"]["post"], {"enabled": True})
         scene.post = PostSettings(enabled=False)
         off = analyze_frame(scene, bytes((0, 0, 0, 255)) * 4, 2, 2)
@@ -63,7 +63,7 @@ class PostContractsTest(unittest.TestCase):
         self.assertEqual(diff["post"], {"before": {"enabled": True}, "after": {"enabled": False}})
         same = compare_reports(on, analyze_frame(CubeDemo().build_scene(), pixels, 2, 2))
         self.assertTrue(same["same_post"])
-        self.assertEqual(diff["schema"], 9)
+        self.assertEqual(diff["schema"], 10)
 
     def test_compare_accepts_legacy_without_post(self):
         scene = CubeDemo().build_scene()
@@ -74,7 +74,7 @@ class PostContractsTest(unittest.TestCase):
         legacy["scene"].pop("post", None)
         diff = compare_reports(legacy, report)
         self.assertTrue(diff["same_post"])
-        self.assertEqual(diff["schema"], 9)
+        self.assertEqual(diff["schema"], 10)
 
     def test_snapshot_round_trips_post_flag(self):
         scene = CubeDemo().build_scene()

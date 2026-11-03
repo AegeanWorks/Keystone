@@ -124,6 +124,13 @@ class Engine:
             return True
         return False
 
+    def _game_particles(self) -> object | None:
+        for attribute in ("particles", "fx", "particle_system"):
+            system = getattr(self.game, attribute, None)
+            if system is not None:
+                return system
+        return None
+
     def _draw_ui(self) -> Canvas | None:
         if self.overlay is None or self.ui_renderer is None:
             return None
@@ -176,6 +183,7 @@ class Engine:
             audio_voices=voices,
             anim_clips=anim_clips,
             particles=live_fx,
+            sprites=int(stats.get("sprites", 0)),
         )
         draw_game_ui = getattr(self.game, "draw_ui", None)
         canvas = self.overlay.build(state, draw_game_ui if callable(draw_game_ui) else None)
@@ -214,7 +222,7 @@ class Engine:
                 for index, dt in enumerate(steps):
                     self.game.update(dt, actions if index == 0 else actions.without_pressed())
                 self._elapsed += sum(steps)
-            self.renderer.render(self.scene)
+            self.renderer.render(self.scene, self._game_particles())
             self._draw_ui()
             if self._visible:
                 self.context.swap_buffers()
@@ -232,7 +240,7 @@ class Engine:
         return frames
 
     def capture(self, image_path: str | Path | None, report_path: str | Path | None = None) -> None:
-        self.renderer.render(self.scene)
+        self.renderer.render(self.scene, self._game_particles())
         canvas = self._draw_ui()
         pixels = self.renderer.read_pixels()
         if image_path is not None:
@@ -243,6 +251,15 @@ class Engine:
             from keystone.analysis import analyze_frame, write_report
 
             ui = describe_canvas(canvas, self.paused, self.overlay.visible) if canvas is not None else None
+            system = self._game_particles()
+            items = getattr(system, "particles", None) if system is not None else None
+            alive = len(items) if isinstance(items, list) else 0
+            stats = getattr(self.renderer, "last_stats", {})
+            fx = {
+                "alive": alive,
+                "drawn": int(stats.get("sprites", 0)),
+                "enabled": bool(int(stats.get("sprites_enabled", 1))),
+            }
             report = analyze_frame(
                 self.scene,
                 pixels,
@@ -250,6 +267,7 @@ class Engine:
                 self.renderer.height,
                 image_path,
                 ui=ui,
+                fx=fx,
             )
             write_report(report_path, report)
 

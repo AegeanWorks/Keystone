@@ -251,26 +251,26 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 
 ## 🚀 Features
 
-- **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth/culling, Blinn-Phong + PBR, shadows (1024 PCF), sRGB, post grade, bloom diffusion; draw/triangle/shadow/post/bloom stats feed the profiler.
-- **Scene graph**: named nodes with stable per-scene IDs, tags, layers, optional typed components, local/world transforms, visibility, cycle-safe parenting, linear queries and cached static GPU meshes.
+- **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth/culling, Blinn-Phong + PBR, shadows (1024 PCF), sRGB, post grade, bloom diffusion, point sprites; draw/tri/shadow/post/bloom/sprite stats feed the profiler.
+- **Scene graph**: nodes with stable per-scene IDs, tags, layers, optional typed components, local/world transforms, visibility, cycle-safe parenting, linear queries and cached static GPU meshes.
 - **Assets**: immutable `MeshData` with optional UVs and vertex colors, cube/plane/cone/cylinder/sphere primitives, a streaming OBJ loader, and an immutable `TextureData` with PNG and procedural checker sources.
-- **Textured PBR materials**: `Material` keeps Blinn-Phong specular/shininess plus metallic, roughness and emissive channels; `Material.texture` samples an RGBA texture with repeat wrapping and mipmaps; glTF PBR factors and emissive survive import; material graphs add a `pbr` node; the renderer caches one GPU texture per immutable payload.
+- **Textured PBR materials**: `Material` keeps specular/shininess plus metallic, roughness and emissive; `Material.texture` samples RGBA with repeat wrapping and mipmaps; glTF PBR factors and emissive survive import; material graphs add a `pbr` node; one cached GPU texture per immutable payload.
 - **Fixed-step runtime**: `FixedStepClock` releases whole simulation steps with a bounded catch-up budget; the headless path advances exactly one step per rendered frame for deterministic tests.
 - **Action input**: `InputMap` maps keys and pointer motion to `forward`, `right`, `up`, `look_yaw`, `look_pitch`, `pressed` and `held` with rebindable bindings and named action contexts (`gameplay`, `menu`, custom) that save/load as JSON; games never read GLFW directly.
-- **Audio core**: dependency-free synth (`sine`, `square`, `noise`), named-bus `Mixer` with deterministic mixdown, mono 16-bit WAV read/write and `audio_report()` for AI analysis; no hardware or playback device required.
-- **Animation core**: keyframe `Track`/`AnimationClip` (linear/step), looping controller, crossfade blending, timed events, `apply_pose()`, linear-blend skinning (<=4 influences, CPU + GPU, glTF) with merge exclusion, JSON round trips and `animation_report()`.
+- **Audio core**: dependency-free synth (`sine`, `square`, `noise`), named-bus `Mixer` with deterministic mixdown, mono 16-bit WAV read/write and `audio_report()` for AI analysis; no hardware required.
+- **Animation core**: keyframe `Track`/`AnimationClip` (linear/step), looping controller, crossfade blending, timed events, `apply_pose()`, linear-blend skinning (<=4 influences, CPU + GPU, glTF), JSON round trips and `animation_report()`.
 - **Replay runner**: `run_log()`/`verify_log()` replay a `CommandLog` on a fresh game without a window, and `--replay log.json` (with `--out`, `--expect-hash`, `--trace`) gives AI a file-based deterministic audit trail.
-- **Particles**: deterministic CPU `Emitter`/`ParticleSystem` with seeded spawn, gravity/drag, swept AABB collision, burst emission, lifetime culling, JSON round trips and `particles_report()`; HUD/inspector/describe expose live counts.
+- **Particles**: deterministic CPU `Emitter`/`ParticleSystem` (seeded spawn, gravity/drag, swept collision, bursts, culling, JSON round trips, `particles_report()`); HUD/inspector/describe expose counts; one GPU billboard per live particle.
 - **Physics**: ray/AABB/sphere queries, sphere pushout, deterministic spatial-grid broadphase, AABB character movement with gravity and ground detection, trigger enter/exit tracking and filtered raycasts.
 - **Replay and persistence**: `ActionState` command logs, stable hashes and atomic JSON writes with a `.bak` snapshot.
 - **Plugin loading**: `load_game("package.module:Factory")` validates the five-operation contract before the engine starts.
 - **No-GL simulation**: `run_simulation()` and `--simulate` drive `GameModule.update()` directly, with JSON action scripts and deterministic hashes, no window or driver required.
-- **AI discovery and testing**: `--describe` exposes actions, capabilities, report/scene schemas and snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; `keystone.testing`/`agents`/`playtest` add scenario helpers, validated actions, fused observations and seeded bots.
-- **Visual regression gate**: `--compare-baseline baseline.json` renders a new report, compares image/report hashes, stats and projected nodes, prints the diff and exits non-zero on image change. `--diff-out diff.png` writes a changed-pixel diff image.
-- **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip image loading, changed-pixel counts, bbox and a visual diff without third-party imaging libraries.
-- **Frame reports for AI analysis**: `--report` writes schema-9 JSON with image hashes, pixel/luminance stats, content box, dominant colors, 8×8 grid, camera, projected bounds and per-node identity/material metadata, plus UI labels/buttons when the overlay is rendered.
-- **Human overlay**: game-agnostic HUD with game/status, FPS, frame, time, resolution and profiler lines (draws, tris, audio, anim, FX), plus help and pause menu; 5×7 bitmap font, no font asset. Games add HUD via `draw_ui(canvas, state)` and expose `mixer`/anim/FX counts.
-- **Web console and WebGL viewer**: `--serve` starts a loopback stdlib JSON API and dashboard; `/api/describe`, `/api/scene`, `/api/inspector`, `/api/simulate` share the CLI contract; WebGL2 previews scenes with textures, lights, fog. `/api/inspector` reports counts, batch plan, merge, audio/anim, assets.
+- **AI discovery and testing**: `--describe` exposes actions, capabilities, schemas and snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; `testing`/`agents`/`playtest` add helpers, validated actions, fused observations and seeded bots.
+- **Visual regression gate**: `--compare-baseline baseline.json` re-renders, compares image/report hashes, stats and nodes, prints the diff and exits non-zero on image change. `--diff-out diff.png` writes a changed-pixel diff.
+- **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip loading, changed-pixel counts, bbox and a visual diff, dependency-free.
+- **Frame reports for AI analysis**: `--report` writes schema-10 JSON with image hashes, pixel/luminance stats, content box, dominant colors, 8×8 grid, camera, projected bounds and per-node identity/material metadata, sprite/FX counts and UI labels/buttons when the overlay is rendered.
+- **Human overlay**: game-agnostic HUD with game/status, FPS, frame, time, resolution and profiler lines (draws, tris, audio, anim, FX, sprites), plus help and pause menu; 5×7 bitmap font, no font asset. Games add HUD via `draw_ui(canvas, state)`.
+- **Web console and WebGL viewer**: `--serve` starts a loopback stdlib JSON API and dashboard sharing the CLI contract (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/simulate`); WebGL2 previews scenes with textures, lights, fog; `/api/inspector` reports counts, batches, merge, audio/anim, assets, sprites.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
 
 ## 🤖 AI Testing & Frame Analysis
@@ -429,6 +429,7 @@ keystone/
 │       ├── shader.py         <- GLSL compilation and uniforms
 │       ├── mesh_buffer.py    <- VAO/VBO/EBO upload and drawing
 │       ├── skinned_buffer.py <- skinned mesh upload
+│       ├── sprites.py        <- deterministic sprite math
 │       ├── instancing.py     <- deterministic instancing groups
 │       ├── shadow.py         <- shadow map
 │       ├── post.py           <- post grade math
@@ -436,7 +437,7 @@ keystone/
 │       ├── bloom_fbo.py      <- bloom diffusion FBO
 │       ├── texture_buffer.py <- 2D texture upload, mipmaps and cleanup
 │       ├── ui_renderer.py    <- screen-space alpha-blended UI draw
-│       └── renderer.py       <- forward renderer, sky, lights, shadows, post, bloom
+│       └── renderer.py       <- forward renderer, sky, lights, shadows, post, bloom, sprites
 ├── assets/
 │   ├── octahedron.obj        <- generic sample OBJ
 │   ├── engine.png            <- sample frame
@@ -466,6 +467,7 @@ keystone/
 │   ├── test_agents.py        <- AI adapters, validation and audit trail
 │   ├── test_animation.py     <- clips, blending and timed events
 │   ├── test_skinning.py      <- skin math, GPU path, glTF
+│   ├── test_sprites.py       <- sprite math, report, sample fixture
 │   ├── test_assets.py        <- registry ids, digests, dependencies and reload
 │   ├── test_audio.py         <- synth, mixer buses and WAV I/O
 │   ├── test_batch.py         <- batch planning and world-space merge
@@ -568,7 +570,7 @@ snapshot = history.undo()
 3. ~~Assets~~ v0.22.0; ~~material graphs~~ v0.23.0; ~~glTF~~ v0.24.0; ~~GLB~~ v0.26.0; ~~PBR core~~ v0.27.0.
 4. Renderer PBR/emissive and schema 2 in v0.27.0; batch plan in v0.28.0, merge in v0.29.0, ~~instancing~~ in v0.32.0, ~~shadows~~ in v0.34.0, ~~sRGB~~ in v0.35.0, ~~post grade~~ in v0.36.0, ~~bloom~~ in v0.37.0 and ~~diffusion~~ in v0.38.0; post chain remains.
 5. ~~Input persistence~~ v0.27.0; ~~contexts/audio mixer~~ v0.28.0; live playback out of scope.
-6. ~~Animation core~~ in v0.29.0; ~~blending/events~~ in v0.30.0; ~~skinning~~ in v0.41.0; ~~CPU particles~~ in v0.31.0; GPU sprites/bounce remain.
+6. ~~Animation core~~ in v0.29.0; ~~blending/events~~ in v0.30.0; ~~skinning~~ in v0.41.0; ~~CPU particles~~ in v0.31.0; ~~GPU sprites~~ in v0.42.0; bounce remains.
 6. ~~Schema versioning~~ v0.25.0; ~~replay runner~~ v0.30.0.
 7. ~~Profiler HUD~~ in v0.27.0; ~~web inspector~~ in v0.28.0-0.30.0 (batches, merge, assets) plus ~~instancing~~ in v0.32.0; editor/HUD hooks remain.
 8. ~~AI adapters~~ in v0.27.0 (`keystone.agents`).

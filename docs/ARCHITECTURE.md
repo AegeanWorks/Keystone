@@ -1,6 +1,6 @@
 # Keystone Architecture
 
-**Status:** implemented in v0.41.0 - core-only engine with scene identity, PBR materials, physics systems, human UI with profiler, deterministic animation with blending/events and skinning, particles with collision and audio, batch planning and merging, replay runner, seeded bot playtester with transcript diffing and fairness validation, a local web console with inspector, asset inventory and particle state, an asset registry with hot reload, material graphs, glTF 2.0 import, versioned scene snapshots with undo/redo, AI observation/action adapters, a post color-grade, bloom diffusion and character locomotion
+**Status:** implemented in v0.42.0 - core-only engine with scene identity, PBR materials, physics systems, human UI with profiler, deterministic animation with blending/events and skinning, particles with collision and GPU point sprites, audio, batch planning and merging, replay runner, seeded bot playtester with transcript diffing and fairness validation, a local web console with inspector, asset inventory and particle state, an asset registry with hot reload, material graphs, glTF 2.0 import, versioned scene snapshots with undo/redo, AI observation/action adapters, a post color-grade, bloom diffusion and character locomotion
 **Boundary:** `keystone/` is game-agnostic; games are external modules.
 
 ## 1. What Keystone Is
@@ -111,7 +111,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 
 - `headless.run_simulation(game, frames, actions, step, trace)` calls `build_scene()` and then `update()` in fixed steps without importing the renderer or creating a GL context.
 - `load_actions()` accepts a JSON list or an object with `actions`; every item is an `ActionState`.
-- `analysis.analyze_frame(scene, pixels, width, height, image_path, ui=None)` returns schema-5 JSON: image hashes, pixel statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data, projected node bounds with scene identity/tags/layers/components, PBR material/texture metadata and optional UI labels/buttons. `Engine.capture(image, report)` writes both artifacts.
+- `analysis.analyze_frame(scene, pixels, width, height, image_path, ui=None, fx=None)` returns schema-10 JSON: image hashes, pixel statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data, projected node bounds with scene identity/tags/layers/components, PBR material/texture metadata, sprite toggle plus per-frame FX counts and optional UI labels/buttons. `Engine.capture(image, report)` writes both artifacts.
 - `analysis.compare_reports(before, after)` returns image/report equality, luminance/content-ratio deltas, bbox changes, added/removed/changed nodes (including identity, tag, layer, component and PBR material changes), and added/removed/moved UI labels and buttons. It accepts schema-1/2/3/4 reports as baselines and keys nodes by ID when both reports are schema 4 or newer.
 - `keystone.agents.observe()` fuses `describe_game()` and `run_simulation()` into one hash-stable observation; `parse_actions()` validates LLM JSON into `ActionState`; `summarize_report()` compresses a frame report for model context; `AuditTrail` keeps a hash-chained log.
 - `InputMap.save_bindings()/load_bindings()` persist rebindable keys as JSON; the profiler HUD shows draw calls and triangles from `Renderer.last_stats`.
@@ -154,7 +154,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Runtime | Implemented | fixed clock, rebindable input with contexts and JSON persistence, loop, screenshots, profiler HUD with audio voices and animation clips |
 | Audio | Implemented | synth clips, named-bus mixer, deterministic mixdown, WAV I/O, audit reports |
 | Animation | Implemented | deterministic keyframe clips, looping controller, crossfade blending, timed events, pose application, JSON round trips, audit reports |
-| Particles | Implemented | deterministic CPU emitters and systems with gravity/drag, swept AABB collision, burst emission, lifetime culling, JSON round trips, HUD/inspector/AI reports |
+| Particles | Implemented | deterministic CPU emitters and systems with gravity/drag, swept AABB collision, burst emission, lifetime culling, JSON round trips, HUD/inspector/AI reports, plus one GPU point-sprite billboard per live particle |
 | Replay | Implemented | CommandLog runner and verifier without a window; --replay log.json with hash pinning |
 | Plugin | Implemented | GameModule + loader |
 | Replay | Implemented (basic) | action log, stable hash |
@@ -181,7 +181,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 4. **Renderer** — PBR shading, emissive and render stats in v0.27.0; static batch planning in v0.28.0 and world-space batch merging in v0.29.0; GPU instancing in v0.32.0, directional shadows in v0.34.0, an sRGB linear pipeline in v0.35.0, a post color-grade in v0.36.0, bloom glow in v0.37.0 and bloom diffusion in v0.38.0; full post chain remains.
 5. **Input/audio** — rebindable input with JSON persistence and profiler HUD in v0.27.0; action contexts, deterministic mixer with buses, WAV I/O and HUD voices in v0.28.0; live device playback remains out of scope.
 6. **AI adapters** — implemented in v0.27.0; validated actions, fused observations, report summaries and hash-chained audit trail.
-6. **Animation** — deterministic keyframe clips, looping controller, pose application and JSON round trips in v0.29.0; crossfade blending and timed events in v0.30.0; skinning (LBS-4, CPU + GPU, glTF) in v0.41.0; deterministic CPU particles with HUD/inspector/AI reports in v0.31.0, swept AABB collision in v0.40.0; GPU point sprites and bounce remain.
+6. **Animation** — deterministic keyframe clips, looping controller, pose application and JSON round trips in v0.29.0; crossfade blending and timed events in v0.30.0; skinning (LBS-4, CPU + GPU, glTF) in v0.41.0; deterministic CPU particles with HUD/inspector/AI reports in v0.31.0, swept AABB collision in v0.40.0, GPU point sprites in v0.42.0; bounce remains.
 6. **Serialization/replay** — versioned scene snapshot format and undo/redo in v0.25.0; deterministic replay runner with `--replay` in v0.30.0; seeded bot playtester with transcript diffing and fairness validation in v0.33.0.
 7. **Tooling** — the v0.20.0 web console covers discovery, simulation and scene preview; `/api/inspector` with batch plan and audio state in v0.28.0 plus merge summary and animation state in v0.29.0 plus asset inventory in v0.30.0; editor, richer HUD widgets and editor hooks remain.
 

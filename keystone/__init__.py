@@ -57,12 +57,13 @@ from keystone.scene import (
     PostSettings,
     Scene,
     ShadowSettings,
+    SpriteSettings,
     Transform,
 )
 from keystone.scene_snapshot import scene_from_dict, scene_to_dict
 from keystone.skin import bone_matrices, skin_mesh, skin_point
 
-__version__ = "0.41.0"
+__version__ = "0.42.0"
 __all__ = [
     "PLAYTEST_REPORT_SCHEMA",
     "SAMPLE_RATE",
@@ -98,6 +99,7 @@ __all__ = [
     "Scene",
     "ScriptedPolicy",
     "ShadowSettings",
+    "SpriteSettings",
     "TextureData",
     "Track",
     "Transform",

@@ -196,6 +196,13 @@ class BloomSettings:
     enabled: bool = True
 
 
+@dataclass(frozen=True, slots=True)
+class SpriteSettings:
+    """Deterministic GPU point-sprite toggle (one instanced quad per particle)."""
+
+    enabled: bool = True
+
+
 def _root_node() -> Node:
     return Node("", id="root")
 
@@ -212,6 +219,7 @@ class Scene:
     color: ColorSettings = field(default_factory=ColorSettings)
     post: PostSettings = field(default_factory=PostSettings)
     bloom: BloomSettings = field(default_factory=BloomSettings)
+    sprite: SpriteSettings = field(default_factory=SpriteSettings)
     ambient: Vec3 = Vec3(0.16, 0.17, 0.2)
     background: Vec3 = Vec3(0.045, 0.055, 0.075)
     sky: Vec3 = Vec3(0.01, 0.015, 0.04)

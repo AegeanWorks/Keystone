@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `112`
-- **Total Classes**: `157`
-- **Total Top-Level Functions**: `200`
-- **Total Class Methods**: `844`
-- **Total Source Lines**: `16674`
+- **Total Python Modules**: `114`
+- **Total Classes**: `162`
+- **Total Top-Level Functions**: `206`
+- **Total Class Methods**: `864`
+- **Total Source Lines**: `17232`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `144` lines (`3131` bytes)
+**Size**: `146` lines (`3173` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `380` lines (`20851` bytes)
+**Size**: `391` lines (`21765` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -61,20 +61,22 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `469` lines (`19629` bytes)
+**Size**: `528` lines (`21895` bytes)
 
 **Functions:**
 - `def _rows(pixels, width, height, flip)`
 - `def _stats(pixels, width, height, background, flip)`
 - `def _material_report(material)`
 - `def _node_report(scene, width, height)`
-- `def analyze_frame(scene, pixels, width, height, image_path, ui)`
+- `def analyze_frame(scene, pixels, width, height, image_path, ui, fx)`
 - `def _compare_ui(before, after)`
 - `def _shadows_of(report)`
 - `def _color_of(report)`
 - `def _post_of(report)`
 - `def _bloom_of(report)`
-- `def compare_reports(before, after)` - *Compare schema-1/2/3/4/5/6/7/8/9 frame reports for AI-driven regression checks.*
+- `def _sprites_of(report)`
+- `def _fx_of(report)`
+- `def compare_reports(before, after)` - *Compare schema-1/2/3/4/5/6/7/8/9/10 frame reports for AI-driven regression checks.*
 - `def diff_images(before, after, output, threshold)` - *Write a visual diff PNG and return changed-pixel statistics.*
 - `def write_report(path, report)`
 
@@ -119,7 +121,7 @@
 ### [`keystone/app.py`](keystone/app.py)
 > *Game-agnostic engine runtime: window, fixed step, input, render and capture.*
 
-**Size**: `266` lines (`10159` bytes)
+**Size**: `284` lines (`10984` bytes)
 
 **Classes:**
 - `class Engine` - *Owns the runtime around one external GameModule.*
@@ -130,6 +132,7 @@
   - Method `._handle_system_actions(actions)`
   - Method `.toggle_pause()` - *Pause or resume gameplay; release the cursor while the menu is open.*
   - Method `.apply_ui_action(action)` - *Run a named UI action; returns False when the action is unknown.*
+  - Method `._game_particles()`
   - Method `._draw_ui()`
   - Method `.run(max_frames)` - *Run until the window closes or max_frames (0 = unlimited) is reached.*
   - Method `.capture(image_path, report_path)`
@@ -541,7 +544,7 @@
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
 > *Blinn-Phong forward renderer with fog, shadows and screenshot readback.*
 
-**Size**: `925` lines (`36172` bytes)
+**Size**: `1120` lines (`44515` bytes)
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
@@ -559,6 +562,11 @@
   - Method `._srgb_requested(scene)`
   - Method `._post_requested(scene)`
   - Method `._bloom_requested(scene)`
+  - Method `._sprites_requested(scene)`
+  - Method `._init_sprite_buffers()`
+  - Method `._release_sprite_buffers()`
+  - Method `._camera_basis(scene)`
+  - Method `._draw_sprites(scene, particles, view_projection, post_on, bloom_on)`
   - Method `._apply_bloom(program, bloom_on)`
   - Method `._apply_post(program, post_on)`
   - Method `._apply_shared(program, scene, view_projection, light_vp, shadows_on, srgb_on)`
@@ -567,7 +575,7 @@
   - Method `._draw_quad()`
   - Method `._draw_geometry(scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on)`
   - Method `._run_bloom_chain()`
-  - Method `.render(scene)`
+  - Method `.render(scene, particles)`
   - Method `.read_pixels()`
   - Method `.save_png(path)`
   - Method `.release()`
@@ -631,6 +639,19 @@
   - Method `.__init__(mesh)`
   - Method `.draw()`
   - Method `.release()`
+
+---
+
+### [`keystone/gpu/sprites.py`](keystone/gpu/sprites.py)
+> *Deterministic GPU point-sprite math: size attenuation and soft alpha.*
+
+**Size**: `74` lines (`2667` bytes)
+
+**Functions:**
+- `def sprite_scale(distance, size)` - *Return the deterministic pixel size for a particle.*
+- `def soft_alpha(u, v)` - *Return the soft-circle coverage for quad UVs in [0, 1].*
+- `def sprite_alpha(age, lifetime, u, v)` - *Return the combined fade * soft-circle alpha for one particle.*
+- `def billboard_corners(center, right, up, world_size)` - *Return the four world corners for a camera-facing quad.*
 
 ---
 
@@ -927,7 +948,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `92` lines (`3362` bytes)
+**Size**: `93` lines (`3391` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -995,7 +1016,7 @@
 ### [`keystone/samples.py`](keystone/samples.py)
 > *A minimal game-agnostic sample used to smoke-test the engine.*
 
-**Size**: `134` lines (`5223` bytes)
+**Size**: `152` lines (`5821` bytes)
 
 **Classes:**
 - `class CubeDemo` - *A rotating cube scene; contains no combat, puzzles or genre rules.*
@@ -1011,7 +1032,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `299` lines (`10048` bytes)
+**Size**: `307` lines (`10284` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -1042,6 +1063,7 @@
 - `class ColorSettings` - *Deterministic sRGB-correct linear pipeline toggle (in-shader, pow 2.2).*
 - `class PostSettings` - *Deterministic post color-grade toggle (in-shader exposure + vignette).*
 - `class BloomSettings` - *Deterministic bloom glow toggle (in-shader luminance threshold).*
+- `class SpriteSettings` - *Deterministic GPU point-sprite toggle (one instanced quad per particle).*
 - `class Scene` - *Root node, identity allocation, queries, camera, lights and atmosphere.*
   - Method `.add(node)`
   - Method `.traverse()`
@@ -1059,7 +1081,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `313` lines (`12989` bytes)
+**Size**: `320` lines (`13379` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)`
@@ -1209,7 +1231,7 @@
 ### [`keystone/ui/overlay.py`](keystone/ui/overlay.py)
 > *Game-agnostic human overlay: HUD, controls help and pause menu.*
 
-**Size**: `158` lines (`6833` bytes)
+**Size**: `160` lines (`6921` bytes)
 
 **Classes:**
 - `class HudState` - *Presentation-only snapshot the overlay needs for one frame.*
@@ -1256,7 +1278,7 @@
 ### [`keystone/web/scene.py`](keystone/web/scene.py)
 > *Export a game-agnostic scene as a JSON document for the browser viewer.*
 
-**Size**: `143` lines (`5276` bytes)
+**Size**: `145` lines (`5392` bytes)
 
 **Functions:**
 - `def _floats(values)`
@@ -1276,7 +1298,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `403` lines (`17931` bytes)
+**Size**: `405` lines (`18063` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1364,7 +1386,7 @@
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
-**Size**: `245` lines (`10173` bytes)
+**Size**: `245` lines (`10178` bytes)
 
 **Classes:**
 - `class Health`
@@ -1420,7 +1442,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `300` lines (`13785` bytes)
+**Size**: `300` lines (`13787` bytes)
 
 **Classes:**
 - `class HudCube`
@@ -1518,7 +1540,7 @@
 ### [`tests/test_bloom.py`](tests/test_bloom.py)
 > *Tests for the deterministic bloom glow (in-shader luminance threshold).*
 
-**Size**: `200` lines (`7862` bytes)
+**Size**: `200` lines (`7865` bytes)
 
 **Classes:**
 - `class BloomMathTest`
@@ -1834,7 +1856,7 @@
 ### [`tests/test_pbr.py`](tests/test_pbr.py)
 > *Tests for PBR material extensions: validation, glTF, graphs and reports.*
 
-**Size**: `82` lines (`3271` bytes)
+**Size**: `82` lines (`3272` bytes)
 
 **Classes:**
 - `class PbrMaterialTest`
@@ -1914,7 +1936,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `60` lines (`2379` bytes)
+**Size**: `61` lines (`2440` bytes)
 
 **Classes:**
 - `class PluginTest`
@@ -1949,7 +1971,7 @@
 ### [`tests/test_post.py`](tests/test_post.py)
 > *Tests for the deterministic post color-grade (in-shader exposure + vignette).*
 
-**Size**: `100` lines (`4244` bytes)
+**Size**: `100` lines (`4247` bytes)
 
 **Classes:**
 - `class PostMathTest`
@@ -2100,7 +2122,7 @@
 ### [`tests/test_shadows.py`](tests/test_shadows.py)
 > *Tests for deterministic directional shadow mapping (fixed 1024 map, PCF).*
 
-**Size**: `125` lines (`5270` bytes)
+**Size**: `125` lines (`5272` bytes)
 
 **Classes:**
 - `class ShadowMathTest`
@@ -2155,10 +2177,37 @@
 
 ---
 
+### [`tests/test_sprites.py`](tests/test_sprites.py)
+> *Tests for deterministic GPU point-sprite particle rendering.*
+
+**Size**: `158` lines (`6884` bytes)
+
+**Classes:**
+- `class SpriteMathTest`
+  - Method `.test_constants_are_fixed()`
+  - Method `.test_scale_attenuates_and_clamps()`
+  - Method `.test_soft_alpha_center_and_edge()`
+  - Method `.test_sprite_alpha_combines_fade_and_soft()`
+  - Method `.test_billboard_corners_are_symmetric()`
+- `class SpriteSceneTest`
+  - Method `.test_scene_defaults_to_sprites_enabled()`
+  - Method `.test_snapshot_round_trips_sprites()`
+  - Method `.test_snapshot_rejects_non_mapping_sprites()`
+- `class SpriteReportTest`
+  - Method `.test_schema_is_10_with_sprites_and_fx()`
+  - Method `.test_analyze_frame_reports_sprites_and_fx()`
+  - Method `.test_no_sprites_changes_report_hash()`
+  - Method `.test_compare_accepts_schema_9_baseline()`
+  - Method `.test_describe_reports_sprites_capability()`
+- `class SpriteSampleTest`
+  - Method `.test_fountain_is_deterministic_and_outside_snapshot()`
+
+---
+
 ### [`tests/test_srgb.py`](tests/test_srgb.py)
 > *Tests for the deterministic sRGB-correct linear pipeline (in-shader, pow 2.2).*
 
-**Size**: `78` lines (`3289` bytes)
+**Size**: `78` lines (`3292` bytes)
 
 **Classes:**
 - `class SrgbContractsTest`
@@ -2245,7 +2294,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `193` lines (`8398` bytes)
+**Size**: `193` lines (`8399` bytes)
 
 **Classes:**
 - `class Health`
