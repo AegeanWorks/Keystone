@@ -427,9 +427,10 @@ keystone/
 │       ├── shader.py         <- GLSL compilation and uniforms
 │       ├── mesh_buffer.py    <- VAO/VBO/EBO upload and drawing
 │       ├── instancing.py     <- deterministic instancing groups
+│       ├── shadow.py         <- shadow map and light VP
 │       ├── texture_buffer.py <- 2D texture upload, mipmaps and cleanup
 │       ├── ui_renderer.py    <- screen-space alpha-blended UI draw
-│       └── renderer.py       <- forward renderer, sky, lights, readback
+│       └── renderer.py       <- forward renderer, sky, lights, shadows, readback
 ├── assets/
 │   ├── octahedron.obj        <- generic sample OBJ
 │   ├── engine.png            <- sample frame
@@ -465,6 +466,7 @@ keystone/
 │   ├── test_gltf.py           <- glTF/GLB import and texture loading
 │   ├── test_history.py        <- bounded undo/redo history
 │   ├── test_instancing.py     <- hardware-instancing groups and draws
+│   ├── test_shadows.py        <- shadow map and contracts
 │   ├── test_scene_snapshot.py <- versioned scene save/load
 │   ├── test_plugin.py        <- GameModule contract and loader
 │   ├── test_replay.py        <- command log and hashes
