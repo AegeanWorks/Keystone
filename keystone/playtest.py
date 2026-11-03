@@ -14,6 +14,7 @@ an ``unknown`` fairness verdict, never a false ``fair``.
 
 from __future__ import annotations
 
+import math as _math
 import random as _random
 import time as _time
 from collections.abc import Callable, Iterable, Mapping
@@ -129,9 +130,9 @@ def run_bot(
         raise TypeError("factory must be callable")
     if frames < 0:
         raise ValueError("frames cannot be negative")
-    if step <= 0.0:
+    if not _math.isfinite(step) or step <= 0.0:
         raise ValueError("step must be positive")
-    if max_wall_seconds <= 0.0:
+    if not _math.isfinite(max_wall_seconds) or max_wall_seconds <= 0.0:
         raise ValueError("max_wall_seconds must be positive")
     reset = getattr(policy, "reset", None)
     select = getattr(policy, "select", None)
@@ -141,83 +142,87 @@ def run_bot(
     if not isinstance(policy_name, str) or not policy_name.strip():
         raise ValueError("policy name must be a non-blank string")
 
-    _random.seed(seed)
-    rng = _random.Random(seed)
-    policy.reset(seed)
-    game = factory()
-    build = getattr(game, "build_scene", None)
-    update = getattr(game, "update", None)
-    snapshot = getattr(game, "snapshot", None)
-    actions_of = getattr(game, "actions", None)
-    if not callable(build) or not callable(update) or not callable(snapshot) or not callable(actions_of):
-        raise TypeError("replayed game must expose build_scene(), update(), snapshot() and actions()")
-    build()
-
+    state = _random.getstate()
     try:
-        spec = actions_of()
-    except (AttributeError, TypeError, ValueError) as exc:
-        raise ValueError(f"game actions() spec could not be read: {exc}") from exc
-    if not isinstance(spec, Mapping):
-        raise TypeError("game actions() spec must be a mapping")
-    actions_spec = dict(spec)
+        _random.seed(seed)
+        rng = _random.Random(seed)
+        policy.reset(seed)
+        game = factory()
+        build = getattr(game, "build_scene", None)
+        update = getattr(game, "update", None)
+        snapshot = getattr(game, "snapshot", None)
+        actions_of = getattr(game, "actions", None)
+        if not callable(build) or not callable(update) or not callable(snapshot) or not callable(actions_of):
+            raise TypeError("replayed game must expose build_scene(), update(), snapshot() and actions()")
+        build()
 
-    used: list[dict[str, Any]] = []
-    snapshots: list[dict[str, Any]] = []
-    deadline = _time.monotonic() + max_wall_seconds
-    outcome = "unknown"
-    timed_out = False
-    steps_used = 0
-    for _ in range(frames):
-        if _time.monotonic() >= deadline:
-            timed_out = True
-            break
         try:
-            current = snapshot()
+            spec = actions_of()
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise ValueError(f"game actions() spec could not be read: {exc}") from exc
+        if not isinstance(spec, Mapping):
+            raise TypeError("game actions() spec must be a mapping")
+        actions_spec = dict(spec)
+
+        used: list[dict[str, Any]] = []
+        snapshots: list[dict[str, Any]] = []
+        deadline = _time.monotonic() + max_wall_seconds
+        outcome = "unknown"
+        timed_out = False
+        steps_used = 0
+        for _ in range(frames):
+            if _time.monotonic() >= deadline:
+                timed_out = True
+                break
+            try:
+                current = snapshot()
+            except (AttributeError, TypeError, ValueError) as exc:
+                raise ValueError(f"game snapshot() failed: {exc}") from exc
+            if not isinstance(current, Mapping):
+                raise TypeError("game snapshot() must return a mapping")
+            action = select(dict(current), dict(actions_spec), rng)
+            if not isinstance(action, ActionState):
+                raise TypeError("policy select() must return an ActionState")
+            used.append(action.to_dict())
+            update(step, action)
+            steps_used += 1
+            outcome = read_outcome(snapshot())
+            if trace:
+                final_of_frame = snapshot()
+                if not isinstance(final_of_frame, Mapping):
+                    raise TypeError("game snapshot() must return a mapping")
+                snapshots.append(dict(final_of_frame))
+            if outcome in TERMINAL_OUTCOMES:
+                break
+        try:
+            final = snapshot()
         except (AttributeError, TypeError, ValueError) as exc:
             raise ValueError(f"game snapshot() failed: {exc}") from exc
-        if not isinstance(current, Mapping):
+        if not isinstance(final, Mapping):
             raise TypeError("game snapshot() must return a mapping")
-        action = select(dict(current), dict(actions_spec), rng)
-        if not isinstance(action, ActionState):
-            raise TypeError("policy select() must return an ActionState")
-        used.append(action.to_dict())
-        update(step, action)
-        steps_used += 1
-        outcome = read_outcome(snapshot())
+        final = dict(final)
+        if timed_out and outcome not in TERMINAL_OUTCOMES:
+            outcome = "timeout"
+        transcript: dict[str, Any] = {
+            "schema": TRANSCRIPT_SCHEMA,
+            "game": getattr(game, "name", "game"),
+            "seed": seed,
+            "step": step,
+            "frames": frames,
+            "steps_used": steps_used,
+            "timed_out": timed_out,
+            "policy": {"name": policy_name, "seed": seed, "params": dict(getattr(policy, "params", {}))},
+            "command_log": {"seed": seed, "step": step, "frames": used},
+            "actions": used,
+            "outcome": outcome,
+            "final": final,
+            "hash": stable_hash(final),
+        }
         if trace:
-            final_of_frame = snapshot()
-            if not isinstance(final_of_frame, Mapping):
-                raise TypeError("game snapshot() must return a mapping")
-            snapshots.append(dict(final_of_frame))
-        if outcome in TERMINAL_OUTCOMES:
-            break
-    try:
-        final = snapshot()
-    except (AttributeError, TypeError, ValueError) as exc:
-        raise ValueError(f"game snapshot() failed: {exc}") from exc
-    if not isinstance(final, Mapping):
-        raise TypeError("game snapshot() must return a mapping")
-    final = dict(final)
-    if timed_out and outcome not in TERMINAL_OUTCOMES:
-        outcome = "timeout"
-    transcript: dict[str, Any] = {
-        "schema": TRANSCRIPT_SCHEMA,
-        "game": getattr(game, "name", "game"),
-        "seed": seed,
-        "step": step,
-        "frames": frames,
-        "steps_used": steps_used,
-        "timed_out": timed_out,
-        "policy": {"name": policy_name, "seed": seed, "params": dict(getattr(policy, "params", {}))},
-        "command_log": {"seed": seed, "step": step, "frames": used},
-        "actions": used,
-        "outcome": outcome,
-        "final": final,
-        "hash": stable_hash(final),
-    }
-    if trace:
-        transcript["snapshots"] = snapshots
-    return transcript
+            transcript["snapshots"] = snapshots
+        return transcript
+    finally:
+        _random.setstate(state)
 
 
 def diff_transcripts(before: Mapping[str, Any], after: Mapping[str, Any]) -> dict[str, Any]:
@@ -482,11 +487,11 @@ def validate_fairness(
         raise TypeError("factory must be callable")
     if frames < 0:
         raise ValueError("frames cannot be negative")
-    if step <= 0.0:
+    if not _math.isfinite(step) or step <= 0.0:
         raise ValueError("step must be positive")
     if max_states <= 0:
         raise ValueError("max_states must be positive")
-    if max_wall_seconds <= 0.0:
+    if not _math.isfinite(max_wall_seconds) or max_wall_seconds <= 0.0:
         raise ValueError("max_wall_seconds must be positive")
     seeds = list(seeds)
     if not seeds:

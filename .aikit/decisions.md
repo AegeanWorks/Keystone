@@ -450,3 +450,12 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Decision**: Hash metallic/roughness/emissive into material digests, width/height plus pixel sha into texture digests, and joint/weight/skin-joint/bind-matrix groups into mesh digests with length-prefixed packing. Two existing assertions that pinned pixel-only texture digests were updated to the new contract. Four regression tests added (metallic/roughness/emissive divergence, reshaped-texture divergence, skin-weight divergence with no false duplicates).
 - **Consequences**: Content-distinct assets no longer collide in duplicates()/find_by_digest() and refresh() detects their changes; 473 tests green, ruff clean, 6/6 aikit gates; simulate hash unchanged. apply_ui_action resume idempotence kept as-is (idempotent success, no harm reproduced); texture names stay out of digests by content-addressing design.
 
+
+
+### ADR-053: Keep every reported node and isolate bot randomness
+- **Date**: 2026-11-04
+- **Status**: Accepted
+- **Context**: _node_report dropped any node whose center hit the projection plane (ZeroDivisionError -> continue skipped the whole entry, corrupting node_count and diffs); run_bot permanently reseeded global random like run_log did before ADR-049; run_bot and validate_fairness accepted NaN/Inf steps and wall budgets, silently disabling timeouts and poisoning clocks. The hygiene gate rejects bare except-pass, so the deliberate null-screen keep carries a scoped marker (bare form needs a 3+ char reason word per the checker).
+- **Decision**: Degrade on-plane nodes to screen null instead of dropping them; save/restore global RNG around run_bot like run_log; require finite positive step and wall budgets in run_bot and validate_fairness. Five regression tests added (on-plane inclusion with null screen, RNG restore, NaN/Inf step rejection).
+- **Consequences**: Frame reports never lose nodes; bot runs are side-effect-free and strictly validated; 475 tests green, ruff clean, 6/6 aikit gates; simulate hash unchanged. apply_ui_action resume idempotence and unbind-resurrect stay filed as judgment calls, not defects.
+

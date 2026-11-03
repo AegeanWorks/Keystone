@@ -76,8 +76,23 @@ class TranscriptTest(unittest.TestCase):
             run_bot(FairMaze, RandomPolicy(), frames=-1)
         with self.assertRaises(ValueError):
             run_bot(FairMaze, RandomPolicy(), step=0.0)
+        with self.assertRaises(ValueError):
+            run_bot(FairMaze, RandomPolicy(), step=float("nan"))
+        with self.assertRaises(ValueError):
+            run_bot(FairMaze, RandomPolicy(), step=float("inf"))
+        with self.assertRaises(ValueError):
+            validate_fairness(FairMaze, step=float("nan"))
         with self.assertRaises(TypeError):
             run_bot(FairMaze, object())
+
+    def test_run_bot_restores_global_random_state(self):
+        import random
+
+        random.seed(0)
+        expected = random.random()
+        random.seed(0)
+        run_bot(CubeDemo, RandomPolicy(), frames=4, seed=7)
+        self.assertEqual(random.random(), expected)
         with self.assertRaises(TypeError):
             run_bot("not-a-factory", RandomPolicy())
 

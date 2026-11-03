@@ -59,6 +59,21 @@ class AnalysisTest(unittest.TestCase):
         self.assertGreater(cube["triangles"], 0)
         self.assertIn("hash", report)
 
+    def test_node_on_the_projection_plane_stays_in_the_report(self):
+        from keystone.scene import Transform
+
+        scene = Scene()
+        scene.camera.position = Vec3(0.0, 0.0, 5.0)
+        scene.camera.look_at(Vec3(0.0, 0.0, 0.0))
+        scene.add(Node("at-eye", transform=Transform(position=Vec3(0.0, 0.0, 5.0))))
+        scene.add(Node("origin"))
+        report = analyze_frame(scene, bytes((0, 0, 0, 255)) * (64 * 48), 64, 48)
+        names = [node["name"] for node in report["scene"]["nodes"]]
+        self.assertIn("at-eye", names)
+        self.assertIn("origin", names)
+        at_eye = next(node for node in report["scene"]["nodes"] if node["name"] == "at-eye")
+        self.assertIsNone(at_eye["screen"])
+
     def test_material_and_texture_metadata_are_reported(self):
         scene = CubeDemo().build_scene()
         report = analyze_frame(scene, bytes((0, 0, 0, 255)) * 4, 2, 2)

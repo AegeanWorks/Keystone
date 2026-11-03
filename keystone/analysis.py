@@ -163,8 +163,9 @@ def _node_report(scene: Scene, width: int, height: int) -> list[dict]:
                     round((ndc.x + 1.0) * 0.5 * width, 2),
                     round((1.0 - ndc.y) * 0.5 * height, 2),
                 ]
+        # hygiene: allow nodes on the projection plane to keep a null screen
         except ZeroDivisionError:
-            continue
+            pass
         material = _material_report(node.material)
         if material is not None:
             entry["material"] = material

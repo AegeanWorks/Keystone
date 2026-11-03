@@ -9,8 +9,8 @@
 - **Total Python Modules**: `114`
 - **Total Classes**: `162`
 - **Total Top-Level Functions**: `208`
-- **Total Class Methods**: `896`
-- **Total Source Lines**: `17750`
+- **Total Class Methods**: `898`
+- **Total Source Lines**: `17786`
 
 ---
 
@@ -61,7 +61,7 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `528` lines (`21895` bytes)
+**Size**: `529` lines (`21968` bytes)
 
 **Functions:**
 - `def _rows(pixels, width, height, flip)`
@@ -915,7 +915,7 @@
 ### [`keystone/playtest.py`](keystone/playtest.py)
 > *Seeded bot playtesting: transcripts, diffing, policies and fairness checks.*
 
-**Size**: `580` lines (`23829` bytes)
+**Size**: `585` lines (`24371` bytes)
 
 **Classes:**
 - `class BotPolicy` - *One seeded decision step over the five-operation game contract.*
@@ -1391,13 +1391,14 @@
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
-**Size**: `245` lines (`10178` bytes)
+**Size**: `260` lines (`10903` bytes)
 
 **Classes:**
 - `class Health`
 - `class AnalysisTest`
   - Method `.test_pixel_stats_and_content_bbox()`
   - Method `.test_scene_nodes_have_projected_screen_bounds()`
+  - Method `.test_node_on_the_projection_plane_stays_in_the_report()`
   - Method `.test_material_and_texture_metadata_are_reported()`
   - Method `.test_scene_identity_metadata_is_reported()`
   - Method `.test_png_hash_and_atomic_report()`
@@ -1914,7 +1915,7 @@
 ### [`tests/test_playtest.py`](tests/test_playtest.py)
 > *Tests for the seeded bot playtester: transcripts, diffs, policies and fairness.*
 
-**Size**: `396` lines (`16516` bytes)
+**Size**: `411` lines (`17111` bytes)
 
 **Classes:**
 - `class TranscriptTest`
@@ -1924,6 +1925,7 @@
   - Method `.test_transcript_replays_through_the_command_log()`
   - Method `.test_terminal_outcome_ends_the_run_early()`
   - Method `.test_invalid_runner_arguments_are_rejected()`
+  - Method `.test_run_bot_restores_global_random_state()`
   - Method `.test_canon_drops_time_and_rounds_floats()`
 - `class DiffTest`
   - Method `.test_identical_transcripts_match_with_no_divergence()`
