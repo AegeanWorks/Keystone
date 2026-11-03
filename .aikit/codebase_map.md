@@ -9,8 +9,8 @@
 - **Total Python Modules**: `114`
 - **Total Classes**: `162`
 - **Total Top-Level Functions**: `208`
-- **Total Class Methods**: `890`
-- **Total Source Lines**: `17612`
+- **Total Class Methods**: `891`
+- **Total Source Lines**: `17620`
 
 ---
 
@@ -774,7 +774,7 @@
 ### [`keystone/math3d.py`](keystone/math3d.py)
 > *Column-major 3D math primitives shared by the scene, camera and GPU layers.*
 
-**Size**: `371` lines (`12816` bytes)
+**Size**: `373` lines (`13013` bytes)
 
 **Classes:**
 - `class Vec3` - *Immutable 3-component vector with the usual right-handed operations.*
@@ -1818,7 +1818,7 @@
 ### [`tests/test_math3d.py`](tests/test_math3d.py)
 > *Unit tests for the Keystone 3D math core.*
 
-**Size**: `128` lines (`4929` bytes)
+**Size**: `134` lines (`5237` bytes)
 
 **Classes:**
 - `class Vec3Test`
@@ -1833,6 +1833,7 @@
   - Method `.test_direction_ignores_translation()`
   - Method `.test_inverse_round_trips_affine_matrix()`
   - Method `.test_inverse_rejects_projective_matrix()`
+  - Method `.test_transform_point_rejects_projective_matrix()`
   - Method `.test_perspective_maps_near_and_far_to_ndc()`
   - Method `.test_perspective_rejects_invalid_fov()`
   - Method `.test_look_at_puts_eye_at_origin()`

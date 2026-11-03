@@ -44,6 +44,8 @@ keystone/
 ├── camera.py         PerspectiveCamera
 ├── geometry.py       MeshData, Material
 ├── mesh_builder.py   static geometry composition
+├── material_graph.py declarative material graphs (color, float, checker, texture, mix, material, pbr)
+├── gltf/             dependency-free glTF 2.0 import (meshes, materials, textures, scenes, skins)
 ├── primitives.py     cube, plane, cone, cylinder, sphere
 ├── obj_loader.py     streaming OBJ
 ├── png.py            PNG writer and reader
@@ -86,7 +88,7 @@ A game may additionally expose `draw_ui(canvas, state)`. It is an optional prese
 
 ### Web API
 
-`keystone.web` exports a versioned scene document (`SCENE_SCHEMA`, version 1) and a stdlib `ThreadingHTTPServer`. `GET /api/describe` reuses `describe_game()`, `POST /api/simulate` reuses `run_simulation()`, and `GET /api/scene` serializes the live scene with shared meshes, RGBA textures, camera, lights and world matrices. Requests share one in-memory `GameSession` behind a lock. The server binds to loopback by default, sends CORS headers for local clients, never creates a GL context and serves only its bundled static assets. The browser console renders that document with WebGL2; the OpenGL renderer remains the pixel authority.
+`keystone.web` exports a versioned scene document (`SCENE_SCHEMA`, version 2) and a stdlib `ThreadingHTTPServer`. `GET /api/describe` reuses `describe_game()`, `POST /api/simulate` reuses `run_simulation()`, and `GET /api/scene` serializes the live scene with shared meshes, RGBA textures, camera, lights and world matrices. Requests share one in-memory `GameSession` behind a lock. The server binds to loopback by default, sends CORS headers for local clients, never creates a GL context and serves only its bundled static assets. The browser console renders that document with WebGL2; the OpenGL renderer remains the pixel authority.
 
 ### Frame lifecycle
 
@@ -148,7 +150,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Geometry | Implemented | indexed meshes, materials, vertex colors |
 | Assets | Implemented | indexed meshes, materials, RGBA textures, OBJ, PNG; asset registry with stable ids, digests, dependencies and hot reload |
 | State snapshots | Implemented | versioned scene save/load with camera, environment, asset references and bounded undo/redo history; duplicate ids, dangling parents and cycles rejected |
-| Material graphs | Implemented | declarative node graphs evaluating to Material: color, float, checker, texture, mix and material nodes, cycle detection, JSON serialization |
+| Material graphs | Implemented | declarative node graphs evaluating to Material: color, float, checker, texture, mix, material and pbr nodes, cycle detection, JSON serialization |
 | glTF 2.0 | Implemented | dependency-free importer for meshes, materials, textures and scenes; GLB containers, external and embedded buffers, normalized accessors, PNG textures, TRS and matrix transforms; sparse accessors and non-triangle primitives rejected |
 | Renderer | Implemented | OpenGL 3.3, sky, lights, PBR (metallic/roughness/emissive), fog, textures, readback, draw/triangle stats, static batch planning and world-space merge |
 | Runtime | Implemented | fixed clock, rebindable input with contexts and JSON persistence, loop, screenshots, profiler HUD with audio voices and animation clips |

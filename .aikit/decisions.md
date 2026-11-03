@@ -423,3 +423,12 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Decision**: Extend the standalone-command guards (serve/describe/playtest plus a new simulate window guard) to reject window flags; require integer seeds, finite positive steps and list frames in CommandLog; save/restore random state around run_log; read JSON as utf-8-sig; ignore backwards wall time without retreating the clock and reject non-finite now; require string snapshot names; wrap bad action items as TypeError with actions[i]. Eight regression tests added across CLI, replay, headless, serialization, clock and snapshot suites.
 - **Consequences**: Ignored flags now fail fast at exit 2 with the naming command; replay is side-effect-free and strict at the boundary; BOM files load; clocks cannot mint debt or freeze; 467 tests green, ruff clean, 6/6 aikit gates; simulate hash unchanged. Deferred: unbind-resurrect schema, snapshot missing-asset strictness, headless hold-last semantics, UI pause-capture semantics.
 
+
+
+### ADR-050: Guard projective misuse and close doc drift
+- **Date**: 2026-11-04
+- **Status**: Accepted
+- **Context**: Mat4.transform_point silently returned non-divided points for projective matrices (eye-space z instead of NDC) while inverse() already rejected them; docs drifted (README geometry line claimed a skin export, endpoint table omitted /api/inspector and pinned schema 1, ARCHITECTURE pinned scene-doc version 1, omitted gltf/ from the layer tree and pbr from the material-graph row). ADR-029 multi-primitive note is stale (fan-out already ships) but ADRs are append-only, so it stands with this record noting the correction.
+- **Decision**: transform_point (and Mat4*Vec3 through it) raises ValueError for projective matrices directing to project_point, mirroring inverse()'s affine check; analysis/world and builder paths are affine-only so behavior is unchanged. Docs: fix the geometry line, add the inspector endpoint row, correct schema versions to 2, add gltf/ and pbr to ARCHITECTURE.
+- **Consequences**: Projection misuse fails fast with an actionable message; two math regression tests added; README stays within the 32500-char budget (32495) with the duplicated inspector clause folded into the endpoint table; 468 tests green, ruff clean, 6/6 aikit gates; simulate hash unchanged.
+

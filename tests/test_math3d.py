@@ -69,6 +69,12 @@ class Mat4Test(unittest.TestCase):
         with self.assertRaises(ValueError):
             Mat4.perspective(60.0, 1.5, 0.1, 100.0).inverse()
 
+    def test_transform_point_rejects_projective_matrix(self):
+        with self.assertRaises(ValueError):
+            Mat4.perspective(60.0, 1.0, 0.5, 100.0).transform_point(Vec3(0, 0, -0.5))
+        with self.assertRaises(ValueError):
+            Mat4.perspective(60.0, 1.0, 0.5, 100.0) * Vec3(0, 0, -0.5)
+
     def test_perspective_maps_near_and_far_to_ndc(self):
         m = Mat4.perspective(60.0, 1.0, 0.5, 100.0)
         near = m.project_point(Vec3(0, 0, -0.5))

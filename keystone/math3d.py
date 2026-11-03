@@ -217,6 +217,8 @@ class Mat4:
         )
 
     def transform_point(self, point: Vec3) -> Vec3:
+        if any(abs(self.m[i]) > 1e-9 for i in (3, 7, 11)) or abs(self.m[15] - 1.0) > 1e-9:
+            raise ValueError("transform_point needs an affine matrix; use project_point for projections")
         x, y, z = point.x, point.y, point.z
         return Vec3(
             self.m[0] * x + self.m[4] * y + self.m[8] * z + self.m[12],

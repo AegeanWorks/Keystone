@@ -241,7 +241,8 @@ The dashboard can inspect the game contract, run the same action scripts as `--s
 |---|---|---|
 | `/api/health` | `GET` | server, game and schema versions |
 | `/api/describe` | `GET` | the same discovery payload as `--describe`, including `capabilities.web` |
-| `/api/scene` | `GET` | scene document schema 1: camera, lights, atmosphere, node identity, world matrices, shared meshes and RGBA textures |
+| `/api/scene` | `GET` | scene document schema 2: camera, lights, atmosphere, node identity, world matrices, shared meshes and RGBA textures |
+| `/api/inspector` | `GET` | batch plan, merge, audio/anim/particles, assets |
 | `/api/simulate` | `POST` | the same deterministic result as `--simulate`; body `{"frames": 60, "actions": [...], "step": 0.0167, "trace": false}` |
 | `/api` | `GET` | endpoint and schema index |
 
@@ -270,7 +271,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip loading, changed-pixel counts, bbox and a visual diff, dependency-free.
 - **Frame reports for AI analysis**: `--report` writes schema-10 JSON with image hashes, pixel/luminance stats, content box, dominant colors, 8×8 grid, camera, projected bounds and per-node identity/material metadata, sprite/FX counts and UI labels/buttons when the overlay is rendered.
 - **Human overlay**: game-agnostic HUD with game/status, FPS, frame, time, resolution and profiler lines (draws, tris, audio, anim, FX, sprites), plus help and pause menu; 5×7 bitmap font, no font asset. Games add HUD via `draw_ui(canvas, state)`.
-- **Web console and WebGL viewer**: `--serve` starts a loopback stdlib JSON API and dashboard sharing the CLI contract (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/simulate`); WebGL2 previews scenes with textures, lights, fog; `/api/inspector` reports counts, batches, merge, audio/anim, assets, sprites.
+- **Web console and WebGL viewer**: `--serve` starts a loopback stdlib JSON API and dashboard sharing the CLI contract (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/simulate`); WebGL2 previews scenes with textures, lights, fog.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
 
 ## 🤖 AI Testing & Frame Analysis
@@ -387,7 +388,7 @@ keystone/
 │   ├── math3d.py             <- Vec3, Mat4, Quat (column-major, OpenGL-ready)
 │   ├── camera.py             <- perspective camera
 │   ├── scene.py              <- hierarchy, identity, components, transforms and lights
-│   ├── geometry.py           <- MeshData, Material, skin
+│   ├── geometry.py           <- MeshData, Material
 │   ├── skin.py               <- bone palettes, CPU skinning
 │   ├── mesh_builder.py       <- merge boxes, quads and meshes
 │   ├── material_graph.py     <- declarative node graphs evaluating to Material
