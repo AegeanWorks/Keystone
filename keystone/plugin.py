@@ -38,6 +38,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "shadows": True,
             "srgb": True,
             "post": True,
+            "bloom": True,
             "pbr": True,
             "agents": True,
             "profiler": True,

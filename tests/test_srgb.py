@@ -22,7 +22,7 @@ class SrgbContractsTest(unittest.TestCase):
     def test_report_includes_color_metadata_and_hash(self):
         scene = CubeDemo().build_scene()
         report = analyze_frame(scene, bytes((0, 0, 0, 255)) * 4, 2, 2)
-        self.assertEqual(report["schema"], 8)
+        self.assertEqual(report["schema"], 9)
         self.assertEqual(report["scene"]["color"], {"enabled": True})
         scene.color = ColorSettings(enabled=False)
         off = analyze_frame(scene, bytes((0, 0, 0, 255)) * 4, 2, 2)
@@ -41,7 +41,7 @@ class SrgbContractsTest(unittest.TestCase):
         self.assertEqual(diff["color"], {"before": {"enabled": True}, "after": {"enabled": False}})
         same = compare_reports(on, analyze_frame(CubeDemo().build_scene(), pixels, 2, 2))
         self.assertTrue(same["same_color"])
-        self.assertEqual(diff["schema"], 8)
+        self.assertEqual(diff["schema"], 9)
 
     def test_compare_accepts_legacy_without_color(self):
         scene = CubeDemo().build_scene()
@@ -52,7 +52,7 @@ class SrgbContractsTest(unittest.TestCase):
         legacy["scene"].pop("color", None)
         diff = compare_reports(legacy, report)
         self.assertTrue(diff["same_color"])
-        self.assertEqual(diff["schema"], 8)
+        self.assertEqual(diff["schema"], 9)
 
     def test_snapshot_round_trips_color_flag(self):
         scene = CubeDemo().build_scene()

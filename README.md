@@ -251,7 +251,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 
 ## 🚀 Features
 
-- **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth/culling, Blinn-Phong + PBR, shadows (1024 PCF), sRGB, post grade (exposure + vignette); draw/triangle/shadow/post stats feed the profiler.
+- **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth/culling, Blinn-Phong + PBR, shadows (1024 PCF), sRGB, post grade, bloom; draw/triangle/shadow/post/bloom stats feed the profiler.
 - **Scene graph**: named nodes with stable per-scene IDs, tags, layers, optional typed components, local/world transforms, visibility, cycle-safe parenting, linear queries and cached static GPU meshes.
 - **Assets**: immutable `MeshData` with optional UVs and vertex colors, cube/plane/cone/cylinder/sphere primitives, a streaming OBJ loader, and an immutable `TextureData` with PNG and procedural checker sources.
 - **Textured PBR materials**: `Material` keeps Blinn-Phong specular/shininess plus metallic, roughness and emissive channels; `Material.texture` samples an RGBA texture with repeat wrapping and mipmaps; glTF PBR factors and emissive survive import; material graphs add a `pbr` node; the renderer caches one GPU texture per immutable payload.
@@ -268,9 +268,9 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 - **AI discovery and testing**: `--describe` exposes actions, capabilities, report/scene schemas and snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; `keystone.testing`/`agents`/`playtest` add scenario helpers, validated actions, fused observations and seeded bots.
 - **Visual regression gate**: `--compare-baseline baseline.json` renders a new report, compares image/report hashes, stats and projected nodes, prints the diff and exits non-zero on image change. `--diff-out diff.png` writes a changed-pixel diff image.
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip image loading, changed-pixel counts, bbox and a visual diff without third-party imaging libraries.
-- **Frame reports for AI analysis**: `--report` writes schema-5 JSON with image hashes, pixel/luminance stats, content box, dominant colors, 8×8 grid, camera, projected bounds and per-node identity/material metadata, plus UI labels/buttons when the overlay is rendered.
-- **Human overlay**: a game-agnostic HUD with game/status, FPS, frame, elapsed time, resolution and profiler lines (draw calls, triangles, audio voices, animation clips, live particles), plus controls help and an interactive pause menu; drawn with an embedded 5×7 bitmap font, no font asset or imaging library. Games can add their own HUD through the optional `draw_ui(canvas, state)` hook and expose a `mixer`, animation controller or particle system for the counts.
-- **Web console and WebGL viewer**: `--serve` starts a loopback-only stdlib JSON API and vanilla browser dashboard; `/api/describe`, `/api/scene`, `/api/inspector` and `/api/simulate` share the CLI contract, and the WebGL2 viewer previews exported scene documents with textures, lights and fog. `/api/inspector` reports node/mesh/texture counts, the static batch plan, merge savings, audio and animation state plus an asset inventory for humans and AI.
+- **Frame reports for AI analysis**: `--report` writes schema-9 JSON with image hashes, pixel/luminance stats, content box, dominant colors, 8×8 grid, camera, projected bounds and per-node identity/material metadata, plus UI labels/buttons when the overlay is rendered.
+- **Human overlay**: game-agnostic HUD with game/status, FPS, frame, time, resolution and profiler lines (draws, tris, audio, anim, FX), plus help and pause menu; 5×7 bitmap font, no font asset. Games add HUD via `draw_ui(canvas, state)` and expose `mixer`/anim/FX counts.
+- **Web console and WebGL viewer**: `--serve` starts a loopback stdlib JSON API and dashboard; `/api/describe`, `/api/scene`, `/api/inspector`, `/api/simulate` share the CLI contract; WebGL2 previews scenes with textures, lights, fog. `/api/inspector` reports counts, batch plan, merge, audio/anim, assets.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
 
 ## 🤖 AI Testing & Frame Analysis
@@ -429,9 +429,10 @@ keystone/
 │       ├── instancing.py     <- deterministic instancing groups
 │       ├── shadow.py         <- shadow map
 │       ├── post.py           <- post grade math
+│       ├── bloom.py          <- bloom glow
 │       ├── texture_buffer.py <- 2D texture upload, mipmaps and cleanup
 │       ├── ui_renderer.py    <- screen-space alpha-blended UI draw
-│       └── renderer.py       <- forward renderer, sky, lights, shadows, post
+│       └── renderer.py       <- forward renderer, sky, lights, shadows, post, bloom
 ├── assets/
 │   ├── octahedron.obj        <- generic sample OBJ
 │   ├── engine.png            <- sample frame
@@ -470,6 +471,7 @@ keystone/
 │   ├── test_shadows.py        <- shadow map
 │   ├── test_srgb.py           <- sRGB pipeline
 │   ├── test_post.py           <- post color-grade
+│   ├── test_bloom.py          <- bloom
 │   ├── test_scene_snapshot.py <- versioned scene save/load
 │   ├── test_plugin.py        <- GameModule contract and loader
 │   ├── test_replay.py        <- command log and hashes
@@ -559,7 +561,7 @@ snapshot = history.undo()
 1. ~~Scene identity/ECS.~~ Done in v0.19.0.
 2. ~~Broadphase/character/triggers.~~ Done in v0.21.0.
 3. ~~Assets~~ v0.22.0; ~~material graphs~~ v0.23.0; ~~glTF~~ v0.24.0; ~~GLB~~ v0.26.0; ~~PBR core~~ v0.27.0.
-4. Renderer PBR/emissive and schema 2 in v0.27.0; batch plan in v0.28.0, merge in v0.29.0, ~~instancing~~ in v0.32.0, ~~shadows~~ in v0.34.0, ~~sRGB~~ in v0.35.0 and ~~post grade~~ in v0.36.0; bloom remains.
+4. Renderer PBR/emissive and schema 2 in v0.27.0; batch plan in v0.28.0, merge in v0.29.0, ~~instancing~~ in v0.32.0, ~~shadows~~ in v0.34.0, ~~sRGB~~ in v0.35.0, ~~post grade~~ in v0.36.0 and ~~bloom~~ in v0.37.0; blur chain remains.
 5. ~~Input persistence~~ v0.27.0; ~~contexts/audio mixer~~ v0.28.0; live playback out of scope.
 6. ~~Animation core~~ in v0.29.0; ~~blending/events~~ in v0.30.0; skinning remains; ~~CPU particles~~ in v0.31.0; GPU sprites/collision remain.
 6. ~~Schema versioning~~ v0.25.0; ~~replay runner~~ v0.30.0.

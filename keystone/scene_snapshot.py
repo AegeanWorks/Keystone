@@ -7,6 +7,7 @@ from typing import Any
 
 from keystone.math3d import Quat, Vec3
 from keystone.scene import (
+    BloomSettings,
     ColorSettings,
     DirectionalLight,
     Node,
@@ -190,6 +191,7 @@ def scene_to_dict(scene: Scene, registry: Any = None) -> dict[str, Any]:
             "shadow": {"enabled": bool(getattr(scene.shadow, "enabled", True))},
             "color": {"enabled": bool(getattr(scene.color, "enabled", True))},
             "post": {"enabled": bool(getattr(scene.post, "enabled", True))},
+            "bloom": {"enabled": bool(getattr(scene.bloom, "enabled", True))},
         },
         "nodes": nodes,
     }
@@ -252,6 +254,11 @@ def scene_from_dict(data: Mapping[str, Any], registry: Any = None) -> Scene:
             if not isinstance(post, Mapping):
                 raise TypeError("scene snapshot post must be a mapping")
             scene.post = PostSettings(enabled=bool(post.get("enabled", True)))
+        bloom = environment.get("bloom")
+        if bloom is not None:
+            if not isinstance(bloom, Mapping):
+                raise TypeError("scene snapshot bloom must be a mapping")
+            scene.bloom = BloomSettings(enabled=bool(bloom.get("enabled", True)))
     raw_nodes = data.get("nodes", [])
     if not isinstance(raw_nodes, (list, tuple)):
         raise TypeError("scene snapshot nodes must be a list")

@@ -49,6 +49,7 @@ from keystone.playtest import (
 )
 from keystone.plugin import GameModule
 from keystone.scene import (
+    BloomSettings,
     ColorSettings,
     DirectionalLight,
     Node,
@@ -60,7 +61,7 @@ from keystone.scene import (
 )
 from keystone.scene_snapshot import scene_from_dict, scene_to_dict
 
-__version__ = "0.36.0"
+__version__ = "0.37.0"
 __all__ = [
     "PLAYTEST_REPORT_SCHEMA",
     "SAMPLE_RATE",
@@ -71,6 +72,7 @@ __all__ = [
     "AssetRegistry",
     "AudioClip",
     "AuditTrail",
+    "BloomSettings",
     "BotPolicy",
     "ColorSettings",
     "DirectionalLight",

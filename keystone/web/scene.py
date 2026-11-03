@@ -96,6 +96,7 @@ def scene_document(scene: Scene, game: str = "game") -> dict:
     shadow = getattr(scene, "shadow", None)
     color = getattr(scene, "color", None)
     post = getattr(scene, "post", None)
+    bloom = getattr(scene, "bloom", None)
     return {
         "schema": SCENE_SCHEMA["version"],
         "game": game,
@@ -105,6 +106,7 @@ def scene_document(scene: Scene, game: str = "game") -> dict:
         "shadows": {"enabled": bool(getattr(shadow, "enabled", True)), "size": 1024},
         "color": {"enabled": bool(getattr(color, "enabled", True))},
         "post": {"enabled": bool(getattr(post, "enabled", True))},
+        "bloom": {"enabled": bool(getattr(bloom, "enabled", True))},
         "camera": {
             "position": list(camera.position),
             "yaw": camera.yaw,

@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `105`
-- **Total Classes**: `146`
-- **Total Top-Level Functions**: `182`
-- **Total Class Methods**: `777`
-- **Total Source Lines**: `14849`
+- **Total Python Modules**: `107`
+- **Total Classes**: `149`
+- **Total Top-Level Functions**: `185`
+- **Total Class Methods**: `789`
+- **Total Source Lines**: `15124`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `138` lines (`2972` bytes)
+**Size**: `140` lines (`3012` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `364` lines (`19935` bytes)
+**Size**: `380` lines (`20851` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -61,7 +61,7 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `444` lines (`18597` bytes)
+**Size**: `469` lines (`19629` bytes)
 
 **Functions:**
 - `def _rows(pixels, width, height, flip)`
@@ -73,7 +73,8 @@
 - `def _shadows_of(report)`
 - `def _color_of(report)`
 - `def _post_of(report)`
-- `def compare_reports(before, after)` - *Compare schema-1/2/3/4/5/6/7/8 frame reports for AI-driven regression checks.*
+- `def _bloom_of(report)`
+- `def compare_reports(before, after)` - *Compare schema-1/2/3/4/5/6/7/8/9 frame reports for AI-driven regression checks.*
 - `def diff_images(before, after, output, threshold)` - *Write a visual diff PNG and return changed-pixel statistics.*
 - `def write_report(path, report)`
 
@@ -118,7 +119,7 @@
 ### [`keystone/app.py`](keystone/app.py)
 > *Game-agnostic engine runtime: window, fixed step, input, render and capture.*
 
-**Size**: `265` lines (`10097` bytes)
+**Size**: `266` lines (`10159` bytes)
 
 **Classes:**
 - `class Engine` - *Owns the runtime around one external GameModule.*
@@ -422,6 +423,17 @@
 
 ---
 
+### [`keystone/gpu/bloom.py`](keystone/gpu/bloom.py)
+> *Deterministic emissive-aware bloom glow (luminance threshold, in-shader, no FBO).*
+
+**Size**: `57` lines (`1820` bytes)
+
+**Functions:**
+- `def bloom_factor(luma, threshold, knee)` - *Return the deterministic smoothstep glow weight for one luminance.*
+- `def bloom_color(color, threshold, knee, intensity)` - *Add the threshold glow to a display-referred 0..1 RGB triple.*
+
+---
+
 ### [`keystone/gpu/context.py`](keystone/gpu/context.py)
 > *GLFW window and OpenGL 3.3 context lifecycle with deterministic teardown.*
 
@@ -492,7 +504,7 @@
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
 > *Blinn-Phong forward renderer with fog, shadows and screenshot readback.*
 
-**Size**: `543` lines (`20733` bytes)
+**Size**: `586` lines (`22725` bytes)
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
@@ -500,10 +512,12 @@
   - Method `.resize(width, height)`
   - Method `._gpu_mesh(mesh)`
   - Method `._gpu_texture(texture)`
-  - Method `._draw_sky(scene, srgb_on, post_on)`
+  - Method `._draw_sky(scene, srgb_on, post_on, bloom_on)`
   - Method `._shadows_requested(scene)`
   - Method `._srgb_requested(scene)`
   - Method `._post_requested(scene)`
+  - Method `._bloom_requested(scene)`
+  - Method `._apply_bloom(program, bloom_on)`
   - Method `._apply_post(program, post_on)`
   - Method `._apply_shared(program, scene, view_projection, light_vp, shadows_on, srgb_on)`
   - Method `._apply_material(program, material)`
@@ -852,7 +866,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `90` lines (`3309` bytes)
+**Size**: `91` lines (`3336` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -936,7 +950,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `291` lines (`9824` bytes)
+**Size**: `299` lines (`10048` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -966,6 +980,7 @@
 - `class ShadowSettings` - *Deterministic directional shadow-map toggle (fixed 1024 map, bias 0.005).*
 - `class ColorSettings` - *Deterministic sRGB-correct linear pipeline toggle (in-shader, pow 2.2).*
 - `class PostSettings` - *Deterministic post color-grade toggle (in-shader exposure + vignette).*
+- `class BloomSettings` - *Deterministic bloom glow toggle (in-shader luminance threshold).*
 - `class Scene` - *Root node, identity allocation, queries, camera, lights and atmosphere.*
   - Method `.add(node)`
   - Method `.traverse()`
@@ -983,7 +998,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `306` lines (`12617` bytes)
+**Size**: `313` lines (`12989` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)`
@@ -1120,7 +1135,7 @@
 ### [`keystone/ui/overlay.py`](keystone/ui/overlay.py)
 > *Game-agnostic human overlay: HUD, controls help and pause menu.*
 
-**Size**: `156` lines (`6752` bytes)
+**Size**: `158` lines (`6833` bytes)
 
 **Classes:**
 - `class HudState` - *Presentation-only snapshot the overlay needs for one frame.*
@@ -1167,7 +1182,7 @@
 ### [`keystone/web/scene.py`](keystone/web/scene.py)
 > *Export a game-agnostic scene as a JSON document for the browser viewer.*
 
-**Size**: `141` lines (`5165` bytes)
+**Size**: `143` lines (`5276` bytes)
 
 **Functions:**
 - `def _floats(values)`
@@ -1187,7 +1202,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `401` lines (`17804` bytes)
+**Size**: `403` lines (`17931` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1275,7 +1290,7 @@
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
-**Size**: `245` lines (`10170` bytes)
+**Size**: `245` lines (`10173` bytes)
 
 **Classes:**
 - `class Health`
@@ -1423,6 +1438,27 @@
   - Method `.test_cube_demo_plan_reports_savings()`
 - `class InspectorEndpointTest`
   - Method `.test_inspector_returns_batches_and_audio()`
+
+---
+
+### [`tests/test_bloom.py`](tests/test_bloom.py)
+> *Tests for the deterministic bloom glow (in-shader luminance threshold).*
+
+**Size**: `108` lines (`4351` bytes)
+
+**Classes:**
+- `class BloomMathTest`
+  - Method `.test_constants_are_fixed()`
+  - Method `.test_dark_has_no_bloom_and_bright_saturates()`
+  - Method `.test_bloom_adds_proportionally_and_clamps()`
+- `class BloomContractsTest`
+  - Method `.test_bloom_settings_default_enabled()`
+  - Method `.test_describe_reports_bloom()`
+  - Method `.test_report_includes_bloom_metadata_and_hash()`
+  - Method `.test_compare_reports_diffs_bloom()`
+  - Method `.test_compare_accepts_legacy_without_bloom()`
+  - Method `.test_snapshot_round_trips_bloom_flag()`
+  - Method `.test_scene_document_and_inspector_expose_bloom()`
 
 ---
 
@@ -1787,7 +1823,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `58` lines (`2264` bytes)
+**Size**: `59` lines (`2322` bytes)
 
 **Classes:**
 - `class PluginTest`

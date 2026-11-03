@@ -16,14 +16,15 @@ from keystone.texture import TextureData
 GRID = 8
 
 REPORT_SCHEMA = {
-    "version": 8,
+    "version": 9,
     "fields": {
         "image": ["path", "width", "height", "rgba_sha256", "png_sha256"],
         "stats": ["mean_rgb", "mean_luma", "content_pixels", "content_ratio", "content_bbox", "dominant_colors", "grid_luma"],
-        "scene": ["camera", "node_count", "nodes", "shadows", "color", "post"],
+        "scene": ["camera", "node_count", "nodes", "shadows", "color", "post", "bloom"],
         "shadows": ["enabled", "size"],
         "color": ["enabled"],
         "post": ["enabled"],
+        "bloom": ["enabled"],
         "node": ["id", "name", "parent", "parent_id", "visible", "tags", "layer", "components", "world", "screen", "bbox", "triangles", "material"],
         "material": ["color", "specular", "shininess", "checker_scale", "metallic", "roughness", "emissive", "texture"],
         "texture": ["name", "width", "height", "sha256"],
@@ -42,6 +43,7 @@ REPORT_SCHEMA = {
         "schema-6 adds scene shadows metadata (enabled, size).",
         "schema-7 adds scene color metadata (sRGB pipeline enabled).",
         "schema-8 adds scene post metadata (post color-grade enabled).",
+        "schema-9 adds scene bloom metadata (bloom glow enabled).",
         "schema-1/2/3 reports remain comparable; nodes are keyed by id when both reports are schema 4 or newer.",
         "ui labels and button rects are presentation metadata in top-left pixels.",
     ],
@@ -221,8 +223,10 @@ def analyze_frame(
     color = {"enabled": bool(getattr(color_setting, "enabled", True))}
     post_setting = getattr(scene, "post", None)
     post = {"enabled": bool(getattr(post_setting, "enabled", True))}
+    bloom_setting = getattr(scene, "bloom", None)
+    bloom = {"enabled": bool(getattr(bloom_setting, "enabled", True))}
     report = {
-        "schema": 8,
+        "schema": 9,
         "image": image,
         "stats": stats,
         "scene": {
@@ -239,10 +243,11 @@ def analyze_frame(
             "shadows": shadows,
             "color": color,
             "post": post,
+            "bloom": bloom,
         },
         "ui": ui,
     }
-    hashed = {"image": image, "stats": stats, "nodes": nodes, "shadows": shadows, "color": color, "post": post}
+    hashed = {"image": image, "stats": stats, "nodes": nodes, "shadows": shadows, "color": color, "post": post, "bloom": bloom}
     if ui is not None:
         hashed["ui"] = ui
     report["hash"] = stable_hash(hashed)
@@ -306,10 +311,18 @@ def _post_of(report: dict) -> dict | None:
     return None
 
 
+def _bloom_of(report: dict) -> dict | None:
+    scene = report.get("scene", {})
+    bloom = scene.get("bloom") if isinstance(scene, dict) else None
+    if isinstance(bloom, dict):
+        return {"enabled": bool(bloom.get("enabled", True))}
+    return None
+
+
 def compare_reports(before: dict, after: dict) -> dict:
-    """Compare schema-1/2/3/4/5/6/7/8 frame reports for AI-driven regression checks."""
-    if before.get("schema") not in (1, 2, 3, 4, 5, 6, 7, 8) or after.get("schema") not in (1, 2, 3, 4, 5, 6, 7, 8):
-        raise ValueError("both reports must use schema 1, 2, 3, 4, 5, 6, 7 or 8")
+    """Compare schema-1/2/3/4/5/6/7/8/9 frame reports for AI-driven regression checks."""
+    if before.get("schema") not in (1, 2, 3, 4, 5, 6, 7, 8, 9) or after.get("schema") not in (1, 2, 3, 4, 5, 6, 7, 8, 9):
+        raise ValueError("both reports must use schema 1, 2, 3, 4, 5, 6, 7, 8 or 9")
     first_stats = before["stats"]
     second_stats = after["stats"]
     key = "id" if before.get("schema", 0) >= 4 and after.get("schema", 0) >= 4 else "name"
@@ -376,8 +389,18 @@ def compare_reports(before: dict, after: dict) -> dict:
         same_post = before_post == after_post
         post_before = before_post
         post_after = after_post
+    before_bloom = _bloom_of(before)
+    after_bloom = _bloom_of(after)
+    if before_bloom is None or after_bloom is None:
+        same_bloom = True
+        bloom_before = before_bloom or {"enabled": True}
+        bloom_after = after_bloom or {"enabled": True}
+    else:
+        same_bloom = before_bloom == after_bloom
+        bloom_before = before_bloom
+        bloom_after = after_bloom
     return {
-        "schema": 8,
+        "schema": 9,
         "same_image": before["image"]["rgba_sha256"] == after["image"]["rgba_sha256"],
         "same_report": before.get("hash") == after.get("hash"),
         "same_ui": ui_diff["same"],
@@ -387,6 +410,8 @@ def compare_reports(before: dict, after: dict) -> dict:
         "color": {"before": color_before, "after": color_after},
         "same_post": same_post,
         "post": {"before": post_before, "after": post_after},
+        "same_bloom": same_bloom,
+        "bloom": {"before": bloom_before, "after": bloom_after},
         "mean_luma_delta": round(second_stats["mean_luma"] - first_stats["mean_luma"], 3),
         "content_ratio_delta": round(second_stats["content_ratio"] - first_stats["content_ratio"], 4),
         "content_bbox": {"before": first_stats["content_bbox"], "after": second_stats["content_bbox"]},

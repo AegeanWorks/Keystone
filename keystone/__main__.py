@@ -85,6 +85,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-srgb", action="store_true", help="disable sRGB-correct linear pipeline")
     parser.add_argument("--post", action="store_true", help="enable post color-grade (default: on)")
     parser.add_argument("--no-post", action="store_true", help="disable post color-grade")
+    parser.add_argument("--bloom", action="store_true", help="enable bloom glow (default: on)")
+    parser.add_argument("--no-bloom", action="store_true", help="disable bloom glow")
     parser.add_argument("--start-paused", action="store_true", help="start a rendered run with gameplay paused")
     parser.add_argument("--serve", action="store_true", help="serve the local JSON API and WebGL web console")
     parser.add_argument("--host", default=None, help="web console bind host (default: 127.0.0.1)")
@@ -96,6 +98,7 @@ def main(argv: list[str] | None = None) -> int:
         args.describe or args.headless or args.simulate or args.verify_determinism or args.expect_hash
         or args.compare_baseline or args.diff_out or args.actions or args.trace or args.ui or args.no_ui
         or args.shadows or args.no_shadows or args.srgb or args.no_srgb or args.post or args.no_post
+        or args.bloom or args.no_bloom
         or args.start_paused or args.out or args.report or args.replay or args.playtest or args.script
         or args.transcript_out or args.policy != "random" or args.seed != 0
     ):
@@ -106,24 +109,24 @@ def main(argv: list[str] | None = None) -> int:
         args.headless or args.simulate or args.verify_determinism or args.expect_hash
         or args.compare_baseline or args.out or args.report or args.actions or args.trace
         or args.ui or args.no_ui or args.shadows or args.no_shadows
-        or args.srgb or args.no_srgb or args.post or args.no_post or args.start_paused
+        or args.srgb or args.no_srgb or args.post or args.no_post or args.bloom or args.no_bloom or args.start_paused
         or args.replay or args.playtest
         or args.script or args.transcript_out or args.policy != "random" or args.seed != 0
     ):
         parser.error("--describe is a standalone discovery command")
     if args.headless and args.simulate:
         parser.error("--headless and --simulate are mutually exclusive")
-    if args.replay and (args.headless or args.simulate or args.verify_determinism or args.describe or args.serve or args.playtest or args.shadows or args.no_shadows or args.srgb or args.no_srgb or args.post or args.no_post):
+    if args.replay and (args.headless or args.simulate or args.verify_determinism or args.describe or args.serve or args.playtest or args.shadows or args.no_shadows or args.srgb or args.no_srgb or args.post or args.no_post or args.bloom or args.no_bloom):
         parser.error("--replay is a standalone no-GL command")
     if args.playtest and (
         args.headless or args.simulate or args.verify_determinism or args.describe or args.serve
         or args.replay or args.report or args.compare_baseline or args.diff_out or args.actions
         or args.trace or args.ui or args.no_ui or args.shadows or args.no_shadows
-        or args.srgb or args.no_srgb or args.post or args.no_post or args.start_paused
+        or args.srgb or args.no_srgb or args.post or args.no_post or args.bloom or args.no_bloom or args.start_paused
     ):
         parser.error("--playtest is a standalone no-GL command")
-    if args.replay and (args.actions or args.compare_baseline or args.diff_out or args.report or args.ui or args.no_ui or args.shadows or args.no_shadows or args.srgb or args.no_srgb or args.post or args.no_post or args.start_paused):
-        parser.error("--replay takes a CommandLog; --actions/--compare-baseline/--report/--ui/--shadows/--srgb/--post do not apply")
+    if args.replay and (args.actions or args.compare_baseline or args.diff_out or args.report or args.ui or args.no_ui or args.shadows or args.no_shadows or args.srgb or args.no_srgb or args.post or args.no_post or args.bloom or args.no_bloom or args.start_paused):
+        parser.error("--replay takes a CommandLog; --actions/--compare-baseline/--report/--ui/--shadows/--srgb/--post/--bloom do not apply")
     if args.replay and (args.frames or args.size != (960, 540)):
         parser.error("--replay uses the log frame count and needs no window; --frames/--size do not apply")
     if args.ui and args.no_ui:
@@ -134,8 +137,12 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--srgb and --no-srgb are mutually exclusive")
     if args.post and args.no_post:
         parser.error("--post and --no-post are mutually exclusive")
+    if args.bloom and args.no_bloom:
+        parser.error("--bloom and --no-bloom are mutually exclusive")
     if (args.post or args.no_post) and (args.describe or args.simulate or args.verify_determinism):
         parser.error("--post/--no-post apply to rendered runs, not discovery or simulation commands")
+    if (args.bloom or args.no_bloom) and (args.describe or args.simulate or args.verify_determinism):
+        parser.error("--bloom/--no-bloom apply to rendered runs, not discovery or simulation commands")
     if (args.ui or args.no_ui) and (args.describe or args.simulate or args.verify_determinism):
         parser.error("--ui/--no-ui apply to rendered runs, not discovery or simulation commands")
     if (args.shadows or args.no_shadows) and (args.describe or args.simulate or args.verify_determinism):
@@ -272,7 +279,12 @@ def main(argv: list[str] | None = None) -> int:
             return 0 if ok else 1
 
         from keystone.app import Engine
-        from keystone.scene import ColorSettings, PostSettings, ShadowSettings
+        from keystone.scene import (
+            BloomSettings,
+            ColorSettings,
+            PostSettings,
+            ShadowSettings,
+        )
 
         engine = Engine(
             game,
@@ -295,6 +307,10 @@ def main(argv: list[str] | None = None) -> int:
             engine.scene.post = PostSettings(enabled=False)
         elif args.post:
             engine.scene.post = PostSettings(enabled=True)
+        if args.no_bloom:
+            engine.scene.bloom = BloomSettings(enabled=False)
+        elif args.bloom:
+            engine.scene.bloom = BloomSettings(enabled=True)
         if args.start_paused:
             engine.toggle_pause()
         rendered = engine.run(max_frames=args.frames if args.frames else (1 if args.headless else 0))

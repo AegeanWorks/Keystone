@@ -189,6 +189,13 @@ class PostSettings:
     enabled: bool = True
 
 
+@dataclass(frozen=True, slots=True)
+class BloomSettings:
+    """Deterministic bloom glow toggle (in-shader luminance threshold)."""
+
+    enabled: bool = True
+
+
 def _root_node() -> Node:
     return Node("", id="root")
 
@@ -204,6 +211,7 @@ class Scene:
     shadow: ShadowSettings = field(default_factory=ShadowSettings)
     color: ColorSettings = field(default_factory=ColorSettings)
     post: PostSettings = field(default_factory=PostSettings)
+    bloom: BloomSettings = field(default_factory=BloomSettings)
     ambient: Vec3 = Vec3(0.16, 0.17, 0.2)
     background: Vec3 = Vec3(0.045, 0.055, 0.075)
     sky: Vec3 = Vec3(0.01, 0.015, 0.04)

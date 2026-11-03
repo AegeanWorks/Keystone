@@ -172,6 +172,7 @@ class Engine:
             triangles=int(stats.get("triangles", 0)),
             shadow_calls=int(stats.get("shadow_calls", 0)),
             post_enabled=int(stats.get("post_enabled", 0)),
+            bloom_enabled=int(stats.get("bloom_enabled", 0)),
             audio_voices=voices,
             anim_clips=anim_clips,
             particles=live_fx,
