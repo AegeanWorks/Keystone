@@ -3,32 +3,15 @@
   "active_task": {
     "task_id": "keystone-delta-bind-v1",
     "last_phase": "implementation",
-    "active_phase": 4,
-    "status": "in_progress",
+    "active_phase": 5,
+    "status": "completed",
     "updated_at": 1793796566.94702,
     "owner": "kilo:delta",
     "started_by": "kilo:delta",
-    "continuations": []
+    "continuations": [],
+    "completed_at": 1793796590.9566493
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-sprites-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/4] Plan deterministic GPU point-sprite particle rendering",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793742756.4752958,
-      "timestamp_str": "2026-11-04 00:52:36",
-      "agent": "kilo:sprites",
-      "impact_assessment": {
-        "why": "CPU particles have no GPU path; games hand-roll FX quads with divergent blending and hashes",
-        "benefits": "One instanced billboard draw for all live particles; sim hash unchanged; headless report/diff provable",
-        "risks": "contract: additive SpriteSettings plus renderer(scene,particles=None), report schema 9 to 10, snapshot env optional; dependency: stdlib plus existing GL/renderer only; concurrency: single-threaded render, no shared state; state: snapshot schema 1 unchanged, reports atomic",
-        "mitigation": "Failing-first tests for math, determinism pin, no-sprites pixel parity, schema compat; full pytest plus 6/6 gates before commit"
-      },
-      "plan_digest": "336e53f2a2783658e3ac124257db9c4e2906915e42f80b234763b4effac2d336"
-    },
     {
       "task_id": "keystone-sprites-v1",
       "phase": "in_progress",
@@ -281,6 +264,16 @@
       "status": "in_progress",
       "timestamp": 1793796566.94702,
       "timestamp_str": "2026-11-04 15:49:26",
+      "agent": "kilo:delta"
+    },
+    {
+      "task_id": "keystone-delta-bind-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-delta-bind-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793796590.9566507,
+      "timestamp_str": "2026-11-04 15:49:50",
       "agent": "kilo:delta"
     }
   ]
