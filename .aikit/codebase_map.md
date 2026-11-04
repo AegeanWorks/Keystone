@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `114`
-- **Total Classes**: `163`
+- **Total Classes**: `164`
 - **Total Top-Level Functions**: `208`
-- **Total Class Methods**: `909`
-- **Total Source Lines**: `17989`
+- **Total Class Methods**: `912`
+- **Total Source Lines**: `18057`
 
 ---
 
@@ -857,7 +857,7 @@
 ### [`keystone/particles.py`](keystone/particles.py)
 > *Deterministic, game-agnostic CPU particles: emitters, systems and reports.*
 
-**Size**: `360` lines (`14524` bytes)
+**Size**: `368` lines (`14944` bytes)
 
 **Classes:**
 - `class Particle` - *One live particle: position, velocity, age, lifetime and size.*
@@ -1856,7 +1856,7 @@
 ### [`tests/test_particles.py`](tests/test_particles.py)
 > *Tests for the deterministic particle core.*
 
-**Size**: `325` lines (`12977` bytes)
+**Size**: `385` lines (`15319` bytes)
 
 **Classes:**
 - `class EmitterTest`
@@ -1887,6 +1887,10 @@
   - Method `.test_response_rejects_bad_parameters()`
   - Method `.test_response_is_deterministic()`
   - Method `.test_cube_demo_fountain_bounces_deterministically()`
+  - Method `.test_deep_interior_spawn_ejects_through_near_face()`
+- `class SlideTest`
+  - Method `.test_sliding_along_face_preserves_tangential_motion()`
+  - Method `.test_sliding_is_deterministic()`
 
 ---
 

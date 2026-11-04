@@ -3,7 +3,13 @@
 import unittest
 
 from keystone.math3d import Vec3
-from keystone.particles import Emitter, Particle, ParticleSystem, particles_report
+from keystone.particles import (
+    POINT_SKIN,
+    Emitter,
+    Particle,
+    ParticleSystem,
+    particles_report,
+)
 
 
 class EmitterTest(unittest.TestCase):
@@ -319,6 +325,60 @@ class ResponseTest(unittest.TestCase):
         )
         self.assertNotIn("particles", first.snapshot())
         self.assertEqual(first.snapshot(), second.snapshot())
+
+
+    def test_deep_interior_spawn_ejects_through_near_face(self):
+        from keystone.physics import AABB
+
+        system = self._still_system()
+        system.burst("still", 1)
+        system.particles[0] = Particle(Vec3(0, 0, 0), Vec3(0, -1, 0), 0.0, 10.0, 1.0, 0, "still")
+        floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+        system.step(0.5, [floor])
+        pushed = system.particles[0]
+        self.assertAlmostEqual(pushed.position.y, 0.5)
+        self.assertEqual(pushed.velocity.y, 0.0)
+
+
+class SlideTest(unittest.TestCase):
+    def test_sliding_along_face_preserves_tangential_motion(self):
+        from keystone.physics import AABB
+
+        system = ParticleSystem()
+        system.add(Emitter(name="slide", speed=0.0, gravity=Vec3(0.0, 0.0, 0.0), lifetime=10.0, seed=6))
+        system.burst("slide", 1)
+        system.particles[0] = Particle(
+            Vec3(0, 0.5 + POINT_SKIN, 0), Vec3(2.0, -0.01, 1.0), 0.0, 10.0, 1.0, 0, "slide"
+        )
+        floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+        system.step(1 / 60, [floor])
+        slid = system.particles[0]
+        self.assertAlmostEqual(slid.position.x, 2.0 / 60, places=9)
+        self.assertAlmostEqual(slid.position.z, 1.0 / 60, places=9)
+        self.assertAlmostEqual(slid.position.y, 0.5)
+        self.assertEqual((slid.velocity.x, slid.velocity.y, slid.velocity.z), (2.0, 0.0, 1.0))
+
+    def test_sliding_is_deterministic(self):
+        from keystone.physics import AABB
+
+        def run() -> Particle:
+            system = ParticleSystem()
+            system.add(Emitter(name="slide", speed=0.0, gravity=Vec3(0.0, -2.0, 0.0), lifetime=10.0, seed=6))
+            system.burst("slide", 1)
+            system.particles[0] = Particle(
+                Vec3(0, 0.5 + POINT_SKIN, 0), Vec3(2.0, -0.01, 1.0), 0.0, 10.0, 1.0, 0, "slide"
+            )
+            floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+            for _ in range(30):
+                system.step(1 / 60, [floor], restitution=0.45, friction=0.1)
+            return system.particles[0]
+
+        first, second = run(), run()
+        self.assertEqual(
+            (first.position.x, first.position.y, first.position.z),
+            (second.position.x, second.position.y, second.position.z),
+        )
+        self.assertGreater(first.position.x, 0.2)
 
 
 if __name__ == "__main__":

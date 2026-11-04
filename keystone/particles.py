@@ -29,7 +29,12 @@ _AXES = ("x", "y", "z")
 def _move_point_flat(
     px: float, py: float, pz: float, axis: int, amount: float, flat: list[tuple[float, float, float, float, float, float]]
 ) -> tuple[float, bool]:
-    """Float-only swept point move; axis is 0/1/2 for x/y/z."""
+    """Float-only swept point move; axis is 0/1/2 for x/y/z.
+
+    The interior-start clause only fires for points strictly inside the
+    box on every axis. Points resting on a face (within POINT_SKIN) slide
+    instead of relocating to the min face.
+    """
     if abs(amount) < 1e-12:
         if axis == 0:
             return px, False
@@ -50,22 +55,25 @@ def _move_point_flat(
                 continue
             low = cx - hx
             high = cx + hx
+            deep = cy - hy < py < cy + hy and cz - hz < pz < cz + hz
         elif axis == 1:
             if abs(px - cx) > hx + POINT_SKIN or abs(pz - cz) > hz + POINT_SKIN:
                 continue
             low = cy - hy
             high = cy + hy
+            deep = cx - hx < px < cx + hx and cz - hz < pz < cz + hz
         else:
             if abs(px - cx) > hx + POINT_SKIN or abs(py - cy) > hy + POINT_SKIN:
                 continue
             low = cz - hz
             high = cz + hz
+            deep = cx - hx < px < cx + hx and cy - hy < py < cy + hy
         if amount > 0.0:
-            if (end >= low - POINT_SKIN and start <= low + POINT_SKIN) or (low < start < high):
+            if (end >= low - POINT_SKIN and start <= low + POINT_SKIN) or (deep and low < start < high):
                 end = min(end, low - POINT_SKIN)
                 hit = True
         else:
-            if (end <= high + POINT_SKIN and start >= high - POINT_SKIN) or (low < start < high):
+            if (end <= high + POINT_SKIN and start >= high - POINT_SKIN) or (deep and low < start < high):
                 end = max(end, high + POINT_SKIN)
                 hit = True
     return end, hit

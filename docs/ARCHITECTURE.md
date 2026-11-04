@@ -208,6 +208,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - `SpatialGrid` returns exact overlapping proxies after updates/removals, without duplicates.
 - `CharacterController` rests on a floor, stops at walls, leaves the ground on a jump, steps onto low stairs and rides caller-supplied platform velocity with swept pushout.
 - Particles bounce with restitution, lose tangential velocity to friction, settle below rest speed and optionally die on contact, all deterministically.
+- Particles sliding along a box face keep tangential motion; deep-interior spawns eject through the near face.
 - `TriggerTracker` reports sorted enter, stay and exit sets; `raycast()` filters candidates and returns the nearest hit.
 - `Scene` assigns unique IDs, preserves them across reparenting and rejects duplicate explicit IDs.
 - `Scene.query()`/`find()` filter by name, tag, layer and component; `find_by_id()` resolves an ID.

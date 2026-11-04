@@ -1,63 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-particle-response-v1",
+    "task_id": "keystone-slide-fix-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793774636.792784,
-    "owner": "kilo:response",
-    "started_by": "kilo:response",
+    "updated_at": 1793775404.3985176,
+    "owner": "kilo:fix",
+    "started_by": "kilo:fix",
     "continuations": [],
-    "completed_at": 1793774637.2029145
+    "completed_at": 1793775405.1532788
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-format-hardening-v2",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Delivery ready: v0.26.0, full pytest and ruff clean, 6/6 project gates, codebase map refreshed, README glTF/GLB section and roadmap corrected, ARCHITECTURE and ADR-032 updated; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793545281.4674802,
-      "timestamp_str": "2026-11-01 18:01:21",
-      "agent": "kilo:review",
-      "handoff": {
-        "state": "v0.26.0 GLB import and stricter glTF/snapshot validation",
-        "next": "renderer instancing/PBR or replay runner",
-        "failed": "none",
-        "open": "none",
-        "evidence": "full pytest, ruff, aikit check keystone 6/6"
-      }
-    },
-    {
-      "task_id": "keystone-format-hardening-v2",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-format-hardening-v2' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793545482.2394314,
-      "timestamp_str": "2026-11-01 18:04:42",
-      "agent": "kilo:review"
-    },
-    {
-      "task_id": "keystone-playtester-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/4] Plan bot playtester: transcript/diff/policies/fairness over five ops, maze fixture prover, no contract change",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793657140.6565785,
-      "timestamp_str": "2026-11-03 01:05:40",
-      "agent": "kilo:playtester",
-      "impact_assessment": {
-        "why": "AI clients need seeded bot play, transcript pinning and fairness rejects next to --simulate",
-        "benefits": "headless bot runs with expect-hash parity, shared report schema for future web adapters",
-        "risks": "contract: additive playtest module plus CLI flags, no five-op change; dependency: stdlib plus core input/replay/headless only; concurrency: single-threaded runs, wall-clock cap aborts; state: transcripts/reports via atomic writes, no format change to existing schemas",
-        "mitigation": "failing-first tests per layer, boundary test stays green, full pytest plus 6/6 project gates before commit"
-      },
-      "plan_digest": "f28d54f7a4c9d90fe61654b9a9e01d8fb5b748c92c4fbb940b702c38b6a1e0ba"
-    },
     {
       "task_id": "keystone-playtester-v1",
       "phase": "phase 3",
@@ -277,6 +231,45 @@
       "timestamp": 1793774637.202917,
       "timestamp_str": "2026-11-04 09:43:57",
       "agent": "kilo:response"
+    },
+    {
+      "task_id": "keystone-slide-fix-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/2] Plan slide-teleport fix: gate interior clause on depth beyond skin",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793774968.287535,
+      "timestamp_str": "2026-11-04 09:49:28",
+      "agent": "kilo:fix",
+      "impact_assessment": {
+        "why": "resting or sliding particles teleport to the box min face instead of sliding",
+        "benefits": "correct tangential slide and grazing exit with zero change to crossing, rest and eject paths",
+        "risks": "contract: none, private sweep helper only; dependency: none; concurrency: none; state: none",
+        "mitigation": "failing-first slide/graze/eject tests plus full suite and unchanged demo frame hash"
+      },
+      "plan_digest": "00de08b7a4038f784e58541fe27c8e2b5438d4b8e09ea2b913928bfa7cd041de"
+    },
+    {
+      "task_id": "keystone-slide-fix-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/2] Fix verified: slide preserved, deep eject locked, suite green, sim hash unchanged, frame-70 hash bit-identical; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793775404.3985176,
+      "timestamp_str": "2026-11-04 09:56:44",
+      "agent": "kilo:fix"
+    },
+    {
+      "task_id": "keystone-slide-fix-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-slide-fix-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793775405.153281,
+      "timestamp_str": "2026-11-04 09:56:45",
+      "agent": "kilo:fix"
     }
   ]
 }
