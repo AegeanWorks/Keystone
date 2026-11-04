@@ -141,7 +141,7 @@ class SkinMathTest(unittest.TestCase):
 
 
 class SkinBatchTest(unittest.TestCase):
-    def test_merge_skips_skinned_meshes(self):
+    def test_merge_keeps_skinned_meshes_in_rig_groups(self):
         from keystone.batch import merge_batches, plan_batches
 
         scene = Scene()
@@ -159,10 +159,12 @@ class SkinBatchTest(unittest.TestCase):
         scene.add(plain)
         plan = plan_batches(scene)
         self.assertEqual(plan["draw_calls"], 1)
+        self.assertEqual(plan["skin_calls"], 1)
         merged = merge_batches(scene)
         merged_ids = [node for group in merged["merged"] for node in group["nodes"]]
-        self.assertNotIn("skinned", merged_ids)
+        self.assertIn("skinned", merged_ids)
         self.assertIn("plain", merged_ids)
+        self.assertEqual(merged["skin_merged_calls"], 1)
 
 
 class SkinGltfTest(unittest.TestCase):

@@ -170,8 +170,8 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Physics | Implemented | rays, AABB, sphere queries, broadphase, character movement and triggers |
 | AI adapters | Implemented | validated action parsing, fused observations, report summaries, hash-chained audit trail |
 | Playtest | Implemented | seeded bot policies, CommandLog-compatible transcripts, transcript diffing, schema-1 reports, fairness validation |
-| Batching | Implemented | static mesh/material grouping with draw-call savings and world-space merge |
-| Inspector | Implemented | web `/api/inspector` with node counts, batch plan, merge summary, audio, animation and particle state, asset inventory |
+| Batching | Implemented | static mesh/material grouping with draw-call savings, world-space merge, and skin-aware merge for identical rigs |
+| Inspector | Implemented | web `/api/inspector` with node counts, batch plan, merge summary (incl. skinned rigs), audio, animation and particle state, asset inventory |
 | ECS | Optional/missing | evaluate after a real workload |
 | Editor/tooling | Missing | future core module |
 
@@ -180,7 +180,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 1. **Scene identity and components** — implemented in v0.19.0; stable node IDs, tags/layers and typed component queries.
 2. **Physics** — implemented in v0.21.0; broadphase, AABB character controller, triggers and filtered raycasts.
 3. **Assets** — asset registry and hot reload in v0.22.0; material graphs in v0.23.0; glTF 2.0 import in v0.24.0; snapshots and undo/redo in v0.25.0; GLB containers and stricter format validation in v0.26.0; PBR material core, `pbr` graph nodes and full glTF PBR preservation in v0.27.0.
-4. **Renderer** — PBR shading, emissive and render stats in v0.27.0; static batch planning in v0.28.0 and world-space batch merging in v0.29.0; GPU instancing in v0.32.0, directional shadows in v0.34.0, an sRGB linear pipeline in v0.35.0, a post color-grade in v0.36.0, bloom glow in v0.37.0 and bloom diffusion in v0.38.0; full post chain remains.
+4. **Renderer** — PBR shading, emissive and render stats in v0.27.0; static batch planning in v0.28.0 and world-space batch merging in v0.29.0; skin-aware merge in v0.44.0; GPU instancing in v0.32.0, directional shadows in v0.34.0, an sRGB linear pipeline in v0.35.0, a post color-grade in v0.36.0, bloom glow in v0.37.0 and bloom diffusion in v0.38.0; full post chain remains.
 5. **Input/audio** — rebindable input with JSON persistence and profiler HUD in v0.27.0; action contexts, deterministic mixer with buses, WAV I/O and HUD voices in v0.28.0; live device playback remains out of scope.
 6. **AI adapters** — implemented in v0.27.0; validated actions, fused observations, report summaries and hash-chained audit trail.
 6. **Animation** — deterministic keyframe clips, looping controller, pose application and JSON round trips in v0.29.0; crossfade blending and timed events in v0.30.0; skinning (LBS-4, CPU + GPU, glTF) in v0.41.0; deterministic CPU particles with HUD/inspector/AI reports in v0.31.0, swept AABB collision in v0.40.0, GPU point sprites in v0.42.0, bounce/friction/contact-kill in v0.43.0.
@@ -218,6 +218,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - `--compare-baseline baseline.json` exits non-zero on image change.
 - `--diff-out diff.png` writes a visual pixel diff.
 - `compare_reports()` detects image, stat and projected-node changes.
+- Merged skinned rigs render pixel-identical frames with fewer draw calls.
 - `python -m keystone --serve` starts a loopback JSON API and static console without OpenGL.
 - `GET /api/describe`, `GET /api/scene` and `POST /api/simulate` return the CLI-compatible schemas and CORS headers.
 - The WebGL2 viewer renders a scene document with shared meshes, textures, lights and fog.

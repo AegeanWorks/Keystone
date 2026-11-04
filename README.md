@@ -253,24 +253,24 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 ## 🚀 Features
 
 - **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth/culling, Blinn-Phong + PBR, shadows (1024 PCF), sRGB, post grade, bloom diffusion, point sprites; draw/tri/shadow/post/bloom/sprite stats feed the profiler.
-- **Scene graph**: nodes with stable per-scene IDs, tags, layers, optional typed components, local/world transforms, visibility, cycle-safe parenting, linear queries and cached static GPU meshes.
+- **Scene graph**: nodes with stable IDs, tags, layers, typed components, local/world transforms, visibility, cycle-safe parenting, queries and cached GPU meshes.
 - **Assets**: immutable `MeshData` with optional UVs and vertex colors, cube/plane/cone/cylinder/sphere primitives, a streaming OBJ loader, and an immutable `TextureData` with PNG and procedural checker sources.
-- **Textured PBR materials**: `Material` keeps specular/shininess plus metallic, roughness and emissive; `Material.texture` samples RGBA with repeat wrapping and mipmaps; glTF PBR factors and emissive survive import; material graphs add a `pbr` node; one cached GPU texture per immutable payload.
+- **Textured PBR materials**: `Material` keeps specular/shininess plus metallic, roughness and emissive; `Material.texture` samples RGBA with repeat wrapping and mipmaps; glTF PBR factors and emissive survive import; material graphs add `pbr`; one cached GPU texture per payload.
 - **Fixed-step runtime**: `FixedStepClock` releases whole simulation steps with a bounded catch-up budget; the headless path advances exactly one step per rendered frame for deterministic tests.
 - **Action input**: `InputMap` maps keys and pointer motion to `forward`, `right`, `up`, `look_yaw`, `look_pitch`, `pressed` and `held` with rebindable bindings and named action contexts (`gameplay`, `menu`, custom) that save/load as JSON; games never read GLFW directly.
 - **Audio core**: dependency-free synth (`sine`, `square`, `noise`), named-bus `Mixer` with deterministic mixdown, mono 16-bit WAV IO and `audio_report()`; no hardware required.
 - **Animation core**: keyframe `Track`/`AnimationClip` (linear/step), looping controller, crossfade blending, timed events, `apply_pose()`, linear-blend skinning (<=4 influences, CPU + GPU, glTF), JSON round trips and `animation_report()`.
-- **Replay runner**: `run_log()`/`verify_log()` replay a `CommandLog` on a fresh game without a window, and `--replay log.json` (with `--out`, `--expect-hash`, `--trace`) gives a file-based audit trail.
+- **Replay runner**: `run_log()`/`verify_log()` replay a `CommandLog` on a fresh game without a window, and `--replay log.json` (with `--out`, `--expect-hash`, `--trace`) gives a file audit trail.
 - **Particles**: deterministic CPU `Emitter`/`ParticleSystem` (seeded spawn, gravity/drag, swept collision with bounce, friction and contact-kill, bursts, culling, JSON round trips, reports); HUD/inspector/describe counts; one GPU billboard per particle.
 - **Physics**: ray/AABB/sphere queries, sphere pushout, deterministic spatial-grid broadphase, AABB character movement with gravity and ground detection, trigger enter/exit tracking and filtered raycasts.
 - **Replay and persistence**: `ActionState` command logs, stable hashes and atomic JSON writes with a `.bak` snapshot.
-- **Plugin loading**: `load_game("package.module:Factory")` validates the five-operation contract before the engine starts.
+- **Plugin loading**: `load_game("package.module:Factory")` validates the five-op contract before the engine starts.
 - **No-GL simulation**: `run_simulation()` and `--simulate` drive `GameModule.update()` directly, with JSON action scripts and deterministic hashes, no window or driver required.
 - **AI discovery and testing**: `--describe` exposes actions, capabilities, schemas and snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; `testing`/`agents`/`playtest` add helpers, validated actions, fused observations, seeded bots.
 - **Visual regression gate**: `--compare-baseline baseline.json` re-renders, compares image/report hashes, stats and nodes, prints the diff, exits non-zero on image change. `--diff-out diff.png` writes a changed-pixel diff.
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip loading, changed-pixel counts, bbox, visual diff, dependency-free.
 - **Frame reports for AI analysis**: `--report` writes schema-10 JSON with image hashes, pixel/luminance stats, content box, dominant colors, 8×8 grid, camera, projected bounds and per-node identity/material metadata, sprite/FX counts and UI labels/buttons when the overlay is rendered.
-- **Human overlay**: game-agnostic HUD with game/status, FPS, frame, time, resolution and profiler lines (draws, tris, audio, anim, FX, sprites), plus help and pause menu; 5×7 bitmap font, no font asset. Games add HUD via `draw_ui(canvas, state)`.
+- **Human overlay**: game-agnostic HUD with game/status, FPS, frame, time, resolution and profiler lines (draws, tris, audio, anim, FX, sprites), plus help/pause menu; 5×7 font, no asset. Games add HUD via `draw_ui(canvas, state)`.
 - **Web console and WebGL viewer**: `--serve` starts a loopback stdlib JSON API and dashboard sharing the CLI contract (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/simulate`); WebGL2 previews scenes with textures, lights, fog.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
 
@@ -365,7 +365,7 @@ keystone/
 │   ├── animation.py          <- keyframe clips, controller and pose reports
 │   ├── app.py                <- game-agnostic Engine loop
 │   ├── audio.py              <- synth clips, bus mixer and WAV I/O
-│   ├── batch.py              <- static batch planning and world-space merge
+│   ├── batch.py              <- static batch planning, world-space and rig merge
 │   ├── clock.py              <- fixed-step clock
 │   ├── input.py              <- ActionState and InputMap with contexts
 │   ├── plugin.py             <- GameModule protocol and loader
@@ -390,7 +390,7 @@ keystone/
 │   ├── scene.py              <- hierarchy, identity, components, transforms and lights
 │   ├── geometry.py           <- MeshData, Material
 │   ├── skin.py               <- bone palettes, CPU skinning
-│   ├── mesh_builder.py       <- merge boxes, quads and meshes
+│   ├── mesh_builder.py       <- merge boxes, quads, meshes, skinned rigs
 │   ├── material_graph.py     <- declarative node graphs evaluating to Material
 │   ├── primitives.py         <- cube, plane, cone, cylinder and sphere
 │   ├── obj_loader.py         <- streaming Wavefront OBJ loader
@@ -469,7 +469,8 @@ keystone/
 │   ├── test_animation.py     <- clips, blending and timed events
 │   ├── test_skinning.py      <- skin math, GPU path, glTF
 │   ├── test_sprites.py       <- sprite math, report, sample fixture
-│   ├── test_assets.py        <- registry ids, digests, dependencies and reload
+│   ├── test_merge_skin.py    <- skin-aware merge
+│   ├── test_assets.py          <- registry ids, digests, dependencies and reload
 │   ├── test_audio.py         <- synth, mixer buses and WAV I/O
 │   ├── test_batch.py         <- batch planning and world-space merge
 │   ├── test_material_graph.py <- declarative material graph evaluation
@@ -569,7 +570,7 @@ snapshot = history.undo()
 1. ~~Scene identity/ECS.~~ Done in v0.19.0.
 2. ~~Broadphase/character/triggers.~~ Done in v0.21.0.
 3. ~~Assets~~ v0.22.0; ~~material graphs~~ v0.23.0; ~~glTF~~ v0.24.0; ~~GLB~~ v0.26.0; ~~PBR core~~ v0.27.0.
-4. Renderer PBR/emissive and schema 2 in v0.27.0; batch plan in v0.28.0, merge in v0.29.0, ~~instancing~~ in v0.32.0, ~~shadows~~ in v0.34.0, ~~sRGB~~ in v0.35.0, ~~post grade~~ in v0.36.0, ~~bloom~~ in v0.37.0 and ~~diffusion~~ in v0.38.0; post chain remains.
+4. Renderer PBR/emissive and schema 2 in v0.27.0; batch plan in v0.28.0, merge in v0.29.0, skin-aware merge in v0.44.0, ~~instancing~~ in v0.32.0, ~~shadows~~ in v0.34.0, ~~sRGB~~ in v0.35.0, ~~post grade~~ in v0.36.0, ~~bloom~~ in v0.37.0 and ~~diffusion~~ in v0.38.0; post chain remains.
 5. ~~Input persistence~~ v0.27.0; ~~contexts/audio mixer~~ v0.28.0; live playback out of scope.
 6. ~~Animation core~~ in v0.29.0; ~~blending/events~~ in v0.30.0; ~~skinning~~ in v0.41.0; ~~CPU particles~~ in v0.31.0; ~~GPU sprites~~ in v0.42.0, bounce/friction/kill in v0.43.0.
 6. ~~Schema versioning~~ v0.25.0; ~~replay runner~~ v0.30.0.

@@ -97,6 +97,8 @@ class GameSession:
                     "merged_calls": merged["merged_calls"],
                     "saved_calls": merged["saved_calls"],
                     "triangles": merged["triangles"],
+                    "skin_merged_calls": merged["skin_merged_calls"],
+                    "skin_saved_calls": merged["skin_saved_calls"],
                 }
             except (AttributeError, TypeError, ValueError):
                 merged_summary = None

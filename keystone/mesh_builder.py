@@ -15,6 +15,17 @@ class MeshBuilder:
         self._uvs: list[tuple[float, float]] = []
         self._colors: list[tuple[float, float, float]] = []
         self._indices: list[int] = []
+        self._joints: list[tuple[int, ...]] = []
+        self._weights: list[tuple[float, ...]] = []
+        self._skin_joints: tuple[str, ...] | None = None
+        self._skin_inverse_bind: tuple[tuple[float, ...], ...] | None = None
+        self._mode: str | None = None
+
+    def _require_mode(self, mode: str) -> None:
+        if self._mode is None:
+            self._mode = mode
+        elif self._mode != mode:
+            raise ValueError(f"cannot mix {self._mode} and {mode} geometry in one builder")
 
     def add_quad(
         self,
@@ -24,6 +35,7 @@ class MeshBuilder:
         p3: tuple[float, float, float],
         color: tuple[float, float, float] = (1.0, 1.0, 1.0),
     ) -> MeshBuilder:
+        self._require_mode("plain")
         a, b, c = Vec3(*p0), Vec3(*p1), Vec3(*p2)
         normal = (b - a).cross(c - a).normalized()
         if normal.length_squared() < 1e-12:
@@ -45,6 +57,7 @@ class MeshBuilder:
         color: tuple[float, float, float] = (1.0, 1.0, 1.0),
     ) -> MeshBuilder:
         """Merge another mesh under a uniform scale and translation."""
+        self._require_mode("plain")
         if scale <= 0.0:
             raise ValueError("mesh scale must be positive")
         base = len(self._positions)
@@ -69,6 +82,7 @@ class MeshBuilder:
         color: tuple[float, float, float] = (1.0, 1.0, 1.0),
     ) -> MeshBuilder:
         """Merge a mesh transformed by a world matrix (positions + normals)."""
+        self._require_mode("plain")
         if not isinstance(matrix, Mat4):
             raise TypeError("matrix must be a Mat4")
         # Normals need transpose(inverse(M)), matching gpu.renderer.normal_matrix.
@@ -89,6 +103,32 @@ class MeshBuilder:
             self._colors.append(
                 (source[0] * color[0], source[1] * color[1], source[2] * color[2])
             )
+        self._indices.extend(base + index for index in mesh.indices)
+        return self
+
+    def add_skinned_mesh(self, mesh: MeshData) -> MeshBuilder:
+        """Concatenate a skinned mesh verbatim (positions, joints, weights).
+
+        Members merged this way must share the joint-name list; the merged
+        node reuses their common world matrix so deformation is unchanged.
+        """
+        self._require_mode("skin")
+        if not isinstance(mesh, MeshData) or not mesh.skinned:
+            raise ValueError("add_skinned_mesh needs a skinned MeshData")
+        if self._skin_joints is None:
+            self._skin_joints = tuple(mesh.skin_joints)
+            self._skin_inverse_bind = tuple(mesh.skin_inverse_bind)
+        elif tuple(mesh.skin_joints) != self._skin_joints:
+            raise ValueError("skinned merge members must share the joint-name list")
+        base = len(self._positions)
+        for index, position in enumerate(mesh.positions):
+            self._positions.append(position)
+            self._normals.append(mesh.normals[index])
+            self._uvs.append(mesh.uvs[index] if mesh.uvs else (0.0, 0.0))
+            source = mesh.colors[index] if mesh.colors else (1.0, 1.0, 1.0)
+            self._colors.append(source)
+            self._joints.append(tuple(mesh.joints[index]))
+            self._weights.append(tuple(mesh.weights[index]))
         self._indices.extend(base + index for index in mesh.indices)
         return self
 
@@ -125,6 +165,18 @@ class MeshBuilder:
     def build(self) -> MeshData:
         if not self._indices:
             raise ValueError("mesh builder has no geometry")
+        if self._mode == "skin":
+            return MeshData(
+                tuple(self._positions),
+                tuple(self._normals),
+                tuple(self._uvs),
+                tuple(self._indices),
+                tuple(self._colors),
+                tuple(self._joints),
+                tuple(self._weights),
+                self._skin_joints or (),
+                self._skin_inverse_bind or (),
+            )
         return MeshData(
             tuple(self._positions),
             tuple(self._normals),

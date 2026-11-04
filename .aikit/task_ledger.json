@@ -1,79 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-slide-fix-v1",
+    "task_id": "keystone-skin-merge-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793775404.3985176,
-    "owner": "kilo:fix",
-    "started_by": "kilo:fix",
+    "updated_at": 1793791116.2708204,
+    "owner": "kilo:merge",
+    "started_by": "kilo:merge",
     "continuations": [],
-    "completed_at": 1793775405.1532788
+    "completed_at": 1793791116.4287226
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-playtester-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/4] Playtester core: transcript/diff/policies/fairness module, CLI, maze fixture, 31 tests, docs and ADR-034",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793657634.9858332,
-      "timestamp_str": "2026-11-03 01:13:54",
-      "agent": "kilo:playtester"
-    },
-    {
-      "task_id": "keystone-playtester-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/4] Delivery ready: v0.33.0, 357 tests, ruff clean, 6/6 gates; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793657858.688965,
-      "timestamp_str": "2026-11-03 01:17:38",
-      "agent": "kilo:playtester"
-    },
-    {
-      "task_id": "keystone-playtester-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[4/4] Stage 4 follow-up: README tree lists playtester test files, 6/6 gates; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793658112.1060724,
-      "timestamp_str": "2026-11-03 01:21:52",
-      "agent": "kilo:playtester"
-    },
-    {
-      "task_id": "keystone-audit-waves-0-30-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/2] Audit waves 0-30 (commits 1-30): survey log plus diffstat, verify CC-029 25-vs-28 absent in keystone, boundary-proof resolve_sphere_aabb pushout drift",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793722551.6562421,
-      "timestamp_str": "2026-11-03 19:15:51",
-      "agent": "kilo:audit",
-      "impact_assessment": {
-        "why": "First-30 audit found surviving pushout position bug in physics.py while CC-029 threshold does not reproduce in keystone",
-        "benefits": "Pushout contract becomes exact and boundary-covered; audit drops unverifiable cross-project claim",
-        "risks": "contract: physics-only position fix plus additive exact tests; dependency: none; concurrency: none; state: no save change",
-        "mitigation": "Failing-first exact pushout tests for exterior and interior cases, then fix, then full gates"
-      },
-      "plan_digest": "9d55833341b7796de3a510f98042f3935352c001b7eec0b6b1418d07c09f731d"
-    },
-    {
-      "task_id": "keystone-playtester-v1",
-      "phase": "superseded",
-      "phase_num": 4,
-      "description": "Superseded by 'keystone-audit-waves-0-30-v1' without --complete or --reset",
-      "status": "superseded",
-      "timestamp": 1793722551.6562421,
-      "timestamp_str": "2026-11-03 19:15:51",
-      "agent": "kilo:audit",
-      "continued_from": "kilo:playtester"
-    },
     {
       "task_id": "keystone-audit-waves-0-30-v1",
       "phase": "in_progress",
@@ -270,6 +208,74 @@
       "timestamp": 1793775405.153281,
       "timestamp_str": "2026-11-04 09:56:45",
       "agent": "kilo:fix"
+    },
+    {
+      "task_id": "keystone-skin-merge-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/4] Plan skin-aware batch merging with rebased inverse binds",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793784336.5706367,
+      "timestamp_str": "2026-11-04 12:25:36",
+      "agent": "kilo:merge",
+      "impact_assessment": {
+        "why": "skinned meshes never merge, so rigged crowds pay one draw per model with no engine path to consolidate",
+        "benefits": "N rigged draws become 1 with identical deformation; plan and inspector report real skin savings",
+        "risks": "contract: additive merge counters plus builder skin path, no schema or report change; dependency: stdlib plus geometry math only; concurrency: single-threaded bake, no shared state; state: no stored state, pure bake function",
+        "mitigation": "failing-first oracle equality, merged versus unmerged pixel parity, full pytest plus 6/6 gates before commit"
+      },
+      "plan_digest": "d1a9c89ae766157c76bcc23a71d9d981f5f14ec71f70ae5778aaff68216cdfc2"
+    },
+    {
+      "task_id": "keystone-skin-merge-v1",
+      "phase": "in_progress",
+      "phase_num": 3,
+      "description": "[2/4] Merge implementation: builder skin path, batch skin groups, tests, docs",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793790630.9694579,
+      "timestamp_str": "2026-11-04 14:10:30",
+      "agent": "kilo:merge"
+    },
+    {
+      "task_id": "keystone-skin-merge-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[3/4] Delivery ready: v0.44.0 skin-aware merge, 7 merge tests plus contract update green, ruff clean, 6/6 gates; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793791042.2190957,
+      "timestamp_str": "2026-11-04 14:17:22",
+      "agent": "kilo:merge",
+      "handoff": {
+        "state": "v0.44.0 skin merge implemented uncommitted",
+        "next": "Stage 4 check (cold-start demo, serve console, gate re-run)",
+        "failed": "none",
+        "open": "no push without instruction",
+        "evidence": "pytest green, ruff clean, aikit 6/6, sim hash 772cac5232a0947b8f6d1914a5cf0cde, pixel parity bytes identical, merge 200x 0.09s"
+      }
+    },
+    {
+      "task_id": "keystone-skin-merge-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[4/4] Stage 4 check passed: pytest green, determinism ok, aikit 6/6, headless fx 64/64, serve inspector skin counters ok; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793791116.2708204,
+      "timestamp_str": "2026-11-04 14:18:36",
+      "agent": "kilo:merge"
+    },
+    {
+      "task_id": "keystone-skin-merge-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-skin-merge-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793791116.4287243,
+      "timestamp_str": "2026-11-04 14:18:36",
+      "agent": "kilo:merge"
     }
   ]
 }

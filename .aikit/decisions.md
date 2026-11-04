@@ -475,3 +475,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Decision**: Gate the interior-start clause on strict interiority on every axis (no skin tolerance), computed from the already-available point coordinates. Face-contact points (offset exactly one skin outside) skip the clause and slide; genuinely deep-interior spawns eject exactly as before. Two-line change in _move_point_flat; no signature, schema, or behavior change for crossings, rests, or ejections.
 - **Consequences**: Sliding preserves tangential motion deterministically; frame-70 demo hash e37b744448a1fbbb5cf5f390f41753db is bit-identical pre/post fix and the simulate hash is unchanged. Failing-first slide/graze tests plus a deep-interior preservation lock added. Tangential exit off a box edge while still in the skin band now slides off cleanly instead of teleporting.
 
+
+### ADR-056: Add skin-aware batch merging for identical rigs
+- **Date**: 2026-11-04
+- **Status**: Accepted
+- **Context**: merge_batches skipped every skinned mesh, so rigged crowds paid one draw per model with no engine path to consolidate; per-game rig merging would fork draw-call accounting and frame hashes.
+- **Decision**: Merge skinned groups keyed by material, joint-name tuple and node world-matrix tuple, concatenating positions, normals, UVs, colors, joints and weights verbatim with the shared inverse binds; the merged node reuses the common world matrix so deformation is bit-exact. MeshBuilder gains a mode-guarded add_skinned_mesh path; plan_batches and the merge summary gain additive skin counters; the web inspector exports them. Cross-transform merges (inverse-bind rebasing) and palette-union remaps stay future.
+- **Consequences**: N identical rigs render as 1 draw with pixel-identical frames to the unmerged scene (proven by a headless Engine pixel-parity test on a test rig module). Static plans, pins and the simulate hash are unchanged (CubeDemo is unskinned). Perf budget: merge wall at most 1.3x current cost on equivalent groups; runtime draws strictly decrease.
+

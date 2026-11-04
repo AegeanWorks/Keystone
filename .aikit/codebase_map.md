@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `114`
-- **Total Classes**: `164`
-- **Total Top-Level Functions**: `208`
-- **Total Class Methods**: `912`
-- **Total Source Lines**: `18057`
+- **Total Python Modules**: `115`
+- **Total Classes**: `167`
+- **Total Top-Level Functions**: `210`
+- **Total Class Methods**: `927`
+- **Total Source Lines**: `18329`
 
 ---
 
@@ -236,7 +236,7 @@
 ### [`keystone/batch.py`](keystone/batch.py)
 > *Static batch planner: group draw nodes to cut draw calls without new deps.*
 
-**Size**: `104` lines (`4054` bytes)
+**Size**: `146` lines (`6035` bytes)
 
 **Functions:**
 - `def _skinned(mesh)` - *Whether a mesh deforms at render time and must never bake or merge.*
@@ -825,14 +825,16 @@
 ### [`keystone/mesh_builder.py`](keystone/mesh_builder.py)
 > *Compose boxes and quads into a single indexed MeshData.*
 
-**Size**: `134` lines (`5436` bytes)
+**Size**: `186` lines (`7852` bytes)
 
 **Classes:**
 - `class MeshBuilder` - *Accumulates flat-shaded quads and boxes, then builds one mesh.*
   - Method `.__init__()`
+  - Method `._require_mode(mode)`
   - Method `.add_quad(p0, p1, p2, p3, color)`
   - Method `.add_mesh(mesh, offset, scale, color)` - *Merge another mesh under a uniform scale and translation.*
   - Method `.add_mesh_matrix(mesh, matrix, color)` - *Merge a mesh transformed by a world matrix (positions + normals).*
+  - Method `.add_skinned_mesh(mesh)` - *Concatenate a skinned mesh verbatim (positions, joints, weights).*
   - Method `.add_box(cx, cy, cz, sx, sy, sz, color)`
   - Method `.is_empty()`
   - Method `.build()`
@@ -1304,7 +1306,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `405` lines (`18063` bytes)
+**Size**: `407` lines (`18201` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1853,6 +1855,35 @@
 
 ---
 
+### [`tests/test_merge_skin.py`](tests/test_merge_skin.py)
+> *Tests for skin-aware batch merging: identical rigs merge into one draw.*
+
+**Size**: `174` lines (`7013` bytes)
+
+**Classes:**
+- `class SkinMergeTest`
+  - Method `.test_merge_combines_same_rig_groups()`
+  - Method `.test_merged_deformation_matches_oracle_exactly()`
+  - Method `.test_separates_by_material_joints_and_transform()`
+  - Method `.test_plan_reports_skin_counters_without_moving_main_groups()`
+  - Method `.test_exclude_applies_to_skin_groups()`
+  - Method `.test_builder_rejects_mismatched_skin()`
+- `class RigGame` - *Minimal game module with two identical rigs for pixel-parity proofs.*
+  - Method `.__init__(merged)`
+  - Method `.build_scene()`
+  - Method `.update(dt, actions)`
+  - Method `.snapshot()`
+  - Method `.actions()`
+  - Method `.status()`
+- `class SkinPixelParityTest`
+  - Method `.test_merged_scene_renders_identical_pixels()`
+
+**Functions:**
+- `def _rig_mesh(**overrides)`
+- `def _rig_scene(transform, material, mesh)`
+
+---
+
 ### [`tests/test_particles.py`](tests/test_particles.py)
 > *Tests for the deterministic particle core.*
 
@@ -2199,7 +2230,7 @@
 ### [`tests/test_skinning.py`](tests/test_skinning.py)
 > *Tests for deterministic linear-blend skinning (max 4 influences).*
 
-**Size**: `292` lines (`11998` bytes)
+**Size**: `294` lines (`12114` bytes)
 
 **Classes:**
 - `class SkinValidationTest`
@@ -2215,7 +2246,7 @@
   - Method `.test_bone_palette_is_deterministic()`
   - Method `.test_missing_joint_raises_with_fix()`
 - `class SkinBatchTest`
-  - Method `.test_merge_skips_skinned_meshes()`
+  - Method `.test_merge_keeps_skinned_meshes_in_rig_groups()`
 - `class SkinGltfTest`
   - Method `._skinned_document(bad_joint, normalized_joints)`
   - Method `.test_loads_a_skin()`
