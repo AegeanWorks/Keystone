@@ -138,9 +138,12 @@ class AnimationClip:
                     raise TypeError("clip tracks must be Track instances")
 
     def duration(self) -> float:
+        has_tracks = bool(self.position_tracks or self.rotation_tracks or self.scale_tracks)
         longest = 0.0
         for _, track in (*self.position_tracks, *self.rotation_tracks, *self.scale_tracks):
             longest = max(longest, track.duration())
+        if has_tracks:
+            return longest
         for time, _ in self.events:
             longest = max(longest, time)
         return longest

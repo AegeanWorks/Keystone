@@ -489,3 +489,12 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The skin-aware merge keyed groups by material, joint-name tuple and node world matrix only, and MeshBuilder accepted any member with matching joint names. Two rigs sharing joint names but carrying different inverse bind matrices merged into one group keeping the first binds, so the second rig deformed against the wrong rest pose. Reproduced with identical joints/materials/transforms and shifted binds collapsing to one group.
 - **Decision**: Extend the plan/merge skin keys with the inverse bind matrix tuple and reject mismatched binds in MeshBuilder.add_skinned_mesh alongside the joint-name check. Remove the unused particles._AXES constant left over from the swept-pass change.
 - **Consequences**: Differing bind palettes stay in separate groups and the builder fails fast at the boundary; identical rigs still merge to one draw with pixel-identical frames. 496 tests green, ruff clean, 6/6 aikit gates; simulate hash unchanged (CubeDemo is unskinned).
+
+
+### ADR-058: Fix six reproduced 12-module swarm defects with minimal patches
+
+- **Date**: 2026-11-04
+- **Status**: Accepted
+- **Context**: 12 parallel analysis subagents (one module each) returned completed documents; main session sampled and reproduced every implemented claim, refuted one (S04 None-context with schema 1 masked by legacy fallback, confirmed with schema 2) and narrowed one (animation duration must keep event-only clips working). Fabricated-batch rule not triggered: all sampled claims reproduced.
+- **Decision**: Six minimal fixes: input.bind blank-context misroute (None vs empty), input.from_dict context str-coercion, particles.step and headless.run_simulation NaN/Inf step rejection, animation.duration tracks-only when tracks exist (event-only fallback preserved), analysis._stats per-cell grid divisor, mixer.render single master factor. Seven regression tests added (input x2, particles, headless asserts, animation x2, analysis grid, audio master).
+- **Consequences**: 503 tests green, verify-determinism 120 ok, simulate hash 772cac5232a0947b8f6d1914a5cf0cde unchanged, headless report schema 10 ok, 6/6 aikit gates after fix pass. Filed-but-deferred: plan-vs-merge grouping divergence, sprite oracle vs renderer sizing, hold-last pressed parity, interior-eject direction, unbind-resurrect, touch-trigger hysteresis (real but behavior-changing, need separate versioned decisions).

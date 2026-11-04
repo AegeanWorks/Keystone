@@ -28,6 +28,15 @@ class EmitterTest(unittest.TestCase):
             Emitter(name="x", rate=-1.0)
         with self.assertRaises(ValueError):
             Particle(age=-0.1)
+
+    def test_step_rejects_non_finite_dt(self):
+        system = ParticleSystem()
+        system.add(Emitter(name="sparks", seed=5))
+        system.burst("sparks", 1)
+        with self.assertRaises(ValueError):
+            system.step(float("nan"))
+        with self.assertRaises(ValueError):
+            system.step(float("inf"))
         with self.assertRaises(ValueError):
             Particle(lifetime=0.0)
 

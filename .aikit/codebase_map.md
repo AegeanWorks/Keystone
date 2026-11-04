@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `115`
-- **Total Classes**: `167`
+- **Total Classes**: `168`
 - **Total Top-Level Functions**: `210`
-- **Total Class Methods**: `929`
-- **Total Source Lines**: `18358`
+- **Total Class Methods**: `936`
+- **Total Source Lines**: `18425`
 
 ---
 
@@ -61,7 +61,7 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `529` lines (`21968` bytes)
+**Size**: `532` lines (`22029` bytes)
 
 **Functions:**
 - `def _rows(pixels, width, height, flip)`
@@ -85,7 +85,7 @@
 ### [`keystone/animation.py`](keystone/animation.py)
 > *Deterministic, game-agnostic animation: keyframe clips, sampling and control.*
 
-**Size**: `364` lines (`15622` bytes)
+**Size**: `367` lines (`15765` bytes)
 
 **Classes:**
 - `class Track` - *One keyframed channel: sorted times with Vec3 or Quat values.*
@@ -204,7 +204,7 @@
 ### [`keystone/audio.py`](keystone/audio.py)
 > *Game-agnostic audio core: synth clips, bus mixer and WAV I/O.*
 
-**Size**: `227` lines (`9062` bytes)
+**Size**: `231` lines (`9174` bytes)
 
 **Classes:**
 - `class AudioClip` - *Immutable mono PCM clip in [-1, 1] with a fixed sample rate.*
@@ -689,7 +689,7 @@
 ### [`keystone/headless.py`](keystone/headless.py)
 > *Simulation without a window: JSON action scripts and deterministic traces.*
 
-**Size**: `68` lines (`2325` bytes)
+**Size**: `69` lines (`2375` bytes)
 
 **Functions:**
 - `def load_actions(path)`
@@ -722,7 +722,7 @@
 ### [`keystone/input.py`](keystone/input.py)
 > *Generic input mapping: named actions, axes and pointer look.*
 
-**Size**: `278` lines (`11259` bytes)
+**Size**: `278` lines (`11275` bytes)
 
 **Classes:**
 - `class ActionState` - *One sampled input frame; games translate names into their own rules.*
@@ -859,7 +859,7 @@
 ### [`keystone/particles.py`](keystone/particles.py)
 > *Deterministic, game-agnostic CPU particles: emitters, systems and reports.*
 
-**Size**: `366` lines (`14919` bytes)
+**Size**: `367` lines (`14967` bytes)
 
 **Classes:**
 - `class Particle` - *One live particle: position, velocity, age, lifetime and size.*
@@ -1394,7 +1394,7 @@
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
-**Size**: `260` lines (`10903` bytes)
+**Size**: `266` lines (`11158` bytes)
 
 **Classes:**
 - `class Health`
@@ -1415,13 +1415,14 @@
   - Method `.test_pixel_diff_writes_an_artifact_and_stats()`
   - Method `.test_pixel_diff_rejects_dimension_mismatch()`
   - Method `.test_rejects_bad_pixel_count()`
+  - Method `.test_grid_luma_uses_per_cell_counts()`
 
 ---
 
 ### [`tests/test_animation.py`](tests/test_animation.py)
 > *Tests for deterministic animation clips, controllers and pose application.*
 
-**Size**: `193` lines (`7968` bytes)
+**Size**: `209` lines (`8575` bytes)
 
 **Classes:**
 - `class TrackTest`
@@ -1442,6 +1443,9 @@
 - `class MergeTest`
   - Method `.test_merge_bakes_static_groups()`
   - Method `.test_merge_excludes_animated_nodes()`
+- `class ClipDurationTest`
+  - Method `.test_duration_ignores_far_event_when_tracks_exist()`
+  - Method `.test_event_only_clip_keeps_event_duration()`
 
 **Functions:**
 - `def _vec_track(pairs)`
@@ -1521,7 +1525,7 @@
 ### [`tests/test_audio.py`](tests/test_audio.py)
 > *Tests for the game-agnostic audio core.*
 
-**Size**: `90` lines (`3347` bytes)
+**Size**: `98` lines (`3720` bytes)
 
 **Classes:**
 - `class AudioTest`
@@ -1532,6 +1536,7 @@
   - Method `.test_mix_clips_clamps_once_at_the_end()`
   - Method `.test_wav_round_trip()`
   - Method `.test_clip_json_round_trip()`
+  - Method `.test_master_bus_applies_once()`
 
 ---
 
@@ -1726,7 +1731,7 @@
 ### [`tests/test_headless.py`](tests/test_headless.py)
 > *Tests for no-OpenGL simulation and action scripts.*
 
-**Size**: `65` lines (`2642` bytes)
+**Size**: `69` lines (`2852` bytes)
 
 **Classes:**
 - `class HeadlessTest`
@@ -1759,7 +1764,7 @@
 ### [`tests/test_input.py`](tests/test_input.py)
 > *Tests for input sampling and action state.*
 
-**Size**: `127` lines (`4758` bytes)
+**Size**: `139` lines (`5331` bytes)
 
 **Classes:**
 - `class FakeContext`
@@ -1777,6 +1782,8 @@
   - Method `.test_unbind_survives_context_round_trip()`
   - Method `.test_action_state_round_trip_and_clear()`
   - Method `.test_action_state_rejects_string_pressed_and_bad_pointer()`
+  - Method `.test_bind_rejects_blank_context()`
+  - Method `.test_from_dict_rejects_non_string_context()`
 
 ---
 
@@ -1889,12 +1896,13 @@
 ### [`tests/test_particles.py`](tests/test_particles.py)
 > *Tests for the deterministic particle core.*
 
-**Size**: `385` lines (`15319` bytes)
+**Size**: `394` lines (`15650` bytes)
 
 **Classes:**
 - `class EmitterTest`
   - Method `.test_spawn_is_deterministic()`
   - Method `.test_validation()`
+  - Method `.test_step_rejects_non_finite_dt()`
   - Method `.test_json_round_trip()`
 - `class SystemTest`
   - Method `._system()`

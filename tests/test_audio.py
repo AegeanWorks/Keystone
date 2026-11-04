@@ -85,6 +85,14 @@ class AudioTest(unittest.TestCase):
         self.assertEqual(restored.samples, clip.samples)
         self.assertEqual(restored.name, "blip")
 
+    def test_master_bus_applies_once(self):
+        clip = sine(440.0, 0.05)
+        direct = Mixer(buses={"master": 0.5, "sfx": 1.0})
+        direct.play(clip, bus="master")
+        via_sfx = Mixer(buses={"master": 0.5, "sfx": 1.0})
+        via_sfx.play(clip, bus="sfx")
+        self.assertAlmostEqual(direct.render().samples[10], via_sfx.render().samples[10], places=6)
+
 
 if __name__ == "__main__":
     unittest.main()

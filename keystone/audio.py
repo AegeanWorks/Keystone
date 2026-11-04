@@ -159,8 +159,12 @@ class Mixer:
 
     def render(self) -> AudioClip:
         parts: list[tuple[AudioClip, float, float]] = []
+        master = self.buses.get("master", 1.0)
         for clip, bus, gain, pitch in self._voices:
-            bus_gain = self.buses.get(bus, 1.0) * self.buses.get("master", 1.0)
+            if bus == "master":
+                bus_gain = master
+            else:
+                bus_gain = self.buses.get(bus, 1.0) * master
             parts.append((clip, gain * bus_gain, pitch))
         result = mix_clips(parts)
         return AudioClip(samples=result.samples, sample_rate=self.sample_rate, name="mixdown")

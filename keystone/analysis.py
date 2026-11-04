@@ -70,6 +70,7 @@ def _stats(pixels: bytes, width: int, height: int, background: Vec3, flip: bool 
     min_x, min_y, max_x, max_y = width, height, -1, -1
     bins: dict[tuple[int, int, int], int] = {}
     grid = [[0.0 for _ in range(GRID)] for _ in range(GRID)]
+    counts = [[0 for _ in range(GRID)] for _ in range(GRID)]
     for y, row in enumerate(rows):
         for x in range(width):
             offset = x * 4
@@ -85,12 +86,14 @@ def _stats(pixels: bytes, width: int, height: int, background: Vec3, flip: bool 
                 max_x, max_y = max(max_x, x), max(max_y, y)
             key = (r >> 4, g >> 4, b >> 4)
             bins[key] = bins.get(key, 0) + 1
-            grid[min(GRID - 1, y * GRID // height)][min(GRID - 1, x * GRID // width)] += luma
+            gy = min(GRID - 1, y * GRID // height)
+            gx = min(GRID - 1, x * GRID // width)
+            grid[gy][gx] += luma
+            counts[gy][gx] += 1
     count = max(1, width * height)
     for gy in range(GRID):
         for gx in range(GRID):
-            cells = ((height + GRID - 1) // GRID) * ((width + GRID - 1) // GRID)
-            grid[gy][gx] = round(grid[gy][gx] / max(1, cells), 2)
+            grid[gy][gx] = round(grid[gy][gx] / max(1, counts[gy][gx]), 2)
     dominant = [
         {"rgb": [key[0] * 16 + 8, key[1] * 16 + 8, key[2] * 16 + 8], "pixels": count_bin}
         for key, count_bin in sorted(bins.items(), key=lambda item: item[1], reverse=True)[:5]

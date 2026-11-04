@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -41,8 +42,8 @@ def run_simulation(
     """Advance a game without creating a window or OpenGL context."""
     if frames < 0:
         raise ValueError("frames cannot be negative")
-    if step <= 0.0:
-        raise ValueError("step must be positive")
+    if step <= 0.0 or not math.isfinite(step):
+        raise ValueError("step must be positive and finite")
     game.build_scene()
     script = list(actions or [])
     snapshots: list[dict] = []

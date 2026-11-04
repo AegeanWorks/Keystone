@@ -147,7 +147,7 @@ class InputMap:
             raise ValueError("action name must be a non-blank string")
         if not isinstance(key, str) or not key.strip():
             raise ValueError("key name must be a non-blank string")
-        target = context or self.context
+        target = self.context if context is None else context
         if not isinstance(target, str) or not target.strip():
             raise ValueError("context must be a non-blank string")
         if target not in self.contexts:
@@ -211,7 +211,7 @@ class InputMap:
         raw_contexts = data.get("contexts", {})
         if not isinstance(raw_contexts, dict):
             raise TypeError("input contexts must hold a mapping")
-        context = str(data.get("context", "gameplay"))
+        context = data.get("context", "gameplay")
         instance = cls(
             bindings=merged,
             look_speed=float(data.get("look_speed", 1.6)),

@@ -59,6 +59,10 @@ class HeadlessTest(unittest.TestCase):
             run_simulation(CubeDemo(), -1)
         with self.assertRaises(ValueError):
             run_simulation(CubeDemo(), 1, step=0.0)
+        with self.assertRaises(ValueError):
+            run_simulation(CubeDemo(), 1, step=float("nan"))
+        with self.assertRaises(ValueError):
+            run_simulation(CubeDemo(), 1, step=float("inf"))
 
 
 if __name__ == "__main__":

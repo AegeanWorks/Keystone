@@ -255,6 +255,12 @@ class AnalysisTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             analyze_frame(game.build_scene(), b"\x00", 2, 2)
 
+    def test_grid_luma_uses_per_cell_counts(self):
+        scene = Scene()
+        pixels = bytes((255, 255, 255, 255)) * (10 * 10)
+        report = analyze_frame(scene, pixels, 10, 10)
+        self.assertEqual(report["stats"]["grid_luma"][1][1], 255.0)
+
 
 if __name__ == "__main__":
     unittest.main()

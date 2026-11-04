@@ -122,6 +122,18 @@ class InputMapTest(unittest.TestCase):
         with self.assertRaises((TypeError, ValueError)):
             ActionState.from_dict({"pointer": "ab"})
 
+    def test_bind_rejects_blank_context(self):
+        with self.assertRaises(ValueError):
+            InputMap().bind("dash", "x", context="")
+        with self.assertRaises(ValueError):
+            InputMap().bind("dash", "x", context="  ")
+
+    def test_from_dict_rejects_non_string_context(self):
+        with self.assertRaises((TypeError, ValueError)):
+            InputMap.from_dict({"schema": 2, "bindings": {}, "context": None})
+        with self.assertRaises((TypeError, ValueError)):
+            InputMap.from_dict({"schema": 2, "bindings": {}, "context": 123})
+
 
 if __name__ == "__main__":
     unittest.main()

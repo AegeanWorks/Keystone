@@ -189,5 +189,21 @@ class MergeTest(unittest.TestCase):
         self.assertEqual(result["merged"][0]["nodes"], ["still"])
 
 
+class ClipDurationTest(unittest.TestCase):
+    def test_duration_ignores_far_event_when_tracks_exist(self):
+        from keystone.animation import Track
+        track = Track(times=(0.0, 1.0), values=(Vec3(0, 0, 0), Vec3(1, 0, 0)))
+        clip = AnimationClip(
+            name="b",
+            position_tracks=(("x", track),),
+            events=((10.0, "far"),),
+        )
+        self.assertEqual(clip.duration(), 1.0)
+
+    def test_event_only_clip_keeps_event_duration(self):
+        clip = AnimationClip(name="fx", events=((0.5, "hit"), (1.0, "end")))
+        self.assertEqual(clip.duration(), 1.0)
+
+
 if __name__ == "__main__":
     unittest.main()

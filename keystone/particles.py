@@ -9,6 +9,7 @@ and AI reports through counts and snapshots.
 
 from __future__ import annotations
 
+import math
 import random
 from collections.abc import Iterable
 from dataclasses import dataclass, field
@@ -236,8 +237,8 @@ class ParticleSystem:
         legacy dead stop), friction scales tangential velocity on hit steps
         only, and kill_on_contact drops the particle on its first hit.
         """
-        if dt < 0.0:
-            raise ValueError("dt must be non-negative")
+        if dt < 0.0 or not math.isfinite(dt):
+            raise ValueError("dt must be non-negative and finite")
         if not 0.0 <= restitution <= 1.0:
             raise ValueError("restitution must be within [0, 1]")
         if not 0.0 <= friction <= 1.0:
