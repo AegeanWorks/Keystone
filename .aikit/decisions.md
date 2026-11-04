@@ -459,3 +459,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Decision**: Degrade on-plane nodes to screen null instead of dropping them; save/restore global RNG around run_bot like run_log; require finite positive step and wall budgets in run_bot and validate_fairness. Five regression tests added (on-plane inclusion with null screen, RNG restore, NaN/Inf step rejection).
 - **Consequences**: Frame reports never lose nodes; bot runs are side-effect-free and strictly validated; 475 tests green, ruff clean, 6/6 aikit gates; simulate hash unchanged. apply_ui_action resume idempotence and unbind-resurrect stay filed as judgment calls, not defects.
 
+
+### ADR-054: Add deterministic particle bounce, friction and contact-kill
+- **Date**: 2026-11-04
+- **Status**: Accepted
+- **Context**: Particles stopped dead on every contact, so games needing sparks, debris or bouncing shots would hand-roll response math with divergent trajectories and hashes.
+- **Decision**: Extend ParticleSystem.step with restitution=0.0, friction=0.0, kill_on_contact=False (defaults reproduce the legacy dead stop bit-identically, including a verbatim zero-assignment branch so no negative zero leaks into traces). Validation precedes the empty-box fast path. On a hit: kill drops the particle; else per-axis reflect-or-zero in swept X-Z-Y order with REST_SPEED 0.05 settle snapping; friction scales tangential velocity only on hit steps. CubeDemo gains a floor slab AABB center (0,-0.05,0) half (10,0.05,10) with restitution=0.45 stepped in update() but excluded from snapshot(). No Emitter, Particle, report, renderer, CLI or schema changes.
+- **Consequences**: The fountain visibly bounces in headless frames while the simulate hash 772cac5232a0947b8f6d1914a5cf0cde is unchanged. Perf budget: step wall at most 1.05x legacy at 1k particles by 8 AABBs. Known quirk (pre-existing, filed as follow-up): a particle sliding tangentially while in box contact relocates to the box min face via the interior-start clause of the swept pass; the fountain never triggers it because lifetimes end before any settle.
+

@@ -20,6 +20,9 @@ __all__ = ["Emitter", "Particle", "ParticleSystem", "particles_report"]
 
 POINT_SKIN = 1e-9
 
+#: Bounce speed below which a reflected axis settles to rest (m/s).
+REST_SPEED = 0.05
+
 _AXES = ("x", "y", "z")
 
 
@@ -212,10 +215,27 @@ class ParticleSystem:
             added += 1
         return added
 
-    def step(self, dt: float, colliders: Iterable[AABB] = ()) -> int:
-        """Advance all particles by dt; returns the live count afterwards."""
+    def step(
+        self,
+        dt: float,
+        colliders: Iterable[AABB] = (),
+        restitution: float = 0.0,
+        friction: float = 0.0,
+        kill_on_contact: bool = False,
+    ) -> int:
+        """Advance all particles by dt; returns the live count afterwards.
+
+        Contact response is deterministic: hits use the swept X-Z-Y pass in
+        caller box order; restitution reflects the hit axis (0 keeps the
+        legacy dead stop), friction scales tangential velocity on hit steps
+        only, and kill_on_contact drops the particle on its first hit.
+        """
         if dt < 0.0:
             raise ValueError("dt must be non-negative")
+        if not 0.0 <= restitution <= 1.0:
+            raise ValueError("restitution must be within [0, 1]")
+        if not 0.0 <= friction <= 1.0:
+            raise ValueError("friction must be within [0, 1]")
         boxes = list(colliders)
         for box in boxes:
             if not isinstance(box, AABB):
@@ -228,6 +248,7 @@ class ParticleSystem:
             for box in boxes
         ]
         self.time += dt
+        legacy = restitution == 0.0 and friction == 0.0 and not kill_on_contact
         live: list[Particle] = []
         for particle in self.particles:
             age = particle.age + dt
@@ -249,15 +270,43 @@ class ParticleSystem:
             pz, hit_z = _move_point_flat(px, py, pz, 2, velocity.z * dt, flat)
             py, hit_y = _move_point_flat(px, py, pz, 1, velocity.y * dt, flat)
             position = Vec3(px, py, pz)
-            if hit_x:
-                velocity = Vec3(0.0, velocity.y, velocity.z)
-            if hit_z:
-                velocity = Vec3(velocity.x, velocity.y, 0.0)
-            if hit_y:
-                velocity = Vec3(velocity.x, 0.0, velocity.z)
+            if legacy:
+                if hit_x:
+                    velocity = Vec3(0.0, velocity.y, velocity.z)
+                if hit_z:
+                    velocity = Vec3(velocity.x, velocity.y, 0.0)
+                if hit_y:
+                    velocity = Vec3(velocity.x, 0.0, velocity.z)
+            else:
+                if hit_x or hit_y or hit_z:
+                    if kill_on_contact:
+                        continue
+                    if hit_x:
+                        velocity = self._respond_axis(velocity.x, velocity.y, velocity.z, 0, restitution)
+                    if hit_z:
+                        velocity = self._respond_axis(velocity.x, velocity.y, velocity.z, 2, restitution)
+                    if hit_y:
+                        velocity = self._respond_axis(velocity.x, velocity.y, velocity.z, 1, restitution)
+                    if friction > 0.0:
+                        grip = 1.0 - friction
+                        velocity = Vec3(
+                            velocity.x if hit_x else velocity.x * grip,
+                            velocity.y if hit_y else velocity.y * grip,
+                            velocity.z if hit_z else velocity.z * grip,
+                        )
             live.append(Particle(position, velocity, age, particle.lifetime, particle.size, particle.seed, particle.emitter))
         self.particles = live
         return len(self.particles)
+
+    @staticmethod
+    def _respond_axis(vx: float, vy: float, vz: float, axis: int, restitution: float) -> Vec3:
+        """Reflect one velocity axis with settle snapping; other axes untouched."""
+        components = [vx, vy, vz]
+        reflected = -components[axis] * restitution
+        if abs(reflected) < REST_SPEED:
+            reflected = 0.0
+        components[axis] = reflected
+        return Vec3(components[0], components[1], components[2])
 
     def _step_free(self, dt: float) -> int:
         self.time += dt

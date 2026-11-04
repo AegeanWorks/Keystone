@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `114`
-- **Total Classes**: `162`
+- **Total Classes**: `163`
 - **Total Top-Level Functions**: `208`
-- **Total Class Methods**: `898`
-- **Total Source Lines**: `17786`
+- **Total Class Methods**: `909`
+- **Total Source Lines**: `17989`
 
 ---
 
@@ -857,7 +857,7 @@
 ### [`keystone/particles.py`](keystone/particles.py)
 > *Deterministic, game-agnostic CPU particles: emitters, systems and reports.*
 
-**Size**: `311` lines (`12294` bytes)
+**Size**: `360` lines (`14524` bytes)
 
 **Classes:**
 - `class Particle` - *One live particle: position, velocity, age, lifetime and size.*
@@ -872,7 +872,8 @@
   - Method `.__post_init__()`
   - Method `.add(emitter)`
   - Method `.burst(emitter_name, count, origin)` - *Emit count particles immediately; returns the number actually added.*
-  - Method `.step(dt, colliders)` - *Advance all particles by dt; returns the live count afterwards.*
+  - Method `.step(dt, colliders, restitution, friction, kill_on_contact)` - *Advance all particles by dt; returns the live count afterwards.*
+  - Method `._respond_axis(vx, vy, vz, axis, restitution)` - *Reflect one velocity axis with settle snapping; other axes untouched.*
   - Method `._step_free(dt)`
   - Method `.alive_count()`
   - Method `.clear()`
@@ -1021,7 +1022,7 @@
 ### [`keystone/samples.py`](keystone/samples.py)
 > *A minimal game-agnostic sample used to smoke-test the engine.*
 
-**Size**: `155` lines (`5953` bytes)
+**Size**: `157` lines (`6094` bytes)
 
 **Classes:**
 - `class CubeDemo` - *A rotating cube scene; contains no combat, puzzles or genre rules.*
@@ -1855,7 +1856,7 @@
 ### [`tests/test_particles.py`](tests/test_particles.py)
 > *Tests for the deterministic particle core.*
 
-**Size**: `173` lines (`6797` bytes)
+**Size**: `325` lines (`12977` bytes)
 
 **Classes:**
 - `class EmitterTest`
@@ -1875,6 +1876,17 @@
   - Method `.test_empty_colliders_match_legacy_path()`
   - Method `.test_collision_is_deterministic()`
   - Method `.test_collision_rejects_bad_colliders()`
+- `class ResponseTest`
+  - Method `._still_system()`
+  - Method `.test_defaults_stop_dead_with_clean_zero()`
+  - Method `.test_bounce_reflects_with_restitution()`
+  - Method `.test_elastic_bounce_preserves_speed()`
+  - Method `.test_rest_threshold_settles_micro_bounces()`
+  - Method `.test_friction_scales_tangentials_on_hit_only()`
+  - Method `.test_kill_on_contact_drops_the_particle()`
+  - Method `.test_response_rejects_bad_parameters()`
+  - Method `.test_response_is_deterministic()`
+  - Method `.test_cube_demo_fountain_bounces_deterministically()`
 
 ---
 

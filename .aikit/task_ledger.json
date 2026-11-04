@@ -1,84 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-sprites-v1",
+    "task_id": "keystone-particle-response-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793745446.066002,
-    "owner": "kilo:sprites",
-    "started_by": "kilo:sprites",
+    "updated_at": 1793774636.792784,
+    "owner": "kilo:response",
+    "started_by": "kilo:response",
     "continuations": [],
-    "completed_at": 1793745453.3885412
+    "completed_at": 1793774637.2029145
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-review-hardening-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/3] glTF and snapshot correctness: normals now follow triangle indices; non-triangle modes, unknown material indices, sparse accessors and node cycles fail with ValueError; normalized integer accessors scale to unit range; snapshots preserve camera lens, ambient/background/sky, fog and lights and reject duplicate ids, dangling parents and self-parenting; material texture_name must resolve; 7 glTF, 6 snapshot and 1 material-graph regression tests added",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793520292.2136192,
-      "timestamp_str": "2026-11-01 11:04:52",
-      "agent": "kilo:review"
-    },
-    {
-      "task_id": "keystone-review-hardening-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Delivery ready: v0.25.1, full pytest and ruff clean, 6/6 project gates, codebase map refreshed, README snapshot section and roadmap corrected, ARCHITECTURE and ADR-031 updated; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793520292.554651,
-      "timestamp_str": "2026-11-01 11:04:52",
-      "agent": "kilo:review",
-      "handoff": {
-        "state": "v0.25.1 hardened glTF import and scene snapshots",
-        "next": "renderer instancing/PBR or replay runner",
-        "failed": "none",
-        "open": "no git remote configured for push",
-        "evidence": "full pytest, ruff, aikit check keystone 6/6"
-      }
-    },
-    {
-      "task_id": "keystone-review-hardening-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-review-hardening-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793520670.9658682,
-      "timestamp_str": "2026-11-01 11:11:10",
-      "agent": "kilo:review"
-    },
-    {
-      "task_id": "keystone-format-hardening-v2",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan a second format pass over the last three commits: add GLB container import, validate glTF material texture indices and accessor view bounds, enforce snapshot asset kinds and field types, and remove the quadratic asset lookup; tests, ADR, docs and version bump",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793534741.5368292,
-      "timestamp_str": "2026-11-01 15:05:41",
-      "agent": "kilo:review",
-      "impact_assessment": {
-        "why": "The recent glTF and snapshot hardening still leaves real gaps: binary .glb files are rejected as invalid UTF-8 JSON, material baseColorTexture indices are silently dropped when out of range, accessor byte offsets can read outside their declared bufferView, and scene snapshots accept a material asset as a node mesh and coerce non-string ids. These failures are silent or surface as confusing downstream errors.",
-        "benefits": "Keystone imports standard GLB bundles and fails malformed glTF and snapshot documents early with precise errors; asset references are type-checked, and snapshot serialization scales linearly instead of scanning the whole registry per node.",
-        "risks": "contract: same public modules, GLB added to load_gltf input and version 0.26.0; stricter validation may reject previously accepted malformed documents; dependency: stdlib only; concurrency: none, pure decoding; state: no persisted format change beyond accepting GLB input",
-        "mitigation": "Failing-first tests for GLB JSON and BIN chunks, texture index validation, accessor bounds, snapshot kind mismatch and non-string ids; full pytest, ruff and 6/6 project gates before commit"
-      }
-    },
-    {
-      "task_id": "keystone-format-hardening-v2",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/3] GLB and validation: load_gltf accepts GLB v2 JSON and BIN chunks from bytes or files; material texture indices, accessor/bufferView offsets and view bounds are validated; snapshots require string ids, reject non-mapping camera/transform, enforce mesh/material asset kinds and use a linear payload-to-id index; 8 glTF and 3 snapshot regressions added",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793545281.0847957,
-      "timestamp_str": "2026-11-01 18:01:21",
-      "agent": "kilo:review"
-    },
     {
       "task_id": "keystone-format-hardening-v2",
       "phase": "phase 4",
@@ -276,6 +209,74 @@
       "timestamp": 1793745453.388543,
       "timestamp_str": "2026-11-04 01:37:33",
       "agent": "kilo:sprites"
+    },
+    {
+      "task_id": "keystone-particle-response-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/4] Plan deterministic particle bounce, friction and contact-kill",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793773999.0282466,
+      "timestamp_str": "2026-11-04 09:33:19",
+      "agent": "kilo:response",
+      "impact_assessment": {
+        "why": "CPU particles stop dead on contact; every game hand-rolls bounce with divergent trajectories",
+        "benefits": "shared validated contact response with settle guarantee; CubeDemo fountain visibly bounces; sim hash unchanged",
+        "risks": "contract: additive step kwargs plus sample fixture, no schema or report change; dependency: stdlib plus physics AABB only; concurrency: single-threaded stepping, no shared state; state: no stored state, params are per-call",
+        "mitigation": "failing-first tests for defaults bit-identical, reflection values, friction, kill, settle, validation; full pytest plus 6/6 gates before commit"
+      },
+      "plan_digest": "3ce96ca4dbc2ed7ae0517124c5637feae06bff22ff84427c162fa03c670f42b6"
+    },
+    {
+      "task_id": "keystone-particle-response-v1",
+      "phase": "in_progress",
+      "phase_num": 3,
+      "description": "[2/4] Response implementation: step kwargs, floor slab, tests, docs",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793774001.5021684,
+      "timestamp_str": "2026-11-04 09:33:21",
+      "agent": "kilo:response"
+    },
+    {
+      "task_id": "keystone-particle-response-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[3/4] Delivery ready: v0.43.0 bounce/friction/kill, 475+10 tests green, ruff clean, 6/6 gates; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793774501.394323,
+      "timestamp_str": "2026-11-04 09:41:41",
+      "agent": "kilo:response",
+      "handoff": {
+        "state": "v0.43.0 response implemented uncommitted",
+        "next": "Stage 4 check (cold-start demo, serve console, gate re-run)",
+        "failed": "none",
+        "open": "no push without instruction",
+        "evidence": "pytest green, ruff clean, aikit 6/6, sim hash 772cac5232a0947b8f6d1914a5cf0cde, headless fx 64/64, step ratio 0.96x"
+      }
+    },
+    {
+      "task_id": "keystone-particle-response-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[4/4] Stage 4 check passed: pytest green, determinism ok, aikit 6/6, headless fx 64/64 f1+f70 with diff exit 1, HUD/serve ok; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793774636.792784,
+      "timestamp_str": "2026-11-04 09:43:56",
+      "agent": "kilo:response"
+    },
+    {
+      "task_id": "keystone-particle-response-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-particle-response-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793774637.202917,
+      "timestamp_str": "2026-11-04 09:43:57",
+      "agent": "kilo:response"
     }
   ]
 }

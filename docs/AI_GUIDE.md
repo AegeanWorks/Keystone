@@ -203,11 +203,15 @@ print(run_log(CubeDemo, log)["hash"])
 
 # Deterministic particles: seeded emitters, HUD/inspector/AI reports.
 from keystone.particles import Emitter, ParticleSystem, particles_report
+from keystone.physics import AABB
+from keystone.math3d import Vec3
 
 fx = ParticleSystem()
 fx.add(Emitter(name="sparks", rate=60.0, seed=5))
 fx.burst("sparks", 8)
 fx.step(0.016)
+floor = AABB(Vec3(0, -0.05, 0), Vec3(10, 0.05, 10))
+fx.step(0.016, [floor], restitution=0.45, friction=0.1)
 print(particles_report(fx))
 ```
 

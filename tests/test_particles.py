@@ -169,5 +169,157 @@ class SystemTest(unittest.TestCase):
             system.step(1 / 60, ["not-a-box"])
 
 
+class ResponseTest(unittest.TestCase):
+    def _still_system(self) -> ParticleSystem:
+        system = ParticleSystem()
+        system.add(Emitter(name="still", speed=0.0, gravity=Vec3(0.0, 0.0, 0.0), lifetime=10.0, seed=4))
+        return system
+
+    def test_defaults_stop_dead_with_clean_zero(self):
+        from keystone.physics import AABB
+
+        system = self._still_system()
+        system.burst("still", 1)
+        system.particles[0] = Particle(Vec3(-3, 0, 0), Vec3(60, 0, 0), 0.0, 10.0, 1.0, 0, "still")
+        wall = AABB(Vec3(0, 0, 0), Vec3(0.5, 5, 5))
+        system.step(1.0, [wall])
+        stopped = system.particles[0]
+        self.assertEqual(stopped.velocity.x, 0.0)
+        self.assertEqual(repr(stopped.velocity.x), "0.0")
+
+    def test_bounce_reflects_with_restitution(self):
+        from keystone.physics import AABB
+
+        system = self._still_system()
+        system.burst("still", 1)
+        system.particles[0] = Particle(Vec3(0, 3, 0), Vec3(0, -10, 0), 0.0, 10.0, 1.0, 0, "still")
+        floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+        system.step(0.5, [floor], restitution=0.5)
+        bounced = system.particles[0]
+        self.assertAlmostEqual(bounced.position.y, 0.5, places=6)
+        self.assertEqual(bounced.velocity.y, 5.0)
+
+    def test_elastic_bounce_preserves_speed(self):
+        from keystone.physics import AABB
+
+        system = self._still_system()
+        system.burst("still", 1)
+        system.particles[0] = Particle(Vec3(0, 3, 0), Vec3(0, -10, 0), 0.0, 10.0, 1.0, 0, "still")
+        floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+        system.step(0.5, [floor], restitution=1.0)
+        self.assertEqual(system.particles[0].velocity.y, 10.0)
+
+    def test_rest_threshold_settles_micro_bounces(self):
+        from keystone.physics import AABB
+
+        system = self._still_system()
+        system.burst("still", 1)
+        system.particles[0] = Particle(Vec3(0, 0.54, 0), Vec3(0, -0.08, 0), 0.0, 10.0, 1.0, 0, "still")
+        floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+        system.step(0.5, [floor], restitution=0.5)
+        settled = system.particles[0]
+        self.assertEqual(settled.velocity.y, 0.0)
+        self.assertEqual(repr(settled.velocity.y), "0.0")
+
+    def test_friction_scales_tangentials_on_hit_only(self):
+        from keystone.physics import AABB
+
+        floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+
+        def run(mu: float, boxes: list) -> Particle:
+            system = self._still_system()
+            system.burst("still", 1)
+            system.particles[0] = Particle(Vec3(0, 3, 0), Vec3(6, -8, 0), 0.0, 10.0, 1.0, 0, "still")
+            system.step(0.5, boxes, friction=mu)
+            return system.particles[0]
+
+        hit = run(0.25, [floor])
+        self.assertAlmostEqual(hit.position.y, 0.5)
+        self.assertEqual(hit.velocity.x, 4.5)
+        self.assertEqual(hit.velocity.y, 0.0)
+        self.assertEqual(hit.velocity.z, 0.0)
+        missed = run(0.25, [])
+        plain = run(0.0, [])
+        self.assertEqual(
+            (missed.velocity.x, missed.velocity.y, missed.velocity.z),
+            (plain.velocity.x, plain.velocity.y, plain.velocity.z),
+        )
+
+    def test_kill_on_contact_drops_the_particle(self):
+        from keystone.physics import AABB
+
+        system = self._still_system()
+        system.burst("still", 1)
+        system.particles[0] = Particle(Vec3(0, 3, 0), Vec3(0, -10, 0), 0.0, 10.0, 1.0, 0, "still")
+        floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+        self.assertEqual(system.step(0.5, [floor], kill_on_contact=True), 0)
+        system.burst("still", 1)
+        system.particles[0] = Particle(Vec3(0, 3, 0), Vec3(0, -10, 0), 0.0, 10.0, 1.0, 0, "still")
+        self.assertEqual(system.step(0.5, [floor]), 1)
+
+    def test_response_rejects_bad_parameters(self):
+        from keystone.physics import AABB
+
+        floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+        for kwargs in (
+            {"restitution": 1.5},
+            {"restitution": -0.1},
+            {"restitution": float("nan")},
+            {"friction": 1.5},
+            {"friction": -0.1},
+            {"friction": float("nan")},
+        ):
+            system = self._still_system()
+            system.burst("still", 1)
+            with self.assertRaises(ValueError):
+                system.step(1 / 60, [floor], **kwargs)
+        system = self._still_system()
+        system.burst("still", 1)
+        with self.assertRaises(ValueError):
+            system.step(1 / 60, [], restitution=2.0)
+
+    def test_response_is_deterministic(self):
+        from keystone.physics import AABB
+
+        def run() -> ParticleSystem:
+            system = ParticleSystem()
+            system.add(Emitter(name="hail", speed=0.0, gravity=Vec3(0.0, -10.0, 0.0), seed=9))
+            system.burst("hail", 6)
+            floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+            for _ in range(90):
+                system.step(1 / 60, [floor], restitution=0.45, friction=0.1)
+            return system
+
+        first, second = run(), run()
+        self.assertEqual(
+            [(p.position.x, p.position.y, p.velocity.x, p.velocity.y) for p in first.particles],
+            [(p.position.x, p.position.y, p.velocity.x, p.velocity.y) for p in second.particles],
+        )
+
+    def test_cube_demo_fountain_bounces_deterministically(self):
+        from keystone.samples import CubeDemo
+
+        class Actions:
+            forward = 0.0
+            right = 0.0
+            up = 0.0
+            look_yaw = 0.0
+            look_pitch = 0.0
+
+        first, second = CubeDemo(), CubeDemo()
+        first.build_scene()
+        second.build_scene()
+        for _ in range(120):
+            first.update(1 / 60, Actions())
+            second.update(1 / 60, Actions())
+        self.assertEqual(len(first.particles.particles), len(second.particles.particles))
+        self.assertEqual(
+            [(p.position.x, p.position.y, p.position.z) for p in first.particles.particles],
+            [(p.position.x, p.position.y, p.position.z) for p in second.particles.particles],
+        )
+        self.assertNotIn("particles", first.snapshot())
+        self.assertEqual(first.snapshot(), second.snapshot())
+
+
 if __name__ == "__main__":
     unittest.main()

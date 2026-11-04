@@ -9,6 +9,7 @@ from keystone.assets import AssetRegistry
 from keystone.geometry import Material
 from keystone.math3d import Quat, Vec3
 from keystone.particles import Emitter, ParticleSystem
+from keystone.physics import AABB
 from keystone.primitives import cube, plane, sphere
 from keystone.scene import DirectionalLight, Node, PointLight, Scene, Transform
 from keystone.texture import TextureData
@@ -23,6 +24,7 @@ class CubeDemo:
         self.scene = Scene()
         self.assets = AssetRegistry()
         self.particles = ParticleSystem()
+        self._floor = AABB(Vec3(0.0, -0.05, 0.0), Vec3(10.0, 0.05, 10.0))
         self._time = 0.0
         self._cubes: list[Node] = []
 
@@ -115,7 +117,7 @@ class CubeDemo:
 
     def update(self, dt: float, actions: object) -> None:
         self._time += dt
-        self.particles.step(dt)
+        self.particles.step(dt, [self._floor], restitution=0.45)
         for index, node in enumerate(self._cubes):
             node.transform = replace(
                 node.transform,
