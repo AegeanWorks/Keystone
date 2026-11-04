@@ -42,6 +42,9 @@ class TrackTest(unittest.TestCase):
             Track(times=(), values=())
         with self.assertRaises(TypeError):
             Track(times=(0.0,), values=(object(),))
+        for bad in (float("nan"), float("inf"), float("-inf")):
+            with self.assertRaises(ValueError):
+                Track(times=(bad,), values=(Vec3(),))
 
     def test_quat_slerp_endpoints(self):
         first, second = Quat(), Quat.from_axis_angle(Vec3(0.0, 1.0, 0.0), 3.14159)

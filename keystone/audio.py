@@ -210,7 +210,7 @@ def read_wav(path: str | Path) -> AudioClip:
         raise ValueError(f"could not read WAV from {path}: {exc}") from exc
     count = len(frames) // 2
     samples = struct.unpack(f"<{count}h", frames) if count else ()
-    return AudioClip(samples=tuple(value / 32767.0 for value in samples),
+    return AudioClip(samples=tuple(value / 32768.0 if value < 0 else value / 32767.0 for value in samples),
                      sample_rate=rate, name=Path(str(path)).stem)
 
 

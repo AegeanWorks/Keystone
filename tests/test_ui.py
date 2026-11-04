@@ -3,7 +3,14 @@
 import unittest
 
 from keystone.ui.canvas import Canvas
-from keystone.ui.font import GLYPH_HEIGHT, GLYPH_WIDTH, glyph, line_height, text_width
+from keystone.ui.font import (
+    GLYPH_HEIGHT,
+    GLYPH_WIDTH,
+    glyph,
+    line_height,
+    text_width,
+    truncate_text,
+)
 from keystone.ui.menu import MenuItem, PauseMenu
 from keystone.ui.overlay import HudState, HumanOverlay
 from keystone.ui.report import describe_canvas
@@ -19,6 +26,13 @@ class FontTest(unittest.TestCase):
     def test_lowercase_and_unknown_characters_are_supported(self):
         self.assertEqual(glyph("a"), glyph("A"))
         self.assertEqual(len(glyph("\u00a7")), GLYPH_HEIGHT)
+
+    def test_truncate_returns_maximal_prefix(self):
+        self.assertEqual(truncate_text("ABC", 11, 1), "AB")
+        self.assertEqual(truncate_text("AB", 11, 1), "AB")
+        self.assertLessEqual(text_width(truncate_text("ABCDEF", 11, 1), 1), 11)
+        with self.assertRaises(ValueError):
+            truncate_text("AB", 10, 0)
 
 
 class CanvasTest(unittest.TestCase):

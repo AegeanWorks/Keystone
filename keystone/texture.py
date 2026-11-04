@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import struct
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -30,8 +31,8 @@ class TextureData:
             )
 
     def sha256(self) -> str:
-        """Return a stable digest of the pixel payload."""
-        return hashlib.sha256(self.rgba).hexdigest()
+        """Return a stable digest of the shape plus the pixel payload."""
+        return hashlib.sha256(struct.pack(">II", self.width, self.height) + self.rgba).hexdigest()
 
     @classmethod
     def from_png(cls, path: str | Path, name: str | None = None) -> TextureData:

@@ -85,6 +85,19 @@ class AudioTest(unittest.TestCase):
         self.assertEqual(restored.samples, clip.samples)
         self.assertEqual(restored.name, "blip")
 
+    def test_read_wav_accepts_full_scale_negative(self):
+        import struct
+        import wave
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "ext.wav"
+            with wave.open(str(path), "wb") as handle:
+                handle.setnchannels(1)
+                handle.setsampwidth(2)
+                handle.setframerate(22050)
+                handle.writeframes(struct.pack("<2h", 0, -32768))
+            loaded = read_wav(path)
+            self.assertAlmostEqual(loaded.samples[1], -1.0, places=4)
+
     def test_master_bus_applies_once(self):
         clip = sine(440.0, 0.05)
         direct = Mixer(buses={"master": 0.5, "sfx": 1.0})

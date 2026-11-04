@@ -46,6 +46,11 @@ class TextureDataTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             TextureData.checker(8, cell=0)
 
+    def test_sha256_distinguishes_shapes(self):
+        first = TextureData(2, 2, b"\x00" * 16, "a")
+        second = TextureData(4, 1, b"\x00" * 16, "b")
+        self.assertNotEqual(first.sha256(), second.sha256())
+
     def test_checker_rejects_bad_channel_counts(self):
         with self.assertRaises(TypeError):
             TextureData.checker(8, dark=(0.1, 0.2))

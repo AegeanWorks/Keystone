@@ -13,7 +13,7 @@ Corner = tuple[int, int | None, int | None]
 
 def load_obj(path: str | Path) -> MeshData:
     """Read an OBJ file line by line so file size is never loaded whole."""
-    with Path(path).open("r", encoding="utf-8", errors="replace") as handle:
+    with Path(path).open("r", encoding="utf-8-sig", errors="replace") as handle:
         return _parse_lines(handle)
 
 

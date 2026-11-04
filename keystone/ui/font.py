@@ -82,7 +82,11 @@ def line_height(scale: int = 1) -> int:
 
 def truncate_text(text: str, width: int, scale: int = 1) -> str:
     """Trim text so it fits width pixels, leaving room for an ellipsis-free cut."""
+    if not isinstance(scale, int) or isinstance(scale, bool) or scale <= 0:
+        raise ValueError("scale must be a positive integer")
     if text_width(text, scale) <= width:
         return text
-    limit = max(0, (width // ((GLYPH_WIDTH + TRACKING) * scale)) - 1)
+    if width < 0:
+        return ""
+    limit = max(0, (width // scale + 1) // (GLYPH_WIDTH + TRACKING))
     return text[:limit]

@@ -9,8 +9,8 @@
 - **Total Python Modules**: `115`
 - **Total Classes**: `168`
 - **Total Top-Level Functions**: `210`
-- **Total Class Methods**: `936`
-- **Total Source Lines**: `18425`
+- **Total Class Methods**: `940`
+- **Total Source Lines**: `18472`
 
 ---
 
@@ -85,7 +85,7 @@
 ### [`keystone/animation.py`](keystone/animation.py)
 > *Deterministic, game-agnostic animation: keyframe clips, sampling and control.*
 
-**Size**: `367` lines (`15765` bytes)
+**Size**: `368` lines (`15815` bytes)
 
 **Classes:**
 - `class Track` - *One keyframed channel: sorted times with Vec3 or Quat values.*
@@ -204,7 +204,7 @@
 ### [`keystone/audio.py`](keystone/audio.py)
 > *Game-agnostic audio core: synth clips, bus mixer and WAV I/O.*
 
-**Size**: `231` lines (`9174` bytes)
+**Size**: `231` lines (`9208` bytes)
 
 **Classes:**
 - `class AudioClip` - *Immutable mono PCM clip in [-1, 1] with a fixed sample rate.*
@@ -844,7 +844,7 @@
 ### [`keystone/obj_loader.py`](keystone/obj_loader.py)
 > *Streaming Wavefront OBJ loader producing indexed triangle meshes.*
 
-**Size**: `137` lines (`5949` bytes)
+**Size**: `137` lines (`5953` bytes)
 
 **Functions:**
 - `def load_obj(path)` - *Read an OBJ file line by line so file size is never loaded whole.*
@@ -1154,12 +1154,12 @@
 ### [`keystone/texture.py`](keystone/texture.py)
 > *Immutable RGBA texture data and dependency-free texture sources.*
 
-**Size**: `86` lines (`3287` bytes)
+**Size**: `87` lines (`3362` bytes)
 
 **Classes:**
 - `class TextureData` - *Top-down RGBA8 pixels with a stable name for reports and debugging.*
   - Method `.__post_init__()`
-  - Method `.sha256()` - *Return a stable digest of the pixel payload.*
+  - Method `.sha256()` - *Return a stable digest of the shape plus the pixel payload.*
   - Method `.from_png(path, name)` - *Load an 8-bit RGBA non-interlaced PNG through the dependency-free reader.*
   - Method `.from_png_bytes(data, name)` - *Load an 8-bit RGBA non-interlaced PNG from bytes.*
   - Method `.checker(size, dark, light, cell, name)` - *Build a deterministic RGBA checker texture without an image file.*
@@ -1212,7 +1212,7 @@
 ### [`keystone/ui/font.py`](keystone/ui/font.py)
 > *Embedded 5x7 bitmap font for the dependency-free human overlay.*
 
-**Size**: `88` lines (`4940` bytes)
+**Size**: `92` lines (`5112` bytes)
 
 **Functions:**
 - `def glyph(character)` - *Return the 7x5 rows for one character; lowercase maps to uppercase.*
@@ -1422,7 +1422,7 @@
 ### [`tests/test_animation.py`](tests/test_animation.py)
 > *Tests for deterministic animation clips, controllers and pose application.*
 
-**Size**: `209` lines (`8575` bytes)
+**Size**: `212` lines (`8741` bytes)
 
 **Classes:**
 - `class TrackTest`
@@ -1525,7 +1525,7 @@
 ### [`tests/test_audio.py`](tests/test_audio.py)
 > *Tests for the game-agnostic audio core.*
 
-**Size**: `98` lines (`3720` bytes)
+**Size**: `111` lines (`4272` bytes)
 
 **Classes:**
 - `class AudioTest`
@@ -1536,6 +1536,7 @@
   - Method `.test_mix_clips_clamps_once_at_the_end()`
   - Method `.test_wav_round_trip()`
   - Method `.test_clip_json_round_trip()`
+  - Method `.test_read_wav_accepts_full_scale_negative()`
   - Method `.test_master_bus_applies_once()`
 
 ---
@@ -1650,7 +1651,7 @@
 ### [`tests/test_geometry.py`](tests/test_geometry.py)
 > *Unit tests for indexed meshes, built-in primitives and the OBJ loader.*
 
-**Size**: `270` lines (`10007` bytes)
+**Size**: `276` lines (`10301` bytes)
 
 **Classes:**
 - `class MeshDataTest`
@@ -1686,6 +1687,7 @@
   - Method `.test_vertex_weight_is_applied()`
   - Method `.test_vertex_junk_is_rejected()`
   - Method `.test_file_round_trip()`
+  - Method `.test_bom_prefix_is_stripped()`
 - `class MaterialTest`
   - Method `.test_defaults_are_valid()`
   - Method `.test_rejects_negative_specular()`
@@ -2332,13 +2334,14 @@
 ### [`tests/test_texture.py`](tests/test_texture.py)
 > *Tests for immutable texture data and texture sources.*
 
-**Size**: `57` lines (`2033` bytes)
+**Size**: `62` lines (`2250` bytes)
 
 **Classes:**
 - `class TextureDataTest`
   - Method `.test_checker_is_deterministic_and_has_expected_shape()`
   - Method `.test_png_round_trip_keeps_pixels()`
   - Method `.test_bad_texture_data_is_rejected()`
+  - Method `.test_sha256_distinguishes_shapes()`
   - Method `.test_checker_rejects_bad_channel_counts()`
 
 ---
@@ -2359,12 +2362,13 @@
 ### [`tests/test_ui.py`](tests/test_ui.py)
 > *Tests for the dependency-free human UI primitives and overlay.*
 
-**Size**: `144` lines (`5961` bytes)
+**Size**: `158` lines (`6340` bytes)
 
 **Classes:**
 - `class FontTest`
   - Method `.test_metrics_match_the_bitmap_grid()`
   - Method `.test_lowercase_and_unknown_characters_are_supported()`
+  - Method `.test_truncate_returns_maximal_prefix()`
 - `class CanvasTest`
   - Method `.test_rect_is_clipped_to_canvas_bounds()`
   - Method `.test_text_records_labels_and_stays_inside_the_canvas()`

@@ -250,6 +250,12 @@ class ObjLoaderTest(unittest.TestCase):
             path.write_text(CUBE_OBJ, encoding="utf-8")
             self.assertEqual(load_obj(path).indices, (0, 1, 2, 0, 2, 3))
 
+    def test_bom_prefix_is_stripped(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "bom.obj"
+            path.write_bytes(b"\xef\xbb\xbf" + CUBE_OBJ.encode("utf-8"))
+            self.assertEqual(load_obj(path).indices, (0, 1, 2, 0, 2, 3))
+
 
 class MaterialTest(unittest.TestCase):
     def test_defaults_are_valid(self):
