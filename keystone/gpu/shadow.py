@@ -28,6 +28,7 @@ __all__ = [
     "ShadowMap",
     "light_view",
     "light_vp",
+    "light_vp_for",
     "orthographic",
 ]
 

@@ -9,10 +9,10 @@ class FixedStepClock:
     """Accumulates wall time and releases whole deterministic simulation steps."""
 
     def __init__(self, step: float = 1.0 / 60.0, max_frame: float = 0.25) -> None:
-        if step <= 0.0:
-            raise ValueError("step must be positive")
-        if max_frame < step:
-            raise ValueError("max_frame must be at least one step")
+        if not math.isfinite(step) or step <= 0.0:
+            raise ValueError("step must be positive and finite")
+        if not math.isfinite(max_frame) or max_frame < step:
+            raise ValueError("max_frame must be at least one step and finite")
         self.step = step
         self.max_frame = max_frame
         self._last: float | None = None

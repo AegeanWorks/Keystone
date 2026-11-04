@@ -102,7 +102,7 @@ class Track:
                 values.append(Vec3(float(raw[0]), float(raw[1]), float(raw[2])))
             elif "q" in key:
                 raw = key["q"]
-                values.append(Quat(float(raw[0]), float(raw[1]), float(raw[2]), float(raw[3])))
+                values.append(Quat(float(raw[3]), float(raw[0]), float(raw[1]), float(raw[2])))
             else:
                 raise ValueError("track key must hold 'v' or 'q'")
         return cls(times=tuple(times), values=tuple(values), interpolation=interpolation)

@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `115`
-- **Total Classes**: `168`
+- **Total Python Modules**: `116`
+- **Total Classes**: `169`
 - **Total Top-Level Functions**: `210`
-- **Total Class Methods**: `940`
-- **Total Source Lines**: `18472`
+- **Total Class Methods**: `948`
+- **Total Source Lines**: `18580`
 
 ---
 
@@ -248,7 +248,7 @@
 ### [`keystone/broadphase.py`](keystone/broadphase.py)
 > *Deterministic spatial-grid broadphase for nearby AABB candidates.*
 
-**Size**: `132` lines (`5182` bytes)
+**Size**: `136` lines (`5317` bytes)
 
 **Classes:**
 - `class SpatialGrid` - *A uniform grid of AABB proxies with exact overlap filtering.*
@@ -312,7 +312,7 @@
 ### [`keystone/clock.py`](keystone/clock.py)
 > *Fixed-step clock with a bounded catch-up budget.*
 
-**Size**: `42` lines (`1420` bytes)
+**Size**: `42` lines (`1501` bytes)
 
 **Classes:**
 - `class FixedStepClock` - *Accumulates wall time and releases whole deterministic simulation steps.*
@@ -615,7 +615,7 @@
 ### [`keystone/gpu/shadow.py`](keystone/gpu/shadow.py)
 > *Deterministic directional shadow mapping (fixed 1024 depth map, 3x3 PCF).*
 
-**Size**: `153` lines (`5374` bytes)
+**Size**: `154` lines (`5394` bytes)
 
 **Classes:**
 - `class ShadowMap` - *Fixed-size depth FBO owned by the renderer (one GL context).*
@@ -722,7 +722,7 @@
 ### [`keystone/input.py`](keystone/input.py)
 > *Generic input mapping: named actions, axes and pointer look.*
 
-**Size**: `278` lines (`11275` bytes)
+**Size**: `278` lines (`11304` bytes)
 
 **Classes:**
 - `class ActionState` - *One sampled input frame; games translate names into their own rules.*
@@ -1003,7 +1003,7 @@
 ### [`keystone/replay.py`](keystone/replay.py)
 > *Deterministic action logs and stable state hashes.*
 
-**Size**: `114` lines (`3797` bytes)
+**Size**: `114` lines (`3803` bytes)
 
 **Classes:**
 - `class CommandLog`
@@ -1239,7 +1239,7 @@
 ### [`keystone/ui/overlay.py`](keystone/ui/overlay.py)
 > *Game-agnostic human overlay: HUD, controls help and pause menu.*
 
-**Size**: `160` lines (`6921` bytes)
+**Size**: `160` lines (`6919` bytes)
 
 **Classes:**
 - `class HudState` - *Presentation-only snapshot the overlay needs for one frame.*
@@ -1286,7 +1286,7 @@
 ### [`keystone/web/scene.py`](keystone/web/scene.py)
 > *Export a game-agnostic scene as a JSON document for the browser viewer.*
 
-**Size**: `145` lines (`5392` bytes)
+**Size**: `145` lines (`5503` bytes)
 
 **Functions:**
 - `def _floats(values)`
@@ -1306,7 +1306,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `407` lines (`18201` bytes)
+**Size**: `407` lines (`18312` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2314,6 +2314,24 @@
   - Method `.test_compare_accepts_legacy_without_color()`
   - Method `.test_snapshot_round_trips_color_flag()`
   - Method `.test_scene_document_and_snapshot_expose_color()`
+
+---
+
+### [`tests/test_swarm_fixes.py`](tests/test_swarm_fixes.py)
+> *Swarm regression pins: one failing-first test per verified Stage-3 fix.*
+
+**Size**: `103` lines (`3573` bytes)
+
+**Classes:**
+- `class SwarmFixesTest`
+  - Method `.test_shadow_all_exports_light_vp_for()`
+  - Method `.test_quat_json_round_trip()`
+  - Method `.test_clock_rejects_non_finite()`
+  - Method `.test_command_log_to_dict_isolated()`
+  - Method `.test_disabled_mouse_suppresses_click()`
+  - Method `.test_update_preserves_insertion_order()`
+  - Method `.test_none_flags_report_disabled()`
+  - Method `.test_hit_test_right_edge_is_exclusive()`
 
 ---
 

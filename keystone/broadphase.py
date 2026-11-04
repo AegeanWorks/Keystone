@@ -45,10 +45,14 @@ class SpatialGrid:
         """Insert or replace a proxy and its current bounds."""
         cells = list(self._cells_for(box))
         if key in self._boxes:
+            order = self._order[key]
             self.remove(key)
-        self._boxes[key] = box
-        self._order[key] = self._next_order
-        self._next_order += 1
+            self._boxes[key] = box
+            self._order[key] = order
+        else:
+            self._boxes[key] = box
+            self._order[key] = self._next_order
+            self._next_order += 1
         for cell in cells:
             self._cells.setdefault(cell, set()).add(key)
 

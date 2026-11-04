@@ -52,7 +52,7 @@ class HumanOverlay:
     def hit_test(self, x: float, y: float) -> str | None:
         """Return the action of the button under the pointer, if any."""
         for left, top, width, height, action in self.hits:
-            if left <= x <= left + width and top <= y <= top + height:
+            if left <= x < left + width and top <= y < top + height:
                 return action
         return None
 

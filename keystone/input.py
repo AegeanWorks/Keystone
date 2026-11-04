@@ -249,7 +249,7 @@ class InputMap:
         pressed = held - self._held
         self._held = held
         mouse = context.mouse_down("left")
-        clicked = mouse and not self._mouse_held
+        clicked = bool(mouse and self.mouse_enabled and not self._mouse_held)
         self._mouse_held = mouse
         x, y = context.cursor_position()
         if self._last_pointer is None or not self.mouse_enabled:

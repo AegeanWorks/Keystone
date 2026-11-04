@@ -29,7 +29,7 @@ class CommandLog:
         self.frames.append(actions.to_dict())
 
     def to_dict(self) -> dict:
-        return {"seed": self.seed, "step": self.step, "frames": self.frames}
+        return {"seed": self.seed, "step": self.step, "frames": list(self.frames)}
 
     @classmethod
     def from_dict(cls, data: dict) -> CommandLog:
