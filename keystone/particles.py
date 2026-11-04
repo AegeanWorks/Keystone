@@ -23,8 +23,6 @@ POINT_SKIN = 1e-9
 #: Bounce speed below which a reflected axis settles to rest (m/s).
 REST_SPEED = 0.05
 
-_AXES = ("x", "y", "z")
-
 
 def _move_point_flat(
     px: float, py: float, pz: float, axis: int, amount: float, flat: list[tuple[float, float, float, float, float, float]]

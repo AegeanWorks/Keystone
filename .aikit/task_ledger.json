@@ -1,39 +1,16 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-skin-merge-v1",
-    "last_phase": "in_progress",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1793791116.2708204,
-    "owner": "kilo:merge",
-    "started_by": "kilo:merge",
-    "continuations": [],
-    "completed_at": 1793791116.4287226
+    "task_id": "keystone-delta-bind-v1",
+    "last_phase": "implementation",
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1793796566.94702,
+    "owner": "kilo:delta",
+    "started_by": "kilo:delta",
+    "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-audit-waves-0-30-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/2] Pushout fix delivered: resolve_sphere_aabb targets low-r/high+r with minimal displacement, 3 exact boundary tests, 358 tests ruff clean 6/6 gates; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793722642.2562025,
-      "timestamp_str": "2026-11-03 19:17:22",
-      "agent": "kilo:audit"
-    },
-    {
-      "task_id": "keystone-audit-waves-0-30-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-audit-waves-0-30-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793742731.5698416,
-      "timestamp_str": "2026-11-04 00:52:11",
-      "agent": "kilo:sprites",
-      "continued_from": "kilo:audit"
-    },
     {
       "task_id": "keystone-sprites-v1",
       "phase": "in_progress",
@@ -276,6 +253,35 @@
       "timestamp": 1793791116.4287243,
       "timestamp_str": "2026-11-04 14:18:36",
       "agent": "kilo:merge"
+    },
+    {
+      "task_id": "keystone-delta-bind-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/2] Plan inverse-bind merge fix",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793796566.8120208,
+      "timestamp_str": "2026-11-04 15:49:26",
+      "agent": "kilo:delta",
+      "impact_assessment": {
+        "why": "delta-review of 23-commit stack found rigs with same joints but different binds merging and corrupting deformation",
+        "benefits": "bit-exact skin merges, fail-fast on bind mismatch",
+        "risks": "contract: skin group keys gain binds, builder rejects mismatch, plan counts split; dependency: stdlib only; concurrency: single-threaded; state: snapshot schema unchanged",
+        "mitigation": "failing-first tests for separate groups and builder rejection plus pixel-parity lock; full pytest plus 6/6 gates"
+      },
+      "plan_digest": "3c7a267065c81af525c3de64cc317f366a770d5434c286c73b6fd36961a24363"
+    },
+    {
+      "task_id": "keystone-delta-bind-v1",
+      "phase": "implementation",
+      "phase_num": 4,
+      "description": "[2/2] Bind fix delivered: keys carry binds, builder rejects mismatch, _AXES removed; 496 tests ruff clean 6/6 gates; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793796566.94702,
+      "timestamp_str": "2026-11-04 15:49:26",
+      "agent": "kilo:delta"
     }
   ]
 }

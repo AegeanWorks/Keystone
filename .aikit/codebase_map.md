@@ -9,8 +9,8 @@
 - **Total Python Modules**: `115`
 - **Total Classes**: `167`
 - **Total Top-Level Functions**: `210`
-- **Total Class Methods**: `927`
-- **Total Source Lines**: `18329`
+- **Total Class Methods**: `929`
+- **Total Source Lines**: `18358`
 
 ---
 
@@ -236,7 +236,7 @@
 ### [`keystone/batch.py`](keystone/batch.py)
 > *Static batch planner: group draw nodes to cut draw calls without new deps.*
 
-**Size**: `146` lines (`6035` bytes)
+**Size**: `148` lines (`6293` bytes)
 
 **Functions:**
 - `def _skinned(mesh)` - *Whether a mesh deforms at render time and must never bake or merge.*
@@ -825,7 +825,7 @@
 ### [`keystone/mesh_builder.py`](keystone/mesh_builder.py)
 > *Compose boxes and quads into a single indexed MeshData.*
 
-**Size**: `186` lines (`7852` bytes)
+**Size**: `189` lines (`8052` bytes)
 
 **Classes:**
 - `class MeshBuilder` - *Accumulates flat-shaded quads and boxes, then builds one mesh.*
@@ -859,7 +859,7 @@
 ### [`keystone/particles.py`](keystone/particles.py)
 > *Deterministic, game-agnostic CPU particles: emitters, systems and reports.*
 
-**Size**: `368` lines (`14944` bytes)
+**Size**: `366` lines (`14919` bytes)
 
 **Classes:**
 - `class Particle` - *One live particle: position, velocity, age, lifetime and size.*
@@ -1858,7 +1858,7 @@
 ### [`tests/test_merge_skin.py`](tests/test_merge_skin.py)
 > *Tests for skin-aware batch merging: identical rigs merge into one draw.*
 
-**Size**: `174` lines (`7013` bytes)
+**Size**: `200` lines (`8326` bytes)
 
 **Classes:**
 - `class SkinMergeTest`
@@ -1868,6 +1868,8 @@
   - Method `.test_plan_reports_skin_counters_without_moving_main_groups()`
   - Method `.test_exclude_applies_to_skin_groups()`
   - Method `.test_builder_rejects_mismatched_skin()`
+  - Method `.test_differing_inverse_binds_stay_separate()`
+  - Method `.test_builder_rejects_mismatched_inverse_binds()`
 - `class RigGame` - *Minimal game module with two identical rigs for pixel-parity proofs.*
   - Method `.__init__(merged)`
   - Method `.build_scene()`

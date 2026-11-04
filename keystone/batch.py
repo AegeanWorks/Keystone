@@ -5,8 +5,8 @@ visible mesh nodes by shared mesh and material payloads, and reports the
 draw-call savings a renderer could realize. `merge_batches()` additionally
 bakes each material group into one world-space mesh without mutating the
 scene. Static merges suit still geometry; animated nodes must be excluded.
-Skinned meshes merge only with identical joint lists and node transforms,
-keeping deformation bit-exact.
+Skinned meshes merge only with identical joint lists, inverse bind
+matrices and node transforms, keeping deformation bit-exact.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ def _skinned(mesh: MeshData) -> bool:
 def plan_batches(scene: Scene) -> dict:
     groups: dict[tuple[int, int], dict] = {}
     total_triangles = 0
-    skin_groups: dict[tuple[int, tuple[str, ...], tuple[float, ...]], int] = {}
+    skin_groups: dict[tuple[int, tuple[str, ...], tuple[tuple[float, ...], ...], tuple[float, ...]], int] = {}
     skin_calls = 0
     skin_triangles = 0
     for node in scene.traverse():
@@ -38,6 +38,7 @@ def plan_batches(scene: Scene) -> dict:
             key = (
                 id(material) if material is not None else 0,
                 tuple(mesh.skin_joints),
+                tuple(tuple(matrix) for matrix in mesh.skin_inverse_bind),
                 tuple(node.world_matrix().flat()),
             )
             skin_groups[key] = skin_groups.get(key, 0) + 1
@@ -78,13 +79,13 @@ def merge_batches(scene: Scene, exclude: set[str] | None = None) -> dict:
 
     `exclude` holds node ids (or names) that must not merge, e.g. animated
     nodes driven by `keystone.animation`. Skinned meshes merge only when they
-    share material, joint-name list and node world matrix, which keeps the
-    deformation bit-exact. Returns per-group merged meshes plus a summary
-    reusing `plan_batches()` counts.
+    share material, joint-name list, inverse bind matrices and node world
+    matrix, which keeps the deformation bit-exact. Returns per-group merged
+    meshes plus a summary reusing `plan_batches()` counts.
     """
     excluded = set(exclude or ())
     groups: dict[int, dict] = {}
-    skin_groups: dict[tuple[int, tuple[str, ...], tuple[float, ...]], dict] = {}
+    skin_groups: dict[tuple[int, tuple[str, ...], tuple[tuple[float, ...], ...], tuple[float, ...]], dict] = {}
     for node in scene.traverse():
         mesh = node.mesh
         if not isinstance(mesh, MeshData) or not node.world_visible():
@@ -96,6 +97,7 @@ def merge_batches(scene: Scene, exclude: set[str] | None = None) -> dict:
             key = (
                 id(node.material) if node.material is not None else 0,
                 tuple(mesh.skin_joints),
+                tuple(tuple(matrix) for matrix in mesh.skin_inverse_bind),
                 world,
             )
             entry = skin_groups.get(key)

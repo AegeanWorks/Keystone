@@ -104,10 +104,36 @@ class SkinMergeTest(unittest.TestCase):
                                               skin_inverse_bind=(IDENTITY_16, IDENTITY_16)))
         with self.assertRaises(ValueError):
             builder.add_skinned_mesh(MeshData(
-                positions=((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)),
+                positions=((0.0, 0.0, 0.0), (1.0, 0.0, 1.0), (0.0, 1.0, 0.0)),
                 normals=((0.0, 0.0, 1.0),) * 3,
                 indices=(0, 1, 2),
             ))
+
+    def test_differing_inverse_binds_stay_separate(self):
+        shifted = (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+                   0.0, 0.0, 1.0, 0.0, 5.0, 0.0, 0.0, 1.0)
+        scene = _rig_scene()
+        other = _rig_mesh(skin_inverse_bind=(shifted, shifted))
+        base_material = scene.find(name="rig-a").material
+        base_transform = Transform(position=Vec3(2.0, 0.0, 0.0))
+        scene.add(Node("rig-c", id="rig-c", transform=base_transform,
+                       mesh=other, material=base_material))
+        merged = merge_batches(scene)
+        self.assertEqual(merged["skin_merged_calls"], 2)
+        self.assertEqual(merged["skin_saved_calls"], 1)
+        binds = sorted(group["mesh"].skin_inverse_bind for group in merged["merged"])
+        self.assertIn(((IDENTITY_16, IDENTITY_16)), binds)
+        self.assertIn(((shifted, shifted)), binds)
+
+    def test_builder_rejects_mismatched_inverse_binds(self):
+        from keystone.mesh_builder import MeshBuilder
+
+        shifted = (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+                   0.0, 0.0, 1.0, 0.0, 5.0, 0.0, 0.0, 1.0)
+        builder = MeshBuilder()
+        builder.add_skinned_mesh(_rig_mesh())
+        with self.assertRaises(ValueError):
+            builder.add_skinned_mesh(_rig_mesh(skin_inverse_bind=(shifted, shifted)))
 
 
 class RigGame:

@@ -109,8 +109,9 @@ class MeshBuilder:
     def add_skinned_mesh(self, mesh: MeshData) -> MeshBuilder:
         """Concatenate a skinned mesh verbatim (positions, joints, weights).
 
-        Members merged this way must share the joint-name list; the merged
-        node reuses their common world matrix so deformation is unchanged.
+        Members merged this way must share the joint-name list and the
+        inverse bind matrices; the merged node reuses their common world
+        matrix so deformation is unchanged.
         """
         self._require_mode("skin")
         if not isinstance(mesh, MeshData) or not mesh.skinned:
@@ -120,6 +121,8 @@ class MeshBuilder:
             self._skin_inverse_bind = tuple(mesh.skin_inverse_bind)
         elif tuple(mesh.skin_joints) != self._skin_joints:
             raise ValueError("skinned merge members must share the joint-name list")
+        elif tuple(mesh.skin_inverse_bind) != self._skin_inverse_bind:
+            raise ValueError("skinned merge members must share the inverse bind matrices")
         base = len(self._positions)
         for index, position in enumerate(mesh.positions):
             self._positions.append(position)
