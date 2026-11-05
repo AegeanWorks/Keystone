@@ -361,27 +361,28 @@ keystone/
 ├── keystone/
 │   ├── __init__.py           <- public API and version
 │   ├── __main__.py           <- CLI: --game, headless frames, PNG
-│   ├── agents.py             <- AI observation/action adapters and audit trail
-│   ├── animation.py          <- keyframe clips, controller and pose reports
-│   ├── app.py                <- game-agnostic Engine loop
-│   ├── audio.py              <- synth clips, bus mixer and WAV I/O
+│   ├── agents.py             <- AI adapters and audit trail
+│   ├── animation.py          <- clips, controller and pose reports
+│   ├── app.py                <- Engine loop
+│   ├── audio.py              <- synth clips, mixer and WAV I/O
 │   ├── batch.py              <- static batch planning, world-space and rig merge
 │   ├── clock.py              <- fixed-step clock
-│   ├── input.py              <- ActionState and InputMap with contexts
+│   ├── culling.py            <- frustum culling
+│   ├── input.py              <- ActionState and InputMap
 │   ├── plugin.py             <- GameModule protocol and loader
-│   ├── playtest.py           <- seeded bot policies, transcripts, diffing and fairness
+│   ├── playtest.py           <- seeded bot policies and fairness
 │   ├── replay.py             <- command log and stable hash
 │   ├── history.py            <- bounded undo/redo snapshots
 │   ├── scene_snapshot.py     <- versioned scene save/load
 │   ├── serialization.py      <- atomic JSON persistence
-│   ├── headless.py           <- no-GL simulation and JSON action scripts
-│   ├── analysis.py           <- frame statistics, projected scene and report diff
-│   ├── testing.py            <- deterministic AI/CI scenario helpers
+│   ├── headless.py           <- no-GL simulation and action scripts
+│   ├── analysis.py           <- frame stats, projection and report diff
+│   ├── testing.py            <- deterministic scenario helpers
 │   ├── physics.py            <- rays, AABB, sphere queries, pushout and raycasts
-│   ├── particles.py          <- deterministic CPU particle emitters and systems
+│   ├── particles.py          <- deterministic CPU emitters and systems
 │   ├── broadphase.py         <- deterministic spatial-grid broadphase
-│   ├── character.py          <- AABB character movement and ground detection
-│   ├── triggers.py           <- trigger volumes and enter/exit tracking
+│   ├── character.py          <- AABB movement and ground detection
+│   ├── triggers.py           <- trigger volumes and tracking
 │   ├── assets.py             <- mesh, material and texture asset registry
 │   ├── asset_io.py           <- file-backed sources, loaders and hot reload
 │   ├── schema.py             <- versioned core schema constants
@@ -391,9 +392,9 @@ keystone/
 │   ├── geometry.py           <- MeshData, Material
 │   ├── skin.py               <- bone palettes, CPU skinning
 │   ├── mesh_builder.py       <- merge boxes, quads, meshes, skinned rigs
-│   ├── material_graph.py     <- declarative node graphs evaluating to Material
+│   ├── material_graph.py     <- node graphs evaluating to Material
 │   ├── primitives.py         <- cube, plane, cone, cylinder and sphere
-│   ├── obj_loader.py         <- streaming Wavefront OBJ loader
+│   ├── obj_loader.py         <- Wavefront OBJ loader
 │   ├── png.py                <- dependency-free PNG writer and reader
 │   ├── texture.py            <- immutable RGBA textures, PNG and checker sources
 │   ├── samples.py            <- CubeDemo smoke test
@@ -481,6 +482,7 @@ keystone/
 │   ├── test_srgb.py           <- sRGB pipeline
 │   ├── test_post.py           <- post color-grade
 │   ├── test_bloom.py          <- bloom
+│   ├── test_culling.py        <- frustum culling
 │   ├── test_scene_snapshot.py <- versioned scene save/load
 │   ├── test_plugin.py        <- GameModule contract and loader
 │   ├── test_replay.py        <- command log and hashes
