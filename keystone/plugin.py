@@ -40,6 +40,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "post": True,
             "bloom": True,
             "sprites": True,
+            "culling": True,
             "skin": True,
             "pbr": True,
             "agents": True,

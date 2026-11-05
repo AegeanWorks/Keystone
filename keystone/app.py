@@ -184,6 +184,7 @@ class Engine:
             anim_clips=anim_clips,
             particles=live_fx,
             sprites=int(stats.get("sprites", 0)),
+            culled=int(stats.get("culled_nodes", 0)),
         )
         draw_game_ui = getattr(self.game, "draw_ui", None)
         canvas = self.overlay.build(state, draw_game_ui if callable(draw_game_ui) else None)

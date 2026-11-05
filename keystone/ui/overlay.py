@@ -36,6 +36,7 @@ class HudState:
     anim_clips: int = 0
     particles: int = 0
     sprites: int = 0
+    culled: int = 0
 
 
 class HumanOverlay:
@@ -133,6 +134,7 @@ class HumanOverlay:
             (state.anim_clips != 0, f"ANIM {state.anim_clips} CLIP" if state.anim_clips != 1 else "ANIM 1 CLIP"),
             (state.particles != 0, f"FX {state.particles} LIVE"),
             (state.sprites != 0, f"SPRITE {state.sprites} DRAWN"),
+            (state.culled != 0, f"CULL {state.culled} OFFSCREEN"),
         )
         values = [value for shown, value in candidates if shown]
         right_width = max(text_width(value, scale) for value in values) + 12 * scale

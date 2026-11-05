@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `116`
-- **Total Classes**: `169`
-- **Total Top-Level Functions**: `210`
-- **Total Class Methods**: `960`
-- **Total Source Lines**: `18690`
+- **Total Python Modules**: `118`
+- **Total Classes**: `174`
+- **Total Top-Level Functions**: `220`
+- **Total Class Methods**: `979`
+- **Total Source Lines**: `19152`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `147` lines (`3214` bytes)
+**Size**: `149` lines (`3258` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `395` lines (`21991` bytes)
+**Size**: `406` lines (`22924` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -61,7 +61,7 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `532` lines (`22029` bytes)
+**Size**: `557` lines (`23154` bytes)
 
 **Functions:**
 - `def _rows(pixels, width, height, flip)`
@@ -75,8 +75,9 @@
 - `def _post_of(report)`
 - `def _bloom_of(report)`
 - `def _sprites_of(report)`
+- `def _culling_of(report)`
 - `def _fx_of(report)`
-- `def compare_reports(before, after)` - *Compare schema-1/2/3/4/5/6/7/8/9/10 frame reports for AI-driven regression checks.*
+- `def compare_reports(before, after)` - *Compare schema-1/2/3/4/5/6/7/8/9/10/11 frame reports for AI-driven regression checks.*
 - `def diff_images(before, after, output, threshold)` - *Write a visual diff PNG and return changed-pixel statistics.*
 - `def write_report(path, report)`
 
@@ -121,7 +122,7 @@
 ### [`keystone/app.py`](keystone/app.py)
 > *Game-agnostic engine runtime: window, fixed step, input, render and capture.*
 
-**Size**: `284` lines (`10984` bytes)
+**Size**: `285` lines (`11038` bytes)
 
 **Classes:**
 - `class Engine` - *Owns the runtime around one external GameModule.*
@@ -322,6 +323,22 @@
 
 ---
 
+### [`keystone/culling.py`](keystone/culling.py)
+> *Deterministic CPU view-frustum culling for the core forward renderer.*
+
+**Size**: `146` lines (`5605` bytes)
+
+**Functions:**
+- `def culling_enabled(scene)` - *Return whether frustum culling is requested for this scene.*
+- `def extract_planes(view_projection)` - *Extract normalized (a, b, c, d) frustum planes, deterministic order.*
+- `def world_bounds(mesh, model)` - *Return the world-space AABB of a mesh under an affine model matrix.*
+- `def aabb_visible(low, high, planes)` - *Return True when an AABB touches or intersects every frustum plane.*
+- `def model_visible(mesh, model, planes)` - *Return True when a mesh under an affine model matrix survives culling.*
+- `def node_visible(node, planes)` - *Return True when a scene node survives frustum culling.*
+- `def cull_scene(scene, width, height)` - *Return python ``id()`` values of frustum-visible nodes.*
+
+---
+
 ### [`keystone/geometry.py`](keystone/geometry.py)
 > *Indexed triangle mesh data and surface material, independent of any GPU API.*
 
@@ -512,11 +529,11 @@
 ### [`keystone/gpu/instancing.py`](keystone/gpu/instancing.py)
 > *Deterministic grouping for hardware instancing.*
 
-**Size**: `91` lines (`3401` bytes)
+**Size**: `108` lines (`4031` bytes)
 
 **Functions:**
 - `def _material_key(material)` - *Normalize the grouping key to match renderer fallback behavior.*
-- `def group_instances(scene)` - *Group visible nodes by identical mesh/material payloads.*
+- `def group_instances(scene, planes)` - *Group visible nodes by identical mesh/material payloads.*
 - `def plan_instanced(scene)` - *Return a JSON-safe instancing plan mirroring ``plan_batches`` counts.*
 
 ---
@@ -549,7 +566,7 @@
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
 > *Blinn-Phong forward renderer with fog, shadows and screenshot readback.*
 
-**Size**: `1120` lines (`44515` bytes)
+**Size**: `1145` lines (`45671` bytes)
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
@@ -568,6 +585,7 @@
   - Method `._post_requested(scene)`
   - Method `._bloom_requested(scene)`
   - Method `._sprites_requested(scene)`
+  - Method `._culling_requested(scene)`
   - Method `._init_sprite_buffers()`
   - Method `._release_sprite_buffers()`
   - Method `._camera_basis(scene)`
@@ -578,7 +596,7 @@
   - Method `._apply_material(program, material)`
   - Method `._render_shadow_pass(scene, light_vp)`
   - Method `._draw_quad()`
-  - Method `._draw_geometry(scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on)`
+  - Method `._draw_geometry(scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on, planes)`
   - Method `._run_bloom_chain()`
   - Method `.render(scene, particles)`
   - Method `.read_pixels()`
@@ -956,7 +974,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `98` lines (`3621` bytes)
+**Size**: `99` lines (`3650` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1040,7 +1058,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `325` lines (`11236` bytes)
+**Size**: `333` lines (`11468` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -1072,6 +1090,7 @@
 - `class PostSettings` - *Deterministic post color-grade toggle (in-shader exposure + vignette).*
 - `class BloomSettings` - *Deterministic bloom glow toggle (in-shader luminance threshold).*
 - `class SpriteSettings` - *Deterministic GPU point-sprite toggle (one instanced quad per particle).*
+- `class CullingSettings` - *Deterministic CPU view-frustum culling toggle (color pass only).*
 - `class Scene` - *Root node, identity allocation, queries, camera, lights and atmosphere.*
   - Method `.add(node)`
   - Method `.traverse()`
@@ -1089,7 +1108,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `323` lines (`13517` bytes)
+**Size**: `330` lines (`13911` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)`
@@ -1239,7 +1258,7 @@
 ### [`keystone/ui/overlay.py`](keystone/ui/overlay.py)
 > *Game-agnostic human overlay: HUD, controls help and pause menu.*
 
-**Size**: `160` lines (`6919` bytes)
+**Size**: `162` lines (`7006` bytes)
 
 **Classes:**
 - `class HudState` - *Presentation-only snapshot the overlay needs for one frame.*
@@ -1286,7 +1305,7 @@
 ### [`keystone/web/scene.py`](keystone/web/scene.py)
 > *Export a game-agnostic scene as a JSON document for the browser viewer.*
 
-**Size**: `145` lines (`5503` bytes)
+**Size**: `147` lines (`5646` bytes)
 
 **Functions:**
 - `def _floats(values)`
@@ -1306,7 +1325,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `408` lines (`18351` bytes)
+**Size**: `410` lines (`18510` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1648,6 +1667,41 @@
   - Method `.test_invalid_configuration()`
   - Method `.test_backwards_time_mints_no_debt()`
   - Method `.test_non_finite_time_is_rejected()`
+
+---
+
+### [`tests/test_culling.py`](tests/test_culling.py)
+> *Tests for deterministic CPU view-frustum culling (color pass only).*
+
+**Size**: `213` lines (`8459` bytes)
+
+**Classes:**
+- `class CullingMathTest`
+  - Method `.test_planes_are_deterministic()`
+  - Method `.test_degenerate_frustum_raises()`
+  - Method `.test_aabb_touching_plane_is_visible()`
+  - Method `.test_world_bounds_follow_translation()`
+  - Method `.test_skinned_nodes_are_always_visible()`
+- `class CullingSceneTest`
+  - Method `.test_front_visible_behind_and_offside_culled()`
+  - Method `.test_cull_scene_keeps_front_only()`
+  - Method `.test_disabled_culling_returns_everything()`
+  - Method `.test_default_enabled()`
+  - Method `.test_cull_scene_rejects_bad_size()`
+- `class CullingGroupingAgreementTest`
+  - Method `.test_group_instances_planes_match_cull_scene()`
+  - Method `.test_group_instances_without_planes_is_legacy()`
+- `class CullingContractsTest`
+  - Method `.test_describe_reports_culling()`
+  - Method `.test_report_includes_culling_metadata_and_hash()`
+  - Method `.test_compare_reports_diffs_culling()`
+  - Method `.test_compare_accepts_legacy_without_culling()`
+  - Method `.test_compare_accepts_schema_10_baseline()`
+  - Method `.test_snapshot_round_trips_culling_flag()`
+
+**Functions:**
+- `def _scene_with_cubes()`
+- `def _skinned_quad()`
 
 ---
 
@@ -2300,7 +2354,7 @@
   - Method `.test_snapshot_round_trips_sprites()`
   - Method `.test_snapshot_rejects_non_mapping_sprites()`
 - `class SpriteReportTest`
-  - Method `.test_schema_is_10_with_sprites_and_fx()`
+  - Method `.test_schema_is_11_with_sprites_and_fx()`
   - Method `.test_analyze_frame_reports_sprites_and_fx()`
   - Method `.test_no_sprites_changes_report_hash()`
   - Method `.test_compare_accepts_schema_9_baseline()`

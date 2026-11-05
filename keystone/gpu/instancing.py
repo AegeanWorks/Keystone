@@ -9,10 +9,14 @@ across runs.
 
 from __future__ import annotations
 
+from keystone.culling import model_visible
 from keystone.geometry import Material, MeshData
 from keystone.scene import Scene
 
 __all__ = ["group_instances", "plan_instanced"]
+
+
+Plane = tuple[float, float, float, float]
 
 
 def _material_key(material: object) -> int:
@@ -22,18 +26,31 @@ def _material_key(material: object) -> int:
     return 0
 
 
-def group_instances(scene: Scene) -> list[dict]:
+def group_instances(
+    scene: Scene,
+    planes: tuple[Plane, ...] | None = None,
+) -> list[dict]:
     """Group visible nodes by identical mesh/material payloads.
 
     Returns groups sorted by ``(-count, nodes[0])`` with nodes sorted by
     ``(id or name)``. Each group holds ``mesh``, ``material`` (or None for
     the renderer default), ``nodes``, ``node_keys``, ``models`` (Mat4 in
     node order) and ``triangles``.
+
+    When ``planes`` (normalized frustum planes from
+    ``keystone.culling.extract_planes``) is given, nodes fully outside the
+    frustum are skipped inline using the same predicate as
+    ``keystone.culling.cull_scene`` but reusing the already-computed world
+    matrix, so culling adds no second scene traversal.     ``None`` preserves
+    the legacy unculled grouping.
     """
     groups: dict[tuple[int, int], dict] = {}
     for node in scene.traverse():
         mesh = node.mesh
         if not isinstance(mesh, MeshData) or not node.world_visible():
+            continue
+        model = node.world_matrix()
+        if planes is not None and not model_visible(mesh, model, planes):
             continue
         material = node.material if isinstance(node.material, Material) else None
         key = (id(mesh), id(material) if material is not None else 0)
@@ -42,7 +59,7 @@ def group_instances(scene: Scene) -> list[dict]:
             entry = {"mesh": mesh, "material": material, "items": []}
             groups[key] = entry
         label = node.id or node.name
-        entry["items"].append((label, node, node.world_matrix()))
+        entry["items"].append((label, node, model))
     result: list[dict] = []
     for entry in groups.values():
         items = sorted(entry["items"], key=lambda item: item[0])

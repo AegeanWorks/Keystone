@@ -79,7 +79,7 @@ class BloomContractsTest(unittest.TestCase):
     def test_report_includes_bloom_metadata_and_hash(self):
         scene = CubeDemo().build_scene()
         report = analyze_frame(scene, bytes((0, 0, 0, 255)) * 4, 2, 2)
-        self.assertEqual(report["schema"], 10)
+        self.assertEqual(report["schema"], 11)
         self.assertEqual(report["scene"]["bloom"], {"enabled": True})
         scene.bloom = BloomSettings(enabled=False)
         off = analyze_frame(scene, bytes((0, 0, 0, 255)) * 4, 2, 2)
@@ -98,7 +98,7 @@ class BloomContractsTest(unittest.TestCase):
         self.assertEqual(diff["bloom"], {"before": {"enabled": True}, "after": {"enabled": False}})
         same = compare_reports(on, analyze_frame(CubeDemo().build_scene(), pixels, 2, 2))
         self.assertTrue(same["same_bloom"])
-        self.assertEqual(diff["schema"], 10)
+        self.assertEqual(diff["schema"], 11)
 
     def test_compare_accepts_legacy_without_bloom(self):
         scene = CubeDemo().build_scene()
@@ -109,7 +109,7 @@ class BloomContractsTest(unittest.TestCase):
         legacy["scene"].pop("bloom", None)
         diff = compare_reports(legacy, report)
         self.assertTrue(diff["same_bloom"])
-        self.assertEqual(diff["schema"], 10)
+        self.assertEqual(diff["schema"], 11)
 
     def test_snapshot_round_trips_bloom_flag(self):
         scene = CubeDemo().build_scene()

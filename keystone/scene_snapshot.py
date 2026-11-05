@@ -9,6 +9,7 @@ from keystone.math3d import Quat, Vec3
 from keystone.scene import (
     BloomSettings,
     ColorSettings,
+    CullingSettings,
     DirectionalLight,
     Node,
     PointLight,
@@ -194,6 +195,7 @@ def scene_to_dict(scene: Scene, registry: Any = None) -> dict[str, Any]:
             "post": {"enabled": bool(getattr(scene.post, "enabled", True))},
             "bloom": {"enabled": bool(getattr(scene.bloom, "enabled", True))},
             "sprites": {"enabled": bool(getattr(scene.sprite, "enabled", True))},
+            "culling": {"enabled": bool(getattr(scene.culling, "enabled", True))},
         },
         "nodes": nodes,
     }
@@ -266,6 +268,11 @@ def scene_from_dict(data: Mapping[str, Any], registry: Any = None) -> Scene:
             if not isinstance(sprites, Mapping):
                 raise TypeError("scene snapshot sprites must be a mapping")
             scene.sprite = SpriteSettings(enabled=bool(sprites.get("enabled", True)))
+        culling = environment.get("culling")
+        if culling is not None:
+            if not isinstance(culling, Mapping):
+                raise TypeError("scene snapshot culling must be a mapping")
+            scene.culling = CullingSettings(enabled=bool(culling.get("enabled", True)))
     raw_nodes = data.get("nodes", [])
     if not isinstance(raw_nodes, (list, tuple)):
         raise TypeError("scene snapshot nodes must be a list")

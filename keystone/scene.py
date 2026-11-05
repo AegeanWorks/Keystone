@@ -219,6 +219,13 @@ class SpriteSettings:
     enabled: bool = True
 
 
+@dataclass(frozen=True, slots=True)
+class CullingSettings:
+    """Deterministic CPU view-frustum culling toggle (color pass only)."""
+
+    enabled: bool = True
+
+
 def _root_node() -> Node:
     return Node("", id="root")
 
@@ -236,6 +243,7 @@ class Scene:
     post: PostSettings = field(default_factory=PostSettings)
     bloom: BloomSettings = field(default_factory=BloomSettings)
     sprite: SpriteSettings = field(default_factory=SpriteSettings)
+    culling: CullingSettings = field(default_factory=CullingSettings)
     ambient: Vec3 = Vec3(0.16, 0.17, 0.2)
     background: Vec3 = Vec3(0.045, 0.055, 0.075)
     sky: Vec3 = Vec3(0.01, 0.015, 0.04)

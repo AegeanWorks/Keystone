@@ -6,6 +6,7 @@ from pathlib import Path
 
 from OpenGL import GL
 
+from keystone.culling import culling_enabled, extract_planes
 from keystone.geometry import Material, MeshData
 from keystone.gpu.bloom import (
     BLOOM_INTENSITY,
@@ -557,6 +558,8 @@ class Renderer:
             "sprite_calls": 0,
             "sprites": 0,
             "sprites_enabled": 0,
+            "culled_nodes": 0,
+            "culling_enabled": 0,
         }
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glDepthFunc(GL.GL_LESS)
@@ -679,6 +682,9 @@ class Renderer:
     def _sprites_requested(self, scene: Scene) -> bool:
         sprite = getattr(scene, "sprite", None)
         return bool(getattr(sprite, "enabled", True))
+
+    def _culling_requested(self, scene: Scene) -> bool:
+        return culling_enabled(scene)
 
     def _init_sprite_buffers(self) -> None:
         self._sprite_vao = GL.glGenVertexArrays(1)
@@ -899,11 +905,13 @@ class Renderer:
         srgb_on: bool,
         post_on: bool,
         bloom_on: bool,
-    ) -> tuple[int, int, int, int]:
+        planes: tuple[tuple[float, float, float, float], ...] | None = None,
+    ) -> tuple[int, int, int, int, int]:
         draw_calls = 0
         triangles = 0
         instanced_calls = 0
         instances = 0
+        kept_nodes = 0
         self._apply_shared(self._program, scene, view_projection, light_vp, shadows_on, srgb_on)
         self._apply_shared(self._inst_program, scene, view_projection, light_vp, shadows_on, srgb_on)
         self._apply_shared(self._skin_program, scene, view_projection, light_vp, shadows_on, srgb_on)
@@ -913,12 +921,14 @@ class Renderer:
         self._apply_post(self._program, post_on)
         self._apply_post(self._inst_program, post_on)
         self._apply_post(self._skin_program, post_on)
-        for group in group_instances(scene):
+        for group in group_instances(scene, planes):
             mesh = group["mesh"]
             if not isinstance(mesh, MeshData):
                 raise TypeError("Node.mesh must be MeshData")
             material = group["material"] if isinstance(group["material"], Material) else Material()
+            nodes = group["nodes"]
             models = group["models"]
+            kept_nodes += len(nodes)
             skinned = bool(getattr(mesh, "skinned", False))
             if skinned:
                 for model in models:
@@ -950,7 +960,7 @@ class Renderer:
                 instanced_calls += 1
                 instances += len(models)
                 triangles += mesh.triangle_count() * len(models)
-        return (draw_calls, triangles, instanced_calls, instances)
+        return (draw_calls, triangles, instanced_calls, instances, kept_nodes)
 
     def _run_bloom_chain(self) -> None:
         assert self._bloom_scene is not None
@@ -1018,6 +1028,7 @@ class Renderer:
         post_on = self._post_requested(scene)
         bloom_on = self._bloom_requested(scene)
         sprites_on = self._sprites_requested(scene)
+        culling_on = self._culling_requested(scene)
         if bloom_on and (
             self._bloom_scene is None or self._bloom_a is None or self._bloom_b is None
         ):
@@ -1033,15 +1044,27 @@ class Renderer:
         camera = scene.camera
         view_projection = camera.view_projection(self.width / self.height)
         background = scene.background
+        planes: tuple[tuple[float, float, float, float], ...] | None = None
+        total_mesh = 0
+        kept_nodes = 0
+        if culling_on:
+            try:
+                planes = extract_planes(view_projection)
+            except (ValueError, ArithmeticError):
+                planes = None
+            if planes is not None:
+                for node in scene.traverse():
+                    if isinstance(node.mesh, MeshData) and node.world_visible():
+                        total_mesh += 1
         if not bloom_on:
             GL.glViewport(0, 0, self.width, self.height)
             GL.glClearColor(background.x, background.y, background.z, 1.0)
             GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
             self._draw_sky(scene, srgb_on, post_on, bloom_on)
             drawn = self._draw_geometry(
-                scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on
+                scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on, planes
             )
-            draw_calls, triangles, instanced_calls, instances = drawn
+            draw_calls, triangles, instanced_calls, instances, kept_nodes = drawn
             sprite_calls, sprites = self._draw_sprites(scene, particles, view_projection, post_on, bloom_on)
             draw_calls += sprite_calls
             triangles += sprites * 2
@@ -1053,9 +1076,9 @@ class Renderer:
             GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
             self._draw_sky(scene, srgb_on, post_on, bloom_on)
             drawn = self._draw_geometry(
-                scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on
+                scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on, planes
             )
-            draw_calls, triangles, instanced_calls, instances = drawn
+            draw_calls, triangles, instanced_calls, instances, kept_nodes = drawn
             sprite_calls, sprites = self._draw_sprites(scene, particles, view_projection, post_on, bloom_on)
             draw_calls += sprite_calls
             triangles += sprites * 2
@@ -1080,6 +1103,8 @@ class Renderer:
             "sprite_calls": sprite_calls,
             "sprites": sprites,
             "sprites_enabled": 1 if sprites_on else 0,
+            "culled_nodes": max(0, total_mesh - kept_nodes) if planes is not None else 0,
+            "culling_enabled": 1 if culling_on else 0,
         }
         return dict(self.last_stats)
 

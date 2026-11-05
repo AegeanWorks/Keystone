@@ -51,6 +51,7 @@ from keystone.plugin import GameModule
 from keystone.scene import (
     BloomSettings,
     ColorSettings,
+    CullingSettings,
     DirectionalLight,
     Node,
     PointLight,
@@ -64,7 +65,7 @@ from keystone.scene_snapshot import scene_from_dict, scene_to_dict
 from keystone.skin import bone_matrices, skin_mesh, skin_point
 from keystone.texture import TextureData
 
-__version__ = "0.44.0"
+__version__ = "0.45.0"
 __all__ = [
     "PLAYTEST_REPORT_SCHEMA",
     "SAMPLE_RATE",
@@ -78,6 +79,7 @@ __all__ = [
     "BloomSettings",
     "BotPolicy",
     "ColorSettings",
+    "CullingSettings",
     "DirectionalLight",
     "Emitter",
     "Engine",

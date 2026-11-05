@@ -175,6 +175,7 @@ class GameSession:
             post = getattr(scene, "post", None)
             bloom = getattr(scene, "bloom", None)
             sprite = getattr(scene, "sprite", None)
+            culling = getattr(scene, "culling", None)
             return {
                 "schema": 1,
                 "game": self.name,
@@ -192,6 +193,7 @@ class GameSession:
                 "post": {"enabled": bool(post is not None and getattr(post, "enabled", True))},
                 "bloom": {"enabled": bool(bloom is not None and getattr(bloom, "enabled", True))},
                 "sprites": {"enabled": bool(sprite is not None and getattr(sprite, "enabled", True))},
+                "culling": {"enabled": bool(culling is not None and getattr(culling, "enabled", True))},
                 "audio": audio,
                 "animation": animation,
                 "particles": particles,

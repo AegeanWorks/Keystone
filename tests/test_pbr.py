@@ -64,7 +64,7 @@ class PbrMaterialTest(unittest.TestCase):
         scene.add(Node("hero", id="hero", mesh=cube(1.0),
                        material=Material(metallic=0.5, roughness=0.2, emissive=Vec3(0.1, 0.0, 0.0))))
         report = analyze_frame(scene, bytes((0, 0, 0, 255)) * 4, 2, 2)
-        self.assertEqual(report["schema"], 10)
+        self.assertEqual(report["schema"], 11)
         entry = next(node for node in report["scene"]["nodes"] if node.get("id") == "hero")
         material = entry.get("material")
         self.assertIsNotNone(material)

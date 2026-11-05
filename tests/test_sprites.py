@@ -92,8 +92,8 @@ class SpriteSceneTest(unittest.TestCase):
 
 
 class SpriteReportTest(unittest.TestCase):
-    def test_schema_is_10_with_sprites_and_fx(self):
-        self.assertEqual(REPORT_SCHEMA["version"], 10)
+    def test_schema_is_11_with_sprites_and_fx(self):
+        self.assertEqual(REPORT_SCHEMA["version"], 11)
         self.assertIn("sprites", REPORT_SCHEMA["fields"]["scene"])
         self.assertIn("fx", REPORT_SCHEMA["fields"])
 
@@ -101,7 +101,7 @@ class SpriteReportTest(unittest.TestCase):
         scene = CubeDemo().build_scene()
         pixels = bytes((10, 12, 16, 255)) * 4
         report = analyze_frame(scene, pixels, 2, 2, None, None, {"alive": 64, "drawn": 64, "enabled": True})
-        self.assertEqual(report["schema"], 10)
+        self.assertEqual(report["schema"], 11)
         self.assertTrue(report["scene"]["sprites"]["enabled"])
         self.assertEqual(report["fx"], {"alive": 64, "drawn": 64, "enabled": True})
 
@@ -132,7 +132,7 @@ class SpriteReportTest(unittest.TestCase):
     def test_describe_reports_sprites_capability(self):
         capabilities = describe_game(CubeDemo())["capabilities"]
         self.assertTrue(capabilities["sprites"])
-        self.assertEqual(REPORT_SCHEMA["version"], 10)
+        self.assertEqual(REPORT_SCHEMA["version"], 11)
 
 
 class SpriteSampleTest(unittest.TestCase):
