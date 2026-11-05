@@ -106,6 +106,10 @@ class AudioTest(unittest.TestCase):
         via_sfx.play(clip, bus="sfx")
         self.assertAlmostEqual(direct.render().samples[10], via_sfx.render().samples[10], places=6)
 
+    def test_play_rejects_unknown_bus(self):
+        with self.assertRaises(ValueError):
+            Mixer().play(sine(440.0, 0.02), bus="sfx_typo")
+
 
 if __name__ == "__main__":
     unittest.main()

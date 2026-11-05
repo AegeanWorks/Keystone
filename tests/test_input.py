@@ -140,6 +140,12 @@ class InputMapTest(unittest.TestCase):
         self.assertEqual(mapping.contexts["menu"].get("forward"), "i")
         self.assertEqual(mapping.contexts["gameplay"].get("forward"), "i")
 
+    def test_from_dict_rejects_blank_action_or_key(self):
+        with self.assertRaises(ValueError):
+            InputMap.from_dict({"schema": 2, "bindings": {"": "w"}, "contexts": {}, "context": "gameplay"})
+        with self.assertRaises(ValueError):
+            InputMap.from_dict({"schema": 2, "bindings": {"forward": "   "}, "contexts": {}, "context": "gameplay"})
+
 
 if __name__ == "__main__":
     unittest.main()

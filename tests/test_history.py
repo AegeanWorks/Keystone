@@ -66,6 +66,16 @@ class HistoryTest(unittest.TestCase):
         self.assertEqual(history.peek(), 2)
         self.assertEqual(history.peek(), 2)
 
+    def test_capacity_rejects_non_int(self):
+        with self.assertRaises(TypeError):
+            History(capacity=True)
+        with self.assertRaises(TypeError):
+            History(capacity=2.5)
+        with self.assertRaises(TypeError):
+            History(capacity="4")
+        with self.assertRaises(ValueError):
+            History(capacity=0)
+
 
 if __name__ == "__main__":
     unittest.main()

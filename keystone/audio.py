@@ -147,6 +147,10 @@ class Mixer:
     def play(self, clip: AudioClip, bus: str = "sfx", gain: float = 1.0, pitch: float = 1.0) -> None:
         if clip.sample_rate != self.sample_rate:
             raise ValueError("clip sample rate must match the mixer")
+        if not isinstance(bus, str) or not bus.strip():
+            raise ValueError("bus name must be a non-blank string")
+        if bus not in self.buses:
+            raise ValueError(f"unknown bus '{bus}'")
         if gain < 0.0 or pitch <= 0.0:
             raise ValueError("voice gain must be non-negative and pitch positive")
         self._voices.append((clip, bus, gain, pitch))

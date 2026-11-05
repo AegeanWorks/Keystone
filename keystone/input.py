@@ -132,6 +132,8 @@ class InputMap:
                 for action, key in mapping.items():
                     if not isinstance(action, str) or not isinstance(key, str):
                         raise TypeError("context bindings must map action names to key names")
+                    if not action.strip() or not key.strip():
+                        raise ValueError("context bindings must use non-blank action and key names")
                     merged[action] = key
                 self.contexts[name] = merged
         if not isinstance(context, str) or not context.strip():
@@ -207,6 +209,8 @@ class InputMap:
         for action, key in raw_bindings.items():
             if not isinstance(action, str) or not isinstance(key, str):
                 raise TypeError("input bindings must map action names to key names")
+            if not action.strip() or not key.strip():
+                raise ValueError("input bindings must use non-blank action and key names")
             merged[action] = key
         raw_contexts = data.get("contexts", {})
         if not isinstance(raw_contexts, dict):

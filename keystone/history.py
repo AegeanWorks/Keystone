@@ -15,6 +15,8 @@ class History:
     """
 
     def __init__(self, capacity: int = 64) -> None:
+        if isinstance(capacity, bool) or not isinstance(capacity, int):
+            raise TypeError("history capacity must be a positive integer")
         if capacity < 1:
             raise ValueError("history capacity must be positive")
         self._capacity = capacity

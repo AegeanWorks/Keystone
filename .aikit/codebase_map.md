@@ -9,8 +9,8 @@
 - **Total Python Modules**: `116`
 - **Total Classes**: `169`
 - **Total Top-Level Functions**: `210`
-- **Total Class Methods**: `953`
-- **Total Source Lines**: `18621`
+- **Total Class Methods**: `956`
+- **Total Source Lines**: `18651`
 
 ---
 
@@ -204,7 +204,7 @@
 ### [`keystone/audio.py`](keystone/audio.py)
 > *Game-agnostic audio core: synth clips, bus mixer and WAV I/O.*
 
-**Size**: `231` lines (`9208` bytes)
+**Size**: `235` lines (`9419` bytes)
 
 **Classes:**
 - `class AudioClip` - *Immutable mono PCM clip in [-1, 1] with a fixed sample rate.*
@@ -700,7 +700,7 @@
 ### [`keystone/history.py`](keystone/history.py)
 > *Bounded undo/redo history for engine and game state.*
 
-**Size**: `84` lines (`2666` bytes)
+**Size**: `86` lines (`2813` bytes)
 
 **Classes:**
 - `class History` - *A small, bounded undo/redo stack.*
@@ -722,7 +722,7 @@
 ### [`keystone/input.py`](keystone/input.py)
 > *Generic input mapping: named actions, axes and pointer look.*
 
-**Size**: `278` lines (`11301` bytes)
+**Size**: `282` lines (`11609` bytes)
 
 **Classes:**
 - `class ActionState` - *One sampled input frame; games translate names into their own rules.*
@@ -1526,7 +1526,7 @@
 ### [`tests/test_audio.py`](tests/test_audio.py)
 > *Tests for the game-agnostic audio core.*
 
-**Size**: `111` lines (`4272` bytes)
+**Size**: `115` lines (`4422` bytes)
 
 **Classes:**
 - `class AudioTest`
@@ -1539,6 +1539,7 @@
   - Method `.test_clip_json_round_trip()`
   - Method `.test_read_wav_accepts_full_scale_negative()`
   - Method `.test_master_bus_applies_once()`
+  - Method `.test_play_rejects_unknown_bus()`
 
 ---
 
@@ -1751,7 +1752,7 @@
 ### [`tests/test_history.py`](tests/test_history.py)
 > *Unit tests for bounded undo/redo history.*
 
-**Size**: `71` lines (`2245` bytes)
+**Size**: `81` lines (`2599` bytes)
 
 **Classes:**
 - `class HistoryTest`
@@ -1761,13 +1762,14 @@
   - Method `.test_snapshots_are_deep_copied()`
   - Method `.test_clear_and_empty_behavior()`
   - Method `.test_peek_returns_current_without_moving()`
+  - Method `.test_capacity_rejects_non_int()`
 
 ---
 
 ### [`tests/test_input.py`](tests/test_input.py)
 > *Tests for input sampling and action state.*
 
-**Size**: `145` lines (`5636` bytes)
+**Size**: `151` lines (`6008` bytes)
 
 **Classes:**
 - `class FakeContext`
@@ -1788,6 +1790,7 @@
   - Method `.test_bind_rejects_blank_context()`
   - Method `.test_from_dict_rejects_non_string_context()`
   - Method `.test_custom_bindings_preserved_in_new_contexts()`
+  - Method `.test_from_dict_rejects_blank_action_or_key()`
 
 ---
 
