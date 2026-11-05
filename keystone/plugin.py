@@ -74,7 +74,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
 
 def load_game(spec: str) -> GameModule:
     """Load an external game from 'package.module:Factory'."""
-    if spec.count(":") != 1:
+    if not isinstance(spec, str) or spec.count(":") != 1:
         raise ValueError("game spec must look like 'package.module:Factory'")
     module_name, attribute = spec.split(":", 1)
     if not module_name or not attribute:

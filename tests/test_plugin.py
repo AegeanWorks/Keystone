@@ -44,6 +44,9 @@ class PluginTest(unittest.TestCase):
         for spec in ("keystone.samples", "missing.module:Factory", "keystone.samples:Missing"):
             with self.assertRaises(ValueError):
                 load_game(spec)
+        for spec in (None, 7, b"keystone.samples:CubeDemo"):
+            with self.assertRaises(ValueError):
+                load_game(spec)
 
     def test_loader_rejects_multi_colon_and_noncallable_factory(self):
         with self.assertRaises(ValueError):

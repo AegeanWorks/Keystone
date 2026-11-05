@@ -30,6 +30,7 @@ keystone/
 ├── playtest.py        seeded bot policies, transcript diffing, fairness validation
 ├── input.py          ActionState + InputMap
 ├── clock.py          FixedStepClock
+├── culling.py        frustum planes and AABB visibility
 ├── replay.py         CommandLog + stable_hash()
 ├── serialization.py  atomic JSON with .bak
 ├── headless.py       no-GL action simulation

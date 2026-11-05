@@ -160,6 +160,14 @@ class CullingContractsTest(unittest.TestCase):
     def test_describe_reports_culling(self):
         self.assertTrue(describe_game(CubeDemo())["capabilities"]["culling"])
 
+    def test_public_api_exports_culling_helpers(self):
+        import keystone
+        import keystone.culling
+
+        for name in keystone.culling.__all__:
+            self.assertIn(name, keystone.__all__)
+            self.assertIs(getattr(keystone, name), getattr(keystone.culling, name))
+
     def test_report_includes_culling_metadata_and_hash(self):
         scene = CubeDemo().build_scene()
         report = analyze_frame(scene, bytes((0, 0, 0, 255)) * 4, 2, 2)

@@ -9,8 +9,8 @@
 - **Total Python Modules**: `118`
 - **Total Classes**: `174`
 - **Total Top-Level Functions**: `220`
-- **Total Class Methods**: `979`
-- **Total Source Lines**: `19152`
+- **Total Class Methods**: `981`
+- **Total Source Lines**: `19188`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `149` lines (`3258` bytes)
+**Size**: `165` lines (`3565` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -936,7 +936,7 @@
 ### [`keystone/playtest.py`](keystone/playtest.py)
 > *Seeded bot playtesting: transcripts, diffing, policies and fairness checks.*
 
-**Size**: `588` lines (`24551` bytes)
+**Size**: `592` lines (`24657` bytes)
 
 **Classes:**
 - `class BotPolicy` - *One seeded decision step over the five-operation game contract.*
@@ -974,7 +974,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `99` lines (`3650` bytes)
+**Size**: `99` lines (`3679` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1673,7 +1673,7 @@
 ### [`tests/test_culling.py`](tests/test_culling.py)
 > *Tests for deterministic CPU view-frustum culling (color pass only).*
 
-**Size**: `213` lines (`8459` bytes)
+**Size**: `221` lines (`8752` bytes)
 
 **Classes:**
 - `class CullingMathTest`
@@ -1693,6 +1693,7 @@
   - Method `.test_group_instances_without_planes_is_legacy()`
 - `class CullingContractsTest`
   - Method `.test_describe_reports_culling()`
+  - Method `.test_public_api_exports_culling_helpers()`
   - Method `.test_report_includes_culling_metadata_and_hash()`
   - Method `.test_compare_reports_diffs_culling()`
   - Method `.test_compare_accepts_legacy_without_culling()`
@@ -2035,7 +2036,7 @@
 ### [`tests/test_playtest.py`](tests/test_playtest.py)
 > *Tests for the seeded bot playtester: transcripts, diffs, policies and fairness.*
 
-**Size**: `416` lines (`17394` bytes)
+**Size**: `421` lines (`17667` bytes)
 
 **Classes:**
 - `class TranscriptTest`
@@ -2069,6 +2070,7 @@
   - Method `.test_report_is_frozen_schema_1_and_web_compatible()`
   - Method `.test_report_covers_an_untraced_transcript()`
   - Method `.test_report_rejects_string_reasons_instead_of_splitting_chars()`
+  - Method `.test_report_rejects_non_string_reason_elements()`
   - Method `.test_web_simulate_result_assembles_into_the_same_report()` - *A thin adapter wraps POST /api/simulate output; no browser driving.*
 - `class PlaytestCliTest`
   - Method `.test_playtest_cli_writes_transcript_and_report()`
@@ -2083,7 +2085,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `74` lines (`3032` bytes)
+**Size**: `77` lines (`3173` bytes)
 
 **Classes:**
 - `class PluginTest`
