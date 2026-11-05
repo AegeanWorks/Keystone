@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -58,7 +59,7 @@ class GameSession:
             raise WebProblem(400, "frames must be a non-negative integer", 'send {"frames": 1}')
         if frames > MAX_FRAMES:
             raise WebProblem(400, f"frames must be at most {MAX_FRAMES}", "send a smaller frame count")
-        if isinstance(step, bool) or not isinstance(step, (int, float)) or step <= 0.0:
+        if isinstance(step, bool) or not isinstance(step, (int, float)) or step <= 0.0 or not math.isfinite(step):
             raise WebProblem(400, "step must be a positive number", 'send {"frames": 1, "step": 0.0167}')
         if not isinstance(trace, bool):
             raise WebProblem(400, "trace must be a boolean", 'send {"frames": 1, "trace": false}')

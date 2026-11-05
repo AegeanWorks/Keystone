@@ -486,13 +486,14 @@ keystone/
 │   ├── test_replay.py        <- command log and hashes
 │   ├── test_serialization.py <- atomic JSON persistence
 │   ├── test_headless.py      <- no-GL simulation and action scripts
-│   ├── test_analysis.py      <- frame statistics, projection and report diff
-│   ├── test_testing.py       <- deterministic scenario helpers
+│   ├── test_analysis.py      <- frame stats, projection, report diff
+│   ├── test_testing.py       <- deterministic helpers
 │   ├── test_samples.py       <- CubeDemo smoke test
-│   ├── test_boundary.py      <- core has no game modules/imports
-│   ├── test_web.py           <- scene export, JSON API and static assets
+│   ├── test_boundary.py      <- no game modules/imports
+│   ├── test_web.py           <- scene export, JSON API, assets
 │   ├── test_app.py           <- engine loop, CLI, simulate and reports
 │   ├── test_playtest.py      <- seeded bots and fairness
+│   ├── test_swarm_fixes.py   <- swarm pins
 │   └── support_maze_game.py  <- deterministic grid fixture
 ├── requirements.txt          <- pinned runtime and test dependencies
 ├── pyproject.toml            <- package metadata, pytest and ruff configuration

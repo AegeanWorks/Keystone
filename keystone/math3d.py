@@ -22,6 +22,8 @@ class Vec3:
         return Vec3(self.x - other.x, self.y - other.y, self.z - other.z)
 
     def __mul__(self, scalar: float) -> Vec3:
+        if isinstance(scalar, Vec3) or not isinstance(scalar, (int, float)):
+            raise TypeError("Vec3 can only be multiplied by a real number")
         return Vec3(self.x * scalar, self.y * scalar, self.z * scalar)
 
     __rmul__ = __mul__

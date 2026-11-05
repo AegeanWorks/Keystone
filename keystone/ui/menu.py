@@ -31,6 +31,8 @@ class PauseMenu:
 
     def move(self, delta: int) -> int:
         """Move the selection by delta, wrapping at both ends."""
+        if isinstance(delta, bool) or not isinstance(delta, int):
+            raise TypeError("menu move delta must be an integer")
         self.index = (self.index + delta) % len(self.items)
         return self.index
 

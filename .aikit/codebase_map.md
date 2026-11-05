@@ -9,8 +9,8 @@
 - **Total Python Modules**: `116`
 - **Total Classes**: `169`
 - **Total Top-Level Functions**: `210`
-- **Total Class Methods**: `948`
-- **Total Source Lines**: `18580`
+- **Total Class Methods**: `953`
+- **Total Source Lines**: `18621`
 
 ---
 
@@ -85,7 +85,7 @@
 ### [`keystone/animation.py`](keystone/animation.py)
 > *Deterministic, game-agnostic animation: keyframe clips, sampling and control.*
 
-**Size**: `368` lines (`15815` bytes)
+**Size**: `368` lines (`15816` bytes)
 
 **Classes:**
 - `class Track` - *One keyframed channel: sorted times with Vec3 or Quat values.*
@@ -722,7 +722,7 @@
 ### [`keystone/input.py`](keystone/input.py)
 > *Generic input mapping: named actions, axes and pointer look.*
 
-**Size**: `278` lines (`11304` bytes)
+**Size**: `278` lines (`11301` bytes)
 
 **Classes:**
 - `class ActionState` - *One sampled input frame; games translate names into their own rules.*
@@ -774,7 +774,7 @@
 ### [`keystone/math3d.py`](keystone/math3d.py)
 > *Column-major 3D math primitives shared by the scene, camera and GPU layers.*
 
-**Size**: `373` lines (`13013` bytes)
+**Size**: `375` lines (`13166` bytes)
 
 **Classes:**
 - `class Vec3` - *Immutable 3-component vector with the usual right-handed operations.*
@@ -1225,7 +1225,7 @@
 ### [`keystone/ui/menu.py`](keystone/ui/menu.py)
 > *Game-agnostic pause menu state: items, selection and activation.*
 
-**Size**: `39` lines (`1044` bytes)
+**Size**: `41` lines (`1176` bytes)
 
 **Classes:**
 - `class MenuItem` - *One labelled action the human can choose.*
@@ -1306,7 +1306,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `407` lines (`18312` bytes)
+**Size**: `408` lines (`18351` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1422,7 +1422,7 @@
 ### [`tests/test_animation.py`](tests/test_animation.py)
 > *Tests for deterministic animation clips, controllers and pose application.*
 
-**Size**: `212` lines (`8741` bytes)
+**Size**: `216` lines (`8915` bytes)
 
 **Classes:**
 - `class TrackTest`
@@ -1446,6 +1446,7 @@
 - `class ClipDurationTest`
   - Method `.test_duration_ignores_far_event_when_tracks_exist()`
   - Method `.test_event_only_clip_keeps_event_duration()`
+  - Method `.test_duplicate_keyframe_times_rejected()`
 
 **Functions:**
 - `def _vec_track(pairs)`
@@ -1766,7 +1767,7 @@
 ### [`tests/test_input.py`](tests/test_input.py)
 > *Tests for input sampling and action state.*
 
-**Size**: `139` lines (`5331` bytes)
+**Size**: `145` lines (`5636` bytes)
 
 **Classes:**
 - `class FakeContext`
@@ -1786,6 +1787,7 @@
   - Method `.test_action_state_rejects_string_pressed_and_bad_pointer()`
   - Method `.test_bind_rejects_blank_context()`
   - Method `.test_from_dict_rejects_non_string_context()`
+  - Method `.test_custom_bindings_preserved_in_new_contexts()`
 
 ---
 
@@ -1835,7 +1837,7 @@
 ### [`tests/test_math3d.py`](tests/test_math3d.py)
 > *Unit tests for the Keystone 3D math core.*
 
-**Size**: `134` lines (`5237` bytes)
+**Size**: `138` lines (`5396` bytes)
 
 **Classes:**
 - `class Vec3Test`
@@ -1843,6 +1845,7 @@
   - Method `.test_cross_follows_right_hand_rule()`
   - Method `.test_normalized_is_unit_and_zero_safe()`
   - Method `.test_lerp_hits_both_ends()`
+  - Method `.test_mul_rejects_vector_operand()`
 - `class Mat4Test`
   - Method `.test_identity_leaves_points_and_matrices_unchanged()`
   - Method `.test_translation_and_scale_apply_in_order()`
@@ -2380,7 +2383,7 @@
 ### [`tests/test_ui.py`](tests/test_ui.py)
 > *Tests for the dependency-free human UI primitives and overlay.*
 
-**Size**: `158` lines (`6340` bytes)
+**Size**: `164` lines (`6548` bytes)
 
 **Classes:**
 - `class FontTest`
@@ -2402,6 +2405,7 @@
   - Method `.test_canvas_metadata_is_report_ready()`
   - Method `.test_compact_layout_uses_smaller_text()`
   - Method `.test_tiny_canvas_is_clipped_without_errors()`
+  - Method `.test_pause_menu_move_rejects_non_integer()`
 
 **Functions:**
 - `def state(**overrides)`
@@ -2411,7 +2415,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `193` lines (`8399` bytes)
+**Size**: `209` lines (`8937` bytes)
 
 **Classes:**
 - `class Health`
@@ -2434,5 +2438,6 @@
   - Method `.test_simulate_endpoint_returns_a_deterministic_result()`
   - Method `.test_options_preflight_and_static_assets()`
   - Method `.test_api_index_and_errors_are_json()`
+  - Method `.test_simulate_rejects_non_finite_step()`
 
 ---

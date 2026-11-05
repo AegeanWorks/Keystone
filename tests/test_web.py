@@ -188,6 +188,22 @@ class WebServerTest(unittest.TestCase):
         self.assertEqual(status, 405)
         self.assertFalse(payload["ok"])
 
+    def test_simulate_rejects_non_finite_step(self):
+        status, _, payload = self._json(
+            "/api/simulate",
+            method="POST",
+            payload={"frames": 1, "step": float("nan")},
+        )
+        self.assertEqual(status, 400)
+        self.assertFalse(payload["ok"])
+        status, _, payload = self._json(
+            "/api/simulate",
+            method="POST",
+            payload={"frames": 1, "step": float("inf")},
+        )
+        self.assertEqual(status, 400)
+        self.assertFalse(payload["ok"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -24,7 +24,7 @@ def _check_times(times: tuple[float, ...]) -> None:
     for time in times:
         if not math.isfinite(time) or time < 0.0:
             raise ValueError("keyframe times must be finite and non-negative")
-    if any(b < a for a, b in itertools.pairwise(times)):
+    if any(b <= a for a, b in itertools.pairwise(times)):
         raise ValueError("keyframe times must be sorted")
 
 

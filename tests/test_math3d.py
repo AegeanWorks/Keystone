@@ -29,6 +29,10 @@ class Vec3Test(unittest.TestCase):
         self.assertEqual(a.lerp(b, 1.0), b)
         self.assertEqual(a.lerp(b, 0.5), Vec3(5, 10, 15))
 
+    def test_mul_rejects_vector_operand(self):
+        with self.assertRaises(TypeError):
+            Vec3(1, 2, 3) * Vec3(4, 5, 6)  # type: ignore[operator]
+
 
 class Mat4Test(unittest.TestCase):
     def test_identity_leaves_points_and_matrices_unchanged(self):

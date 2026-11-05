@@ -135,5 +135,11 @@ class InputMapTest(unittest.TestCase):
             InputMap.from_dict({"schema": 2, "bindings": {}, "context": 123})
 
 
+    def test_custom_bindings_preserved_in_new_contexts(self):
+        mapping = InputMap(bindings={"forward": "i"}, contexts={"menu": {"confirm": "space"}})
+        self.assertEqual(mapping.contexts["menu"].get("forward"), "i")
+        self.assertEqual(mapping.contexts["gameplay"].get("forward"), "i")
+
+
 if __name__ == "__main__":
     unittest.main()

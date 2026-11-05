@@ -128,7 +128,7 @@ class InputMap:
                     raise ValueError("context names must be non-blank strings")
                 if not isinstance(mapping, dict):
                     raise TypeError("context bindings must be mappings")
-                merged = dict(DEFAULT_BINDINGS)
+                merged = dict(self.bindings)
                 for action, key in mapping.items():
                     if not isinstance(action, str) or not isinstance(key, str):
                         raise TypeError("context bindings must map action names to key names")

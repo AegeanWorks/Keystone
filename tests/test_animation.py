@@ -207,6 +207,10 @@ class ClipDurationTest(unittest.TestCase):
         clip = AnimationClip(name="fx", events=((0.5, "hit"), (1.0, "end")))
         self.assertEqual(clip.duration(), 1.0)
 
+    def test_duplicate_keyframe_times_rejected(self):
+        with self.assertRaises(ValueError):
+            Track(times=(0.0, 0.0), values=(Vec3(0, 0, 0), Vec3(9, 0, 0)))
+
 
 if __name__ == "__main__":
     unittest.main()
