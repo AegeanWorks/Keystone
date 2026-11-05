@@ -45,6 +45,13 @@ class PluginTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 load_game(spec)
 
+    def test_loader_rejects_multi_colon_and_noncallable_factory(self):
+        with self.assertRaises(ValueError):
+            load_game("keystone.samples:CubeDemo:extra")
+        with self.assertRaises(TypeError) as ctx:
+            load_game("keystone.samples:__name__")
+        self.assertIn("keystone.samples:__name__", str(ctx.exception))
+
     def test_missing_methods_are_rejected(self):
         with self.assertRaises(TypeError):
             load_game("tests.test_plugin:IncompleteGame")

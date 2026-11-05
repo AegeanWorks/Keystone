@@ -130,6 +130,16 @@ class NodeIdentityTest(unittest.TestCase):
             scene.add(Node("second", id="duplicate"))
         self.assertEqual(scene.query(name="second"), [])
 
+    def test_scene_add_rejects_attached_node_without_moving_it(self):
+        scene = Scene()
+        parent = scene.add(Node("parent"))
+        child = Node("child")
+        parent.add_child(child)
+        with self.assertRaises(ValueError):
+            scene.add(child)
+        self.assertIs(child.parent, parent)
+        self.assertIn(child, parent.children)
+
     def test_tags_are_copied_and_queryable(self):
         tags = {"enemy"}
         node = Node("raider", tags=tags)

@@ -252,6 +252,11 @@ class ReportTest(unittest.TestCase):
         self.assertEqual(report["coverage"], {"states_visited": 6, "unique_hashes": None})
         self.assertEqual(report["fairness"], {"verdict": "unknown", "reasons": ["no_fairness_check"]})
 
+    def test_report_rejects_string_reasons_instead_of_splitting_chars(self):
+        transcript = run_bot(FairMaze, RandomPolicy(), frames=2, seed=0, trace=False)
+        with self.assertRaises(ValueError):
+            make_report(transcript, {"verdict": "fair", "reasons": "win"})
+
     def test_web_simulate_result_assembles_into_the_same_report(self):
         """A thin adapter wraps POST /api/simulate output; no browser driving."""
         actions = [ActionState(right=1.0)] * 4

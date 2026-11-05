@@ -435,7 +435,10 @@ def make_report(
     if fairness is not None:
         if not isinstance(fairness, Mapping) or fairness.get("verdict") not in ("fair", "unfair", "unknown"):
             raise ValueError("fairness must hold a verdict of fair, unfair or unknown")
-        verdict = {"verdict": fairness["verdict"], "reasons": list(fairness.get("reasons", []))}
+        reasons = fairness.get("reasons", [])
+        if isinstance(reasons, str) or not isinstance(reasons, (list, tuple)):
+            raise ValueError("fairness reasons must be a list of strings")
+        verdict = {"verdict": fairness["verdict"], "reasons": list(reasons)}
     return {
         "schema": PLAYTEST_REPORT_SCHEMA,
         "game": transcript["game"],

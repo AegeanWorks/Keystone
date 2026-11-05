@@ -27,6 +27,11 @@ class AudioTest(unittest.TestCase):
         self.assertNotEqual(noise(0.05, seed=3).samples, noise(0.05, seed=4).samples)
         self.assertEqual(len(square(220.0, 0.02).samples), int(0.02 * first.sample_rate))
 
+    def test_noise_rejects_nonint_seed_to_keep_determinism(self):
+        for bad in (None, "7", 3.5, True):
+            with self.assertRaises(TypeError):
+                noise(0.05, seed=bad)
+
     def test_validation_rejects_bad_params(self):
         with self.assertRaises(ValueError):
             sine(0.0, 0.1)

@@ -73,7 +73,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
 
 def load_game(spec: str) -> GameModule:
     """Load an external game from 'package.module:Factory'."""
-    if ":" not in spec:
+    if spec.count(":") != 1:
         raise ValueError("game spec must look like 'package.module:Factory'")
     module_name, attribute = spec.split(":", 1)
     if not module_name or not attribute:
@@ -86,7 +86,12 @@ def load_game(spec: str) -> GameModule:
         factory = getattr(module, attribute)
     except AttributeError as exc:
         raise ValueError(f"'{module_name}' has no attribute '{attribute}'") from exc
-    game = factory()
+    if not callable(factory):
+        raise TypeError(f"game '{spec}' factory '{attribute}' is not callable")
+    try:
+        game = factory()
+    except TypeError as exc:
+        raise TypeError(f"game '{spec}' factory failed: {exc}") from exc
     for method in ("build_scene", "update", "snapshot", "actions", "status"):
         if not callable(getattr(game, method, None)):
             raise TypeError(f"game '{spec}' does not implement {method}()")

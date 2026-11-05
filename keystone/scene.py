@@ -243,6 +243,8 @@ class Scene:
     _next_id: int = field(default=1, init=False, repr=False)
 
     def add(self, node: Node) -> Node:
+        if node.parent is not None:
+            raise ValueError("node is already attached; remove it from its parent first")
         self._prepare(node)
         self.root.add_child(node)
         return node

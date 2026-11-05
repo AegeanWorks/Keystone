@@ -92,6 +92,8 @@ def square(frequency: float, duration: float, sample_rate: int = SAMPLE_RATE, na
 def noise(duration: float, seed: int = 7, sample_rate: int = SAMPLE_RATE, name: str = "noise") -> AudioClip:
     if duration <= 0.0 or sample_rate <= 0:
         raise ValueError("duration and sample rate must be positive")
+    if isinstance(seed, bool) or not isinstance(seed, int):
+        raise TypeError("noise seed must be an int to keep mixes deterministic")
     rng = random.Random(seed)
     count = int(duration * sample_rate)
     return AudioClip(samples=tuple(rng.uniform(-1.0, 1.0) for _ in range(count)),

@@ -9,8 +9,8 @@
 - **Total Python Modules**: `116`
 - **Total Classes**: `169`
 - **Total Top-Level Functions**: `210`
-- **Total Class Methods**: `956`
-- **Total Source Lines**: `18651`
+- **Total Class Methods**: `960`
+- **Total Source Lines**: `18690`
 
 ---
 
@@ -204,7 +204,7 @@
 ### [`keystone/audio.py`](keystone/audio.py)
 > *Game-agnostic audio core: synth clips, bus mixer and WAV I/O.*
 
-**Size**: `235` lines (`9419` bytes)
+**Size**: `237` lines (`9560` bytes)
 
 **Classes:**
 - `class AudioClip` - *Immutable mono PCM clip in [-1, 1] with a fixed sample rate.*
@@ -918,7 +918,7 @@
 ### [`keystone/playtest.py`](keystone/playtest.py)
 > *Seeded bot playtesting: transcripts, diffing, policies and fairness checks.*
 
-**Size**: `585` lines (`24371` bytes)
+**Size**: `588` lines (`24551` bytes)
 
 **Classes:**
 - `class BotPolicy` - *One seeded decision step over the five-operation game contract.*
@@ -956,7 +956,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `93` lines (`3391` bytes)
+**Size**: `98` lines (`3621` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1040,7 +1040,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `323` lines (`11110` bytes)
+**Size**: `325` lines (`11236` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -1526,11 +1526,12 @@
 ### [`tests/test_audio.py`](tests/test_audio.py)
 > *Tests for the game-agnostic audio core.*
 
-**Size**: `115` lines (`4422` bytes)
+**Size**: `120` lines (`4617` bytes)
 
 **Classes:**
 - `class AudioTest`
   - Method `.test_synth_clips_are_deterministic()`
+  - Method `.test_noise_rejects_nonint_seed_to_keep_determinism()`
   - Method `.test_validation_rejects_bad_params()`
   - Method `.test_mixer_applies_buses_and_renders()`
   - Method `.test_mix_clips_requires_shared_rate()`
@@ -1980,7 +1981,7 @@
 ### [`tests/test_playtest.py`](tests/test_playtest.py)
 > *Tests for the seeded bot playtester: transcripts, diffs, policies and fairness.*
 
-**Size**: `411` lines (`17111` bytes)
+**Size**: `416` lines (`17394` bytes)
 
 **Classes:**
 - `class TranscriptTest`
@@ -2013,6 +2014,7 @@
 - `class ReportTest`
   - Method `.test_report_is_frozen_schema_1_and_web_compatible()`
   - Method `.test_report_covers_an_untraced_transcript()`
+  - Method `.test_report_rejects_string_reasons_instead_of_splitting_chars()`
   - Method `.test_web_simulate_result_assembles_into_the_same_report()` - *A thin adapter wraps POST /api/simulate output; no browser driving.*
 - `class PlaytestCliTest`
   - Method `.test_playtest_cli_writes_transcript_and_report()`
@@ -2027,7 +2029,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `67` lines (`2687` bytes)
+**Size**: `74` lines (`3032` bytes)
 
 **Classes:**
 - `class PluginTest`
@@ -2035,6 +2037,7 @@
   - Method `.test_describe_exposes_capabilities_actions_and_snapshot()`
   - Method `.test_describe_reports_a_game_ui_hook()`
   - Method `.test_invalid_specs_are_rejected()`
+  - Method `.test_loader_rejects_multi_colon_and_noncallable_factory()`
   - Method `.test_missing_methods_are_rejected()`
   - Method `.test_public_api_exports_texture_data()`
 - `class IncompleteGame`
@@ -2142,7 +2145,7 @@
 ### [`tests/test_scene.py`](tests/test_scene.py)
 > *Unit tests for the Keystone scene graph and perspective camera.*
 
-**Size**: `262` lines (`9883` bytes)
+**Size**: `272` lines (`10246` bytes)
 
 **Classes:**
 - `class Health`
@@ -2163,6 +2166,7 @@
   - Method `.test_ids_are_scene_local_and_survive_reparenting()`
   - Method `.test_explicit_id_is_preserved_and_findable()`
   - Method `.test_duplicate_explicit_id_is_rejected_without_attaching()`
+  - Method `.test_scene_add_rejects_attached_node_without_moving_it()`
   - Method `.test_tags_are_copied_and_queryable()`
   - Method `.test_layer_and_component_queries_filter_attached_nodes()`
   - Method `.test_component_access_and_removal()`
