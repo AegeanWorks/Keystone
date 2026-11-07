@@ -160,6 +160,43 @@ function normalMatrix(matrix) {
   ]);
 }
 
+function subtract(left, right) {
+  return [left[0] - right[0], left[1] - right[1], left[2] - right[2]];
+}
+
+function dot(left, right) {
+  return left[0] * right[0] + left[1] * right[1] + left[2] * right[2];
+}
+
+function cross(left, right) {
+  return [
+    left[1] * right[2] - left[2] * right[1],
+    left[2] * right[0] - left[0] * right[2],
+    left[0] * right[1] - left[1] * right[0],
+  ];
+}
+
+function length(value) {
+  return Math.hypot(value[0], value[1], value[2]);
+}
+
+function normalize(value) {
+  const size = length(value) || 1;
+  return [value[0] / size, value[1] / size, value[2] / size];
+}
+
+function lookAt(eye, target, up = [0, 1, 0]) {
+  const z = normalize(subtract(eye, target));
+  const x = normalize(cross(up, z));
+  const y = cross(z, x);
+  return new Float32Array([
+    x[0], y[0], z[0], 0,
+    x[1], y[1], z[1], 0,
+    x[2], y[2], z[2], 0,
+    -dot(x, eye), -dot(y, eye), -dot(z, eye), 1,
+  ]);
+}
+
 function base64ToBytes(encoded) {
   const binary = atob(encoded);
   const bytes = new Uint8Array(binary.length);
@@ -195,14 +232,109 @@ export class SceneViewer {
     this.meshes = new Map();
     this.textures = new Map();
     this.scene = null;
+    this.cameraState = null;
+    this.dragging = false;
+    this.lastPointer = [0, 0];
+    this.canvas.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) {
+        return;
+      }
+      this.dragging = true;
+      this.lastPointer = [event.clientX, event.clientY];
+      this.canvas.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+    this.canvas.addEventListener("pointermove", (event) => {
+      if (!this.dragging || !this.cameraState) {
+        return;
+      }
+      const dx = event.clientX - this.lastPointer[0];
+      const dy = event.clientY - this.lastPointer[1];
+      this.lastPointer = [event.clientX, event.clientY];
+      this.cameraState.yaw -= dx * 0.01;
+      this.cameraState.pitch = Math.max(
+        -1.5,
+        Math.min(1.5, this.cameraState.pitch - dy * 0.01),
+      );
+      this.render();
+    });
+    this.canvas.addEventListener("pointerup", (event) => {
+      this.dragging = false;
+      if (this.canvas.hasPointerCapture(event.pointerId)) {
+        this.canvas.releasePointerCapture(event.pointerId);
+      }
+    });
+    this.canvas.addEventListener("pointercancel", () => {
+      this.dragging = false;
+    });
+    this.canvas.addEventListener(
+      "wheel",
+      (event) => {
+        if (!this.cameraState) {
+          return;
+        }
+        event.preventDefault();
+        const factor = Math.exp(event.deltaY * 0.001);
+        this.cameraState.distance = Math.max(
+          0.5,
+          Math.min(500, this.cameraState.distance * factor),
+        );
+        this.render();
+      },
+      { passive: false },
+    );
     this.resize = this.resize.bind(this);
     window.addEventListener("resize", this.resize);
     this.resize();
   }
 
+  ensureCamera(scene) {
+    if (this.cameraState) {
+      return;
+    }
+    const target = [0, 1, 0];
+    const offset = subtract(scene.camera.position, target);
+    const distance = Math.max(0.5, length(offset));
+    this.cameraState = {
+      target,
+      distance,
+      yaw: Math.atan2(offset[0], offset[2]),
+      pitch: Math.asin(Math.max(-1, Math.min(1, offset[1] / distance))),
+    };
+  }
+
+  resetCamera() {
+    this.cameraState = null;
+    if (this.scene) {
+      this.ensureCamera(this.scene);
+    }
+    this.render();
+  }
+
+  cameraPosition() {
+    const state = this.cameraState;
+    if (!state) {
+      return [0, 0, 0];
+    }
+    const cosPitch = Math.cos(state.pitch);
+    return [
+      state.target[0] + state.distance * cosPitch * Math.sin(state.yaw),
+      state.target[1] + state.distance * Math.sin(state.pitch),
+      state.target[2] + state.distance * cosPitch * Math.cos(state.yaw),
+    ];
+  }
+
+  viewMatrix() {
+    if (!this.cameraState) {
+      return new Float32Array(this.scene.camera.view);
+    }
+    return lookAt(this.cameraPosition(), this.cameraState.target);
+  }
+
   loadScene(scene) {
     this.clearScene();
     this.scene = scene;
+    this.ensureCamera(scene);
     for (const [id, mesh] of Object.entries(scene.meshes || {})) {
       this.meshes.set(id, this.uploadMesh(mesh));
     }
@@ -310,9 +442,9 @@ export class SceneViewer {
       camera.near,
       camera.far,
     );
-    const viewProjection = multiply(projection, new Float32Array(camera.view));
+    const viewProjection = multiply(projection, this.viewMatrix());
     gl.uniformMatrix4fv(this.uniforms.view_proj, false, viewProjection);
-    gl.uniform3fv(this.uniforms.camera_pos, camera.position);
+    gl.uniform3fv(this.uniforms.camera_pos, this.cameraPosition());
     gl.uniform3fv(this.uniforms.light_dir, scene.light.direction);
     gl.uniform3fv(this.uniforms.light_color, scene.light.color.map((value) => value * scene.light.intensity));
     gl.uniform3fv(this.uniforms.ambient, scene.atmosphere.ambient);

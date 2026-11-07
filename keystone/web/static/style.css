@@ -290,6 +290,25 @@ code {
   left: 14px;
 }
 
+.viewer-control {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 2;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--text);
+  background: rgba(15, 21, 32, 0.82);
+  font-family: var(--mono);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+#canvas {
+  touch-action: none;
+}
+
 .hud {
   right: 14px;
   bottom: 12px;

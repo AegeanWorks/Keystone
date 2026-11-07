@@ -837,6 +837,7 @@ class WebServerTest(unittest.TestCase):
             "component-data",
             "component-set",
             "component-remove",
+            "view-reset",
             "prefab-save",
             "prefab-insert",
             "transform-apply",
@@ -854,6 +855,12 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("set_component", script)
         self.assertIn("play_start", script)
         self.assertIn("set_node", script)
+        status, _, body = self._request("/viewer.js")
+        self.assertEqual(status, 200)
+        viewer_script = body.decode("utf-8")
+        self.assertIn("resetCamera", viewer_script)
+        self.assertIn("pointerdown", viewer_script)
+        self.assertIn("lookAt", viewer_script)
         status, _, payload = self._json("/api")
         self.assertEqual(status, 200)
         self.assertIn("editor", payload["endpoints"])

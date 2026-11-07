@@ -712,3 +712,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Rename/delete existed only in the JSON API; humans had to call the API directly to manage scene and prefab files.
 - **Decision**: Add new-name fields plus Rename/Delete buttons for scene and prefab libraries, wire them to the existing schema-11 actions, and include them in the busy-state button set. No API or schema change.
 - **Consequences**: 703 tests green; the console covers the full save/load/rename/delete lifecycle for both libraries. Editor camera polish and non-serve scene loading remain future work.
+
+### ADR-086: Add an independent orbit camera to the editor viewport
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: The WebGL viewport always used the game camera, so inspecting an authored scene from another angle required changing gameplay state. A Unity/Unreal-style editor needs viewport navigation independent of the scene.
+- **Decision**: Add a `lookAt` matrix and spherical editor camera state to `viewer.js`: left-drag orbits, the wheel zooms within bounds, and Reset view re-frames from the scene camera. The editor camera survives scene refreshes, while the game camera remains untouched. Add a viewport Reset view button and a `touch-action: none` canvas rule.
+- **Consequences**: 703 tests green and both JS modules pass `node --check`; navigation is independent of gameplay state, with no pan/fly or gizmo controls yet. Non-serve scene loading remains future work.

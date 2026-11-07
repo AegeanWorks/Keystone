@@ -56,6 +56,7 @@ const elements = {
   output: document.getElementById("output"),
   canvas: document.getElementById("canvas"),
   viewerStatus: document.getElementById("viewer-status"),
+  viewReset: document.getElementById("view-reset"),
   hud: document.getElementById("hud"),
 };
 
@@ -672,6 +673,11 @@ async function init() {
   }
 }
 
+elements.viewReset.addEventListener("click", () => {
+  if (viewer) {
+    viewer.resetCamera();
+  }
+});
 elements.step.addEventListener("click", () => run(() => simulate(1)));
 elements.run.addEventListener("click", () => run(() => simulate(60)));
 elements.simulate.addEventListener("click", () => run(() => simulate()));
