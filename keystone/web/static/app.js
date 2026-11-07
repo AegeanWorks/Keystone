@@ -48,6 +48,7 @@ const elements = {
   meshAsset: document.getElementById("mesh-asset"),
   materialAsset: document.getElementById("material-asset"),
   assignAsset: document.getElementById("assign-asset"),
+  assetInfo: document.getElementById("asset-info"),
   componentType: document.getElementById("component-type"),
   componentFields: document.getElementById("component-fields"),
   componentHint: document.getElementById("component-hint"),
@@ -275,6 +276,25 @@ function fillAssets(selection) {
   elements.materialAsset.value = selection ? selection.material || "" : "";
 }
 
+function assetSummary(assetId) {
+  const assets = (editorState && editorState.assets) || [];
+  const asset = assets.find((item) => item.id === assetId);
+  if (!asset) {
+    return null;
+  }
+  return `${asset.id} · ${asset.kind}\n${JSON.stringify(asset.metadata || {}, null, 2)}`;
+}
+
+function updateAssetInfo() {
+  const summaries = [elements.meshAsset.value, elements.materialAsset.value]
+    .filter(Boolean)
+    .map(assetSummary)
+    .filter(Boolean);
+  elements.assetInfo.textContent = summaries.length
+    ? summaries.join("\n\n")
+    : "No registry assets selected.";
+}
+
 function renderComponentTypes(editor) {
   const previous = elements.componentType.value;
   elements.componentType.replaceChildren();
@@ -442,6 +462,7 @@ function showEditor(editor) {
   fillNodeProperties(editor.selection);
   fillTransform(editor.selection);
   fillAssets(editor.selection);
+  updateAssetInfo();
   fillComponentData(editor.selection);
   renderComponentFields(editor, editor.selection);
   const history = editor.history || { undo: 0, redo: 0 };
@@ -880,6 +901,8 @@ elements.transformApply.addEventListener("click", () => run(applyTransform));
 elements.playStart.addEventListener("click", () => run(playStart));
 elements.playStep.addEventListener("click", () => run(playStep));
 elements.playStop.addEventListener("click", () => run(playStop));
+elements.meshAsset.addEventListener("change", updateAssetInfo);
+elements.materialAsset.addEventListener("change", updateAssetInfo);
 elements.assignAsset.addEventListener("click", () => run(assignAssets));
 elements.componentSet.addEventListener("click", () => run(setComponent));
 elements.componentRemove.addEventListener("click", () => run(removeComponent));

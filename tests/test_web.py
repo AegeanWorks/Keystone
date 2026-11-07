@@ -835,6 +835,7 @@ class WebServerTest(unittest.TestCase):
             "mesh-asset",
             "material-asset",
             "assign-asset",
+            "asset-info",
             "component-type",
             "component-fields",
             "component-hint",
@@ -863,6 +864,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("keydown", script)
         self.assertIn("set_component", script)
         self.assertIn("renderComponentFields", script)
+        self.assertIn("updateAssetInfo", script)
         self.assertIn("play_start", script)
         self.assertIn("set_node", script)
         status, _, body = self._request("/viewer.js")
