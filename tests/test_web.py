@@ -842,6 +842,7 @@ class WebServerTest(unittest.TestCase):
             "component-set",
             "component-remove",
             "view-reset",
+            "view-focus",
             "prefab-save",
             "prefab-insert",
             "transform-apply",
@@ -865,6 +866,7 @@ class WebServerTest(unittest.TestCase):
         self.assertEqual(status, 200)
         viewer_script = body.decode("utf-8")
         self.assertIn("resetCamera", viewer_script)
+        self.assertIn("focusNode", viewer_script)
         self.assertIn("pointerdown", viewer_script)
         self.assertIn("lookAt", viewer_script)
         status, _, payload = self._json("/api")

@@ -305,6 +305,10 @@ code {
   cursor: pointer;
 }
 
+.viewer-control-secondary {
+  top: 46px;
+}
+
 #canvas {
   touch-action: none;
 }

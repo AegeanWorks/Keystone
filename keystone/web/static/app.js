@@ -61,6 +61,7 @@ const elements = {
   canvas: document.getElementById("canvas"),
   viewerStatus: document.getElementById("viewer-status"),
   viewReset: document.getElementById("view-reset"),
+  viewFocus: document.getElementById("view-focus"),
   hud: document.getElementById("hud"),
 };
 
@@ -817,6 +818,11 @@ async function init() {
 elements.viewReset.addEventListener("click", () => {
   if (viewer) {
     viewer.resetCamera();
+  }
+});
+elements.viewFocus.addEventListener("click", () => {
+  if (viewer && editorState && editorState.selection) {
+    viewer.focusNode(editorState.selection.id);
   }
 });
 elements.step.addEventListener("click", () => run(() => simulate(1)));

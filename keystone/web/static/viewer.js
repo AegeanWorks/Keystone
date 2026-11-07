@@ -311,6 +311,28 @@ export class SceneViewer {
     this.render();
   }
 
+  focusNode(nodeId) {
+    if (!this.scene) {
+      return;
+    }
+    const node = (this.scene.nodes || []).find((item) => item.id === nodeId);
+    if (!node) {
+      return;
+    }
+    this.ensureCamera(this.scene);
+    const world = node.world || [];
+    this.cameraState.target = [
+      world[12] || 0.0,
+      world[13] || 0.0,
+      world[14] || 0.0,
+    ];
+    this.cameraState.distance = Math.max(
+      2.0,
+      Math.min(12.0, this.cameraState.distance),
+    );
+    this.render();
+  }
+
   cameraPosition() {
     const state = this.cameraState;
     if (!state) {
