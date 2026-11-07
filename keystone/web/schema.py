@@ -15,11 +15,14 @@ EDITOR_SCHEMA = {
     "version": EDITOR_SCHEMA_VERSION,
     "actions": list(EDITOR_ACTIONS),
     "fields": {
-        "node": ["id", "name", "parent_id", "children", "visible", "selected", "tags", "layer", "components", "mesh", "material", "transform", "world"],
+        "node": ["id", "name", "parent_id", "children", "visible", "selected", "tags", "layer", "components", "component_data", "mesh", "material", "transform", "world"],
         "transform": ["position", "rotation", "scale"],
         "create_node": ["id", "name", "parent", "position", "rotation", "scale", "tags", "layer", "visible", "mesh", "material"],
         "assign_asset": ["id", "mesh", "material"],
+        "set_component": ["id", "type", "data"],
+        "remove_component": ["id", "type"],
         "asset": ["id", "kind", "sha256", "source", "dependencies"],
+        "component_types": ["name"],
         "reparent_node": ["id", "parent"],
         "history": ["undo", "redo", "limit"],
         "scene": ["name", "node_count", "source", "error"],
@@ -29,6 +32,7 @@ EDITOR_SCHEMA = {
         "schema 2 adds create/delete/duplicate/reparent, undo/redo and registry-linked mesh/material ids",
         "schema 3 adds save_scene/load_scene with typed-component scene files",
         "schema 4 adds asset inventory and assign_asset for existing nodes",
+        "schema 5 adds component_types plus set_component/remove_component authoring",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

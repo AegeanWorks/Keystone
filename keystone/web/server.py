@@ -12,6 +12,7 @@ from typing import ClassVar
 from urllib.parse import urlparse
 
 from keystone.assets import AssetRegistry
+from keystone.component_codec import validate_component_types
 from keystone.headless import run_simulation
 from keystone.input import ActionState
 from keystone.plugin import GameModule, describe_game
@@ -31,8 +32,10 @@ from keystone.web.editor import (
     editor_document,
     find_node,
     insert_prefab,
+    remove_component,
     reparent_node,
     save_prefab,
+    set_component,
     transform_from_payload,
 )
 from keystone.web.scene import scene_document
@@ -80,7 +83,8 @@ class GameSession:
         self.selected_id: str | None = None
         self.prefabs: dict[str, Prefab] = {}
         self.history = EditorHistory()
-        component_types = getattr(game, "component_types", None)
+        component_types = validate_component_types(getattr(game, "component_types", None))
+        self.component_types = component_types
         self.prefab_library: PrefabLibrary | None = None
         if prefab_dir is not None:
             self.prefab_library = PrefabLibrary(
@@ -199,6 +203,7 @@ class GameSession:
             scene_entries=scene_entries,
             registry=registry,
             assets=asset_entries(registry),
+            component_types=sorted(self.component_types or {}),
         )
         document["game"] = self.name
         document["workspace"] = {
@@ -254,6 +259,27 @@ class GameSession:
                     self.history.apply(
                         scene,
                         lambda: assign_assets(node, payload, self._registry_locked()),
+                    )
+                    self.selected_id = node.id
+                elif action == "set_component":
+                    node = find_node(scene, payload.get("id"))
+                    self.history.apply(
+                        scene,
+                        lambda: set_component(
+                            node,
+                            payload.get("type"),
+                            payload.get("data"),
+                            self.component_types,
+                        ),
+                    )
+                    self.selected_id = node.id
+                elif action == "remove_component":
+                    node = find_node(scene, payload.get("id"))
+                    self.history.apply(
+                        scene,
+                        lambda: remove_component(
+                            node, payload.get("type"), self.component_types
+                        ),
                     )
                     self.selected_id = node.id
                 elif action == "create_node":

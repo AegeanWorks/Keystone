@@ -32,6 +32,10 @@ const elements = {
   meshAsset: document.getElementById("mesh-asset"),
   materialAsset: document.getElementById("material-asset"),
   assignAsset: document.getElementById("assign-asset"),
+  componentType: document.getElementById("component-type"),
+  componentData: document.getElementById("component-data"),
+  componentSet: document.getElementById("component-set"),
+  componentRemove: document.getElementById("component-remove"),
   editorRefresh: document.getElementById("editor-refresh"),
   editorState: document.getElementById("editor-state"),
   summary: document.getElementById("summary"),
@@ -70,6 +74,7 @@ function setBusy(value) {
     elements.step, elements.run, elements.simulate, elements.refresh,
     elements.nodeCreate, elements.nodeDuplicate, elements.nodeDelete, elements.nodeReparent,
     elements.sceneSave, elements.sceneLoad, elements.assignAsset,
+    elements.componentSet, elements.componentRemove,
     elements.prefabSave, elements.prefabInsert, elements.transformApply, elements.editorRefresh,
   ]) {
     button.disabled = value;
@@ -150,6 +155,7 @@ function editorSummary(editor) {
     prefabs: editor.prefabs,
     scenes: editor.scenes,
     assets: (editor.assets || []).length,
+    component_types: editor.component_types,
     actions: editor.actions,
     history: editor.history,
   };
@@ -228,6 +234,28 @@ function fillAssets(selection) {
   elements.materialAsset.value = selection ? selection.material || "" : "";
 }
 
+function renderComponentTypes(editor) {
+  const previous = elements.componentType.value;
+  elements.componentType.replaceChildren();
+  for (const name of editor.component_types || []) {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    elements.componentType.append(option);
+  }
+  const values = Array.from(elements.componentType.options).map((option) => option.value);
+  elements.componentType.value = values.includes(previous)
+    ? previous
+    : values[0] || "";
+}
+
+function fillComponentData(selection) {
+  const documents = (selection && selection.component_data) || [];
+  const selected = documents.find((item) => item.type === elements.componentType.value);
+  elements.componentData.value =
+    selected && !selected.error ? JSON.stringify(selected.data, null, 2) : "{}";
+}
+
 function fillTransform(selection) {
   if (!selection) {
     elements.position.value = "0, 0, 0";
@@ -244,8 +272,10 @@ function showEditor(editor) {
   editorState = editor;
   renderHierarchy(editor);
   renderAssets(editor);
+  renderComponentTypes(editor);
   fillTransform(editor.selection);
   fillAssets(editor.selection);
+  fillComponentData(editor.selection);
   const history = editor.history || { undo: 0, redo: 0 };
   elements.editorState.textContent =
     `${editor.nodes.length} nodes · ${editor.prefabs.length} prefabs · ` +
@@ -336,6 +366,42 @@ async function assignAssets() {
   await editorAction(
     { action: "assign_asset", id: editorState.selection.id, mesh, material },
     "assigning assets",
+  );
+  await refreshScene(false);
+}
+
+async function setComponent() {
+  if (!editorState || !editorState.selection) {
+    throw new Error("Select a node before editing components.");
+  }
+  const type = elements.componentType.value;
+  if (!type) {
+    throw new Error("The game exposes no component types.");
+  }
+  let data;
+  try {
+    data = JSON.parse(elements.componentData.value || "null");
+  } catch (error) {
+    throw new Error(`Component data JSON: ${error.message}`);
+  }
+  await editorAction(
+    { action: "set_component", id: editorState.selection.id, type, data },
+    "setting component",
+  );
+  await refreshScene(false);
+}
+
+async function removeComponent() {
+  if (!editorState || !editorState.selection) {
+    throw new Error("Select a node before editing components.");
+  }
+  const type = elements.componentType.value;
+  if (!type) {
+    throw new Error("The game exposes no component types.");
+  }
+  await editorAction(
+    { action: "remove_component", id: editorState.selection.id, type },
+    "removing component",
   );
   await refreshScene(false);
 }
@@ -501,6 +567,9 @@ elements.editorRefresh.addEventListener("click", () => run(() => refreshEditor(t
 elements.hierarchy.addEventListener("change", () => run(() => selectNode(elements.hierarchy.value)));
 elements.transformApply.addEventListener("click", () => run(applyTransform));
 elements.assignAsset.addEventListener("click", () => run(assignAssets));
+elements.componentSet.addEventListener("click", () => run(setComponent));
+elements.componentRemove.addEventListener("click", () => run(removeComponent));
+elements.componentType.addEventListener("change", () => fillComponentData(editorState && editorState.selection));
 elements.nodeCreate.addEventListener("click", () => run(createNode));
 elements.nodeDuplicate.addEventListener("click", () => run(duplicateNode));
 elements.nodeDelete.addEventListener("click", () => run(deleteNode));

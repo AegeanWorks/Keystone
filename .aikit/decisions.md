@@ -624,3 +624,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: `create_node` could reference registry assets by id, but existing nodes could not be inspected or reassigned. A Unity/Unreal-style inspector needs the asset browser and node mesh/material fields in the same AI-addressable editor document.
 - **Decision**: Bump the editor schema to 4, include the registry's JSON-safe asset inventory (`id`, `kind`, `sha256`, `source`, `dependencies`) and each node's resolved `mesh`/`material` ids, and add `assign_asset` with `mesh`/`material` fields that assign or clear through the registry. Validate missing/kind-mismatched ids, route the mutation through `EditorHistory`, and add mesh/material selects plus an apply button to the console.
 - **Consequences**: 692 tests green; humans and AI clients can discover assets and reassign node payloads with undo, while invalid ids fail with 400 before mutation. Component authoring and play-in-editor remain future work.
+
+### ADR-075: Add typed component authoring to the editor
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: The editor displayed component names but could not add, edit or remove them. Game-defined components already had a shared codec and optional `game.component_types` map for prefabs and scenes, so the editor lacked only the authoring contract and UI.
+- **Decision**: Bump the editor schema to 5, expose the game's `component_types` names and each node's serialized `component_data`, and add `set_component`/`remove_component` actions. Data is decoded through `component_codec`, replacements are keyed by type, unknown or non-serializable payloads fail with 400, and mutations run through `EditorHistory`. The console adds a type select, JSON data editor and set/remove buttons.
+- **Consequences**: 693 tests green; component edits undo and survive `.kscene` save/load, while games without a `component_types` map reject component authoring explicitly. Play-in-editor and richer component field forms remain future work.

@@ -12,6 +12,11 @@ import math
 from collections.abc import Callable, Mapping
 from typing import TypeVar
 
+from keystone.component_codec import (
+    ComponentTypes,
+    component_from_dict,
+    component_to_dict,
+)
 from keystone.math3d import Quat, Vec3
 from keystone.prefab import Prefab
 from keystone.scene import Node, Scene, Transform
@@ -28,8 +33,10 @@ __all__ = [
     "editor_document",
     "find_node",
     "insert_prefab",
+    "remove_component",
     "reparent_node",
     "save_prefab",
+    "set_component",
     "transform_from_payload",
 ]
 
@@ -256,6 +263,19 @@ class EditorHistory:
         self._redo.clear()
 
 
+def _component_documents(node: Node) -> list[dict[str, object]]:
+    documents: list[dict[str, object]] = []
+    for component_type, component in sorted(
+        node.components.items(),
+        key=lambda item: (item[0].__module__, item[0].__qualname__),
+    ):
+        try:
+            documents.append(component_to_dict(component))
+        except (TypeError, ValueError) as exc:
+            documents.append({"type": component_type.__name__, "error": str(exc)})
+    return documents
+
+
 def node_document(
     node: Node,
     selected_id: str | None,
@@ -273,6 +293,7 @@ def node_document(
         "tags": sorted(node.tags),
         "layer": node.layer,
         "components": sorted(component_type.__name__ for component_type in node.components),
+        "component_data": _component_documents(node),
         "mesh": _payload_id(registry, node.mesh, "mesh"),
         "material": _payload_id(registry, node.material, "material"),
         "transform": {
@@ -293,6 +314,7 @@ def editor_document(
     scene_entries: list[dict[str, object]] | None = None,
     registry: object | None = None,
     assets: list[dict[str, object]] | None = None,
+    component_types: list[str] | None = None,
 ) -> dict:
     nodes = [node_document(node, selected_id, registry) for node in scene.traverse()]
     selection = next((node for node in nodes if node["id"] == selected_id), None)
@@ -312,6 +334,7 @@ def editor_document(
         ),
         "scenes": scene_entries if scene_entries is not None else [],
         "assets": assets if assets is not None else asset_entries(registry),
+        "component_types": component_types if component_types is not None else [],
         "actions": list(EDITOR_ACTIONS),
         "history": (
             history.describe()
@@ -415,6 +438,47 @@ def transform_from_payload(node: Node, payload: dict) -> Transform:
     if not isinstance(payload, Mapping):
         raise TypeError("transform payload must be a mapping")
     return _transform_from_payload(payload, node.transform)
+
+
+def set_component(
+    node: Node,
+    type_name: object,
+    data: object,
+    component_types: ComponentTypes | None,
+) -> object:
+    """Decode and add/replace one component on a node."""
+    if not isinstance(node, Node):
+        raise TypeError("set_component target must be a Node")
+    if not isinstance(type_name, str) or not type_name.strip():
+        raise ValueError("component type must be a non-blank string")
+    if component_types is None:
+        raise ValueError("the game does not expose component_types")
+    if type_name not in component_types:
+        raise ValueError(f"unknown component type {type_name!r}")
+    component = component_from_dict(
+        {"type": type_name, "data": data}, component_types
+    )
+    node.components[type(component)] = component
+    return component
+
+
+def remove_component(
+    node: Node,
+    type_name: object,
+    component_types: ComponentTypes | None,
+) -> object:
+    """Remove one named component from a node."""
+    if not isinstance(node, Node):
+        raise TypeError("remove_component target must be a Node")
+    if not isinstance(type_name, str) or not type_name.strip():
+        raise ValueError("component type must be a non-blank string")
+    if component_types is None or type_name not in component_types:
+        raise ValueError(f"unknown component type {type_name!r}")
+    component_type = component_types[type_name]
+    component = node.components.pop(component_type, None)
+    if component is None:
+        raise ValueError(f"node {node.id or node.name!r} has no {type_name} component")
+    return component
 
 
 def assign_assets(

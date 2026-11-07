@@ -9,6 +9,7 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 
 from keystone import web
 from keystone.math3d import Vec3
@@ -16,12 +17,16 @@ from keystone.primitives import cube
 from keystone.samples import CubeDemo
 from keystone.scene import Node, Scene
 from keystone.web.scene import SCENE_SCHEMA, scene_document
-from keystone.web.server import GameSession, create_server
+from keystone.web.server import GameSession, WebProblem, create_server
 
 
 @dataclass(frozen=True)
 class Health:
     value: int
+
+
+class ComponentDemo(CubeDemo):
+    component_types: ClassVar[dict[str, type]] = {"Health": Health}
 
 
 class SceneDocumentTest(unittest.TestCase):
@@ -175,7 +180,7 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 4)
+        self.assertEqual(editor["schema"], 5)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
         self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
@@ -453,6 +458,79 @@ class WebServerTest(unittest.TestCase):
             entries = {entry["name"]: entry for entry in broken.editor()["scenes"]}
             self.assertIsNotNone(entries["broken"]["error"])
 
+    def test_editor_component_authoring_and_scene_round_trip(self):
+        with tempfile.TemporaryDirectory() as directory:
+            scene_dir = Path(directory) / "scenes"
+            session = GameSession(ComponentDemo(), scene_dir=scene_dir)
+            editor = session.editor()
+            self.assertEqual(editor["component_types"], ["Health"])
+            cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+            result = session.editor_action(
+                {
+                    "action": "set_component",
+                    "id": cube["id"],
+                    "type": "Health",
+                    "data": {"value": 5},
+                }
+            )
+            self.assertEqual(result["selection"]["components"], ["Health"])
+            self.assertEqual(
+                result["selection"]["component_data"],
+                [{"type": "Health", "data": {"value": 5}}],
+            )
+            result = session.editor_action(
+                {
+                    "action": "set_component",
+                    "id": cube["id"],
+                    "type": "Health",
+                    "data": {"value": 9},
+                }
+            )
+            self.assertEqual(
+                result["selection"]["component_data"][0]["data"]["value"], 9
+            )
+            session.editor_action(
+                {"action": "remove_component", "id": cube["id"], "type": "Health"}
+            )
+            result = session.editor_action({"action": "undo"})
+            self.assertEqual(
+                result["selection"]["component_data"][0]["data"]["value"], 9
+            )
+
+            session.editor_action({"action": "save_scene", "name": "component-level"})
+            session.editor_action(
+                {"action": "remove_component", "id": cube["id"], "type": "Health"}
+            )
+            loaded = session.editor_action(
+                {"action": "load_scene", "name": "component-level"}
+            )
+            restored = next(node for node in loaded["nodes"] if node["id"] == cube["id"])
+            self.assertEqual(restored["component_data"][0]["data"]["value"], 9)
+
+            other = next(node for node in editor["nodes"] if node["name"] == "cube-1")
+            for payload in (
+                {
+                    "action": "set_component",
+                    "id": cube["id"],
+                    "type": "Missing",
+                    "data": {},
+                },
+                {
+                    "action": "set_component",
+                    "id": cube["id"],
+                    "type": "Health",
+                    "data": [],
+                },
+                {
+                    "action": "remove_component",
+                    "id": other["id"],
+                    "type": "Health",
+                },
+            ):
+                with self.assertRaises(WebProblem) as caught:
+                    session.editor_action(payload)
+                self.assertEqual(caught.exception.status, 400)
+
     def test_editor_static_controls_and_index(self):
         status, _, body = self._request("/")
         text = body.decode("utf-8")
@@ -472,6 +550,10 @@ class WebServerTest(unittest.TestCase):
             "mesh-asset",
             "material-asset",
             "assign-asset",
+            "component-type",
+            "component-data",
+            "component-set",
+            "component-remove",
             "prefab-save",
             "prefab-insert",
             "transform-apply",
@@ -485,6 +567,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("duplicate_node", script)
         self.assertIn("save_scene", script)
         self.assertIn("assign_asset", script)
+        self.assertIn("set_component", script)
         status, _, payload = self._json("/api")
         self.assertEqual(status, 200)
         self.assertIn("editor", payload["endpoints"])
