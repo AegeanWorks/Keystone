@@ -1118,6 +1118,7 @@ class WebServerTest(unittest.TestCase):
             "gizmo-move",
             "gizmo-rotate",
             "gizmo-scale",
+            "gizmo-space",
             "prefab-save",
             "prefab-insert",
             "transform-apply",
@@ -1167,6 +1168,8 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("setGizmoMode", script)
         self.assertIn("axisAngleQuaternion", script)
         self.assertIn("multiplyQuaternion", script)
+        self.assertIn("setGizmoSpace", script)
+        self.assertIn("toggleGizmoSpace", script)
         status, _, body = self._request("/viewer.js")
         self.assertEqual(status, 200)
         viewer_script = body.decode("utf-8")
@@ -1187,6 +1190,8 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("renderGizmo", viewer_script)
         self.assertIn("GIZMO_VERTEX_SHADER", viewer_script)
         self.assertIn("setGizmoMode", viewer_script)
+        self.assertIn("setGizmoSpace", viewer_script)
+        self.assertIn("gizmoSpace", viewer_script)
         self.assertIn("gizmoRing", viewer_script)
         self.assertIn("gizmoScaleArrow", viewer_script)
         self.assertIn("ringDistance", viewer_script)

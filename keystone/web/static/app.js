@@ -81,12 +81,14 @@ const elements = {
   gizmoMove: document.getElementById("gizmo-move"),
   gizmoRotate: document.getElementById("gizmo-rotate"),
   gizmoScale: document.getElementById("gizmo-scale"),
+  gizmoSpace: document.getElementById("gizmo-space"),
   hud: document.getElementById("hud"),
 };
 
 let viewer = null;
 let busy = false;
 let editorState = null;
+let gizmoSpace = "world";
 
 try {
   viewer = new SceneViewer(elements.canvas);
@@ -741,6 +743,15 @@ function setGizmoMode(mode) {
   setStatus(`gizmo: ${mode}`);
 }
 
+function toggleGizmoSpace() {
+  gizmoSpace = gizmoSpace === "world" ? "local" : "world";
+  if (viewer) {
+    viewer.setGizmoSpace(gizmoSpace);
+  }
+  elements.gizmoSpace.textContent = `Space: ${gizmoSpace}`;
+  setStatus(`gizmo space: ${gizmoSpace}`);
+}
+
 async function applyTransform() {
   if (!editorState || !editorState.selection) {
     throw new Error("Select a node before editing its transform.");
@@ -1220,6 +1231,11 @@ document.addEventListener("keydown", (event) => {
     setGizmoMode({ w: "translate", e: "rotate", r: "scale" }[key]);
     return;
   }
+  if (!modifier && key === "x") {
+    event.preventDefault();
+    toggleGizmoSpace();
+    return;
+  }
   const direction = NUDGE_DIRECTIONS[event.key];
   if (direction && editorState.selection) {
     event.preventDefault();
@@ -1314,5 +1330,6 @@ elements.prefabApply.addEventListener("click", () => run(applyPrefabInstance));
 elements.gizmoMove.addEventListener("click", () => setGizmoMode("translate"));
 elements.gizmoRotate.addEventListener("click", () => setGizmoMode("rotate"));
 elements.gizmoScale.addEventListener("click", () => setGizmoMode("scale"));
+elements.gizmoSpace.addEventListener("click", toggleGizmoSpace);
 
 init();

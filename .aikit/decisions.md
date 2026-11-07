@@ -936,3 +936,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The viewport could only translate; rotation and scale required typed inspector fields, unlike Unity/Unreal direct manipulation.
 - **Decision**: Extend the gizmo framework with a mode switch. Translate keeps world-axis arrows; rotate draws three local-axis rings hit-tested against projected segments and previews an axis-angle rotation around the selection origin; scale draws local-axis box handles and previews a local-axis scale matrix. Ctrl/Cmd snaps translate to 0.25 units, rotation to 15 degrees and scale to 0.1; release sends one `transform` action with the composed local quaternion or scaled vector. Console Move/Rotate/Scale buttons and W/E/R select the mode; play mode hides all gizmos. No REST or schema change.
 - **Consequences**: 731 tests green and both JS modules pass `node --check`; rotation and scale are local-axis only and each drag remains one undo entry. World-space rotation, multi-selection and numeric gizmo readouts remain future work.
+
+### ADR-114: Toggle translate gizmos between world and local axes
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Translate handles were always world-axis, which makes placement awkward for rotated parents; Unity/Unreal editors switch between global and local handles.
+- **Decision**: Add a `gizmoSpace` state to the viewer and a Space button plus X shortcut in the console. World mode keeps the fixed X/Y/Z arrows; local mode derives the arrow basis from the selected node's world matrix. Rotate and scale remain local-axis. Toggling cancels any active drag and re-renders. No REST or schema change.
+- **Consequences**: 731 tests green and both JS modules pass `node --check`; translate now supports both spaces while each drag remains one action and one undo entry. World-space rotation, multi-selection and numeric gizmo readouts remain future work.

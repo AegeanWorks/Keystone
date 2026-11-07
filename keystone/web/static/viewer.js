@@ -412,6 +412,7 @@ export class SceneViewer {
     this.dragging = false;
     this.gizmoDrag = null;
     this.gizmoMode = "translate";
+    this.gizmoSpace = "world";
     this.hoverAxis = null;
     this.editable = true;
     this.pointerStart = [0, 0];
@@ -584,6 +585,17 @@ export class SceneViewer {
     this.render();
   }
 
+  setGizmoSpace(space) {
+    if (!["world", "local"].includes(space)) {
+      return;
+    }
+    this.gizmoSpace = space;
+    this.cancelGizmoDrag();
+    this.hoverAxis = null;
+    this.canvas.style.cursor = "";
+    this.render();
+  }
+
   selectedNode() {
     if (!this.scene || !this.selectedId) {
       return null;
@@ -722,7 +734,8 @@ export class SceneViewer {
       y: [0.36, 0.88, 0.42],
       z: [0.36, 0.58, 0.97],
     };
-    if (this.gizmoMode === "translate") {
+    const node = this.selectedNode();
+    if (this.gizmoMode === "translate" && this.gizmoSpace === "world") {
       return [
         {
           name: "x",
@@ -744,7 +757,6 @@ export class SceneViewer {
         },
       ];
     }
-    const node = this.selectedNode();
     const world = (node && node.world) || [];
     const x = normalize([world[0] || 1, world[1] || 0, world[2] || 0]);
     const y = normalize([world[4] || 0, world[5] || 1, world[6] || 0]);

@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-rotate-scale-gizmo-v1",
+    "task_id": "keystone-gizmo-space-v1",
     "last_phase": "verification",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794092809.899896,
+    "updated_at": 1794093032.1738272,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794092810.2416165
+    "completed_at": 1794093032.643334
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-delta-bind-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-delta-bind-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793796590.9566507,
-      "timestamp_str": "2026-11-04 15:49:50",
-      "agent": "kilo:delta"
-    },
-    {
-      "task_id": "keystone-swarm-audit-v1",
-      "phase": "planning",
-      "phase_num": 2,
-      "description": "[1/6] Stage 1-2 plan: 12-module swarm map, exact file ownership, shared contracts and gates verified",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794060606.8494956,
-      "timestamp_str": "2026-11-07 17:10:06",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Full-tree Keystone audit requested; every module needs a read-only analysis agent, verified findings, and minimal evidence-backed fixes without changing the frozen game contract.",
-        "benefits": "Complete coverage with one owner per file; reproducible defects only; parallel analysis; deterministic and headless gates preserved.",
-        "risks": "contract: five-op GameModule and report/scene schemas must stay frozen unless explicitly versioned; dependency: only stdlib plus pinned numpy/PyOpenGL/glfw/pytest; concurrency: 12 read-only agents, single writer in main session; state: 120-frame hash 772cac5232a0947b8f6d1914a5cf0cde may change only for verified behavior fixes and explicit re-pin.",
-        "mitigation": "File-level ownership map, identical evidence bar, sample reproduction, fabricated-batch rejection, full pytest/determinism/headless/aikit gates after every fix, ADR for persisted or contract changes."
-      },
-      "plan_digest": "d88374f38e97ed688b90bd39dc866d647fcf9f530c6b1d179a6d23b681d82dfe"
-    },
-    {
-      "task_id": "keystone-swarm-audit-v1",
-      "phase": "analysis",
-      "phase_num": 3,
-      "description": "[2/6] 12-module swarm triage: 423 evidence rows, all batches sampled, no fabrication invalidation, 20 root-cause fix groups selected",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794065791.5350447,
-      "timestamp_str": "2026-11-07 18:36:31",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-swarm-audit-v1",
       "phase": "implementation",
@@ -259,6 +220,45 @@
       "status": "completed",
       "timestamp": 1794092810.2416184,
       "timestamp_str": "2026-11-08 02:06:50",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-gizmo-space-v1",
+      "phase": "planning",
+      "phase_num": 2,
+      "description": "[1/2] Plan a world/local-space toggle for viewport translation with keyboard and console controls",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794092838.2227035,
+      "timestamp_str": "2026-11-08 02:07:18",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "Translate handles are world-axis only; Unity/Unreal-style placement also needs local-axis movement for rotated parents.",
+        "benefits": "A Space toggle and X shortcut switch translate handles between world and local axes, while rotate/scale stay local and every drag remains one transform action.",
+        "risks": "contract: no REST or schema change; dependency: none; concurrency: existing drag state is cancelled on toggle; state: no persistence needed.",
+        "mitigation": "Reuse the mode-aware gizmo basis, add static tests, run node --check and the full gate cycle."
+      },
+      "plan_digest": "3052789622fb9f80f85f6449939a6cf281c66014b8287ce7036c735d7b6193bc"
+    },
+    {
+      "task_id": "keystone-gizmo-space-v1",
+      "phase": "verification",
+      "phase_num": 4,
+      "description": "[2/2] World/local translate space implemented: Space button, X shortcut, mode-aware basis, drag cancellation, static coverage; 731 tests green, node --check clean, determinism unchanged, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794093032.1738272,
+      "timestamp_str": "2026-11-08 02:10:32",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-gizmo-space-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-gizmo-space-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794093032.6433358,
+      "timestamp_str": "2026-11-08 02:10:32",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]
