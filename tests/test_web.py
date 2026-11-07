@@ -484,6 +484,39 @@ class WebServerTest(unittest.TestCase):
             session.editor_action({"action": "apply_prefab", "id": cube["id"]})
         self.assertEqual(caught.exception.status, 400)
 
+    def test_editor_batch_can_revert_prefab_instance(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        original = cube["transform"]["position"]
+        session.editor_action({"action": "select", "id": cube["id"]})
+        session.editor_action({"action": "save_prefab", "name": "cube-template"})
+        inserted = session.editor_action(
+            {"action": "insert_prefab", "name": "cube-template", "instance": "copy"}
+        )
+        instance_id = inserted["selection"]["id"]
+        session.editor_action(
+            {"action": "transform", "id": instance_id, "position": [5.0, 0.0, 0.0]}
+        )
+        batched = session.editor_action(
+            {
+                "action": "batch",
+                "actions": [
+                    {
+                        "action": "transform",
+                        "id": instance_id,
+                        "position": [2.0, 0.0, 0.0],
+                    },
+                    {"action": "revert_prefab", "id": instance_id},
+                ],
+            }
+        )
+        self.assertEqual(batched["selection"]["transform"]["position"], original)
+        undone = session.editor_action({"action": "undo"})
+        self.assertEqual(
+            undone["selection"]["transform"]["position"], [5.0, 0.0, 0.0]
+        )
+
     def test_editor_prefab_library_persists_and_reloads(self):
         with tempfile.TemporaryDirectory() as directory:
             prefab_dir = Path(directory) / "prefabs"

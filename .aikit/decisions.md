@@ -952,3 +952,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Prefab instances carry editor-only links, but AI clients and the console had to scan every node to find them.
 - **Decision**: Add a deterministic `prefab_instances` list (`id`, `name`, `instance`) to `editor_document`, derived from nodes with a `prefab_link`. Document it in schema 19 and the AI guide. No new action or persistence.
 - **Consequences**: 731 tests green; linked roots are discoverable in one read, while the existing per-node `prefab_link` remains the source of truth. Nested and multi-root instances remain future work.
+
+### ADR-116: Allow prefab reverts inside atomic batches
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: AI clients could batch scene edits, but recovering a prefab instance required a separate undo step, so recovery could not be composed atomically with other authoring.
+- **Decision**: Add `revert_prefab` to `BATCH_ACTIONS`. The existing nested `_batch_depth` path applies it without a second history entry, and a failure still rolls the whole batch back. Bump the editor schema to 20.
+- **Consequences**: 732 tests green; batch scripts can transform and recover instances under one undo entry. `apply_prefab` remains outside batches because it writes the prefab library; multi-root instances remain future work.

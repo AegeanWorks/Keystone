@@ -66,6 +66,7 @@ BATCH_ACTIONS = frozenset(
         "duplicate_node",
         "reparent_node",
         "insert_prefab",
+        "revert_prefab",
     }
 )
 

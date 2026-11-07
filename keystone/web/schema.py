@@ -159,6 +159,7 @@ EDITOR_SCHEMA = {
         "schema 17 adds recoverable library trash and restore actions",
         "schema 18 adds prefab instance links with revert/apply actions",
         "schema 19 adds a prefab_instances inventory of linked roots to the editor document",
+        "schema 20 allows revert_prefab inside atomic batch actions",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

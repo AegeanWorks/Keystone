@@ -9,8 +9,8 @@
 - **Total Python Modules**: `133`
 - **Total Classes**: `206`
 - **Total Top-Level Functions**: `322`
-- **Total Class Methods**: `1272`
-- **Total Source Lines**: `27941`
+- **Total Class Methods**: `1273`
+- **Total Source Lines**: `27976`
 
 ---
 
@@ -1581,14 +1581,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `185` lines (`8561` bytes)
+**Size**: `186` lines (`8631` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1023` lines (`45092` bytes)
+**Size**: `1024` lines (`45117` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3024,7 +3024,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `1320` lines (`57134` bytes)
+**Size**: `1353` lines (`58535` bytes)
 
 **Classes:**
 - `class Health`
@@ -3055,6 +3055,7 @@
   - Method `.test_editor_asset_inventory_and_assignment()`
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_prefab_instance_revert_and_apply()`
+  - Method `.test_editor_batch_can_revert_prefab_instance()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_library_rename_and_delete()`
   - Method `.test_editor_library_trash_and_restore()`
