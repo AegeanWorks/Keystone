@@ -237,6 +237,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - Editor schema 18 exposes `prefab_link` and adds `revert_prefab`/`apply_prefab`: single-root insertions get a deterministic instance prefix, revert replaces the instance with a fresh template copy, apply captures the instance back into the prefab and its library, and prefab capture/instantiation strip links so nested instances remain unsupported.
 - Editor schema 19 adds a `prefab_instances` inventory (`id`, `name`, `instance`) to every editor document so AI clients can discover linked roots without scanning nodes.
 - Editor schema 20 allows `revert_prefab` inside atomic batches, so instance recovery and other edits share one undo entry.
+- Scene diff schema 2 compares `prefab_link` fields, so saved-scene diffs report instance-link changes.
 - `--serve --scene NAME` opens a saved `.kscene` from the project/scene library before the first editor request and requires an explicit library.
 - `--simulate --scene NAME` and `--headless --scene NAME` restore the same `.kscene` into the built scene and pass it to the simulation/engine without rebuilding.
 - `--replay --scene NAME` and `--playtest --scene NAME` restore the scene into every fresh game instance, including fairness probes, so transcripts and verdicts share one authored layout.

@@ -9,8 +9,8 @@
 - **Total Python Modules**: `133`
 - **Total Classes**: `206`
 - **Total Top-Level Functions**: `322`
-- **Total Class Methods**: `1273`
-- **Total Source Lines**: `27979`
+- **Total Class Methods**: `1274`
+- **Total Source Lines**: `28001`
 
 ---
 
@@ -1259,7 +1259,7 @@
 ### [`keystone/scene_diff.py`](keystone/scene_diff.py)
 > *Structured diffs between versioned scene snapshot documents.*
 
-**Size**: `90` lines (`3394` bytes)
+**Size**: `91` lines (`3413` bytes)
 
 **Functions:**
 - `def _node_map(document)`
@@ -2742,12 +2742,13 @@
 ### [`tests/test_scene_diff.py`](tests/test_scene_diff.py)
 > *Tests for structured scene snapshot diffs.*
 
-**Size**: `70` lines (`2589` bytes)
+**Size**: `91` lines (`3304` bytes)
 
 **Classes:**
 - `class SceneDiffTest`
   - Method `.test_identical_documents_have_no_changes()`
   - Method `.test_reports_node_and_scene_changes()`
+  - Method `.test_reports_prefab_link_changes()`
   - Method `.test_rejects_bad_documents()`
 
 ---

@@ -960,3 +960,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: AI clients could batch scene edits, but recovering a prefab instance required a separate undo step, so recovery could not be composed atomically with other authoring.
 - **Decision**: Add `revert_prefab` to `BATCH_ACTIONS`. The existing nested `_batch_depth` path applies it without a second history entry, and a failure still rolls the whole batch back. Bump the editor schema to 20.
 - **Consequences**: 732 tests green; batch scripts can transform and recover instances under one undo entry. `apply_prefab` remains outside batches because it writes the prefab library; multi-root instances remain future work.
+
+### ADR-117: Report prefab-link changes in scene diffs
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: `diff_scene` compared transforms, visibility, assets and components, but ignored editor-only prefab links, so AI clients could not see instance link changes.
+- **Decision**: Add `prefab_link` to `NODE_FIELDS` and bump `SCENE_DIFF_SCHEMA_VERSION` to 2. Before/after values are link dictionaries or null.
+- **Consequences**: 733 tests green; saved-scene comparisons now report link changes alongside other node fields. Nested and multi-root instance tracking remains future work.

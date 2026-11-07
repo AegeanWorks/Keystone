@@ -3,7 +3,7 @@
 import unittest
 
 from keystone.math3d import Vec3
-from keystone.scene import Node, Scene, Transform
+from keystone.scene import Node, PrefabLink, Scene, Transform
 from keystone.scene_diff import SCENE_DIFF_SCHEMA_VERSION, diff_scene_documents
 from keystone.scene_snapshot import scene_to_dict
 
@@ -54,6 +54,27 @@ class SceneDiffTest(unittest.TestCase):
         self.assertIn("position", diff["camera"])
         self.assertIn("background", diff["environment"])
         self.assertTrue(diff["has_changes"])
+
+    def test_reports_prefab_link_changes(self):
+        before = Scene()
+        before.add(Node("hero", id="hero"))
+        after = Scene()
+        after.add(
+            Node(
+                "hero",
+                id="hero",
+                prefab_link=PrefabLink("hero-template", "copy"),
+            )
+        )
+        diff = diff_scene_documents(scene_to_dict(before), scene_to_dict(after))
+        self.assertEqual([item["id"] for item in diff["changed"]], ["hero"])
+        self.assertEqual(
+            diff["changed"][0]["fields"]["prefab_link"],
+            {
+                "before": None,
+                "after": {"name": "hero-template", "instance": "copy"},
+            },
+        )
 
     def test_rejects_bad_documents(self):
         with self.assertRaises(TypeError):
