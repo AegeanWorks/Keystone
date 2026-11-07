@@ -168,7 +168,11 @@ class EngineTest(unittest.TestCase):
             self.assertEqual(caught.exception.code, 2)
 
     def test_web_flags_require_serve(self):
-        for argv in (["--port", "9000"], ["--host", "0.0.0.0"]):
+        for argv in (
+            ["--port", "9000"],
+            ["--host", "0.0.0.0"],
+            ["--prefab-dir", "prefabs"],
+        ):
             with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
                 main(argv)
             self.assertEqual(caught.exception.code, 2)

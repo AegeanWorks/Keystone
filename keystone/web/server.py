@@ -15,6 +15,8 @@ from keystone.assets import AssetRegistry
 from keystone.headless import run_simulation
 from keystone.input import ActionState
 from keystone.plugin import GameModule, describe_game
+from keystone.prefab import Prefab
+from keystone.prefab_library import PrefabLibrary
 from keystone.replay import FIXED_STEP
 from keystone.scene import Node, Scene
 from keystone.web.editor import (
@@ -63,13 +65,20 @@ class WebProblem(Exception):
 class GameSession:
     """One in-memory game guarded by a lock for concurrent HTTP requests."""
 
-    def __init__(self, game: GameModule) -> None:
+    def __init__(self, game: GameModule, prefab_dir: str | Path | None = None) -> None:
         self.game = game
         self.lock = threading.Lock()
         self._built = False
         self.selected_id: str | None = None
-        self.prefabs: dict[str, object] = {}
+        self.prefabs: dict[str, Prefab] = {}
         self.history = EditorHistory()
+        self.prefab_library: PrefabLibrary | None = None
+        if prefab_dir is not None:
+            self.prefab_library = PrefabLibrary(
+                prefab_dir,
+                registry=self._registry_locked(),
+                component_types=getattr(game, "component_types", None),
+            )
 
     @property
     def name(self) -> str:
@@ -112,6 +121,8 @@ class GameSession:
             self._built = True
         if not isinstance(scene, Scene):
             raise TypeError("GameModule.build_scene() must return a Scene")
+        if self.prefab_library is not None:
+            self.prefab_library.registry = self._registry_locked()
         return scene
 
     def scene(self) -> dict:
@@ -127,11 +138,48 @@ class GameSession:
             return None
         return find_node(scene, value)
 
+    def _prefab_entries_locked(self) -> list[dict[str, object]] | None:
+        if self.prefab_library is None:
+            return None
+        entries = [entry.describe() for entry in self.prefab_library.entries()]
+        listed = {str(entry["name"]) for entry in entries}
+        for name in sorted(set(self.prefabs) - listed):
+            entries.append(
+                {
+                    "name": name,
+                    "node_count": self.prefabs[name].node_count,
+                    "source": None,
+                    "error": None,
+                }
+            )
+        entries.sort(key=lambda entry: str(entry["name"]))
+        return entries
+
+    def _ensure_prefab_locked(self, name: object) -> None:
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("prefab name must be a non-blank string")
+        if name in self.prefabs:
+            return
+        if self.prefab_library is None:
+            raise KeyError(f"no saved prefab {name!r}")
+        self.prefabs[name] = self.prefab_library.load(name)
+
     def _editor_locked(self, scene: Scene) -> dict:
         if self.selected_id is not None and scene.find_by_id(self.selected_id) is None:
             self.selected_id = None
-        document = editor_document(scene, self.selected_id, self.prefabs, self.history)
+        document = editor_document(
+            scene,
+            self.selected_id,
+            self.prefabs,
+            self.history,
+            prefab_entries=self._prefab_entries_locked(),
+        )
         document["game"] = self.name
+        document["workspace"] = (
+            {"prefab_dir": self.prefab_library.directory.as_posix()}
+            if self.prefab_library is not None
+            else None
+        )
         return document
 
     def editor(self) -> dict:
@@ -201,10 +249,21 @@ class GameSession:
                         raise ValueError("select a node before saving a prefab")
                     node = find_node(scene, node_id)
                     name = payload.get("name") or node.id or node.name
-                    save_prefab(scene, node, name, self.prefabs)
+                    previous = self.prefabs.get(name) if isinstance(name, str) else None
+                    prefab = save_prefab(scene, node, name, self.prefabs)
+                    if self.prefab_library is not None:
+                        try:
+                            self.prefab_library.save(name, prefab)
+                        except Exception:
+                            if previous is None:
+                                self.prefabs.pop(name, None)
+                            else:
+                                self.prefabs[name] = previous
+                            raise
                     self.selected_id = node.id
                 elif action == "insert_prefab":
                     name = payload.get("name")
+                    self._ensure_prefab_locked(name)
                     parent = self._parent_locked(scene, payload.get("parent"))
                     roots = self.history.apply(
                         scene,
@@ -577,17 +636,27 @@ class ConsoleHandler(BaseHTTPRequestHandler):
             self.wfile.write(body)
 
 
-def create_server(game: GameModule, host: str = "127.0.0.1", port: int = 0) -> KeystoneHTTPServer:
+def create_server(
+    game: GameModule,
+    host: str = "127.0.0.1",
+    port: int = 0,
+    prefab_dir: str | Path | None = None,
+) -> KeystoneHTTPServer:
     """Create a bound server; port 0 asks the OS for a free port."""
     if not isinstance(port, int) or isinstance(port, bool) or not 0 <= port <= 65535:
         raise ValueError("port must be between 0 and 65535")
-    return KeystoneHTTPServer((host, port), GameSession(game))
+    return KeystoneHTTPServer((host, port), GameSession(game, prefab_dir=prefab_dir))
 
 
-def serve(game: GameModule, host: str = "127.0.0.1", port: int = 8000) -> int:
+def serve(
+    game: GameModule,
+    host: str = "127.0.0.1",
+    port: int = 8000,
+    prefab_dir: str | Path | None = None,
+) -> int:
     """Run the local console until interrupted."""
     try:
-        server = create_server(game, host=host, port=port)
+        server = create_server(game, host=host, port=port, prefab_dir=prefab_dir)
     except OSError as exc:
         raise ValueError(
             f"web console could not bind {host}:{port}.\n"

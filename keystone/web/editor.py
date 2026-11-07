@@ -253,6 +253,7 @@ def editor_document(
     selected_id: str | None,
     prefabs: dict[str, Prefab],
     history: EditorHistory | None = None,
+    prefab_entries: list[dict[str, object]] | None = None,
 ) -> dict:
     nodes = [node_document(node, selected_id) for node in scene.traverse()]
     selection = next((node for node in nodes if node["id"] == selected_id), None)
@@ -262,10 +263,14 @@ def editor_document(
         "roots": [node.id for node in scene.root.children],
         "selection": selection,
         "nodes": nodes,
-        "prefabs": [
-            {"name": name, "node_count": prefabs[name].node_count}
-            for name in sorted(prefabs)
-        ],
+        "prefabs": (
+            prefab_entries
+            if prefab_entries is not None
+            else [
+                {"name": name, "node_count": prefabs[name].node_count}
+                for name in sorted(prefabs)
+            ]
+        ),
         "actions": list(EDITOR_ACTIONS),
         "history": (
             history.describe()

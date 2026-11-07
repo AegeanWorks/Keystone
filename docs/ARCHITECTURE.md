@@ -146,7 +146,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 |---|---|---|
 | Math | Implemented | Vec3, Mat4, Quat, transforms |
 | Scene | Implemented | hierarchy, visibility, lights, IDs, tags, layers and components |
-| Prefabs | Implemented | detached subtree capture, versioned `.kprefab` save/load, deterministic instance IDs, component copy isolation, JSON-safe describe |
+| Prefabs | Implemented | detached subtree capture, versioned `.kprefab` save/load, file-backed libraries, deterministic instance IDs, component copy isolation, JSON-safe describe |
 | Projects | Implemented | versioned `keystone.json` manifest, `--new` scaffold, `--project` loader and generated five-op game |
 | Scene queries | Implemented | name/tag/layer/component filters and ID lookup |
 | Camera | Implemented | perspective and view matrices |
@@ -217,7 +217,9 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - `Scene` assigns unique IDs, preserves them across reparenting and rejects duplicate explicit IDs.
 - `Scene.query()`/`find()` filter by name, tag, layer and component; `find_by_id()` resolves an ID.
 - `Prefab` captures a detached subtree, saves/loads schema-1 `.kprefab` files through registered mesh/material ids, instantiates deterministic IDs, preserves tags/layers/components and isolates component copies.
-- `/api/editor` schema 2 creates, deletes, duplicates and reparents nodes, links mesh/material ids through the game's asset registry, and restores bounded undo/redo snapshots atomically.
+- `/api/editor` schema 2 creates, deletes, duplicates and reparents nodes, links mesh/material ids through the game's asset registry, restores bounded undo/redo snapshots atomically, and can back prefab entries with a `PrefabLibrary` rooted in `<project>/prefabs`.
+- The editor reloads persisted prefabs after a restart, reports corrupt library entries as per-entry errors, and inserts them with deterministic instance ids.
+- `--project . --serve` uses `<project>/prefabs/*.kprefab`; `--prefab-dir DIR` overrides the library, and library entries report load errors instead of breaking the editor.
 - `python -m keystone --new <dir>` scaffolds a project whose `--project <dir> --describe` and `--simulate` paths pass the five-operation contract.
 - Schema-4 reports include node ID, parent ID, tags, layer and component names; older reports still compare by name.
 - `TextureData.checker()` renders through a textured plane and material metadata appears in reports.

@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `123`
-- **Total Classes**: `192`
-- **Total Top-Level Functions**: `274`
-- **Total Class Methods**: `1176`
-- **Total Source Lines**: `23406`
+- **Total Python Modules**: `125`
+- **Total Classes**: `196`
+- **Total Top-Level Functions**: `275`
+- **Total Class Methods**: `1192`
+- **Total Source Lines**: `23783`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `482` lines (`26848` bytes)
+**Size**: `491` lines (`27367` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -1050,6 +1050,28 @@
 
 ---
 
+### [`keystone/prefab_library.py`](keystone/prefab_library.py)
+> *File-backed prefab libraries for editors, tools and AI clients.*
+
+**Size**: `135` lines (`5252` bytes)
+
+**Classes:**
+- `class PrefabEntry` - *One library file and its loaded summary, or why it could not load.*
+  - Method `.describe()` - *Return a JSON-safe entry for editor and AI documents.*
+- `class PrefabLibrary` - *Discover, save and load ``.kprefab`` files in one directory.*
+  - Method `.__init__(directory, registry, component_types)`
+  - Method `.path_for(name)` - *Return the safe file path for one library name.*
+  - Method `.save(name, prefab)` - *Write one prefab atomically; its internal name must match the entry.*
+  - Method `.load(name)` - *Load one prefab or raise KeyError when the entry is absent.*
+  - Method `.entry(name)` - *Load one entry's summary, capturing load failures as ``error``.*
+  - Method `.entries()` - *Return every ``.kprefab`` file in stable name order.*
+  - Method `.describe()` - *Return JSON-safe summaries for every library file.*
+
+**Functions:**
+- `def _validate_name(name)`
+
+---
+
 ### [`keystone/primitives.py`](keystone/primitives.py)
 > *Procedural primitives: cube, plane, cone, cylinder and UV sphere.*
 
@@ -1068,7 +1090,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `248` lines (`8851` bytes)
+**Size**: `249` lines (`8927` bytes)
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -1386,7 +1408,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `396` lines (`13789` bytes)
+**Size**: `401` lines (`13958` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene-node edits.*
@@ -1410,7 +1432,7 @@
 - `def _node_from_snapshot(data)`
 - `def _restore_nodes(scene, snapshot)`
 - `def node_document(node, selected_id)`
-- `def editor_document(scene, selected_id, prefabs, history)`
+- `def editor_document(scene, selected_id, prefabs, history, prefab_entries)`
 - `def find_node(scene, node_id)`
 - `def create_node(scene, payload, parent, registry)` - *Create, validate and attach one node from an editor payload.*
 - `def delete_node(scene, node)` - *Detach one node subtree and return its former parent.*
@@ -1446,13 +1468,13 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `609` lines (`27037` bytes)
+**Size**: `678` lines (`29679` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
   - Method `.__init__(status, why, fix)`
 - `class GameSession` - *One in-memory game guarded by a lock for concurrent HTTP requests.*
-  - Method `.__init__(game)`
+  - Method `.__init__(game, prefab_dir)`
   - Property `.name`
   - Method `.describe()`
   - Method `.simulate(frames, actions, step, trace)`
@@ -1460,6 +1482,8 @@
   - Method `.scene()`
   - Method `._registry_locked()`
   - Method `._parent_locked(scene, value)`
+  - Method `._prefab_entries_locked()`
+  - Method `._ensure_prefab_locked(name)`
   - Method `._editor_locked(scene)`
   - Method `.editor()`
   - Method `.editor_action(payload)`
@@ -1488,8 +1512,8 @@
 
 **Functions:**
 - `def _enabled(value)`
-- `def create_server(game, host, port)` - *Create a bound server; port 0 asks the OS for a free port.*
-- `def serve(game, host, port)` - *Run the local console until interrupted.*
+- `def create_server(game, host, port, prefab_dir)` - *Create a bound server; port 0 asks the OS for a free port.*
+- `def serve(game, host, port, prefab_dir)` - *Run the local console until interrupted.*
 
 ---
 
@@ -1618,7 +1642,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `512` lines (`20794` bytes)
+**Size**: `516` lines (`20870` bytes)
 
 **Classes:**
 - `class HudCube`
@@ -2406,6 +2430,22 @@
 
 ---
 
+### [`tests/test_prefab_library.py`](tests/test_prefab_library.py)
+> *Tests for file-backed prefab libraries.*
+
+**Size**: `124` lines (`5064` bytes)
+
+**Classes:**
+- `class Health`
+- `class PrefabLibraryTest`
+  - Method `._fixture(directory)`
+  - Method `.test_save_load_and_describe()`
+  - Method `.test_describe_reports_corrupt_and_invalid_entries()`
+  - Method `.test_names_are_safe_and_must_match_the_prefab()`
+  - Method `.test_load_requires_assets_and_component_types()`
+
+---
+
 ### [`tests/test_project.py`](tests/test_project.py)
 > *Tests for project manifests, scaffolding and the --project CLI path.*
 
@@ -2787,7 +2827,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `470` lines (`19751` bytes)
+**Size**: `500` lines (`21407` bytes)
 
 **Classes:**
 - `class Health`
@@ -2813,6 +2853,7 @@
   - Method `.test_editor_hierarchy_selection_and_transform()`
   - Method `.test_editor_node_authoring_and_undo_redo()`
   - Method `.test_editor_prefab_capture_and_insert()`
+  - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_static_controls_and_index()`
   - Method `.test_step_button_documents_its_reset_semantics()`
   - Method `.test_options_preflight_and_static_assets()`

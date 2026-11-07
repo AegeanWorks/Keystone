@@ -242,7 +242,7 @@ The dashboard can inspect the game contract, run the same action scripts as `--s
 | `/api/simulate` | `POST` | the same deterministic result as `--simulate`; body `{"frames": 60, "actions": [...], "step": 0.0167, "trace": false}` |
 | `/api` | `GET` | endpoint and schema index |
 
-The API sends CORS headers so a local AI client or frontend can call it directly. It is a local development surface, not an internet service: keep the default loopback host, and pass `--host 0.0.0.0` only when you want network exposure. The server never opens a GL context and never reads files outside its bundled static assets.
+The API sends CORS headers so a local AI client or frontend can call it directly. It is a local development surface, not an internet service: keep the default loopback host, and pass `--host 0.0.0.0` only when you want network exposure. The server never opens a GL context, and prefab writes stay inside the configured library.
 
 `/api/scene` exports the game's `self.scene` when it has one, so a live simulation is visible immediately. A game without that attribute gets a fresh `build_scene()` result; put the scene on `self.scene` for live state.
 
@@ -268,7 +268,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip loading, changed-pixel counts, bbox and visual diff.
 - **Frame reports for AI analysis**: `--report` writes schema-11 JSON with image hashes, pixel/luminance stats, content box, dominant colors, 8×8 grid, camera, projected bounds and per-node identity/material metadata, sprite/FX counts and UI labels/buttons.
 - **Human overlay**: game-agnostic HUD with game/status, FPS, frame, time, resolution and profiler lines (draws, tris, audio, anim, FX, sprites), plus help/pause menu; 5×7 font, no asset. Games add HUD via `draw_ui(canvas, state)`.
-- **Web console and WebGL viewer**: `--serve` starts a stdlib JSON API and dashboard sharing the CLI contract (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/editor`, `/api/simulate`); a scene editor exposes hierarchy, node create/duplicate/reparent/delete, transforms, undo/redo and prefabs; WebGL2 previews scenes.
+- **Web console and WebGL viewer**: `--serve` starts a stdlib JSON API and dashboard sharing the CLI contract (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/editor`, `/api/simulate`); a scene editor exposes hierarchy, node create/duplicate/reparent/delete, transforms, undo/redo and persistent prefabs; WebGL2 previews scenes.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
 
 ## 🤖 AI Testing & Frame Analysis

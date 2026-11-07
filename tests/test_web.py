@@ -2,11 +2,13 @@
 
 import base64
 import json
+import tempfile
 import threading
 import unittest
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
+from pathlib import Path
 
 from keystone import web
 from keystone.math3d import Vec3
@@ -330,6 +332,34 @@ class WebServerTest(unittest.TestCase):
         self.assertEqual(editor["selection"]["id"], "copy:" + cube["id"])
         _, _, scene = self._json("/api/scene")
         self.assertIn("copy:" + cube["id"], {node["id"] for node in scene["nodes"]})
+
+    def test_editor_prefab_library_persists_and_reloads(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefab_dir = Path(directory) / "prefabs"
+            first = GameSession(CubeDemo(), prefab_dir=prefab_dir)
+            editor = first.editor()
+            cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+            first.editor_action({"action": "select", "id": cube["id"]})
+            saved = first.editor_action({"action": "save_prefab", "name": "cube-template"})
+            path = prefab_dir / "cube-template.kprefab"
+            self.assertTrue(path.is_file())
+            self.assertEqual(saved["workspace"], {"prefab_dir": prefab_dir.as_posix()})
+            self.assertEqual(saved["prefabs"][0]["source"], path.as_posix())
+            self.assertIsNone(saved["prefabs"][0]["error"])
+
+            second = GameSession(CubeDemo(), prefab_dir=prefab_dir)
+            editor = second.editor()
+            self.assertEqual(editor["prefabs"][0]["name"], "cube-template")
+            self.assertEqual(editor["prefabs"][0]["node_count"], 1)
+            inserted = second.editor_action(
+                {"action": "insert_prefab", "name": "cube-template", "instance": "copy"}
+            )
+            self.assertEqual(inserted["selection"]["id"], "copy:cube-0")
+
+            (prefab_dir / "broken.kprefab").write_text("{}", encoding="utf-8")
+            third = GameSession(CubeDemo(), prefab_dir=prefab_dir)
+            entries = {entry["name"]: entry for entry in third.editor()["prefabs"]}
+            self.assertIsNotNone(entries["broken"]["error"])
 
     def test_editor_static_controls_and_index(self):
         status, _, body = self._request("/")
