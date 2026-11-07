@@ -147,7 +147,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Math | Implemented | Vec3, Mat4, Quat, transforms |
 | Scene | Implemented | hierarchy, visibility, lights, IDs, tags, layers and components |
 | Prefabs | Implemented | detached subtree capture, versioned `.kprefab` save/load, file-backed libraries, deterministic instance IDs, component copy isolation, JSON-safe describe |
-| Projects | Implemented | versioned `keystone.json` manifest, `--new` scaffold with prefab/scene libraries and component hooks, `--project` loader, relative asset import as `project:<path>` and generated five-op game |
+| Projects | Implemented | versioned `keystone.json` manifest, `--new` scaffold with prefab/scene libraries and component hooks, `--project` loader, relative asset import as `project:<path>`, glTF/GLB scene-to-prefab import and generated five-op game |
 | Scene queries | Implemented | name/tag/layer/component filters and ID lookup |
 | Camera | Implemented | perspective and view matrices |
 | Geometry | Implemented | indexed meshes, materials, vertex colors |
@@ -237,7 +237,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - `--verify-determinism --scene NAME` loads the scene on both passes, and windowed runs pass the prepared scene to the engine; only `--describe` rejects `--scene`.
 - `--project . --serve` uses `<project>/prefabs/*.kprefab`; `--prefab-dir DIR` overrides the library, and library entries report load errors instead of breaking the editor.
 - `python -m keystone --new <dir>` scaffolds a project whose `--project <dir> --describe` and `--simulate` paths pass the five-operation contract.
-- A project manifest may list relative `.obj`, `.png` and `.kprefab` assets; `--project` imports them as `project:<path>` after dependencies, rejects absolute, escaping, missing or unsupported paths, and returns records in manifest order.
+- A project manifest may list relative `.obj`, `.png`, `.kprefab`, `.gltf` and `.glb` assets; `--project` imports regular files as `project:<path>` after dependencies, converts glTF/GLB scenes into `<prefabs>/<stem>.kprefab` with `gltf.<stem>.*` sub-assets, rejects absolute, escaping, missing or unsupported paths, and returns regular records in manifest order.
 - Schema-4 reports include node ID, parent ID, tags, layer and component names; older reports still compare by name.
 - `TextureData.checker()` renders through a textured plane and material metadata appears in reports.
 - `python -m keystone --headless --frames 1 --out frame.png --report frame.json` writes both artifacts.

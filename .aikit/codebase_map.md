@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `128`
-- **Total Classes**: `202`
-- **Total Top-Level Functions**: `293`
-- **Total Class Methods**: `1242`
-- **Total Source Lines**: `26011`
+- **Total Python Modules**: `130`
+- **Total Classes**: `204`
+- **Total Top-Level Functions**: `297`
+- **Total Class Methods**: `1246`
+- **Total Source Lines**: `26239`
 
 ---
 
@@ -477,6 +477,17 @@
 - `def _mime_from_path(path)`
 - `def _texture_from_bytes(data, mime_type, name)`
 - `def load_textures(document, buffers, buffer_views, base_dir)`
+
+---
+
+### [`keystone/gltf_import.py`](keystone/gltf_import.py)
+> *Import glTF/GLB scenes into the prefab library and asset registry.*
+
+**Size**: `55` lines (`2220` bytes)
+
+**Functions:**
+- `def is_gltf_asset(path)` - *Return True for a glTF JSON or binary GLB path.*
+- `def import_gltf_prefab(path, registry, library, name)` - *Import one glTF/GLB scene, register its assets and save a prefab.*
 
 ---
 
@@ -1102,7 +1113,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `357` lines (`13501` bytes)
+**Size**: `392` lines (`14778` bytes)
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -1119,8 +1130,9 @@
 - `def save_project(path, manifest)` - *Write a manifest atomically; accepts a directory or a JSON path.*
 - `def _relative_asset_path(value)`
 - `def project_asset_id(value)` - *Return the deterministic registry id for one manifest asset path.*
+- `def _resolve_project_asset(context, value)`
 - `def import_project_assets(context, registry, component_types)` - *Load every manifest asset into an existing registry.*
-- `def attach_project_assets(game, context, component_types)` - *Import manifest assets into game.assets when the project declares any.*
+- `def attach_project_assets(game, context, component_types, prefab_library)` - *Import manifest assets, including glTF scenes as prefab entries.*
 - `def load_project_game(context)` - *Import and validate a project's game after adding its directory to sys.path.*
 - `def _game_source(manifest)`
 - `def _project_readme(manifest)`
@@ -2071,6 +2083,24 @@
 - `def _data_uri(data)`
 - `def _glb_bytes(document, binary_chunk)`
 - `def _triangle_gltf(*, translation, color, roughness)`
+
+---
+
+### [`tests/test_gltf_import.py`](tests/test_gltf_import.py)
+> *Tests for glTF/GLB prefab import and project attachment.*
+
+**Size**: `138` lines (`5623` bytes)
+
+**Classes:**
+- `class GltfPrefabImportTest`
+  - Method `.test_import_registers_assets_and_saves_a_prefab()`
+  - Method `.test_import_replaces_derived_assets_on_reimport()`
+  - Method `.test_import_rejects_bad_inputs()`
+- `class ProjectGltfAttachmentTest`
+  - Method `.test_project_attachment_imports_gltf_prefab_and_assets()`
+
+**Functions:**
+- `def _triangle_gltf()`
 
 ---
 

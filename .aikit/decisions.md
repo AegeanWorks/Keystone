@@ -816,3 +816,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Orbit and zoom covered rotation and distance, but inspecting off-center geometry still required orbiting around the scene target.
 - **Decision**: Derive camera right/up basis vectors from yaw and pitch, and make shift-drag translate the orbit target in that plane with distance-scaled motion. No API or schema change.
 - **Consequences**: 710 tests green and `viewer.js` passes `node --check`; viewport navigation now covers orbit, pan, zoom, reset and focus without touching the game camera. Thumbnail previews remain future work.
+
+### ADR-099: Import glTF/GLB scenes as prefab-library entries
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: The engine could load glTF 2.0/GLB, and projects could import `.obj`, `.png` and `.kprefab`, but a glTF scene could not enter the editor asset pipeline. Unity/Unreal-style projects need one-step scene-model import.
+- **Decision**: Add `keystone.gltf_import` with `is_gltf_asset()` and `import_gltf_prefab()`: load the scene, register textures/materials/meshes as `gltf.<name>.texture.N`/`.material.N`/`.mesh.N` with replace-on-reimport, save the scene as `<prefabs>/<name>.kprefab`, and return the prefab. Project attachment skips glTF during normal asset import, creates `<project>/prefabs` when needed, and imports glTF/GLB files after regular assets so the game registry and editor library are ready. `load_project_game` and `--project` inherit the behavior.
+- **Consequences**: 714 tests green; glTF/GLB models become insertable prefabs with stable sub-asset ids, and re-import refreshes their payloads. External glTF buffer/image dependency tracking and thumbnail previews remain future work.

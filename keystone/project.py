@@ -15,7 +15,9 @@ from pathlib import Path
 
 from keystone.asset_io import kind_from_suffix
 from keystone.assets import AssetRecord, AssetRegistry
+from keystone.gltf_import import import_gltf_prefab, is_gltf_asset
 from keystone.plugin import GameModule, load_game
+from keystone.prefab_library import PrefabLibrary
 from keystone.serialization import read_json, write_json_atomic
 
 PROJECT_SCHEMA_VERSION = 1
@@ -164,6 +166,21 @@ def project_asset_id(value: str | Path) -> str:
     return "project:" + _relative_asset_path(value).as_posix()
 
 
+def _resolve_project_asset(
+    context: ProjectContext, value: str | Path
+) -> tuple[Path, Path]:
+    root = context.directory.resolve()
+    relative = _relative_asset_path(value)
+    target = (root / relative).resolve()
+    try:
+        target.relative_to(root)
+    except ValueError as exc:
+        raise ValueError(f"project asset escapes the project directory: {value}") from exc
+    if not target.is_file():
+        raise FileNotFoundError(f"project asset does not exist: {target}")
+    return relative, target
+
+
 def import_project_assets(
     context: ProjectContext,
     registry: AssetRegistry,
@@ -174,17 +191,11 @@ def import_project_assets(
         raise TypeError("project context must be a ProjectContext")
     if not isinstance(registry, AssetRegistry):
         raise TypeError("project assets need an AssetRegistry")
-    root = context.directory.resolve()
     pending: list[tuple[str, Path, Path, str]] = []
     for value in context.manifest.assets:
-        relative = _relative_asset_path(value)
-        target = (root / relative).resolve()
-        try:
-            target.relative_to(root)
-        except ValueError as exc:
-            raise ValueError(f"project asset escapes the project directory: {value}") from exc
-        if not target.is_file():
-            raise FileNotFoundError(f"project asset does not exist: {target}")
+        relative, target = _resolve_project_asset(context, value)
+        if is_gltf_asset(target):
+            continue
         pending.append((value, relative, target, kind_from_suffix(target)))
     ordered = [item for item in pending if item[3] != "prefab"] + [
         item for item in pending if item[3] == "prefab"
@@ -198,15 +209,20 @@ def import_project_assets(
             kind=kind,
             component_types=component_types if kind == "prefab" else None,
         )
-    return tuple(records[project_asset_id(value)] for value in context.manifest.assets)
+    return tuple(
+        records[project_asset_id(value)]
+        for value in context.manifest.assets
+        if not is_gltf_asset(value)
+    )
 
 
 def attach_project_assets(
     game: GameModule,
     context: ProjectContext,
     component_types: Mapping[str, type] | None = None,
+    prefab_library: PrefabLibrary | None = None,
 ) -> tuple[AssetRecord, ...]:
-    """Import manifest assets into game.assets when the project declares any."""
+    """Import manifest assets, including glTF scenes as prefab entries."""
     if not context.manifest.assets:
         return ()
     registry = getattr(game, "assets", None)
@@ -215,7 +231,24 @@ def attach_project_assets(
     selected = component_types
     if selected is None:
         selected = getattr(game, "component_types", None)
-    return import_project_assets(context, registry, selected)
+    records = import_project_assets(context, registry, selected)
+    gltf_values = [value for value in context.manifest.assets if is_gltf_asset(value)]
+    if gltf_values:
+        library = prefab_library
+        if library is None:
+            library = PrefabLibrary(
+                context.directory / "prefabs",
+                registry=registry,
+                component_types=selected,
+            )
+        elif not isinstance(library, PrefabLibrary):
+            raise TypeError("prefab_library must be a PrefabLibrary or None")
+        else:
+            library.registry = registry
+        for value in gltf_values:
+            _, target = _resolve_project_asset(context, value)
+            import_gltf_prefab(target, registry, library)
+    return records
 
 
 def load_project_game(context: ProjectContext) -> GameModule:
@@ -309,9 +342,11 @@ Save a scene in the console, then reopen it with `--serve --scene NAME`.
 
 ## Assets
 
-Add relative `.obj`, `.png` or `.kprefab` paths to `assets` in `keystone.json`.
-`--project` imports them as `project:<relative-path>` when the game exposes
-`self.assets = AssetRegistry()`.
+Add relative `.obj`, `.png`, `.kprefab`, `.gltf` or `.glb` paths to `assets`
+in `keystone.json`. `--project` imports them when the game exposes
+`self.assets = AssetRegistry()`: regular assets use `project:<relative-path>`,
+and glTF/GLB scenes become `<prefabs>/<stem>.kprefab` with `gltf.<stem>.*`
+mesh/material/texture ids.
 """
 
 
