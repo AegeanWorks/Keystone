@@ -161,12 +161,15 @@ def main(argv: list[str] | None = None) -> int:
         args.host is not None
         or args.port is not None
         or args.prefab_dir is not None
-        or args.scene_dir is not None
-        or args.scene is not None
     ) and not args.serve:
-        parser.error("--host, --port, --prefab-dir, --scene-dir and --scene require --serve")
-    if args.scene is not None and args.project is None and args.scene_dir is None:
-        parser.error("--scene requires --project or --scene-dir")
+        parser.error("--host, --port and --prefab-dir require --serve")
+    if args.scene_dir is not None and not (args.serve or args.scene is not None):
+        parser.error("--scene-dir requires --serve or --scene")
+    if args.scene is not None:
+        if args.project is None and args.scene_dir is None:
+            parser.error("--scene requires --project or --scene-dir")
+        if not (args.serve or args.simulate or args.headless):
+            parser.error("--scene requires --serve, --simulate or --headless")
     if args.describe and (
         args.headless or args.simulate or args.verify_determinism or args.expect_hash
         or args.compare_baseline or args.diff_out or args.out or args.report or args.actions or args.trace
@@ -291,16 +294,29 @@ def main(argv: list[str] | None = None) -> int:
                     file=sys.stderr,
                 )
                 return 1
+        prefab_dir = args.prefab_dir
+        scene_dir = args.scene_dir
+        if project_context is not None:
+            if prefab_dir is None:
+                prefab_dir = project_context.directory / "prefabs"
+            if scene_dir is None:
+                scene_dir = project_context.directory / "scenes"
+        prepared_scene = None
+        if args.scene is not None and not args.serve:
+            from keystone.scene import Scene
+            from keystone.scene_library import SceneLibrary
+
+            prepared_scene = game.build_scene()
+            if not isinstance(prepared_scene, Scene):
+                raise TypeError("GameModule.build_scene() must return a Scene")
+            SceneLibrary(
+                scene_dir,
+                registry=getattr(game, "assets", None),
+                component_types=getattr(game, "component_types", None),
+            ).load_into(args.scene, prepared_scene)
         if args.serve:
             from keystone.web import serve
 
-            prefab_dir = args.prefab_dir
-            scene_dir = args.scene_dir
-            if project_context is not None:
-                if prefab_dir is None:
-                    prefab_dir = project_context.directory / "prefabs"
-                if scene_dir is None:
-                    scene_dir = project_context.directory / "scenes"
             return serve(
                 game,
                 args.host or "127.0.0.1",
@@ -335,7 +351,9 @@ def main(argv: list[str] | None = None) -> int:
 
             actions = load_actions(args.actions) if args.actions else []
             frames = args.frames if args.frames else (len(actions) or 1)
-            result = run_simulation(game, frames, actions, trace=args.trace)
+            result = run_simulation(
+                game, frames, actions, trace=args.trace, scene=prepared_scene
+            )
             if args.expect_hash:
                 result["expected_hash"] = args.expect_hash
                 result["ok"] = result["hash"] == args.expect_hash
@@ -427,6 +445,7 @@ def main(argv: list[str] | None = None) -> int:
             msaa=0 if args.headless else 4,
             title=f"Keystone | {getattr(game, 'name', 'game')}",
             ui=args.ui or (not args.headless and not args.no_ui),
+            scene=prepared_scene,
         )
         if args.no_shadows:
             engine.scene.shadow = ShadowSettings(enabled=False)

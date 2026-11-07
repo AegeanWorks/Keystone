@@ -231,6 +231,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - Editor schema 11 safely renames or deletes scene/prefab library entries and keeps cached prefabs in sync.
 - The console viewport uses an independent orbit camera (`lookAt`, pointer drag, wheel zoom, Reset view) so navigation does not mutate the game camera.
 - `--serve --scene NAME` opens a saved `.kscene` from the project/scene library before the first editor request and requires an explicit library.
+- `--simulate --scene NAME` and `--headless --scene NAME` restore the same `.kscene` into the built scene and pass it to the simulation/engine without rebuilding.
 - `--project . --serve` uses `<project>/prefabs/*.kprefab`; `--prefab-dir DIR` overrides the library, and library entries report load errors instead of breaking the editor.
 - `python -m keystone --new <dir>` scaffolds a project whose `--project <dir> --describe` and `--simulate` paths pass the five-operation contract.
 - A project manifest may list relative `.obj`, `.png` and `.kprefab` assets; `--project` imports them as `project:<path>` after dependencies, rejects absolute, escaping, missing or unsupported paths, and returns records in manifest order.

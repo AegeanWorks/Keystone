@@ -29,6 +29,7 @@ class Engine:
         msaa: int = 0,
         title: str = "Keystone",
         ui: bool = False,
+        scene: Scene | None = None,
     ) -> None:
         self.game = game
         self.context = GLContext(width, height, title, visible, msaa)
@@ -42,7 +43,7 @@ class Engine:
         try:
             if ui:
                 self.ui_renderer = UiRenderer()
-            self.scene = game.build_scene()
+            self.scene = scene if scene is not None else game.build_scene()
         except Exception:
             if self.ui_renderer is not None:
                 self.ui_renderer.release()

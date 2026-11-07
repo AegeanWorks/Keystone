@@ -40,13 +40,14 @@ def run_simulation(
     actions: Iterable[ActionState] | None = None,
     step: float = FIXED_STEP,
     trace: bool = False,
+    scene: Scene | None = None,
 ) -> dict:
     """Advance a game without creating a window or OpenGL context."""
     if frames < 0:
         raise ValueError("frames cannot be negative")
     if step <= 0.0 or not math.isfinite(step):
         raise ValueError("step must be positive and finite")
-    built = game.build_scene()
+    built = scene if scene is not None else game.build_scene()
     if not isinstance(built, Scene):
         raise TypeError("GameModule.build_scene() must return a Scene")
     script = list(actions or [])

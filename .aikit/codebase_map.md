@@ -9,8 +9,8 @@
 - **Total Python Modules**: `128`
 - **Total Classes**: `202`
 - **Total Top-Level Functions**: `293`
-- **Total Class Methods**: `1235`
-- **Total Source Lines**: `25682`
+- **Total Class Methods**: `1237`
+- **Total Source Lines**: `25755`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `521` lines (`28846` bytes)
+**Size**: `540` lines (`29715` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -125,11 +125,11 @@
 ### [`keystone/app.py`](keystone/app.py)
 > *Game-agnostic engine runtime: window, fixed step, input, render and capture.*
 
-**Size**: `329` lines (`13075` bytes)
+**Size**: `330` lines (`13143` bytes)
 
 **Classes:**
 - `class Engine` - *Owns the runtime around one external GameModule.*
-  - Method `.__init__(game, width, height, visible, msaa, title, ui)`
+  - Method `.__init__(game, width, height, visible, msaa, title, ui, scene)`
   - Method `.__enter__()`
   - Method `.__exit__(*exc_info)`
   - Method `._set_capture(captured)`
@@ -727,11 +727,11 @@
 ### [`keystone/headless.py`](keystone/headless.py)
 > *Simulation without a window: JSON action scripts and deterministic traces.*
 
-**Size**: `76` lines (`2659` bytes)
+**Size**: `77` lines (`2723` bytes)
 
 **Functions:**
 - `def load_actions(path)`
-- `def run_simulation(game, frames, actions, step, trace)` - *Advance a game without creating a window or OpenGL context.*
+- `def run_simulation(game, frames, actions, step, trace, scene)` - *Advance a game without creating a window or OpenGL context.*
 
 ---
 
@@ -1699,7 +1699,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `523` lines (`21195` bytes)
+**Size**: `527` lines (`21323` bytes)
 
 **Classes:**
 - `class HudCube`
@@ -2076,12 +2076,13 @@
 ### [`tests/test_headless.py`](tests/test_headless.py)
 > *Tests for no-OpenGL simulation and action scripts.*
 
-**Size**: `171` lines (`6056` bytes)
+**Size**: `188` lines (`6608` bytes)
 
 **Classes:**
 - `class HeadlessTest`
   - Method `.test_simulation_advances_without_a_window()`
   - Method `.test_same_script_is_deterministic()`
+  - Method `.test_provided_scene_skips_rebuilding()`
   - Method `.test_trace_contains_each_frame()`
   - Method `.test_load_actions_accepts_list_and_object()`
   - Method `.test_load_actions_pins_bad_item_index()`
@@ -2508,7 +2509,7 @@
 ### [`tests/test_project.py`](tests/test_project.py)
 > *Tests for project manifests, scaffolding and the --project CLI path.*
 
-**Size**: `273` lines (`11676` bytes)
+**Size**: `304` lines (`12841` bytes)
 
 **Classes:**
 - `class ProjectManifestTest`
@@ -2526,6 +2527,7 @@
   - Method `.test_cli_project_asset_failure_is_actionable()`
   - Method `.test_non_empty_directory_requires_force()`
   - Method `.test_cli_new_and_project()`
+  - Method `.test_cli_simulate_uses_a_saved_scene()`
   - Method `.test_cli_new_is_standalone_and_missing_project_has_why_fix()`
 
 ---

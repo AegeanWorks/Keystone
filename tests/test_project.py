@@ -24,6 +24,7 @@ from keystone.project import (
     save_project,
 )
 from keystone.scene import Node
+from keystone.scene_library import SceneLibrary
 
 OBJ_TEXT = """v 0 0 0
 v 1 0 0
@@ -253,6 +254,36 @@ class ProjectScaffoldTest(unittest.TestCase):
             result = json.loads(out.getvalue())
             self.assertEqual(result["frames"], 2)
             self.assertEqual(result["final"]["name"], name)
+
+    def test_cli_simulate_uses_a_saved_scene(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            context = create_project(root, name=self._name())
+            game = load_project_game(context)
+            scene = game.build_scene()
+            SceneLibrary(
+                root / "scenes",
+                registry=game.assets,
+                component_types=game.component_types,
+            ).save("level", scene)
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(
+                    main(
+                        [
+                            "--project",
+                            str(root),
+                            "--simulate",
+                            "--scene",
+                            "level",
+                            "--frames",
+                            "1",
+                        ]
+                    ),
+                    0,
+                )
+            result = json.loads(out.getvalue())
+            self.assertEqual(result["frames"], 1)
 
     def test_cli_new_is_standalone_and_missing_project_has_why_fix(self):
         with tempfile.TemporaryDirectory() as directory:

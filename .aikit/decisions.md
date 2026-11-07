@@ -728,3 +728,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The console listed saved scenes/prefabs in editor state but its text inputs required remembering exact names, which made load/rename/delete error-prone.
 - **Decision**: Add `<datalist>` suggestions populated from `editor.scenes` and `editor.prefabs`; labels show node counts or a load-error marker. No API or schema change.
 - **Consequences**: 703 tests green and both JS modules pass `node --check`; the console exposes the same library names the AI API already returns. Non-serve scene loading remains future work.
+
+### ADR-088: Load saved scenes for simulate and headless runs
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: `.kscene` files were usable only through `--serve`; AI clients could not simulate or render an authored scene without starting the console.
+- **Decision**: Add optional `scene` parameters to `run_simulation()` and `Engine`, prepare the game scene once in the CLI, restore the named `.kscene` through `SceneLibrary`, and pass it to the chosen run. Allow `--scene` with `--serve`, `--simulate` or `--headless` when `--project`/`--scene-dir` supplies the library; reject other combinations.
+- **Consequences**: 705 tests green; saved scenes drive editor, simulation and headless rendering without rebuilding, while replay/playtest scene loading remains future work.

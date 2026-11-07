@@ -24,6 +24,23 @@ class HeadlessTest(unittest.TestCase):
         second = run_simulation(CubeDemo(), 4, [ActionState(forward=1.0, look_yaw=0.1)])
         self.assertEqual(first["hash"], second["hash"])
 
+    def test_provided_scene_skips_rebuilding(self):
+        class CountingGame(CubeDemo):
+            def __init__(self):
+                super().__init__()
+                self.builds = 0
+
+            def build_scene(self):
+                self.builds += 1
+                return super().build_scene()
+
+        game = CountingGame()
+        scene = game.build_scene()
+        before = game.builds
+        result = run_simulation(game, frames=1, scene=scene)
+        self.assertEqual(result["frames"], 1)
+        self.assertEqual(game.builds, before)
+
     def test_trace_contains_each_frame(self):
         result = run_simulation(CubeDemo(), 3, trace=True)
         self.assertEqual(len(result["trace"]), 3)
