@@ -29,7 +29,11 @@ def load_skins(
         joints_raw = raw.get("joints", [])
         if not isinstance(joints_raw, list) or not joints_raw:
             raise ValueError(f"glTF skin {skin_index} has no joints")
-        joints = [int(joint) for joint in joints_raw]
+        if any(isinstance(joint, bool) or not isinstance(joint, int) for joint in joints_raw):
+            raise ValueError(f"glTF skin {skin_index} joints must be integers")
+        joints = list(joints_raw)
+        if len(set(joints)) != len(joints):
+            raise ValueError(f"glTF skin {skin_index} has duplicate joint indices")
         if any(joint < 0 or joint >= node_count for joint in joints):
             raise ValueError(f"glTF skin {skin_index} references an unknown node")
         if len(joints) > 64:

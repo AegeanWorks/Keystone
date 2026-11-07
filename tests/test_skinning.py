@@ -28,6 +28,14 @@ def _quad_mesh(**overrides):
 
 
 class SkinValidationTest(unittest.TestCase):
+    def test_weights_must_be_finite_non_negative_and_are_normalized(self):
+        bone = Mat4.identity()
+        for weights in ((-1.0,), (float("nan"),), (float("inf"),)):
+            with self.assertRaises(ValueError):
+                skin_point(Vec3(1.0, 0.0, 0.0), Vec3(0.0, 0.0, 1.0), (0,), weights, (bone,))
+        moved = skin_point(Vec3(1.0, 0.0, 0.0), Vec3(0.0, 0.0, 1.0), (0,), (2.0,), (bone,))
+        self.assertEqual(moved[0], Vec3(1.0, 0.0, 0.0))
+
     def test_skinned_normals_use_inverse_transpose(self):
         bone = Mat4.scale(2.0, 1.0, 1.0)
         _, normal = skin_point(
@@ -180,10 +188,12 @@ class SkinBatchTest(unittest.TestCase):
 
 
 class SkinGltfTest(unittest.TestCase):
-    def _skinned_document(self, bad_joint=False, normalized_joints=False):
+    def _skinned_document(self, bad_joint=False, normalized_joints=False, bad_weights=False):
         positions = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
         joints = [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
         weights = [1.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+        if bad_weights:
+            weights = [-1.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
         indices = [0, 1, 2]
         ibm = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] * 2
         blob = (
@@ -252,6 +262,24 @@ class SkinGltfTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             load_gltf(self._skinned_document(normalized_joints=True))
 
+    def test_rejects_negative_weights(self):
+        from keystone.gltf import load_gltf
+
+        with self.assertRaises(ValueError):
+            load_gltf(self._skinned_document(bad_weights=True))
+
+    def test_rejects_fractional_and_duplicate_joint_indices(self):
+        from keystone.gltf import load_gltf
+
+        document = self._skinned_document()
+        document["skins"][0]["joints"] = [1.0, 2]
+        with self.assertRaises(ValueError):
+            load_gltf(document)
+        document = self._skinned_document()
+        document["skins"][0]["joints"] = [1, 1]
+        with self.assertRaises(ValueError):
+            load_gltf(document)
+
 
 class SkinRenderTest(unittest.TestCase):
     def _skinned_scene(self):
@@ -300,6 +328,37 @@ class SkinRenderTest(unittest.TestCase):
                 renderer.release()
         finally:
             context.close()
+
+    def test_holder_transform_does_not_move_skinned_deformation(self):
+        from keystone.gpu.context import GLContext
+        from keystone.gpu.renderer import Renderer
+
+        context = GLContext(64, 48, visible=False)
+        try:
+            renderer = Renderer(64, 48)
+            try:
+                left = self._skinned_scene()
+                right = self._skinned_scene()
+                right.find_by_id("skinned").transform = Transform(position=Vec3(2.0, 0.0, 0.0))
+                renderer.render(left)
+                left_pixels = bytes(renderer.read_pixels())
+                renderer.render(right)
+                right_pixels = bytes(renderer.read_pixels())
+                self.assertEqual(left_pixels, right_pixels)
+            finally:
+                renderer.release()
+        finally:
+            context.close()
+
+    def test_release_after_context_close_is_a_noop(self):
+        from keystone.gpu.context import GLContext
+        from keystone.gpu.skinned_buffer import SkinnedGpuMesh
+
+        context = GLContext(32, 32, visible=False)
+        buffer = SkinnedGpuMesh(self._skinned_scene().find_by_id("skinned").mesh)
+        context.close()
+        buffer.release()
+        self.assertEqual((buffer._vao, buffer._vbo, buffer._ebo), (0, 0, 0))
 
 
 if __name__ == "__main__":

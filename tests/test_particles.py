@@ -348,6 +348,25 @@ class ResponseTest(unittest.TestCase):
         self.assertAlmostEqual(pushed.position.y, 0.5)
         self.assertEqual(pushed.velocity.y, 0.0)
 
+    def test_stationary_deep_particle_depenetrates_on_step(self):
+        from keystone.physics import AABB
+
+        system = ParticleSystem()
+        system.add(Emitter(name="still", speed=0.0, gravity=Vec3(0.0, 0.0, 0.0), seed=1))
+        system.burst("still", 1)
+        system.particles[0] = Particle(Vec3(0, 0, 0), Vec3(), 0.0, 10.0, 1.0, 0, "still")
+        box = AABB(Vec3(0, 0, 0), Vec3(5, 5, 5))
+        system.step(1 / 60, [box])
+        pushed = system.particles[0]
+        self.assertFalse(box.contains(pushed.position))
+
+    def test_speed_is_velocity_magnitude(self):
+        emitter = Emitter(direction=Vec3(3, 4, 0), speed=1.0, spread=0.0, seed=1)
+        self.assertAlmostEqual(emitter.spawn(0).velocity.length(), 1.0)
+        emitter = Emitter(direction=Vec3(0, 1, 0), speed=2.0, spread=0.5, seed=1)
+        for index in range(20):
+            self.assertAlmostEqual(emitter.spawn(index).velocity.length(), 2.0, places=6)
+
     def test_deep_interior_motion_ejects_through_nearest_face(self):
         from keystone.physics import AABB
 

@@ -230,6 +230,25 @@ class AnimationValidationTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             AnimationClip(name="bad", rotation_tracks=(("n", _vec_track([(0.0, Vec3()), (1.0, Vec3())])),))
 
+    def test_track_rejects_non_finite_values_and_zero_quaternion(self):
+        with self.assertRaises(ValueError):
+            Track(times=(0.0, 1.0), values=(Vec3(float("nan"), 0.0, 0.0), Vec3()))
+        with self.assertRaises(ValueError):
+            Track(
+                times=(0.0, 1.0),
+                values=(Quat(0.0, 0.0, 0.0, 0.0), Quat(1.0, 0.0, 0.0, 0.0)),
+            )
+
+    def test_clip_round_trip_is_object_equal_with_unsorted_tracks(self):
+        track = _vec_track([(0.0, Vec3()), (1.0, Vec3(1.0, 0.0, 0.0))])
+        clip = AnimationClip(
+            name="c",
+            position_tracks=(("z", track), ("a", track)),
+            events=((1.0, "end"), (0.0, "start")),
+        )
+        restored = AnimationClip.from_dict(clip.to_dict())
+        self.assertEqual(restored, clip)
+
     def test_blank_or_non_string_node_ids_are_rejected(self):
         track = _vec_track([(0.0, Vec3()), (1.0, Vec3())])
         for node_id in ("", "   ", 5):

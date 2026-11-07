@@ -142,6 +142,17 @@ class AudioTest(unittest.TestCase):
         with self.assertRaises((TypeError, ValueError)):
             AudioClip.from_dict({"samples": [0.1], "sample_rate": 22050.9})
 
+    def test_removed_bus_mutes_instead_of_full_gain(self):
+        mixer = Mixer()
+        mixer.play(AudioClip(samples=(0.5,), name="loud"), bus="sfx")
+        del mixer.buses["sfx"]
+        self.assertEqual(mixer.render().samples, (0.0,))
+
+    def test_mix_clips_rejects_runaway_pitch(self):
+        clip = AudioClip(samples=(0.5,), name="short")
+        with self.assertRaises(ValueError):
+            mix_clips([(clip, 1.0, 1e-5)])
+
     def test_mix_clips_rejects_none(self):
         with self.assertRaises(TypeError):
             mix_clips(None)  # type: ignore[arg-type]

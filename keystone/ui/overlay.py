@@ -58,6 +58,16 @@ class HumanOverlay:
         return None
 
     def _menu(self, canvas: Canvas, state: HudState, scale: int, line: int) -> None:
+        if state.width < 160 or state.height < 120:
+            label = "PAUSED"
+            canvas.text(
+                max(0, (state.width - text_width(label, 1)) // 2),
+                max(0, (state.height - line_height(1)) // 2),
+                label,
+                ALERT,
+                1,
+            )
+            return
         margin = 12 if scale == SCALE else 6
         pad = 8 * scale
         width = max(1, min(state.width - 2 * margin, MENU_WIDTH if scale == SCALE else 300))

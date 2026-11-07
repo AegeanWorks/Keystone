@@ -18,6 +18,7 @@ from pathlib import Path
 from keystone.serialization import write_bytes_atomic
 
 SAMPLE_RATE = 22050
+MIN_PITCH = 1e-4
 
 __all__ = ["SAMPLE_RATE", "AudioClip", "Mixer", "audio_report", "mix_clips", "noise", "read_wav", "sine", "square", "write_wav"]
 
@@ -145,8 +146,8 @@ def mix_clips(clips: list[tuple[AudioClip, float, float]]) -> AudioClip:
             raise ValueError("all mixed clips must share one sample rate")
         if _finite(gain, "gain") < 0.0:
             raise ValueError("gain must be non-negative")
-        if _finite(pitch, "pitch") <= 0.0:
-            raise ValueError("pitch must be positive")
+        if _finite(pitch, "pitch") < MIN_PITCH:
+            raise ValueError(f"pitch must be at least {MIN_PITCH}")
     lengths: list[int] = []
     for clip, _, pitch in voices:
         lengths.append(int(len(clip.samples) / pitch))
@@ -197,8 +198,8 @@ class Mixer:
             raise ValueError(f"unknown bus '{bus}'")
         gain = _finite(gain, "voice gain")
         pitch = _finite(pitch, "voice pitch")
-        if gain < 0.0 or pitch <= 0.0:
-            raise ValueError("voice gain must be non-negative and pitch positive")
+        if gain < 0.0 or pitch < MIN_PITCH:
+            raise ValueError(f"voice gain must be non-negative and pitch at least {MIN_PITCH}")
         self._voices.append((clip, bus, gain, pitch))
 
     def clear(self) -> None:
@@ -214,7 +215,7 @@ class Mixer:
             if bus == "master":
                 bus_gain = master
             else:
-                bus_gain = self.buses.get(bus, 1.0) * master
+                bus_gain = self.buses.get(bus, 0.0) * master
             parts.append((clip, gain * bus_gain, pitch))
         result = mix_clips(parts)
         return AudioClip(samples=result.samples, sample_rate=self.sample_rate, name="mixdown")

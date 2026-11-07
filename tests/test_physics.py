@@ -65,8 +65,10 @@ class PhysicsTest(unittest.TestCase):
         self.assertAlmostEqual(pushed.z, 0.0)
         pushed = resolve_sphere_aabb(Sphere(Vec3(0.5, 0, 0), 0.5), box)
         self.assertAlmostEqual(pushed.x, 1.5)
+        self.assertFalse(sphere_aabb_overlap(Sphere(pushed, 0.5), box))
         pushed = resolve_sphere_aabb(Sphere(Vec3(0, 0.5, 0), 0.5), box)
         self.assertAlmostEqual(pushed.y, 1.5)
+        self.assertFalse(sphere_aabb_overlap(Sphere(pushed, 0.5), box))
 
     def test_aabb_helpers_are_consistent_with_overlap(self):
         box = AABB(Vec3(0, 0, 0), Vec3(1, 2, 3))

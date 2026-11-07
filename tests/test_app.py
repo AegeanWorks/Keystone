@@ -34,6 +34,13 @@ class EngineTest(unittest.TestCase):
             engine.screenshot(path)
             self.assertTrue(path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n"))
 
+    def test_ui_capture_alpha_is_opaque(self):
+        engine = Engine(CubeDemo(), 160, 120, visible=False, ui=True)
+        self.addCleanup(engine.close)
+        engine.run(max_frames=1)
+        pixels = engine.renderer.read_pixels()
+        self.assertEqual(min(pixels[3::4]), 255)
+
     def test_ui_overlay_changes_the_captured_frame(self):
         with tempfile.TemporaryDirectory() as directory:
             plain_path = Path(directory) / "plain.png"

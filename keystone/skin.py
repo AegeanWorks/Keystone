@@ -60,11 +60,20 @@ def skin_point(
     """Deform one vertex by its influences; mirrors the vertex shader exactly."""
     if len(joints) != len(weights) or not joints:
         raise ValueError("joints and weights must be non-empty and match")
+    cleaned: list[float] = []
+    for weight in weights:
+        if isinstance(weight, bool) or not isinstance(weight, (int, float)) or not math.isfinite(weight) or weight < 0.0:
+            raise ValueError("skin weights must be finite and non-negative")
+        cleaned.append(float(weight))
+    total = sum(cleaned)
+    if total <= 1e-12:
+        raise ValueError("skin weights must have a positive sum")
     px, py, pz = 0.0, 0.0, 0.0
     nx, ny, nz = 0.0, 0.0, 0.0
-    for joint, weight in zip(joints, weights):
+    for joint, weight in zip(joints, cleaned):
         if joint < 0 or joint >= len(bones):
             raise ValueError("skin joint index is out of range")
+        weight /= total
         moved = bones[joint] * position
         rotated = _rotate_normal(bones[joint], normal)
         px += weight * moved.x

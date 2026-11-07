@@ -141,6 +141,6 @@ def cull_scene(scene: Scene, width: int, height: int) -> set[int]:
     if width <= 0 or height <= 0:
         raise ValueError("culling width and height must be positive")
     if not culling_enabled(scene):
-        return {id(node) for node in scene.traverse()}
+        return {id(node) for node in scene.traverse() if node.world_visible()}
     planes = extract_planes(scene.camera.view_projection(width / height))
     return {id(node) for node in scene.traverse() if node_visible(node, planes)}

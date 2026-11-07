@@ -133,6 +133,11 @@ class SpatialGrid:
 
     def _candidates(self, box: AABB) -> set[Hashable]:
         found: set[Hashable] = set()
-        for cell in self._cells_for(box):
-            found.update(self._cells.get(cell, ()))
+        try:
+            for cell in self._cells_for(box):
+                found.update(self._cells.get(cell, ()))
+        except ValueError:
+            # A query larger than the cell budget degrades to a linear scan;
+            # correctness never depends on cell_size.
+            return set(self._boxes)
         return found

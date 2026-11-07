@@ -40,7 +40,6 @@ REPORT_SCHEMA = {
         "ui": ["visible", "paused", "labels", "buttons"],
         "ui_label": ["text", "x", "y", "scale", "color"],
         "ui_button": ["label", "action", "rect", "selected", "hovered"],
-        "diagnostics": ["hash", "schema"],
     },
     "notes": [
         "grid_luma is an 8x8 backward-compatible luminance summary.",

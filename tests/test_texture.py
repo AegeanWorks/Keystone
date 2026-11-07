@@ -57,6 +57,10 @@ class TextureDataTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             TextureData.checker(8, light=(0.1, 0.2, 0.3, 0.4))
 
+    def test_texture_rejects_non_bytes_payload(self):
+        with self.assertRaises(TypeError):
+            TextureData(1, 1, [0, 0, 0, 255])  # type: ignore[arg-type]
+
 
 if __name__ == "__main__":
     unittest.main()

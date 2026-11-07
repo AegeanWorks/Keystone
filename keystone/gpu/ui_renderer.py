@@ -69,7 +69,12 @@ class UiRenderer:
         GL.glDepthMask(GL.GL_FALSE)
         GL.glDisable(GL.GL_CULL_FACE)
         GL.glEnable(GL.GL_BLEND)
-        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glBlendFuncSeparate(
+            GL.GL_SRC_ALPHA,
+            GL.GL_ONE_MINUS_SRC_ALPHA,
+            GL.GL_ONE,
+            GL.GL_ONE_MINUS_SRC_ALPHA,
+        )
         try:
             self._program.use()
             self._program.set_vec2("u_size", float(canvas.width), float(canvas.height))

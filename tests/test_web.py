@@ -170,6 +170,11 @@ class WebServerTest(unittest.TestCase):
         self.assertEqual(payload["frames"], 2)
         self.assertEqual(len(payload["hash"]), 32)
 
+    def test_step_button_documents_its_reset_semantics(self):
+        status, _, body = self._request("/")
+        self.assertEqual(status, 200)
+        self.assertIn("Reset + Step 1", body.decode("utf-8"))
+
     def test_options_preflight_and_static_assets(self):
         status, headers, _ = self._request("/api/simulate", method="OPTIONS")
         self.assertEqual(status, 204)

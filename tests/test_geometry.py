@@ -271,6 +271,18 @@ class MaterialTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             Material(checker_scale=-1.0)
 
+    def test_mesh_rejects_bool_coordinates(self):
+        with self.assertRaises(ValueError):
+            MeshData(
+                positions=((True, False, False), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)),
+                normals=((0.0, 0.0, 1.0),) * 3,
+                indices=(0, 1, 2),
+            )
+
+    def test_material_rejects_non_vec3_color(self):
+        with self.assertRaises((TypeError, ValueError)):
+            Material(color=(1.0, 0.0, 0.0))  # type: ignore[arg-type]
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -284,6 +284,9 @@ class AnalysisTest(unittest.TestCase):
         )
         self.assertEqual(diff["changed_nodes"], ["n"])
 
+    def test_report_schema_does_not_advertise_missing_diagnostics(self):
+        self.assertNotIn("diagnostics", REPORT_SCHEMA["fields"])
+
     def test_falsy_settings_report_disabled(self):
         scene = CubeDemo().build_scene()
         scene.shadow = None

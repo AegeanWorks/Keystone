@@ -185,6 +185,8 @@ class Mat4:
 
     @classmethod
     def perspective(cls, fov_y_degrees: float, aspect: float, near: float, far: float) -> Mat4:
+        if not all(math.isfinite(value) for value in (fov_y_degrees, aspect, near, far)):
+            raise ValueError("perspective parameters must be finite")
         if not 0.0 < fov_y_degrees < 180.0:
             raise ValueError("fov_y_degrees must be between 0 and 180")
         if aspect <= 0.0 or near <= 0.0 or far <= near:

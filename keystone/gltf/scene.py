@@ -15,16 +15,28 @@ def _matrix_to_transform(matrix: list[Any]) -> Transform:
     if not (isinstance(matrix, (list, tuple)) and len(matrix) == 16):
         raise ValueError("glTF node matrix must contain 16 numbers")
     values = [float(value) for value in matrix]
+    if not all(math.isfinite(value) for value in values):
+        raise ValueError("glTF node matrix values must be finite")
+    if (
+        abs(values[3]) > 1e-9
+        or abs(values[7]) > 1e-9
+        or abs(values[11]) > 1e-9
+        or abs(values[15] - 1.0) > 1e-9
+    ):
+        raise ValueError("glTF node matrix must be affine")
     tx, ty, tz = values[12], values[13], values[14]
     sx = math.sqrt(values[0] ** 2 + values[1] ** 2 + values[2] ** 2)
     sy = math.sqrt(values[4] ** 2 + values[5] ** 2 + values[6] ** 2)
     sz = math.sqrt(values[8] ** 2 + values[9] ** 2 + values[10] ** 2)
-    if sx < 1e-12:
-        sx = 1.0
-    if sy < 1e-12:
-        sy = 1.0
-    if sz < 1e-12:
-        sz = 1.0
+    if min(sx, sy, sz) < 1e-12:
+        raise ValueError("glTF node matrix must be invertible")
+    determinant = (
+        values[0] * (values[5] * values[10] - values[6] * values[9])
+        - values[4] * (values[1] * values[10] - values[2] * values[9])
+        + values[8] * (values[1] * values[6] - values[2] * values[5])
+    )
+    if determinant < 0.0:
+        sz = -sz
     r00 = values[0] / sx
     r01 = values[4] / sy
     r02 = values[8] / sz

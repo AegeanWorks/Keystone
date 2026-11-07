@@ -42,6 +42,30 @@ def _vec3_value(value: object, label: str) -> Vec3:
     return value
 
 
+def _depenetrate_static(
+    px: float, py: float, pz: float, flat: list[tuple[float, float, float, float, float, float]]
+) -> tuple[float, float, float]:
+    """Eject a stationary point from the nearest box face deterministically."""
+    best_distance = math.inf
+    best = (px, py, pz)
+    for (cx, cy, cz, hx, hy, hz) in flat:
+        if not (cx - hx < px < cx + hx and cy - hy < py < cy + hy and cz - hz < pz < cz + hz):
+            continue
+        candidates = (
+            ((cy + hy) - py, (px, cy + hy + POINT_SKIN, pz)),
+            (py - (cy - hy), (px, cy - hy - POINT_SKIN, pz)),
+            ((cx + hx) - px, (cx + hx + POINT_SKIN, py, pz)),
+            (px - (cx - hx), (cx - hx - POINT_SKIN, py, pz)),
+            ((cz + hz) - pz, (px, py, cz + hz + POINT_SKIN)),
+            (pz - (cz - hz), (px, py, cz - hz - POINT_SKIN)),
+        )
+        for distance, position in candidates:
+            if distance < best_distance:
+                best_distance = distance
+                best = position
+    return best
+
+
 def _move_point_flat(
     px: float, py: float, pz: float, axis: int, amount: float, flat: list[tuple[float, float, float, float, float, float]]
 ) -> tuple[float, bool]:
@@ -189,6 +213,13 @@ class Emitter:
             self.direction.y + rng.uniform(-self.spread, self.spread),
             self.direction.z + rng.uniform(-self.spread, self.spread),
         )
+        length = direction.length()
+        if length < 1e-12:
+            direction = self.direction.normalized()
+            if direction.length_squared() < 1e-12:
+                direction = Vec3(0.0, 1.0, 0.0)
+        else:
+            direction = direction / length
         lifetime = self.lifetime * rng.uniform(0.75, 1.25)
         return Particle(
             position=base,
@@ -350,6 +381,8 @@ class ParticleSystem:
                 keep = max(0.0, 1.0 - drag * dt)
                 velocity = Vec3(velocity.x * keep, velocity.y * keep, velocity.z * keep)
             px, py, pz = particle.position.x, particle.position.y, particle.position.z
+            if abs(velocity.x) < 1e-12 and abs(velocity.y) < 1e-12 and abs(velocity.z) < 1e-12:
+                px, py, pz = _depenetrate_static(px, py, pz, flat)
             px, hit_x = _move_point_flat(px, py, pz, 0, velocity.x * dt, flat)
             pz, hit_z = _move_point_flat(px, py, pz, 2, velocity.z * dt, flat)
             py, hit_y = _move_point_flat(px, py, pz, 1, velocity.y * dt, flat)

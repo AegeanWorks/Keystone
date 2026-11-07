@@ -24,6 +24,8 @@ class TextureData:
     def __post_init__(self) -> None:
         if self.width <= 0 or self.height <= 0:
             raise ValueError("texture width and height must be positive")
+        if not isinstance(self.rgba, bytes):
+            raise TypeError("texture rgba must be immutable bytes")
         if len(self.rgba) != self.width * self.height * 4:
             raise ValueError(
                 f"expected {self.width * self.height * 4} RGBA bytes "

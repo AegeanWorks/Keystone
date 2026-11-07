@@ -113,14 +113,16 @@ class CullingSceneTest(unittest.TestCase):
         self.assertNotIn("behind", names)
         self.assertNotIn("far-left", names)
 
-    def test_disabled_culling_returns_everything(self):
+    def test_disabled_culling_returns_everything_visible(self):
         scene = _scene_with_cubes()
+        scene.add(Node("hidden", visible=False))
         scene.culling = CullingSettings(enabled=False)
         self.assertFalse(culling_enabled(scene))
         visible = cull_scene(scene, 960, 540)
         names = {node.name for node in scene.traverse() if id(node) in visible and node.name}
         self.assertIn("behind", names)
         self.assertIn("far-left", names)
+        self.assertNotIn("hidden", names)
 
     def test_default_enabled(self):
         self.assertTrue(culling_enabled(Scene()))

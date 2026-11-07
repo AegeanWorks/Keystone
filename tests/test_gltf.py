@@ -234,6 +234,31 @@ class GltfImportTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             load_gltf(document)
 
+    def test_reflected_matrix_preserves_the_reflection(self):
+        document = _triangle_gltf()
+        document["nodes"][0].pop("translation", None)
+        document["nodes"][0]["matrix"] = [
+            -1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        ]
+        imported = load_gltf(document)
+        node = imported.scene.root.children[0]
+        self.assertEqual(node.transform.matrix().flat(), tuple(document["nodes"][0]["matrix"]))
+        self.assertLess(node.transform.scale.x * node.transform.scale.y * node.transform.scale.z, 0.0)
+
+    def test_singular_and_non_affine_matrices_are_rejected(self):
+        for matrix in (
+            [0.0] * 16,
+            [-1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 2.0],
+        ):
+            document = _triangle_gltf()
+            document["nodes"][0].pop("translation", None)
+            document["nodes"][0]["matrix"] = matrix
+            with self.assertRaises(ValueError):
+                load_gltf(document)
+
     def test_uv_origin_is_converted_from_gltf_top_left(self):
         positions = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
         uvs = [0.0, 0.0, 1.0, 0.0, 0.0, 1.0]

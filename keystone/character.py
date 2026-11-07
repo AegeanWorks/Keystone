@@ -118,7 +118,7 @@ class CharacterController:
             raise TypeError("colliders must be AABB instances")
         carry = platform_velocity if platform_velocity is not None else Vec3()
         position = body.position
-        if abs(carry.x) >= 1e-12 or abs(carry.y) >= 1e-12 or abs(carry.z) >= 1e-12:
+        if body.on_ground and (abs(carry.x) >= 1e-12 or abs(carry.y) >= 1e-12 or abs(carry.z) >= 1e-12):
             position, _ = self._move_axis(position, body.half_extents, "x", carry.x * dt, boxes)
             position, _ = self._move_axis(position, body.half_extents, "z", carry.z * dt, boxes)
             position, _ = self._move_axis(position, body.half_extents, "y", carry.y * dt, boxes)
@@ -136,6 +136,12 @@ class CharacterController:
                 hit_x = abs(position.x - before_horizontal.x) + 1e-9 < abs(horizontal.x * dt)
                 hit_z = abs(position.z - before_horizontal.z) + 1e-9 < abs(horizontal.z * dt)
         position, hit_y = self._move_axis(position, body.half_extents, "y", vertical * dt, boxes)
+        grounded = bool(hit_y and vertical <= 0.0)
+        if not grounded and body.on_ground and abs(vertical) < 1e-12:
+            _, support = self._move_axis(
+                position, body.half_extents, "y", -max(self.skin * 2.0, 1e-6), boxes
+            )
+            grounded = support
         return CharacterBody(
             position=position,
             half_extents=body.half_extents,
@@ -144,7 +150,7 @@ class CharacterController:
                 0.0 if hit_y else vertical,
                 0.0 if hit_z else horizontal.z,
             ),
-            on_ground=(hit_y and vertical <= 0.0) or (body.on_ground and abs(vertical) < 1e-12),
+            on_ground=grounded,
         )
 
     def _try_step_up(

@@ -14,6 +14,10 @@ class ReplayTest(unittest.TestCase):
         self.assertEqual(stable_hash({"a": 1, "b": 2}), stable_hash({"b": 2, "a": 1}))
         self.assertNotEqual(stable_hash({"a": 1}), stable_hash({"a": 2}))
 
+    def test_hash_canonicalizes_negative_zero(self):
+        self.assertEqual(stable_hash({"x": -0.0}), stable_hash({"x": 0.0}))
+        self.assertEqual(stable_hash({"x": [-0.0, {"y": -0.0}]}), stable_hash({"x": [0.0, {"y": 0.0}]}))
+
     def test_hash_rejects_non_json_and_non_finite_values(self):
         with self.assertRaises(TypeError):
             stable_hash({"set": {"alpha", "beta"}})

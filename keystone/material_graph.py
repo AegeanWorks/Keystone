@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -15,7 +16,13 @@ _JSON_VALUE = (str, int, float, bool, type(None))
 
 
 def _json_value(value: Any) -> Any:
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError("material graph parameters must be finite")
+        return value
     if isinstance(value, Vec3):
+        if not all(math.isfinite(component) for component in (value.x, value.y, value.z)):
+            raise ValueError("material graph Vec3 parameters must be finite")
         return [value.x, value.y, value.z]
     if isinstance(value, tuple):
         return [_json_value(item) for item in value]

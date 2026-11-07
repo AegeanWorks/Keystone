@@ -153,9 +153,11 @@ class OverlayTest(unittest.TestCase):
         self.assertTrue(all(x + width <= 400 for x, _, width, _, _ in canvas.quads))
 
     def test_tiny_canvas_is_clipped_without_errors(self):
-        canvas = HumanOverlay().build(state(width=10, height=10, paused=True))
+        overlay = HumanOverlay()
+        canvas = overlay.build(state(width=10, height=10, paused=True))
         self.assertIn("PAUSED", canvas.labels)
         self.assertTrue(all(x + width <= 10 and y + height <= 10 for x, y, width, height, _ in canvas.quads))
+        self.assertEqual(overlay.hits, [])
 
     def test_pause_menu_move_rejects_non_integer(self):
         from keystone.ui.menu import PauseMenu

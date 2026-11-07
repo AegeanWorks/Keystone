@@ -161,6 +161,11 @@ class MaterialGraphSerializationTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             _node("color", "color", params=(("r", 1.0), ("r", 0.0)))
 
+    def test_non_finite_parameters_are_rejected_on_serialization(self):
+        node = _node("c", "float", params=(("value", float("nan")),))
+        with self.assertRaises(ValueError):
+            node.to_dict()
+
     def test_validate_rejects_cycles(self):
         graph = MaterialGraph(
             nodes=(

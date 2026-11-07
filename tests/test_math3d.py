@@ -133,6 +133,15 @@ class QuatTest(unittest.TestCase):
         self.assertEqual(a.slerp(b, 0.0), a)
         self.assertTrue(a.slerp(b, 1.0).almost_equal(b))
 
+    def test_perspective_rejects_non_finite_framing(self):
+        for kwargs in (
+            {"fov_y_degrees": 60.0, "aspect": float("nan"), "near": 0.1, "far": 10.0},
+            {"fov_y_degrees": 60.0, "aspect": 1.0, "near": float("nan"), "far": 10.0},
+            {"fov_y_degrees": 60.0, "aspect": 1.0, "near": 0.1, "far": float("inf")},
+        ):
+            with self.assertRaises(ValueError):
+                Mat4.perspective(**kwargs)
+
 
 if __name__ == "__main__":
     unittest.main()

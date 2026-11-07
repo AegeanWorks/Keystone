@@ -13,7 +13,7 @@ MAX_SKIN_BONES = 64
 
 
 def _is_finite_number(value: object) -> bool:
-    return isinstance(value, (int, float)) and math.isfinite(value)
+    return not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value)
 
 
 def _check_triplets(name: str, values: tuple) -> None:
@@ -41,6 +41,11 @@ class Material:
     emissive: Vec3 = Vec3(0.0, 0.0, 0.0)
 
     def __post_init__(self) -> None:
+        for label, value in (("color", self.color), ("emissive", self.emissive)):
+            if not isinstance(value, Vec3):
+                raise TypeError(f"material {label} must be a Vec3")
+            if not all(math.isfinite(component) for component in (value.x, value.y, value.z)):
+                raise ValueError(f"material {label} must be finite")
         if self.specular < 0.0:
             raise ValueError("specular must be non-negative")
         if self.shininess <= 0.0:

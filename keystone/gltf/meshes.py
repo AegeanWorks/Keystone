@@ -156,12 +156,12 @@ def load_meshes(
                         raise ValueError(f"glTF mesh {mesh_index} WEIGHTS_0 must be VEC4")
                     joints.append(tuple(int(value) for value in joint_value))
                     row = tuple(float(value) for value in weight_value)
+                    if not all(math.isfinite(value) and value >= 0.0 for value in row):
+                        raise ValueError(f"glTF mesh {mesh_index} weights must be finite and non-negative")
                     total = sum(row)
                     if total <= 1e-9:
-                        row = (1.0, 0.0, 0.0, 0.0)
-                    else:
-                        row = tuple(value / total for value in row)
-                    weights.append(row)
+                        raise ValueError(f"glTF mesh {mesh_index} weights must have a positive sum")
+                    weights.append(tuple(value / total for value in row))
             colors: list[tuple[float, float, float]] = []
             if "COLOR_0" in attributes:
                 colors_raw = read_accessor(

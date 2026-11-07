@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ctypes
+from contextlib import suppress
 
 import numpy
 from OpenGL import GL
@@ -61,12 +62,13 @@ class SkinnedGpuMesh:
         GL.glBindVertexArray(0)
 
     def release(self) -> None:
-        if self._ebo:
-            GL.glDeleteBuffers(1, [self._ebo])
-            self._ebo = 0
-        if self._vbo:
-            GL.glDeleteBuffers(1, [self._vbo])
-            self._vbo = 0
-        if self._vao:
-            GL.glDeleteVertexArrays(1, [self._vao])
-            self._vao = 0
+        with suppress(Exception):
+            if self._ebo:
+                GL.glDeleteBuffers(1, [self._ebo])
+            if self._vbo:
+                GL.glDeleteBuffers(1, [self._vbo])
+            if self._vao:
+                GL.glDeleteVertexArrays(1, [self._vao])
+        self._ebo = 0
+        self._vbo = 0
+        self._vao = 0

@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `118`
 - **Total Classes**: `182`
-- **Total Top-Level Functions**: `235`
-- **Total Class Methods**: `1088`
-- **Total Source Lines**: `20969`
+- **Total Top-Level Functions**: `237`
+- **Total Class Methods**: `1112`
+- **Total Source Lines**: `21309`
 
 ---
 
@@ -62,7 +62,7 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `559` lines (`23063` bytes)
+**Size**: `558` lines (`23020` bytes)
 
 **Functions:**
 - `def _enabled(value)`
@@ -88,7 +88,7 @@
 ### [`keystone/animation.py`](keystone/animation.py)
 > *Deterministic, game-agnostic animation: keyframe clips, sampling and control.*
 
-**Size**: `422` lines (`19191` bytes)
+**Size**: `432` lines (`19926` bytes)
 
 **Classes:**
 - `class Track` - *One keyframed channel: sorted times with Vec3 or Quat values.*
@@ -208,7 +208,7 @@
 ### [`keystone/audio.py`](keystone/audio.py)
 > *Game-agnostic audio core: synth clips, bus mixer and WAV I/O.*
 
-**Size**: `278` lines (`12104` bytes)
+**Size**: `279` lines (`12157` bytes)
 
 **Classes:**
 - `class AudioClip` - *Immutable mono PCM clip in [-1, 1] with a fixed sample rate.*
@@ -253,7 +253,7 @@
 ### [`keystone/broadphase.py`](keystone/broadphase.py)
 > *Deterministic spatial-grid broadphase for nearby AABB candidates.*
 
-**Size**: `138` lines (`5506` bytes)
+**Size**: `143` lines (`5721` bytes)
 
 **Classes:**
 - `class SpatialGrid` - *A uniform grid of AABB proxies with exact overlap filtering.*
@@ -295,7 +295,7 @@
 ### [`keystone/character.py`](keystone/character.py)
 > *Game-agnostic AABB character movement with gravity and collision response.*
 
-**Size**: `210` lines (`8251` bytes)
+**Size**: `216` lines (`8500` bytes)
 
 **Classes:**
 - `class CharacterBody` - *An axis-aligned character body with velocity and ground state.*
@@ -332,7 +332,7 @@
 ### [`keystone/culling.py`](keystone/culling.py)
 > *Deterministic CPU view-frustum culling for the core forward renderer.*
 
-**Size**: `146` lines (`5605` bytes)
+**Size**: `146` lines (`5629` bytes)
 
 **Functions:**
 - `def culling_enabled(scene)` - *Return whether frustum culling is requested for this scene.*
@@ -348,7 +348,7 @@
 ### [`keystone/geometry.py`](keystone/geometry.py)
 > *Indexed triangle mesh data and surface material, independent of any GPU API.*
 
-**Size**: `175` lines (`8538` bytes)
+**Size**: `180` lines (`8928` bytes)
 
 **Classes:**
 - `class Material` - *Blinn-Phong surface parameters with PBR extensions used by the renderer.*
@@ -416,7 +416,7 @@
 ### [`keystone/gltf/meshes.py`](keystone/gltf/meshes.py)
 > *glTF mesh and primitive decoding.*
 
-**Size**: `225` lines (`10610` bytes)
+**Size**: `225` lines (`10796` bytes)
 
 **Functions:**
 - `def _as_vec3(value)`
@@ -431,7 +431,7 @@
 ### [`keystone/gltf/scene.py`](keystone/gltf/scene.py)
 > *glTF node, transform and scene construction.*
 
-**Size**: `192` lines (`7484` bytes)
+**Size**: `204` lines (`8089` bytes)
 
 **Functions:**
 - `def _matrix_to_transform(matrix)`
@@ -445,7 +445,7 @@
 ### [`keystone/gltf/skins.py`](keystone/gltf/skins.py)
 > *glTF skin parsing: joint nodes and inverse bind matrices.*
 
-**Size**: `65` lines (`2859` bytes)
+**Size**: `69` lines (`3142` bytes)
 
 **Functions:**
 - `def load_skins(document, buffers, buffer_views, node_count)` - *Parse the glTF skins array into joint indices and inverse bind matrices.*
@@ -572,7 +572,7 @@
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
 > *Blinn-Phong forward renderer with fog, shadows and screenshot readback.*
 
-**Size**: `1154` lines (`46070` bytes)
+**Size**: `1166` lines (`46554` bytes)
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
@@ -661,7 +661,7 @@
 ### [`keystone/gpu/skinned_buffer.py`](keystone/gpu/skinned_buffer.py)
 > *GPU upload for skinned meshes: base stream plus joints and weights.*
 
-**Size**: `72` lines (`2934` bytes)
+**Size**: `74` lines (`3012` bytes)
 
 **Classes:**
 - `class SkinnedGpuMesh` - *VAO/VBO/EBO triple owning one immutable skinned mesh upload.*
@@ -700,7 +700,7 @@
 ### [`keystone/gpu/ui_renderer.py`](keystone/gpu/ui_renderer.py)
 > *Screen-space OpenGL renderer for the human UI canvas.*
 
-**Size**: `94` lines (`3055` bytes)
+**Size**: `99` lines (`3160` bytes)
 
 **Classes:**
 - `class UiRenderer` - *Uploads one canvas per frame and draws it over the 3D scene.*
@@ -779,7 +779,7 @@
 ### [`keystone/material_graph.py`](keystone/material_graph.py)
 > *Declarative, deterministic material graphs that evaluate to a Material.*
 
-**Size**: `367` lines (`15538` bytes)
+**Size**: `374` lines (`15883` bytes)
 
 **Classes:**
 - `class MaterialGraphNode` - *One node in a material graph: a kind, parameters and input node ids.*
@@ -804,7 +804,7 @@
 ### [`keystone/math3d.py`](keystone/math3d.py)
 > *Column-major 3D math primitives shared by the scene, camera and GPU layers.*
 
-**Size**: `375` lines (`13166` bytes)
+**Size**: `377` lines (`13326` bytes)
 
 **Classes:**
 - `class Vec3` - *Immutable 3-component vector with the usual right-handed operations.*
@@ -889,7 +889,7 @@
 ### [`keystone/particles.py`](keystone/particles.py)
 > *Deterministic, game-agnostic CPU particles: emitters, systems and reports.*
 
-**Size**: `444` lines (`18343` bytes)
+**Size**: `477` lines (`19806` bytes)
 
 **Classes:**
 - `class Particle` - *One live particle: position, velocity, age, lifetime and size.*
@@ -914,6 +914,7 @@
 **Functions:**
 - `def _finite(value, label)`
 - `def _vec3_value(value, label)`
+- `def _depenetrate_static(px, py, pz, flat)` - *Eject a stationary point from the nearest box face deterministically.*
 - `def _move_point_flat(px, py, pz, axis, amount, flat)` - *Float-only swept point move; axis is 0/1/2 for x/y/z.*
 - `def particles_report(system)`
 
@@ -922,7 +923,7 @@
 ### [`keystone/physics.py`](keystone/physics.py)
 > *Generic collision primitives and ray queries for the engine core.*
 
-**Size**: `184` lines (`7183` bytes)
+**Size**: `184` lines (`7182` bytes)
 
 **Classes:**
 - `class Ray`
@@ -1035,7 +1036,7 @@
 ### [`keystone/replay.py`](keystone/replay.py)
 > *Deterministic action logs and stable state hashes.*
 
-**Size**: `131` lines (`4795` bytes)
+**Size**: `146` lines (`5234` bytes)
 
 **Classes:**
 - `class CommandLog`
@@ -1048,6 +1049,7 @@
   - Method `.replay_actions()`
 
 **Functions:**
+- `def _canonical_hash_value(value)`
 - `def stable_hash(payload)` - *Hash a JSON-safe payload deterministically; reject process-local values.*
 - `def run_log(factory, log, trace)` - *Replay a command log on a fresh game without a window or GL context.*
 - `def verify_log(factory, log)` - *Run one log twice from a factory and compare final hashes.*
@@ -1170,7 +1172,7 @@
 ### [`keystone/skin.py`](keystone/skin.py)
 > *Deterministic linear-blend skinning: bone palettes and CPU reference math.*
 
-**Size**: `113` lines (`4391` bytes)
+**Size**: `122` lines (`4823` bytes)
 
 **Functions:**
 - `def bone_matrices(scene, mesh)` - *Return world-space bone palettes (joint world matrix times inverse bind).*
@@ -1195,7 +1197,7 @@
 ### [`keystone/texture.py`](keystone/texture.py)
 > *Immutable RGBA texture data and dependency-free texture sources.*
 
-**Size**: `87` lines (`3362` bytes)
+**Size**: `89` lines (`3475` bytes)
 
 **Classes:**
 - `class TextureData` - *Top-down RGBA8 pixels with a stable name for reports and debugging.*
@@ -1280,7 +1282,7 @@
 ### [`keystone/ui/overlay.py`](keystone/ui/overlay.py)
 > *Game-agnostic human overlay: HUD, controls help and pause menu.*
 
-**Size**: `162` lines (`7004` bytes)
+**Size**: `172` lines (`7337` bytes)
 
 **Classes:**
 - `class HudState` - *Presentation-only snapshot the overlay needs for one frame.*
@@ -1441,7 +1443,7 @@
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
-**Size**: `310` lines (`13105` bytes)
+**Size**: `313` lines (`13244` bytes)
 
 **Classes:**
 - `class Health`
@@ -1464,6 +1466,7 @@
   - Method `.test_rejects_bad_pixel_count()`
   - Method `.test_grid_luma_uses_per_cell_counts()`
   - Method `.test_compare_detects_world_and_triangle_changes()`
+  - Method `.test_report_schema_does_not_advertise_missing_diagnostics()`
   - Method `.test_falsy_settings_report_disabled()`
   - Method `.test_pixel_diff_detects_alpha_only_changes()`
 
@@ -1472,7 +1475,7 @@
 ### [`tests/test_animation.py`](tests/test_animation.py)
 > *Tests for deterministic animation clips, controllers and pose application.*
 
-**Size**: `265` lines (`11205` bytes)
+**Size**: `284` lines (`12010` bytes)
 
 **Classes:**
 - `class TrackTest`
@@ -1500,6 +1503,8 @@
 - `class AnimationValidationTest`
   - Method `.test_exact_loop_wrap_fires_end_event()`
   - Method `.test_channel_value_type_must_match_channel()`
+  - Method `.test_track_rejects_non_finite_values_and_zero_quaternion()`
+  - Method `.test_clip_round_trip_is_object_equal_with_unsorted_tracks()`
   - Method `.test_blank_or_non_string_node_ids_are_rejected()`
   - Method `.test_non_finite_time_and_dt_are_rejected()`
   - Method `.test_malformed_track_vectors_raise_value_error()`
@@ -1512,13 +1517,14 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `505` lines (`20509` bytes)
+**Size**: `512` lines (`20794` bytes)
 
 **Classes:**
 - `class HudCube`
   - Method `.draw_ui(canvas, _state)`
 - `class EngineTest`
   - Method `.test_headless_engine_runs_fixed_steps_and_saves_a_png()`
+  - Method `.test_ui_capture_alpha_is_opaque()`
   - Method `.test_ui_overlay_changes_the_captured_frame()`
   - Method `.test_pause_stops_updates_but_keeps_rendering()`
   - Method `.test_ui_actions_are_drivable_without_real_input()`
@@ -1612,7 +1618,7 @@
 ### [`tests/test_audio.py`](tests/test_audio.py)
 > *Tests for the game-agnostic audio core.*
 
-**Size**: `166` lines (`6735` bytes)
+**Size**: `177` lines (`7172` bytes)
 
 **Classes:**
 - `class AudioTest`
@@ -1629,6 +1635,8 @@
   - Method `.test_play_rejects_unknown_bus()`
   - Method `.test_non_finite_audio_values_are_rejected()`
   - Method `.test_audio_clip_normalizes_samples_and_rate()`
+  - Method `.test_removed_bus_mutes_instead_of_full_gain()`
+  - Method `.test_mix_clips_rejects_runaway_pitch()`
   - Method `.test_mix_clips_rejects_none()`
   - Method `.test_read_wav_rejects_truncated_payload()`
 
@@ -1694,7 +1702,7 @@
 ### [`tests/test_broadphase.py`](tests/test_broadphase.py)
 > *Tests for the deterministic spatial-grid broadphase.*
 
-**Size**: `77` lines (`3269` bytes)
+**Size**: `78` lines (`3362` bytes)
 
 **Classes:**
 - `class SpatialGridTest`
@@ -1711,7 +1719,7 @@
 ### [`tests/test_character.py`](tests/test_character.py)
 > *Tests for the AABB character controller.*
 
-**Size**: `165` lines (`7872` bytes)
+**Size**: `177` lines (`8541` bytes)
 
 **Classes:**
 - `class CharacterControllerTest`
@@ -1723,6 +1731,8 @@
   - Method `.test_character_steps_onto_a_low_step()`
   - Method `.test_character_stops_at_a_tall_step()`
   - Method `.test_platform_carry_pushes_out_of_a_wall()`
+  - Method `.test_platform_carry_does_not_move_an_airborne_body()`
+  - Method `.test_zero_gravity_body_is_not_grounded_without_a_floor()`
   - Method `.test_platform_carry_off_a_ledge_then_falls()`
   - Method `.test_wall_slide_does_not_double_step_or_report_blocked_velocity()`
   - Method `.test_step_up_preserves_the_full_horizontal_delta_once()`
@@ -1750,7 +1760,7 @@
 ### [`tests/test_culling.py`](tests/test_culling.py)
 > *Tests for deterministic CPU view-frustum culling (color pass only).*
 
-**Size**: `221` lines (`8752` bytes)
+**Size**: `223` lines (`8851` bytes)
 
 **Classes:**
 - `class CullingMathTest`
@@ -1762,7 +1772,7 @@
 - `class CullingSceneTest`
   - Method `.test_front_visible_behind_and_offside_culled()`
   - Method `.test_cull_scene_keeps_front_only()`
-  - Method `.test_disabled_culling_returns_everything()`
+  - Method `.test_disabled_culling_returns_everything_visible()`
   - Method `.test_default_enabled()`
   - Method `.test_cull_scene_rejects_bad_size()`
 - `class CullingGroupingAgreementTest`
@@ -1786,7 +1796,7 @@
 ### [`tests/test_geometry.py`](tests/test_geometry.py)
 > *Unit tests for indexed meshes, built-in primitives and the OBJ loader.*
 
-**Size**: `276` lines (`10301` bytes)
+**Size**: `288` lines (`10779` bytes)
 
 **Classes:**
 - `class MeshDataTest`
@@ -1827,13 +1837,15 @@
   - Method `.test_defaults_are_valid()`
   - Method `.test_rejects_negative_specular()`
   - Method `.test_rejects_negative_checker_scale()`
+  - Method `.test_mesh_rejects_bool_coordinates()`
+  - Method `.test_material_rejects_non_vec3_color()`
 
 ---
 
 ### [`tests/test_gltf.py`](tests/test_gltf.py)
 > *Unit tests for dependency-free glTF 2.0 import.*
 
-**Size**: `264` lines (`11803` bytes)
+**Size**: `289` lines (`12878` bytes)
 
 **Classes:**
 - `class GltfImportTest`
@@ -1857,6 +1869,8 @@
   - Method `.test_rejects_unknown_material_texture_indices()`
   - Method `.test_rejects_negative_accessor_offsets()`
   - Method `.test_rejects_accessor_reads_outside_the_buffer_view()`
+  - Method `.test_reflected_matrix_preserves_the_reflection()`
+  - Method `.test_singular_and_non_affine_matrices_are_rejected()`
   - Method `.test_uv_origin_is_converted_from_gltf_top_left()`
 
 **Functions:**
@@ -1959,7 +1973,7 @@
 ### [`tests/test_material_graph.py`](tests/test_material_graph.py)
 > *Unit tests for declarative material graphs.*
 
-**Size**: `180` lines (`6766` bytes)
+**Size**: `185` lines (`6980` bytes)
 
 **Classes:**
 - `class MaterialGraphCoreTest`
@@ -1975,6 +1989,7 @@
   - Method `.test_texture_node_resolves_by_name()`
   - Method `.test_material_texture_name_must_resolve()`
   - Method `.test_duplicate_parameter_names_are_rejected()`
+  - Method `.test_non_finite_parameters_are_rejected_on_serialization()`
   - Method `.test_validate_rejects_cycles()`
 
 **Functions:**
@@ -1985,7 +2000,7 @@
 ### [`tests/test_math3d.py`](tests/test_math3d.py)
 > *Unit tests for the Keystone 3D math core.*
 
-**Size**: `138` lines (`5396` bytes)
+**Size**: `147` lines (`5842` bytes)
 
 **Classes:**
 - `class Vec3Test`
@@ -2012,6 +2027,7 @@
   - Method `.test_quaternion_matrix_matches_matrix_rotation()`
   - Method `.test_multiplication_composes_in_order()`
   - Method `.test_slerp_endpoints()`
+  - Method `.test_perspective_rejects_non_finite_framing()`
 
 ---
 
@@ -2049,7 +2065,7 @@
 ### [`tests/test_particles.py`](tests/test_particles.py)
 > *Tests for the deterministic particle core.*
 
-**Size**: `453` lines (`18130` bytes)
+**Size**: `472` lines (`19071` bytes)
 
 **Classes:**
 - `class EmitterTest`
@@ -2082,6 +2098,8 @@
   - Method `.test_response_is_deterministic()`
   - Method `.test_cube_demo_fountain_bounces_deterministically()`
   - Method `.test_deep_interior_spawn_ejects_through_near_face()`
+  - Method `.test_stationary_deep_particle_depenetrates_on_step()`
+  - Method `.test_speed_is_velocity_magnitude()`
   - Method `.test_deep_interior_motion_ejects_through_nearest_face()`
   - Method `.test_particle_fields_reject_non_finite_values()`
   - Method `.test_emitter_from_dict_rejects_malformed_payloads()`
@@ -2111,7 +2129,7 @@
 ### [`tests/test_physics.py`](tests/test_physics.py)
 > *Tests for generic ray and collision primitives.*
 
-**Size**: `100` lines (`4116` bytes)
+**Size**: `102` lines (`4260` bytes)
 
 **Classes:**
 - `class PhysicsTest`
@@ -2279,11 +2297,12 @@
 ### [`tests/test_replay.py`](tests/test_replay.py)
 > *Tests for deterministic action logs and stable hashes.*
 
-**Size**: `85` lines (`3344` bytes)
+**Size**: `89` lines (`3579` bytes)
 
 **Classes:**
 - `class ReplayTest`
   - Method `.test_hash_ignores_mapping_order()`
+  - Method `.test_hash_canonicalizes_negative_zero()`
   - Method `.test_hash_rejects_non_json_and_non_finite_values()`
   - Method `.test_command_log_constructor_validates_fields()`
   - Method `.test_command_log_round_trip()`
@@ -2431,10 +2450,11 @@
 ### [`tests/test_skinning.py`](tests/test_skinning.py)
 > *Tests for deterministic linear-blend skinning (max 4 influences).*
 
-**Size**: `306` lines (`12526` bytes)
+**Size**: `365` lines (`15042` bytes)
 
 **Classes:**
 - `class SkinValidationTest`
+  - Method `.test_weights_must_be_finite_non_negative_and_are_normalized()`
   - Method `.test_skinned_normals_use_inverse_transpose()`
   - Method `.test_unskinned_meshes_stay_legacy()`
   - Method `.test_skinned_stream_packs_padded_joints_and_weights()`
@@ -2450,13 +2470,17 @@
 - `class SkinBatchTest`
   - Method `.test_merge_keeps_skinned_meshes_in_rig_groups()`
 - `class SkinGltfTest`
-  - Method `._skinned_document(bad_joint, normalized_joints)`
+  - Method `._skinned_document(bad_joint, normalized_joints, bad_weights)`
   - Method `.test_loads_a_skin()`
   - Method `.test_rejects_bad_joint_index()`
   - Method `.test_rejects_normalized_joints()`
+  - Method `.test_rejects_negative_weights()`
+  - Method `.test_rejects_fractional_and_duplicate_joint_indices()`
 - `class SkinRenderTest`
   - Method `._skinned_scene()`
   - Method `.test_posed_render_differs_from_bind()`
+  - Method `.test_holder_transform_does_not_move_skinned_deformation()`
+  - Method `.test_release_after_context_close_is_a_noop()`
 
 **Functions:**
 - `def _quad_mesh(**overrides)`
@@ -2542,7 +2566,7 @@
 ### [`tests/test_texture.py`](tests/test_texture.py)
 > *Tests for immutable texture data and texture sources.*
 
-**Size**: `62` lines (`2250` bytes)
+**Size**: `66` lines (`2420` bytes)
 
 **Classes:**
 - `class TextureDataTest`
@@ -2551,6 +2575,7 @@
   - Method `.test_bad_texture_data_is_rejected()`
   - Method `.test_sha256_distinguishes_shapes()`
   - Method `.test_checker_rejects_bad_channel_counts()`
+  - Method `.test_texture_rejects_non_bytes_payload()`
 
 ---
 
@@ -2570,7 +2595,7 @@
 ### [`tests/test_ui.py`](tests/test_ui.py)
 > *Tests for the dependency-free human UI primitives and overlay.*
 
-**Size**: `180` lines (`7310` bytes)
+**Size**: `182` lines (`7379` bytes)
 
 **Classes:**
 - `class FontTest`
@@ -2604,7 +2629,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `276` lines (`11744` bytes)
+**Size**: `281` lines (`11952` bytes)
 
 **Classes:**
 - `class Health`
@@ -2627,6 +2652,7 @@
   - Method `.test_describe_includes_the_web_capability()`
   - Method `.test_scene_endpoint_returns_the_scene_document()`
   - Method `.test_simulate_endpoint_returns_a_deterministic_result()`
+  - Method `.test_step_button_documents_its_reset_semantics()`
   - Method `.test_options_preflight_and_static_assets()`
   - Method `.test_api_index_and_errors_are_json()`
   - Method `.test_simulate_rejects_non_finite_step()`

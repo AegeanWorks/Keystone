@@ -14,10 +14,25 @@ from keystone.serialization import read_json, write_json_atomic
 FIXED_STEP = 1.0 / 60.0
 
 
+def _canonical_hash_value(value: object) -> object:
+    if isinstance(value, float) and value == 0.0:
+        return 0.0
+    if isinstance(value, dict):
+        return {key: _canonical_hash_value(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_canonical_hash_value(item) for item in value]
+    return value
+
+
 def stable_hash(payload: object) -> str:
     """Hash a JSON-safe payload deterministically; reject process-local values."""
     try:
-        text = json.dumps(payload, sort_keys=True, separators=(",", ":"), allow_nan=False)
+        text = json.dumps(
+            _canonical_hash_value(payload),
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        )
     except (TypeError, ValueError) as exc:
         raise type(exc)(f"stable_hash requires JSON-safe finite values: {exc}") from exc
     return hashlib.blake2b(text.encode("utf-8"), digest_size=16).hexdigest()

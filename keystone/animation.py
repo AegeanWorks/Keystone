@@ -45,6 +45,15 @@ class Track:
         kinds = {type(value) for value in self.values}
         if len(kinds) != 1 or not kinds.pop() in (Vec3, Quat):
             raise TypeError("track values must be all Vec3 or all Quat")
+        for value in self.values:
+            if isinstance(value, Vec3):
+                if not all(math.isfinite(component) for component in (value.x, value.y, value.z)):
+                    raise ValueError("track Vec3 values must be finite")
+            elif isinstance(value, Quat):
+                if not all(math.isfinite(component) for component in (value.w, value.x, value.y, value.z)):
+                    raise ValueError("track Quat values must be finite")
+                if value.w ** 2 + value.x ** 2 + value.y ** 2 + value.z ** 2 < 1e-12:
+                    raise ValueError("track Quat values must be non-zero")
 
     def duration(self) -> float:
         return self.times[-1] if self.times else 0.0
@@ -167,6 +176,7 @@ class AnimationClip:
                     raise TypeError("clip tracks must be Track instances")
                 if not all(isinstance(value, expected) for value in track.values):
                     raise TypeError(f"{label} tracks must hold {expected.__name__} values")
+            object.__setattr__(self, f"{label}_tracks", tuple(sorted(tracks, key=lambda item: item[0])))
 
     def duration(self) -> float:
         has_tracks = bool(self.position_tracks or self.rotation_tracks or self.scale_tracks)

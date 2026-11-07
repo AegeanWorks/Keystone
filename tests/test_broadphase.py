@@ -53,8 +53,9 @@ class SpatialGridTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             grid.insert("huge", huge)
         self.assertNotIn("huge", grid)
-        with self.assertRaises(ValueError):
-            grid.query(huge)
+        self.assertEqual(grid.query(huge), [])
+        grid.insert("small", AABB(Vec3(0, 0, 0), Vec3(1, 1, 1)))
+        self.assertEqual(grid.query(huge), ["small"])
 
     def test_pairs_are_unique_and_ordered_by_insertion(self):
         grid = SpatialGrid(cell_size=2.0)

@@ -237,15 +237,20 @@ out vec3 v_color;
 void main() {
     vec4 skinned = vec4(0.0);
     vec3 skinned_normal = vec3(0.0);
+    float total_weight = 0.0;
     for (int i = 0; i < 4; ++i) {
         int joint = int(a_joints[i] + 0.5);
         float weight = a_weights[i];
         if (weight > 0.0) {
             skinned += weight * (u_bones[joint] * vec4(a_position, 1.0));
             skinned_normal += weight * (transpose(inverse(mat3(u_bones[joint]))) * a_normal);
+            total_weight += weight;
         }
     }
-    if (skinned.w < 0.5) {
+    if (total_weight > 0.001) {
+        skinned /= total_weight;
+        skinned_normal /= total_weight;
+    } else {
         skinned = vec4(a_position, 1.0);
         skinned_normal = a_normal;
     }
@@ -267,14 +272,18 @@ uniform mat4 u_light_vp;
 uniform mat4 u_bones[64];
 void main() {
     vec4 skinned = vec4(0.0);
+    float total_weight = 0.0;
     for (int i = 0; i < 4; ++i) {
         int joint = int(a_joints[i] + 0.5);
         float weight = a_weights[i];
         if (weight > 0.0) {
             skinned += weight * (u_bones[joint] * vec4(a_position, 1.0));
+            total_weight += weight;
         }
     }
-    if (skinned.w < 0.5) {
+    if (total_weight > 0.001) {
+        skinned /= total_weight;
+    } else {
         skinned = vec4(a_position, 1.0);
     }
     gl_Position = u_light_vp * u_model * skinned;
@@ -887,7 +896,7 @@ class Renderer:
                     if skinned:
                         self._skin_depth_program.use()
                         self._skin_depth_program.set_mat4("u_light_vp", light_vp)
-                        self._skin_depth_program.set_mat4("u_model", model)
+                        self._skin_depth_program.set_mat4("u_model", Mat4.identity())
                         self._upload_bones(self._skin_depth_program, scene, mesh)
                         self._gpu_skinned_mesh(mesh).draw()
                     else:
@@ -940,10 +949,13 @@ class Renderer:
             kept_nodes += len(nodes)
             skinned = bool(getattr(mesh, "skinned", False))
             if skinned:
-                for model in models:
+                # glTF skinned meshes are already in world space through the
+                # bone palette; the mesh node transform must be ignored.
+                identity = Mat4.identity()
+                for _model in models:
                     self._skin_program.use()
-                    self._skin_program.set_mat4("u_model", model)
-                    self._skin_program.set_mat3("u_normal_matrix", normal_matrix(model))
+                    self._skin_program.set_mat4("u_model", identity)
+                    self._skin_program.set_mat3("u_normal_matrix", normal_matrix(identity))
                     self._upload_bones(self._skin_program, scene, mesh)
                     self._apply_material(self._skin_program, material)
                     self._gpu_skinned_mesh(mesh).draw()

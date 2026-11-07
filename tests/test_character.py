@@ -91,6 +91,18 @@ class CharacterControllerTest(unittest.TestCase):
         carried = controller.step(body, Vec3(), 1.0, [wall], platform_velocity=Vec3(5, 0, 0))
         self.assertLessEqual(carried.position.x, -0.2 - 0.4 - controller.skin + 1e-9)
 
+    def test_platform_carry_does_not_move_an_airborne_body(self):
+        controller = CharacterController(gravity=0.0)
+        body = CharacterBody(Vec3(0.0, 10.0, 0.0), Vec3(0.35, 0.9, 0.35), Vec3(), False)
+        moved = controller.step(body, Vec3(), 1 / 60, [], platform_velocity=Vec3(5.0, 0.0, 0.0))
+        self.assertEqual(moved.position.x, 0.0)
+
+    def test_zero_gravity_body_is_not_grounded_without_a_floor(self):
+        controller = CharacterController(gravity=0.0)
+        body = CharacterBody(Vec3(0.0, 100.0, 0.0), Vec3(0.35, 0.9, 0.35), Vec3(), True)
+        moved = controller.step(body, Vec3(), 1 / 60, [])
+        self.assertFalse(moved.on_ground)
+
     def test_platform_carry_off_a_ledge_then_falls(self):
         controller = CharacterController(gravity=24.0)
         floor = AABB(Vec3(0, 0, 0), Vec3(1.0, 0.5, 1.0))

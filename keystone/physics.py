@@ -162,7 +162,7 @@ def sphere_aabb_overlap(sphere: Sphere, box: AABB) -> bool:
         max(box.center.y - box.half_extents.y, min(sphere.center.y, box.center.y + box.half_extents.y)),
         max(box.center.z - box.half_extents.z, min(sphere.center.z, box.center.z + box.half_extents.z)),
     )
-    return (closest - sphere.center).length_squared() <= sphere.radius * sphere.radius
+    return (closest - sphere.center).length_squared() < sphere.radius * sphere.radius
 
 
 def resolve_sphere_aabb(sphere: Sphere, box: AABB) -> Vec3:
