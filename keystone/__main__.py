@@ -59,6 +59,10 @@ def main(argv: list[str] | None = None) -> int:
         description="Run a Keystone game module from 'package.module:Factory'.",
     )
     parser.add_argument("--game", default="keystone.samples:CubeDemo", help="game factory spec")
+    parser.add_argument("--new", type=Path, default=None, metavar="DIR", help="scaffold a new Keystone game project")
+    parser.add_argument("--project", type=Path, default=None, metavar="PATH", help="open a keystone.json project directory or file")
+    parser.add_argument("--name", default=None, help="project name for --new (default: directory name)")
+    parser.add_argument("--force", action="store_true", help="allow --new to write into a non-empty directory")
     parser.add_argument("--describe", action="store_true", help="print the game capability/action/snapshot schema")
     parser.add_argument("--headless", action="store_true", help="render without opening a window")
     parser.add_argument("--simulate", action="store_true", help="advance the game without OpenGL")
@@ -103,6 +107,42 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=None, help="PNG for rendering; JSON report for --simulate")
     parser.add_argument("--report", type=Path, default=None, help="machine-readable frame report (requires --headless)")
     args = parser.parse_args(argv)
+    if args.new is not None:
+        incompatible = (
+            args.project is not None or args.describe or args.headless or args.simulate
+            or args.verify_determinism or args.expect_hash is not None or args.compare_baseline is not None
+            or args.diff_out is not None or args.actions is not None or args.replay is not None
+            or args.playtest or args.policy != "random" or args.seed != 0 or args.script is not None
+            or args.transcript_out is not None or args.trace or args.frames or args.size != (960, 540)
+            or args.ui or args.no_ui or args.shadows or args.no_shadows or args.srgb or args.no_srgb
+            or args.post or args.no_post or args.bloom or args.no_bloom or args.sprites or args.no_sprites
+            or args.culling or args.no_culling or args.start_paused or args.serve
+            or args.host is not None or args.port is not None or args.out is not None
+            or args.report is not None or args.game != "keystone.samples:CubeDemo"
+        )
+        if incompatible:
+            parser.error("--new is a standalone project-scaffolding command")
+        from keystone.project import create_project
+
+        try:
+            context = create_project(args.new, name=args.name, force=args.force)
+        except Exception as exc:  # noqa: BLE001 - CLI reports Why/Fix, never a traceback
+            print("Keystone could not create the project.", file=sys.stderr)
+            message = str(exc)
+            if "Why:" in message and "Fix:" in message:
+                print(message, file=sys.stderr)
+            else:
+                print(f"Why: {message}", file=sys.stderr)
+                print("Fix: choose an empty directory or pass --force.", file=sys.stderr)
+            return 1
+        print(f"Created Keystone project {context.manifest.name!r} at {context.directory}")
+        print(f"Manifest: {context.directory / 'keystone.json'}")
+        print("Next: python -m keystone --project . --describe")
+        return 0
+    if args.name is not None:
+        parser.error("--name requires --new")
+    if args.force:
+        parser.error("--force requires --new")
     if args.serve and (
         args.describe or args.headless or args.simulate or args.verify_determinism or args.expect_hash
         or args.compare_baseline or args.diff_out or args.actions or args.trace or args.ui or args.no_ui
@@ -201,6 +241,26 @@ def main(argv: list[str] | None = None) -> int:
     if args.policy == "scripted" and args.script is None:
         parser.error("--policy scripted requires --script")
 
+    project_context = None
+    if args.project is not None:
+        from keystone.project import load_project
+
+        try:
+            project_context = load_project(args.project)
+        except (OSError, ValueError, TypeError) as exc:
+            print("Keystone could not open the project.", file=sys.stderr)
+            print(f"Why: {exc}", file=sys.stderr)
+            print(
+                "Fix: run python -m keystone --new <directory>, or pass a valid keystone.json.",
+                file=sys.stderr,
+            )
+            return 1
+        if args.game == "keystone.samples:CubeDemo":
+            args.game = project_context.manifest.game
+        directory = str(project_context.directory)
+        if directory not in sys.path:
+            sys.path.insert(0, directory)
+
     from keystone.plugin import describe_game, load_game
 
     engine = None
@@ -211,7 +271,10 @@ def main(argv: list[str] | None = None) -> int:
 
             return serve(game, args.host or "127.0.0.1", args.port if args.port is not None else 8000)
         if args.describe:
-            print(json.dumps(describe_game(game), indent=2, sort_keys=True))
+            payload = describe_game(game)
+            if project_context is not None:
+                payload["project"] = project_context.describe()
+            print(json.dumps(payload, indent=2, sort_keys=True))
             return 0
         if args.verify_determinism:
             from keystone.headless import load_actions

@@ -15,6 +15,16 @@ The JSON response contains:
 - `snapshot`: the current state shape;
 - `capabilities`: `simulate`, `render`, `human_ui`, `game_ui`, `web` and the versioned `report_schema`/`scene_schema`.
 
+## 1b. Create or open a project
+
+```bash
+python -m keystone --new my-game
+python -m keystone --project my-game --describe
+python -m keystone --project my-game --simulate --frames 120
+```
+
+`--new` creates `keystone.json`, a five-operation game module, a README and a `.gitignore`. `--project` accepts the project directory or the manifest file, adds the project directory to the import path, validates the game contract and uses the manifest's `game` spec unless `--game` overrides it. `--describe` includes a `project` object with the resolved directory and manifest when `--project` is used.
+
 ## 2. Simulate without OpenGL
 
 ```bash

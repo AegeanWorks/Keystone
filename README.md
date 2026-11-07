@@ -20,9 +20,10 @@ Games plug in through one five-operation contract. Keystone ships a **cube demo*
   ```bash
   python -m pytest -q
   ```
-- **Run the engine sample**:
+- **Create and open a project**:
   ```bash
-  python -m keystone
+  python -m keystone --new my-game
+  python -m keystone --project my-game
   ```
 - **Open the local web console and WebGL viewer**:
   ```bash
@@ -56,11 +57,6 @@ Games plug in through one five-operation contract. Keystone ships a **cube demo*
   ```bash
   python -m keystone --headless --frames 1 --size 1280x720 --out frame.png --report frame.json
   ```
-- **Run an external game module**:
-  ```bash
-  python -m keystone --game my_game:MyGame
-  ```
-
 ### 🛠️ AIKit Commands (run from the AIKit folder)
 
 | Role | Command |
@@ -389,6 +385,7 @@ keystone/
 │   ├── schema.py             <- versioned core schema constants
 │   ├── math3d.py             <- Vec3, Mat4, Quat (column-major, OpenGL-ready)
 │   ├── camera.py             <- perspective camera
+│   ├── prefab.py            <- deterministic subtree templates
 │   ├── scene.py              <- hierarchy, identity, components, transforms and lights
 │   ├── geometry.py           <- MeshData, Material
 │   ├── skin.py               <- bone palettes, CPU skinning
@@ -463,6 +460,7 @@ keystone/
 │   ├── test_clock.py         <- fixed-step clock
 │   ├── test_physics.py       <- rays, AABB, sphere queries and raycasts
 │   ├── test_broadphase.py    <- spatial-grid queries, updates and pairs
+│   ├── test_prefab.py       <- prefab capture, IDs and isolation
 │   ├── test_particles.py     <- seeded emitters, forces and reports
 │   ├── test_pbr.py           <- metallic/roughness/emissive shading
 │   ├── test_character.py     <- floor, wall, jump and validation behavior

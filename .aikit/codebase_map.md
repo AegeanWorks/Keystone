@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `120`
-- **Total Classes**: `185`
-- **Total Top-Level Functions**: `239`
-- **Total Class Methods**: `1127`
-- **Total Source Lines**: `21617`
+- **Total Python Modules**: `122`
+- **Total Classes**: `189`
+- **Total Top-Level Functions**: `247`
+- **Total Class Methods**: `1139`
+- **Total Source Lines**: `22058`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `419` lines (`23317` bytes)
+**Size**: `482` lines (`26848` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -1050,6 +1050,31 @@
 - `def cone(radius, height, segments)`
 - `def cylinder(radius, height, segments)`
 - `def sphere(radius, segments, rings)`
+
+---
+
+### [`keystone/project.py`](keystone/project.py)
+> *Project manifests and one-command scaffolding for external Keystone games.*
+
+**Size**: `248` lines (`8851` bytes)
+
+**Classes:**
+- `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
+  - Method `.__post_init__()`
+  - Method `.to_dict()`
+  - Method `.from_dict(data)`
+- `class ProjectContext` - *A loaded manifest plus its project directory.*
+  - Method `.describe()`
+
+**Functions:**
+- `def _module_name(name)`
+- `def _manifest_path(path)`
+- `def load_project(path)` - *Load ``keystone.json`` from a project directory or manifest file.*
+- `def save_project(path, manifest)` - *Write a manifest atomically; accepts a directory or a JSON path.*
+- `def load_project_game(context)` - *Import and validate a project's game after adding its directory to sys.path.*
+- `def _game_source(manifest)`
+- `def _project_readme(manifest)`
+- `def create_project(directory, *, name, game, force)` - *Scaffold a runnable project directory and return its context.*
 
 ---
 
@@ -2304,6 +2329,25 @@
   - Method `.test_auto_ids()`
   - Method `.test_describe_is_json_safe()`
   - Method `.test_validation()`
+
+---
+
+### [`tests/test_project.py`](tests/test_project.py)
+> *Tests for project manifests, scaffolding and the --project CLI path.*
+
+**Size**: `130` lines (`5333` bytes)
+
+**Classes:**
+- `class ProjectManifestTest`
+  - Method `.test_round_trip_and_file_paths()`
+  - Method `.test_validation_rejects_bad_shapes()`
+  - Method `.test_missing_manifest_is_actionable()`
+- `class ProjectScaffoldTest`
+  - Method `._name()`
+  - Method `.test_create_project_loads_and_simulates()`
+  - Method `.test_non_empty_directory_requires_force()`
+  - Method `.test_cli_new_and_project()`
+  - Method `.test_cli_new_is_standalone_and_missing_project_has_why_fix()`
 
 ---
 
