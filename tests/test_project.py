@@ -11,6 +11,7 @@ from pathlib import Path
 from keystone.__main__ import main
 from keystone.assets import AssetRegistry
 from keystone.headless import run_simulation
+from keystone.input import ActionState
 from keystone.png import write_png
 from keystone.prefab import Prefab
 from keystone.project import (
@@ -23,6 +24,7 @@ from keystone.project import (
     project_asset_id,
     save_project,
 )
+from keystone.replay import CommandLog
 from keystone.scene import Node
 from keystone.scene_library import SceneLibrary
 
@@ -284,6 +286,58 @@ class ProjectScaffoldTest(unittest.TestCase):
                 )
             result = json.loads(out.getvalue())
             self.assertEqual(result["frames"], 1)
+
+    def test_cli_replay_and_playtest_use_a_saved_scene(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            context = create_project(root, name=self._name())
+            game = load_project_game(context)
+            scene = game.build_scene()
+            SceneLibrary(
+                root / "scenes",
+                registry=game.assets,
+                component_types=game.component_types,
+            ).save("level", scene)
+            log = CommandLog(seed=0)
+            log.record(ActionState(forward=1.0))
+            log.save(root / "run.json")
+
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(
+                    main(
+                        [
+                            "--project",
+                            str(root),
+                            "--replay",
+                            str(root / "run.json"),
+                            "--scene",
+                            "level",
+                        ]
+                    ),
+                    0,
+                )
+            self.assertEqual(json.loads(out.getvalue())["frames"], 1)
+
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(
+                    main(
+                        [
+                            "--project",
+                            str(root),
+                            "--playtest",
+                            "--scene",
+                            "level",
+                            "--frames",
+                            "1",
+                            "--seed",
+                            "0",
+                        ]
+                    ),
+                    0,
+                )
+            self.assertEqual(json.loads(out.getvalue())["frames"], 1)
 
     def test_cli_new_is_standalone_and_missing_project_has_why_fix(self):
         with tempfile.TemporaryDirectory() as directory:

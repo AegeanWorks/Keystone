@@ -39,6 +39,25 @@ from tests.support_maze_game import (
 
 
 class TranscriptTest(unittest.TestCase):
+    def test_run_bot_applies_a_scene_loader(self):
+        calls = []
+
+        def loader(game, scene):
+            self.assertIs(scene, game.scene)
+            calls.append(scene)
+
+        transcript = run_bot(
+            CubeDemo,
+            ScriptedPolicy([ActionState(forward=1.0)]),
+            frames=2,
+            seed=0,
+            scene_loader=loader,
+        )
+        self.assertEqual(transcript["frames"], 2)
+        self.assertEqual(len(calls), 1)
+        with self.assertRaises(TypeError):
+            run_bot(CubeDemo, RandomPolicy(), scene_loader=object())
+
     def test_run_bot_records_a_command_log_compatible_transcript(self):
         transcript = run_bot(FairMaze, ScriptedPolicy([ActionState(forward=1.0)]), frames=3, seed=0, trace=True)
         self.assertEqual(transcript["schema"], TRANSCRIPT_SCHEMA)

@@ -168,8 +168,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.scene is not None:
         if args.project is None and args.scene_dir is None:
             parser.error("--scene requires --project or --scene-dir")
-        if not (args.serve or args.simulate or args.headless):
-            parser.error("--scene requires --serve, --simulate or --headless")
+        if not (args.serve or args.simulate or args.headless or args.replay or args.playtest):
+            parser.error(
+                "--scene requires --serve, --simulate, --headless, --replay or --playtest"
+            )
     if args.describe and (
         args.headless or args.simulate or args.verify_determinism or args.expect_hash
         or args.compare_baseline or args.diff_out or args.out or args.report or args.actions or args.trace
@@ -301,19 +303,34 @@ def main(argv: list[str] | None = None) -> int:
                 prefab_dir = project_context.directory / "prefabs"
             if scene_dir is None:
                 scene_dir = project_context.directory / "scenes"
+        def make_game():
+            fresh = load_game(args.game)
+            if project_context is not None:
+                from keystone.project import attach_project_assets
+
+                attach_project_assets(fresh, project_context)
+            return fresh
+
         prepared_scene = None
+        scene_loader = None
         if args.scene is not None and not args.serve:
             from keystone.scene import Scene
             from keystone.scene_library import SceneLibrary
 
-            prepared_scene = game.build_scene()
-            if not isinstance(prepared_scene, Scene):
-                raise TypeError("GameModule.build_scene() must return a Scene")
-            SceneLibrary(
-                scene_dir,
-                registry=getattr(game, "assets", None),
-                component_types=getattr(game, "component_types", None),
-            ).load_into(args.scene, prepared_scene)
+            def load_scene(game_obj, scene_obj):
+                SceneLibrary(
+                    scene_dir,
+                    registry=getattr(game_obj, "assets", None),
+                    component_types=getattr(game_obj, "component_types", None),
+                ).load_into(args.scene, scene_obj)
+
+            if args.replay or args.playtest:
+                scene_loader = load_scene
+            else:
+                prepared_scene = game.build_scene()
+                if not isinstance(prepared_scene, Scene):
+                    raise TypeError("GameModule.build_scene() must return a Scene")
+                load_scene(game, prepared_scene)
         if args.serve:
             from keystone.web import serve
 
@@ -337,7 +354,7 @@ def main(argv: list[str] | None = None) -> int:
             from keystone.testing import verify_determinism
 
             actions = load_actions(args.actions) if args.actions else []
-            result = verify_determinism(lambda: load_game(args.game), actions, frames=args.frames or None)
+            result = verify_determinism(make_game, actions, frames=args.frames or None)
             if args.expect_hash:
                 result["expected_hash"] = args.expect_hash
                 result["ok"] = result["ok"] and result["hash"] == args.expect_hash
@@ -373,7 +390,9 @@ def main(argv: list[str] | None = None) -> int:
                     f"Why: {exc}\n"
                     "Fix: pass a valid CommandLog JSON file written by --simulate --out."
                 ) from exc
-            result = run_log(lambda: load_game(args.game), log, trace=args.trace)
+            result = run_log(
+                make_game, log, trace=args.trace, scene_loader=scene_loader
+            )
             if args.expect_hash:
                 result["expected_hash"] = args.expect_hash
                 result["ok"] = result["hash"] == args.expect_hash
@@ -405,14 +424,22 @@ def main(argv: list[str] | None = None) -> int:
                 policy = RandomPolicy()
                 reference = None
             frames = args.frames if args.frames else 120
-            transcript = run_bot(lambda: load_game(args.game), policy, frames=frames, seed=args.seed, trace=True)
+            transcript = run_bot(
+                make_game,
+                policy,
+                frames=frames,
+                seed=args.seed,
+                trace=True,
+                scene_loader=scene_loader,
+            )
             limit = transcript.get("final", {}).get("time_limit")
             fairness = validate_fairness(
-                lambda: load_game(args.game),
+                make_game,
                 reference_actions=reference,
                 frames=frames,
                 seeds=(args.seed,),
                 time_limit_frames=limit if isinstance(limit, int) else None,
+                scene_loader=scene_loader,
             )
             report = make_report(transcript, fairness)
             if args.expect_hash:

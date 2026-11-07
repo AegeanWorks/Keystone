@@ -736,3 +736,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: `.kscene` files were usable only through `--serve`; AI clients could not simulate or render an authored scene without starting the console.
 - **Decision**: Add optional `scene` parameters to `run_simulation()` and `Engine`, prepare the game scene once in the CLI, restore the named `.kscene` through `SceneLibrary`, and pass it to the chosen run. Allow `--scene` with `--serve`, `--simulate` or `--headless` when `--project`/`--scene-dir` supplies the library; reject other combinations.
 - **Consequences**: 705 tests green; saved scenes drive editor, simulation and headless rendering without rebuilding, while replay/playtest scene loading remains future work.
+
+### ADR-089: Load saved scenes for replay and playtest
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: Replay and playtest create fresh game instances, so the simulate/headless prepared-scene path could not be reused. Their factories also skipped project asset attachment.
+- **Decision**: Add optional `scene_loader(game, scene)` hooks to `run_log`, `verify_log`, `run_bot` and `validate_fairness`, called after each fresh `build_scene()`. Extend `--scene` to `--replay` and `--playtest`, build the scene loader lazily, and use a shared `make_game()` factory that reattaches project assets for every run. Fairness probes now see the same authored layout.
+- **Consequences**: 708 tests green; transcripts and fairness verdicts run against saved scenes, and project assets are available to every fresh instance. Windowed scene loading and editor visual polish remain future work.

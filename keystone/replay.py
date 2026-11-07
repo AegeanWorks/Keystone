@@ -5,10 +5,12 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from keystone.input import ActionState
+from keystone.scene import Scene
 from keystone.serialization import read_json, write_json_atomic
 
 FIXED_STEP = 1.0 / 60.0
@@ -87,16 +89,24 @@ class CommandLog:
         return [ActionState.from_dict(frame) for frame in self.frames]
 
 
-def run_log(factory: object, log: CommandLog, trace: bool = False) -> dict:
+def run_log(
+    factory: object,
+    log: CommandLog,
+    trace: bool = False,
+    scene_loader: Callable[[object, Scene], None] | None = None,
+) -> dict:
     """Replay a command log on a fresh game without a window or GL context.
 
     The global RNG is seeded from ``log.seed`` so games drawing on it replay
     deterministically; games with their own RNG should seed it from the log.
+    ``scene_loader`` can restore a saved scene into each freshly built scene.
     """
     if not callable(factory):
         raise TypeError("factory must be callable")
     if not isinstance(log, CommandLog):
         raise TypeError("log must be a CommandLog")
+    if scene_loader is not None and not callable(scene_loader):
+        raise TypeError("scene_loader must be callable or None")
     import random as _random
 
     state = _random.getstate()
@@ -106,7 +116,11 @@ def run_log(factory: object, log: CommandLog, trace: bool = False) -> dict:
         build = getattr(game, "build_scene", None)
         if not callable(build):
             raise TypeError("replayed game must expose build_scene()")
-        build()
+        built = build()
+        if not isinstance(built, Scene):
+            raise TypeError("replayed game build_scene() must return a Scene")
+        if scene_loader is not None:
+            scene_loader(game, built)
         update = getattr(game, "update", None)
         snapshot = getattr(game, "snapshot", None)
         if not callable(update) or not callable(snapshot):
@@ -134,10 +148,14 @@ def run_log(factory: object, log: CommandLog, trace: bool = False) -> dict:
     return report
 
 
-def verify_log(factory: object, log: CommandLog) -> dict:
+def verify_log(
+    factory: object,
+    log: CommandLog,
+    scene_loader: Callable[[object, Scene], None] | None = None,
+) -> dict:
     """Run one log twice from a factory and compare final hashes."""
-    first = run_log(factory, log)
-    second = run_log(factory, log)
+    first = run_log(factory, log, scene_loader=scene_loader)
+    second = run_log(factory, log, scene_loader=scene_loader)
     return {
         "ok": first["hash"] == second["hash"],
         "hash": first["hash"],

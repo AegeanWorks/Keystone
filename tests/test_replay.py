@@ -7,6 +7,7 @@ from pathlib import Path
 from keystone.input import ActionState
 from keystone.replay import CommandLog, run_log, stable_hash, verify_log
 from keystone.samples import CubeDemo
+from keystone.scene import Scene
 
 
 class ReplayTest(unittest.TestCase):
@@ -47,6 +48,26 @@ class ReplayTest(unittest.TestCase):
             loaded = CommandLog.load(path)
         self.assertEqual(loaded.to_dict(), log.to_dict())
         self.assertEqual(loaded.replay_actions()[0].forward, 1.0)
+
+    def test_scene_loader_restores_each_fresh_scene(self):
+        log = CommandLog(seed=1)
+        log.record(ActionState())
+        calls = []
+
+        def loader(game, scene):
+            self.assertIsInstance(scene, Scene)
+            self.assertIs(scene, game.scene)
+            calls.append((game, scene))
+            scene.background = [0.1, 0.2, 0.3]
+
+        result = run_log(CubeDemo, log, scene_loader=loader)
+        self.assertEqual(result["frames"], 1)
+        self.assertEqual(len(calls), 1)
+        calls.clear()
+        verify_log(CubeDemo, log, scene_loader=loader)
+        self.assertEqual(len(calls), 2)
+        with self.assertRaises(TypeError):
+            run_log(CubeDemo, log, scene_loader=object())
 
     def test_invalid_step_is_rejected(self):
         with self.assertRaises(ValueError):

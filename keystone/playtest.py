@@ -23,6 +23,7 @@ from typing import Any, Protocol
 
 from keystone.input import ActionState
 from keystone.replay import FIXED_STEP, CommandLog, stable_hash
+from keystone.scene import Scene
 
 TRANSCRIPT_SCHEMA = 1
 PLAYTEST_REPORT_SCHEMA = 1
@@ -118,6 +119,7 @@ def run_bot(
     step: float = FIXED_STEP,
     max_wall_seconds: float = 10.0,
     trace: bool = False,
+    scene_loader: Callable[[Any, Scene], None] | None = None,
 ) -> dict[str, Any]:
     """Play one seeded bot run headlessly and record the transcript.
 
@@ -137,6 +139,8 @@ def run_bot(
         raise ValueError("step must be positive")
     if not _math.isfinite(max_wall_seconds) or max_wall_seconds <= 0.0:
         raise ValueError("max_wall_seconds must be positive")
+    if scene_loader is not None and not callable(scene_loader):
+        raise TypeError("scene_loader must be callable or None")
     reset = getattr(policy, "reset", None)
     select = getattr(policy, "select", None)
     if not callable(reset) or not callable(select):
@@ -157,7 +161,11 @@ def run_bot(
         actions_of = getattr(game, "actions", None)
         if not callable(build) or not callable(update) or not callable(snapshot) or not callable(actions_of):
             raise TypeError("replayed game must expose build_scene(), update(), snapshot() and actions()")
-        build()
+        built = build()
+        if not isinstance(built, Scene):
+            raise TypeError("replayed game build_scene() must return a Scene")
+        if scene_loader is not None:
+            scene_loader(game, built)
 
         try:
             spec = actions_of()
@@ -472,6 +480,7 @@ def validate_fairness(
     max_states: int = 5000,
     max_wall_seconds: float = 10.0,
     time_limit_frames: int | None = None,
+    scene_loader: Callable[[Any, Scene], None] | None = None,
 ) -> dict[str, Any]:
     """Judge whether a configuration is winnable, with reasons.
 
@@ -503,6 +512,8 @@ def validate_fairness(
         raise ValueError("max_states must be positive")
     if not _math.isfinite(max_wall_seconds) or max_wall_seconds <= 0.0:
         raise ValueError("max_wall_seconds must be positive")
+    if scene_loader is not None and not callable(scene_loader):
+        raise TypeError("scene_loader must be callable or None")
     seeds = list(seeds)
     if not seeds:
         raise ValueError("seeds must contain at least one seed")
@@ -513,7 +524,11 @@ def validate_fairness(
     for method in ("build_scene", "update", "snapshot", "actions"):
         if not callable(getattr(probe, method, None)):
             raise TypeError(f"game must expose {method}()")
-    probe.build_scene()
+    built = probe.build_scene()
+    if not isinstance(built, Scene):
+        raise TypeError("game build_scene() must return a Scene")
+    if scene_loader is not None:
+        scene_loader(probe, built)
     try:
         initial = probe.snapshot()
     except Exception as exc:  # noqa: BLE001 - failure-is-data, see run_bot
@@ -527,9 +542,11 @@ def validate_fairness(
 
     try:
         first = run_bot(factory, RandomPolicy(), frames=frames, seed=seeds[0], step=step,
-                        max_wall_seconds=max_wall_seconds, trace=False)
+                        max_wall_seconds=max_wall_seconds, trace=False,
+                        scene_loader=scene_loader)
         second = run_bot(factory, RandomPolicy(), frames=frames, seed=seeds[0], step=step,
-                         max_wall_seconds=max_wall_seconds, trace=False)
+                         max_wall_seconds=max_wall_seconds, trace=False,
+                         scene_loader=scene_loader)
     except (ValueError, TypeError) as exc:
         return {"verdict": "unfair", "reasons": [f"crash: {exc}"]}
     if first["hash"] != second["hash"]:
@@ -565,14 +582,16 @@ def validate_fairness(
             raise ValueError("reference_actions must not be empty")
         try:
             scripted = run_bot(factory, ScriptedPolicy(reference), frames=frames, seed=seeds[0],
-                               step=step, max_wall_seconds=max_wall_seconds, trace=True)
+                               step=step, max_wall_seconds=max_wall_seconds, trace=True,
+                               scene_loader=scene_loader)
         except (ValueError, TypeError) as exc:
             return {"verdict": "unfair", "reasons": [f"crash: {exc}"]}
         _absorb(scripted, "reference")
     for seed in seeds:
         try:
             rollout = run_bot(factory, RandomPolicy(), frames=frames, seed=seed, step=step,
-                              max_wall_seconds=max_wall_seconds, trace=True)
+                              max_wall_seconds=max_wall_seconds, trace=True,
+                              scene_loader=scene_loader)
         except (ValueError, TypeError) as exc:
             return {"verdict": "unfair", "reasons": [f"crash: {exc}"]}
         _absorb(rollout, f"random:{seed}")

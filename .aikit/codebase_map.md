@@ -9,8 +9,8 @@
 - **Total Python Modules**: `128`
 - **Total Classes**: `202`
 - **Total Top-Level Functions**: `293`
-- **Total Class Methods**: `1237`
-- **Total Source Lines**: `25755`
+- **Total Class Methods**: `1240`
+- **Total Source Lines**: `25913`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `540` lines (`29715` bytes)
+**Size**: `567` lines (`30494` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -965,7 +965,7 @@
 ### [`keystone/playtest.py`](keystone/playtest.py)
 > *Seeded bot playtesting: transcripts, diffing, policies and fairness checks.*
 
-**Size**: `595` lines (`24795` bytes)
+**Size**: `614` lines (`25810` bytes)
 
 **Classes:**
 - `class BotPolicy` - *One seeded decision step over the five-operation game contract.*
@@ -991,12 +991,12 @@
 - `def read_outcome(snapshot)` - *Read the opportunistic outcome signal; ``unknown`` when absent.*
 - `def read_score(snapshot)` - *Read the opportunistic numeric score signal, if present.*
 - `def to_command_log(transcript)` - *Convert a transcript back to a replayable :class:`CommandLog`.*
-- `def run_bot(factory, policy, frames, seed, step, max_wall_seconds, trace)` - *Play one seeded bot run headlessly and record the transcript.*
+- `def run_bot(factory, policy, frames, seed, step, max_wall_seconds, trace, scene_loader)` - *Play one seeded bot run headlessly and record the transcript.*
 - `def diff_transcripts(before, after)` - *Compare two transcripts: hash fast-path, then first divergence.*
 - `def _validate_actions_spec(spec)`
 - `def _sample_action(rng, axes, buttons)`
 - `def make_report(transcript, fairness)` - *Build the frozen schema-1 playtest report shared with web adapters.*
-- `def validate_fairness(factory, reference_actions, frames, seeds, step, max_states, max_wall_seconds, time_limit_frames)` - *Judge whether a configuration is winnable, with reasons.*
+- `def validate_fairness(factory, reference_actions, frames, seeds, step, max_states, max_wall_seconds, time_limit_frames, scene_loader)` - *Judge whether a configuration is winnable, with reasons.*
 
 ---
 
@@ -1131,7 +1131,7 @@
 ### [`keystone/replay.py`](keystone/replay.py)
 > *Deterministic action logs and stable state hashes.*
 
-**Size**: `146` lines (`5234` bytes)
+**Size**: `164` lines (`5924` bytes)
 
 **Classes:**
 - `class CommandLog`
@@ -1146,8 +1146,8 @@
 **Functions:**
 - `def _canonical_hash_value(value)`
 - `def stable_hash(payload)` - *Hash a JSON-safe payload deterministically; reject process-local values.*
-- `def run_log(factory, log, trace)` - *Replay a command log on a fresh game without a window or GL context.*
-- `def verify_log(factory, log)` - *Run one log twice from a factory and compare final hashes.*
+- `def run_log(factory, log, trace, scene_loader)` - *Replay a command log on a fresh game without a window or GL context.*
+- `def verify_log(factory, log, scene_loader)` - *Run one log twice from a factory and compare final hashes.*
 
 ---
 
@@ -2344,10 +2344,11 @@
 ### [`tests/test_playtest.py`](tests/test_playtest.py)
 > *Tests for the seeded bot playtester: transcripts, diffs, policies and fairness.*
 
-**Size**: `438` lines (`18349` bytes)
+**Size**: `457` lines (`18927` bytes)
 
 **Classes:**
 - `class TranscriptTest`
+  - Method `.test_run_bot_applies_a_scene_loader()`
   - Method `.test_run_bot_records_a_command_log_compatible_transcript()`
   - Method `.test_transcript_hash_matches_simulation_for_the_same_actions()`
   - Method `.test_same_seed_same_transcript()`
@@ -2509,7 +2510,7 @@
 ### [`tests/test_project.py`](tests/test_project.py)
 > *Tests for project manifests, scaffolding and the --project CLI path.*
 
-**Size**: `304` lines (`12841` bytes)
+**Size**: `358` lines (`14793` bytes)
 
 **Classes:**
 - `class ProjectManifestTest`
@@ -2528,6 +2529,7 @@
   - Method `.test_non_empty_directory_requires_force()`
   - Method `.test_cli_new_and_project()`
   - Method `.test_cli_simulate_uses_a_saved_scene()`
+  - Method `.test_cli_replay_and_playtest_use_a_saved_scene()`
   - Method `.test_cli_new_is_standalone_and_missing_project_has_why_fix()`
 
 ---
@@ -2561,7 +2563,7 @@
 ### [`tests/test_replay.py`](tests/test_replay.py)
 > *Tests for deterministic action logs and stable hashes.*
 
-**Size**: `89` lines (`3579` bytes)
+**Size**: `110` lines (`4338` bytes)
 
 **Classes:**
 - `class ReplayTest`
@@ -2570,6 +2572,7 @@
   - Method `.test_hash_rejects_non_json_and_non_finite_values()`
   - Method `.test_command_log_constructor_validates_fields()`
   - Method `.test_command_log_round_trip()`
+  - Method `.test_scene_loader_restores_each_fresh_scene()`
   - Method `.test_invalid_step_is_rejected()`
   - Method `.test_strict_seed_and_frames_are_rejected()`
   - Method `.test_run_log_restores_global_random_state()`
