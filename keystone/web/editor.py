@@ -20,6 +20,8 @@ from keystone.schema import EDITOR_ACTIONS, EDITOR_SCHEMA_VERSION
 __all__ = [
     "EDITOR_ACTIONS",
     "EditorHistory",
+    "asset_entries",
+    "assign_assets",
     "create_node",
     "delete_node",
     "duplicate_node",
@@ -102,6 +104,34 @@ def _transform_from_payload(payload: Mapping[str, object], current: Transform | 
     else:
         rotation = base.rotation
     return Transform(position=position, rotation=rotation, scale=scale)
+
+
+def asset_entries(registry: object | None) -> list[dict[str, object]]:
+    """Return the registry's JSON-safe asset inventory for the editor."""
+    if registry is None:
+        return []
+    describe = getattr(registry, "describe", None)
+    if not callable(describe):
+        return []
+    try:
+        document = describe()
+    except (TypeError, ValueError):
+        return []
+    if not isinstance(document, Mapping):
+        return []
+    assets = document.get("assets", [])
+    if not isinstance(assets, list):
+        return []
+    return [item for item in assets if isinstance(item, Mapping)]
+
+
+def _payload_id(registry: object | None, payload: object | None, kind: str) -> str | None:
+    if payload is None or registry is None:
+        return None
+    for record in registry:  # type: ignore[union-attr]
+        if getattr(record, "payload", None) is payload and getattr(record, "kind", None) == kind:
+            return str(record.id)
+    return None
 
 
 def _asset_payload(
@@ -226,7 +256,11 @@ class EditorHistory:
         self._redo.clear()
 
 
-def node_document(node: Node, selected_id: str | None) -> dict:
+def node_document(
+    node: Node,
+    selected_id: str | None,
+    registry: object | None = None,
+) -> dict:
     transform = node.transform
     rotation = transform.rotation
     return {
@@ -239,6 +273,8 @@ def node_document(node: Node, selected_id: str | None) -> dict:
         "tags": sorted(node.tags),
         "layer": node.layer,
         "components": sorted(component_type.__name__ for component_type in node.components),
+        "mesh": _payload_id(registry, node.mesh, "mesh"),
+        "material": _payload_id(registry, node.material, "material"),
         "transform": {
             "position": [transform.position.x, transform.position.y, transform.position.z],
             "rotation": [rotation.x, rotation.y, rotation.z, rotation.w],
@@ -255,8 +291,10 @@ def editor_document(
     history: EditorHistory | None = None,
     prefab_entries: list[dict[str, object]] | None = None,
     scene_entries: list[dict[str, object]] | None = None,
+    registry: object | None = None,
+    assets: list[dict[str, object]] | None = None,
 ) -> dict:
-    nodes = [node_document(node, selected_id) for node in scene.traverse()]
+    nodes = [node_document(node, selected_id, registry) for node in scene.traverse()]
     selection = next((node for node in nodes if node["id"] == selected_id), None)
     return {
         "schema": EDITOR_SCHEMA_VERSION,
@@ -273,6 +311,7 @@ def editor_document(
             ]
         ),
         "scenes": scene_entries if scene_entries is not None else [],
+        "assets": assets if assets is not None else asset_entries(registry),
         "actions": list(EDITOR_ACTIONS),
         "history": (
             history.describe()
@@ -376,6 +415,28 @@ def transform_from_payload(node: Node, payload: dict) -> Transform:
     if not isinstance(payload, Mapping):
         raise TypeError("transform payload must be a mapping")
     return _transform_from_payload(payload, node.transform)
+
+
+def assign_assets(
+    node: Node,
+    payload: Mapping[str, object],
+    registry: object | None,
+) -> Node:
+    """Assign or clear a node's mesh/material through registry asset ids."""
+    if not isinstance(node, Node):
+        raise TypeError("assign_assets target must be a Node")
+    if not isinstance(payload, Mapping):
+        raise TypeError("assign_assets payload must be a mapping")
+    fields = [name for name in ("mesh", "material") if name in payload]
+    if not fields:
+        raise ValueError("assign_assets needs a mesh or material field")
+    if "mesh" in payload:
+        node.mesh = _asset_payload(registry, payload.get("mesh"), "mesh", "node mesh")
+    if "material" in payload:
+        node.material = _asset_payload(
+            registry, payload.get("material"), "material", "node material"
+        )
+    return node
 
 
 def save_prefab(scene: Scene, node: Node, name: str, prefabs: dict[str, Prefab]) -> Prefab:

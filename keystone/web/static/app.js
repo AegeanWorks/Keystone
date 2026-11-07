@@ -29,6 +29,9 @@ const elements = {
   rotation: document.getElementById("rotation"),
   scale: document.getElementById("scale"),
   transformApply: document.getElementById("transform-apply"),
+  meshAsset: document.getElementById("mesh-asset"),
+  materialAsset: document.getElementById("material-asset"),
+  assignAsset: document.getElementById("assign-asset"),
   editorRefresh: document.getElementById("editor-refresh"),
   editorState: document.getElementById("editor-state"),
   summary: document.getElementById("summary"),
@@ -66,7 +69,7 @@ function setBusy(value) {
   for (const button of [
     elements.step, elements.run, elements.simulate, elements.refresh,
     elements.nodeCreate, elements.nodeDuplicate, elements.nodeDelete, elements.nodeReparent,
-    elements.sceneSave, elements.sceneLoad,
+    elements.sceneSave, elements.sceneLoad, elements.assignAsset,
     elements.prefabSave, elements.prefabInsert, elements.transformApply, elements.editorRefresh,
   ]) {
     button.disabled = value;
@@ -146,6 +149,7 @@ function editorSummary(editor) {
       : null,
     prefabs: editor.prefabs,
     scenes: editor.scenes,
+    assets: (editor.assets || []).length,
     actions: editor.actions,
     history: editor.history,
   };
@@ -195,6 +199,35 @@ function renderHierarchy(editor) {
   renderParentOptions(editor, byId);
 }
 
+function fillAssetSelect(select, kind, assets) {
+  const previous = select.value;
+  select.replaceChildren();
+  const none = document.createElement("option");
+  none.value = "";
+  none.textContent = "(none)";
+  select.append(none);
+  for (const asset of assets.filter((item) => item.kind === kind)) {
+    const option = document.createElement("option");
+    option.value = asset.id;
+    option.textContent = `${asset.id} · ${asset.kind}`;
+    select.append(option);
+  }
+  select.value = Array.from(select.options).some((option) => option.value === previous)
+    ? previous
+    : "";
+}
+
+function renderAssets(editor) {
+  const assets = editor.assets || [];
+  fillAssetSelect(elements.meshAsset, "mesh", assets);
+  fillAssetSelect(elements.materialAsset, "material", assets);
+}
+
+function fillAssets(selection) {
+  elements.meshAsset.value = selection ? selection.mesh || "" : "";
+  elements.materialAsset.value = selection ? selection.material || "" : "";
+}
+
 function fillTransform(selection) {
   if (!selection) {
     elements.position.value = "0, 0, 0";
@@ -210,7 +243,9 @@ function fillTransform(selection) {
 function showEditor(editor) {
   editorState = editor;
   renderHierarchy(editor);
+  renderAssets(editor);
   fillTransform(editor.selection);
+  fillAssets(editor.selection);
   const history = editor.history || { undo: 0, redo: 0 };
   elements.editorState.textContent =
     `${editor.nodes.length} nodes · ${editor.prefabs.length} prefabs · ` +
@@ -289,6 +324,19 @@ async function insertPrefab() {
   }
   const instance = elements.prefabInstance.value.trim() || null;
   await editorAction({ action: "insert_prefab", name, instance }, "inserting prefab");
+  await refreshScene(false);
+}
+
+async function assignAssets() {
+  if (!editorState || !editorState.selection) {
+    throw new Error("Select a node before assigning assets.");
+  }
+  const mesh = elements.meshAsset.value || null;
+  const material = elements.materialAsset.value || null;
+  await editorAction(
+    { action: "assign_asset", id: editorState.selection.id, mesh, material },
+    "assigning assets",
+  );
   await refreshScene(false);
 }
 
@@ -452,6 +500,7 @@ elements.refresh.addEventListener("click", () => run(() => refreshScene(true)));
 elements.editorRefresh.addEventListener("click", () => run(() => refreshEditor(true)));
 elements.hierarchy.addEventListener("change", () => run(() => selectNode(elements.hierarchy.value)));
 elements.transformApply.addEventListener("click", () => run(applyTransform));
+elements.assignAsset.addEventListener("click", () => run(assignAssets));
 elements.nodeCreate.addEventListener("click", () => run(createNode));
 elements.nodeDuplicate.addEventListener("click", () => run(duplicateNode));
 elements.nodeDelete.addEventListener("click", () => run(deleteNode));

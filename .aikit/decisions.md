@@ -616,3 +616,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Component-aware snapshots made scene files possible, but the editor still could not persist authored scenes. A Unity/Unreal-style workflow needs named `.kscene` files that survive restarts, restore in place and report broken entries without taking down the editor.
 - **Decision**: Add `keystone.scene_library` with `SceneLibrary`/`SceneEntry`: portable name validation, atomic `.kscene` save, strict registry asset-reference validation, component-aware load and `load_into()` backed by `restore_scene()`. Bump the editor schema to 3, add `save_scene`/`load_scene`, expose saved scenes plus `workspace.scene_dir`, and add console controls. `--project .` defaults the library to `<project>/scenes`; `--scene-dir DIR` overrides it. Loading a scene clears selection and undo history while preserving the game-owned `Scene` object.
 - **Consequences**: 691 tests green; authored scenes survive console restarts, missing/wrong-kind assets and corrupt entries fail explicitly, and restore keeps `self.scene` identity. Asset browser assignment, component authoring and play-in-editor remain future work.
+
+### ADR-074: Add registry asset inventory and assignment to the editor
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: `create_node` could reference registry assets by id, but existing nodes could not be inspected or reassigned. A Unity/Unreal-style inspector needs the asset browser and node mesh/material fields in the same AI-addressable editor document.
+- **Decision**: Bump the editor schema to 4, include the registry's JSON-safe asset inventory (`id`, `kind`, `sha256`, `source`, `dependencies`) and each node's resolved `mesh`/`material` ids, and add `assign_asset` with `mesh`/`material` fields that assign or clear through the registry. Validate missing/kind-mismatched ids, route the mutation through `EditorHistory`, and add mesh/material selects plus an apply button to the console.
+- **Consequences**: 692 tests green; humans and AI clients can discover assets and reassign node payloads with undo, while invalid ids fail with 400 before mutation. Component authoring and play-in-editor remain future work.

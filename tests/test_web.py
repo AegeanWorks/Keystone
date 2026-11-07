@@ -175,11 +175,14 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 3)
+        self.assertEqual(editor["schema"], 4)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
         self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
         cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        self.assertEqual(cube["mesh"], "mesh.cube")
+        self.assertEqual(cube["material"], "material.cube.0")
+        self.assertIn("mesh.cube", {asset["id"] for asset in editor["assets"]})
 
         status, _, editor = self._json(
             "/api/editor", method="POST", payload={"action": "select", "id": cube["id"]}
@@ -311,6 +314,53 @@ class WebServerTest(unittest.TestCase):
         cube_now = next(node for node in editor["nodes"] if node["id"] == cube["id"])
         self.assertEqual(cube_now["parent_id"], "root")
 
+    def test_editor_asset_inventory_and_assignment(self):
+        _, _, editor = self._json("/api/editor")
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        _, _, editor = self._json(
+            "/api/editor",
+            method="POST",
+            payload={
+                "action": "assign_asset",
+                "id": cube["id"],
+                "material": "material.cube.1",
+            },
+        )
+        self.assertEqual(editor["selection"]["material"], "material.cube.1")
+        self.assertEqual(editor["selection"]["mesh"], "mesh.cube")
+        _, _, editor = self._json(
+            "/api/editor", method="POST", payload={"action": "undo"}
+        )
+        self.assertEqual(editor["selection"]["material"], "material.cube.0")
+        _, _, editor = self._json(
+            "/api/editor",
+            method="POST",
+            payload={"action": "assign_asset", "id": cube["id"], "mesh": None},
+        )
+        self.assertIsNone(editor["selection"]["mesh"])
+        status, _, _ = self._json(
+            "/api/editor",
+            method="POST",
+            payload={
+                "action": "assign_asset",
+                "id": cube["id"],
+                "material": "mesh.cube",
+            },
+        )
+        self.assertEqual(status, 400)
+        status, _, _ = self._json(
+            "/api/editor",
+            method="POST",
+            payload={"action": "assign_asset", "id": cube["id"], "mesh": "missing.mesh"},
+        )
+        self.assertEqual(status, 400)
+        status, _, _ = self._json(
+            "/api/editor",
+            method="POST",
+            payload={"action": "assign_asset", "id": cube["id"]},
+        )
+        self.assertEqual(status, 400)
+
     def test_editor_prefab_capture_and_insert(self):
         _, _, editor = self._json("/api/editor")
         cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
@@ -419,6 +469,9 @@ class WebServerTest(unittest.TestCase):
             "scene-name",
             "scene-save",
             "scene-load",
+            "mesh-asset",
+            "material-asset",
+            "assign-asset",
             "prefab-save",
             "prefab-insert",
             "transform-apply",
@@ -431,6 +484,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("create_node", script)
         self.assertIn("duplicate_node", script)
         self.assertIn("save_scene", script)
+        self.assertIn("assign_asset", script)
         status, _, payload = self._json("/api")
         self.assertEqual(status, 200)
         self.assertIn("editor", payload["endpoints"])

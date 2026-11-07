@@ -23,6 +23,8 @@ from keystone.scene_library import SceneLibrary
 from keystone.web.editor import (
     EDITOR_ACTIONS,
     EditorHistory,
+    asset_entries,
+    assign_assets,
     create_node,
     delete_node,
     duplicate_node,
@@ -187,6 +189,7 @@ class GameSession:
         scene_entries = (
             self.scene_library.describe() if self.scene_library is not None else None
         )
+        registry = self._registry_locked()
         document = editor_document(
             scene,
             self.selected_id,
@@ -194,6 +197,8 @@ class GameSession:
             self.history,
             prefab_entries=self._prefab_entries_locked(),
             scene_entries=scene_entries,
+            registry=registry,
+            assets=asset_entries(registry),
         )
         document["game"] = self.name
         document["workspace"] = {
@@ -243,6 +248,13 @@ class GameSession:
                         node.transform = transform_from_payload(node, payload)
 
                     self.history.apply(scene, apply_transform)
+                    self.selected_id = node.id
+                elif action == "assign_asset":
+                    node = find_node(scene, payload.get("id"))
+                    self.history.apply(
+                        scene,
+                        lambda: assign_assets(node, payload, self._registry_locked()),
+                    )
                     self.selected_id = node.id
                 elif action == "create_node":
                     parent = self._parent_locked(scene, payload.get("parent"))

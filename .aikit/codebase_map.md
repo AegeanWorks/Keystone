@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `128`
 - **Total Classes**: `201`
-- **Total Top-Level Functions**: `283`
-- **Total Class Methods**: `1217`
-- **Total Source Lines**: `24563`
+- **Total Top-Level Functions**: `286`
+- **Total Class Methods**: `1218`
+- **Total Source Lines**: `24694`
 
 ---
 
@@ -1270,7 +1270,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `22` lines (`432` bytes)
+**Size**: `23` lines (`452` bytes)
 
 ---
 
@@ -1449,7 +1449,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `403` lines (`14086` bytes)
+**Size**: `464` lines (`16285` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene-node edits.*
@@ -1467,19 +1467,22 @@
 - `def _node_id(value)`
 - `def _node_tags(value)`
 - `def _transform_from_payload(payload, current)`
+- `def asset_entries(registry)` - *Return the registry's JSON-safe asset inventory for the editor.*
+- `def _payload_id(registry, payload, kind)`
 - `def _asset_payload(registry, value, kind, label)`
 - `def _node_snapshot(node)`
 - `def _snapshot_nodes(scene)`
 - `def _node_from_snapshot(data)`
 - `def _restore_nodes(scene, snapshot)`
-- `def node_document(node, selected_id)`
-- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries)`
+- `def node_document(node, selected_id, registry)`
+- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets)`
 - `def find_node(scene, node_id)`
 - `def create_node(scene, payload, parent, registry)` - *Create, validate and attach one node from an editor payload.*
 - `def delete_node(scene, node)` - *Detach one node subtree and return its former parent.*
 - `def duplicate_node(scene, node, name)` - *Clone one node subtree as a sibling with fresh scene-allocated ids.*
 - `def reparent_node(scene, node, parent)` - *Move one node subtree below a new parent, or the scene root.*
 - `def transform_from_payload(node, payload)`
+- `def assign_assets(node, payload, registry)` - *Assign or clear a node's mesh/material through registry asset ids.*
 - `def save_prefab(scene, node, name, prefabs)`
 - `def insert_prefab(scene, prefabs, name, parent, instance)`
 
@@ -1502,14 +1505,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `52` lines (`2487` bytes)
+**Size**: `55` lines (`2721` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `723` lines (`31398` bytes)
+**Size**: `735` lines (`31891` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2893,7 +2896,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `546` lines (`23536` bytes)
+**Size**: `600` lines (`25599` bytes)
 
 **Classes:**
 - `class Health`
@@ -2918,6 +2921,7 @@
   - Method `.test_simulate_endpoint_returns_a_deterministic_result()`
   - Method `.test_editor_hierarchy_selection_and_transform()`
   - Method `.test_editor_node_authoring_and_undo_redo()`
+  - Method `.test_editor_asset_inventory_and_assignment()`
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_scene_library_persists_and_restores()`
