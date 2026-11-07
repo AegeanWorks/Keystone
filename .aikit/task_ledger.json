@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-swarm-closure-v1",
-    "last_phase": "check",
+    "task_id": "keystone-viewport-gizmo-v1",
+    "last_phase": "verification",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794068101.4893663,
+    "updated_at": 1794090701.616154,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794068119.7796175
+    "completed_at": 1794090834.566365
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-slide-fix-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/2] Fix verified: slide preserved, deep eject locked, suite green, sim hash unchanged, frame-70 hash bit-identical; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793775404.3985176,
-      "timestamp_str": "2026-11-04 09:56:44",
-      "agent": "kilo:fix"
-    },
-    {
-      "task_id": "keystone-slide-fix-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-slide-fix-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793775405.153281,
-      "timestamp_str": "2026-11-04 09:56:45",
-      "agent": "kilo:fix"
-    },
-    {
-      "task_id": "keystone-skin-merge-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/4] Plan skin-aware batch merging with rebased inverse binds",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793784336.5706367,
-      "timestamp_str": "2026-11-04 12:25:36",
-      "agent": "kilo:merge",
-      "impact_assessment": {
-        "why": "skinned meshes never merge, so rigged crowds pay one draw per model with no engine path to consolidate",
-        "benefits": "N rigged draws become 1 with identical deformation; plan and inspector report real skin savings",
-        "risks": "contract: additive merge counters plus builder skin path, no schema or report change; dependency: stdlib plus geometry math only; concurrency: single-threaded bake, no shared state; state: no stored state, pure bake function",
-        "mitigation": "failing-first oracle equality, merged versus unmerged pixel parity, full pytest plus 6/6 gates before commit"
-      },
-      "plan_digest": "d1a9c89ae766157c76bcc23a71d9d981f5f14ec71f70ae5778aaff68216cdfc2"
-    },
     {
       "task_id": "keystone-skin-merge-v1",
       "phase": "in_progress",
@@ -260,6 +221,45 @@
       "status": "completed",
       "timestamp": 1794068119.7796197,
       "timestamp_str": "2026-11-07 19:15:19",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-viewport-gizmo-v1",
+      "phase": "planning",
+      "phase_num": 2,
+      "description": "[1/3] Plan viewport translate gizmo with axis handles, drag preview and one transform action on release",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794090027.6387365,
+      "timestamp_str": "2026-11-08 01:20:27",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "The editor can select nodes but cannot manipulate them directly in the viewport, unlike Unity/Unreal; users must type coordinates or nudge with keys.",
+        "benefits": "Axis-constrained translation by dragging X/Y/Z handles, world-space drag preview, and exactly one validated transform action per completed drag so undo stays clean.",
+        "risks": "contract: no REST or schema change; dependency: none, pure WebGL/JS; concurrency: gizmo drag must pre-empt camera orbit on the same pointer; state: preview mutates world matrices and must restore on cancel.",
+        "mitigation": "Keep gizmo drag state separate from camera drag, derive the final local position through the parent world inverse, restore previewed matrices on cancel, add static tests and run node --check plus the full gate cycle."
+      },
+      "plan_digest": "e3118c0d6766e75112ab220aa864d91da5cc2085f37cc351286e12f9102c88c2"
+    },
+    {
+      "task_id": "keystone-viewport-gizmo-v1",
+      "phase": "verification",
+      "phase_num": 4,
+      "description": "[2/3] Gizmo implemented: X/Y/Z handles, hover, parent/descendant preview, Ctrl snap, one transform action on release; 728 tests green, node --check clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless schema 11, describe schema 1, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794090701.616154,
+      "timestamp_str": "2026-11-08 01:31:41",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-viewport-gizmo-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-viewport-gizmo-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794090834.5663671,
+      "timestamp_str": "2026-11-08 01:33:54",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

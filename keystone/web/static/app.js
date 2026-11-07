@@ -85,6 +85,8 @@ let editorState = null;
 try {
   viewer = new SceneViewer(elements.canvas);
   viewer.onSelect = (nodeId) => run(() => selectNode(nodeId));
+  viewer.onTransform = (axis, delta) =>
+    run(() => applyGizmoTransform(axis, delta));
 } catch (error) {
   elements.viewerStatus.textContent = `Viewer unavailable: ${error.message}`;
 }
@@ -534,6 +536,9 @@ function showEditor(editor) {
   renderComponentFields(editor, editor.selection);
   const history = editor.history || { undo: 0, redo: 0 };
   const play = editor.play || { active: false, frames: 0 };
+  if (viewer) {
+    viewer.setEditable(!play.active);
+  }
   elements.playState.textContent = play.active
     ? `Playing · ${play.frames} frames`
     : "Stopped";
@@ -600,6 +605,48 @@ async function nudgeSelection(delta) {
       ],
     },
     "nudging node",
+  );
+  await refreshScene(false);
+}
+
+function worldDeltaToLocal(world, delta) {
+  const matrix = world || [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+  const a = matrix[0];
+  const b = matrix[4];
+  const c = matrix[8];
+  const d = matrix[1];
+  const e = matrix[5];
+  const f = matrix[9];
+  const g = matrix[2];
+  const h = matrix[6];
+  const i = matrix[10];
+  const determinant = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g);
+  if (Math.abs(determinant) < 1e-9) {
+    return [...delta];
+  }
+  const inverse = 1.0 / determinant;
+  return [
+    ((e * i - f * h) * delta[0] + (c * h - b * i) * delta[1] + (b * f - c * e) * delta[2]) * inverse,
+    ((f * g - d * i) * delta[0] + (a * i - c * g) * delta[1] + (c * d - a * f) * delta[2]) * inverse,
+    ((d * h - e * g) * delta[0] + (b * g - a * h) * delta[1] + (a * e - b * d) * delta[2]) * inverse,
+  ];
+}
+
+async function applyGizmoTransform(axis, delta) {
+  if (!editorState || !editorState.selection) {
+    return;
+  }
+  const selection = editorState.selection;
+  const parent = selection.parent_id
+    ? (editorState.nodes || []).find((node) => node.id === selection.parent_id)
+    : null;
+  const localDelta = worldDeltaToLocal(parent ? parent.world : null, delta);
+  const position = selection.transform.position.map(
+    (value, index) => Math.round((value + localDelta[index]) * 1e6) / 1e6,
+  );
+  await editorAction(
+    { action: "transform", id: selection.id, position },
+    `moving node on ${axis.toUpperCase()}`,
   );
   await refreshScene(false);
 }

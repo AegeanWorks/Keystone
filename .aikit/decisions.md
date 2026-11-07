@@ -912,3 +912,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Scene and prefab deletes unlinked files immediately, so an AI or human mistake was irreversible and no recovery path existed in the editor.
 - **Decision**: Add `library_trash.py` and route library deletes into a `.trash` directory with unique file names. Add `trash()` and `restore(trash_name)` to both libraries, expose entries in `/api/editor`, add `restore_prefab`/`restore_scene` and console buttons, and keep cached prefabs synchronized. Bump the editor schema to 17.
 - **Consequences**: 728 tests green; deletes are recoverable without overwriting live entries, and corrupt/legacy trash files remain inert. Transform gizmos, prefab overrides and behavior systems remain future work.
+
+### ADR-111: Add a viewport translate gizmo with one-action drags
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Nodes could be selected and nudged, but direct viewport translation still required typing coordinates; Unity/Unreal-style authoring expects draggable axis handles.
+- **Decision**: Draw an unlit X/Y/Z arrow gizmo at the selection's world position with camera-distance scaling. Hit-test the projected axis segments, begin an axis drag on pointer-down, and preview a world-space delta on the selected node and its descendants. Ctrl/Cmd snaps to 0.25 units. On release restore the preview and send one validated `transform` action whose local position is derived through the parent world inverse. Hide the gizmo in play mode. No REST or schema change.
+- **Consequences**: 728 tests green, both JS modules pass `node --check`, and one drag equals one undo entry. The gizmo is translate-only and world-axis aligned; rotation/scale gizmos and local-space axes remain future work.
