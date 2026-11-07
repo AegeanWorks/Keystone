@@ -170,14 +170,23 @@ bindings.bind("dash", "left_shift")
 bindings.bind("confirm", "enter", context="menu")
 bindings.save_bindings("bindings.json")
 
-# Prefabs: capture a subtree, then instantiate isolated deterministic copies.
+# Prefabs: capture, persist through the asset registry, then instantiate copies.
 from keystone import Prefab
 from keystone.scene import Scene
 
-prefab = Prefab.from_node(CubeDemo().build_scene().find_by_id("cube-0"), name="cube")
+demo = CubeDemo()
+source = demo.build_scene().find_by_id("cube-0")
+prefab = Prefab.from_node(source, name="cube")
+prefab.save("cube.kprefab", demo.assets)
+loaded = Prefab.load("cube.kprefab", demo.assets)
 scene = Scene()
-prefab.instantiate(scene, instance="a")
-print(prefab.describe())
+loaded.instantiate(scene, instance="a")
+demo.assets.register_file("prefab.cube", "cube.kprefab")
+print(loaded.describe())
+
+# Custom components need an explicit type map on load; mesh/material ids must
+# already be registered. `register_file(..., component_types={...})` does both.
+# Prefabs are the fourth asset kind: their digests and dependencies update on refresh.
 
 # Deterministic audio: synth, mix, audit, export.
 from keystone.audio import Mixer, audio_report, sine, write_wav

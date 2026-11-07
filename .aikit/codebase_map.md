@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `123`
-- **Total Classes**: `189`
-- **Total Top-Level Functions**: `254`
-- **Total Class Methods**: `1145`
-- **Total Source Lines**: `22368`
+- **Total Classes**: `191`
+- **Total Top-Level Functions**: `261`
+- **Total Class Methods**: `1166`
+- **Total Source Lines**: `22938`
 
 ---
 
@@ -148,7 +148,7 @@
 ### [`keystone/asset_io.py`](keystone/asset_io.py)
 > *Disk-backed asset sources, default loaders and hot-reload reporting.*
 
-**Size**: `125` lines (`4367` bytes)
+**Size**: `129` lines (`4548` bytes)
 
 **Classes:**
 - `class AssetSource` - *One file-backed asset: where it came from, how to load it and its last stamp.*
@@ -159,7 +159,7 @@
 
 **Functions:**
 - `def default_loader(kind)` - *Return the built-in loader for a kind, or explain how to supply one.*
-- `def kind_from_suffix(path)` - *Infer an asset kind from a .obj or .png path.*
+- `def kind_from_suffix(path)` - *Infer an asset kind from a .obj, .png or .kprefab path.*
 - `def fingerprint(path)` - *Return (mtime_ns, size) for a readable path, or None when it is absent.*
 - `def asset_kind(payload)` - *Return the registry kind of a payload object.*
 - `def load_asset(kind, path, loader)` - *Load one source and prove the payload matches the declared kind.*
@@ -169,19 +169,19 @@
 ### [`keystone/assets.py`](keystone/assets.py)
 > *Game-agnostic asset registry with stable ids, content hashes and dependencies.*
 
-**Size**: `378` lines (`14526` bytes)
+**Size**: `409` lines (`15852` bytes)
 
 **Classes:**
 - `class AssetRecord` - *One registered asset: a stable id, kind, immutable payload and content digest.*
   - Method `.__post_init__()`
   - Method `.describe()` - *Return a JSON-safe description for AI clients and diagnostics.*
-- `class AssetRegistry` - *Caller-owned registry for meshes, materials and textures.*
+- `class AssetRegistry` - *Caller-owned registry for meshes, materials, textures and prefabs.*
   - Method `.__init__()`
   - Method `.__len__()`
   - Method `.__contains__(asset_id)`
   - Method `.__iter__()`
   - Method `.register(asset_id, payload, *, kind, source, dependencies, replace)` - *Register one asset, inferring its kind from the payload when omitted.*
-  - Method `.register_file(asset_id, path, *, kind, loader, dependencies, replace)` - *Load a .obj or .png file, register it and bind it for hot reload.*
+  - Method `.register_file(asset_id, path, *, kind, loader, dependencies, component_types, replace)` - *Load a .obj, .png or .kprefab file and bind it for hot reload.*
   - Method `.refresh()` - *Re-read every changed source and report reloaded, unchanged, failed and missing ids.*
   - Method `.get(asset_id)` - *Return one record, or None when the id is not registered.*
   - Method `.require(asset_id)` - *Return one record or raise a KeyError naming the missing asset.*
@@ -199,7 +199,8 @@
 - `def _validate_kind(kind)`
 - `def _validate_dependency(asset_id, dependency)`
 - `def _dependencies(asset_id, dependencies)`
-- `def _digest(kind, payload)`
+- `def _digest(kind, payload, registry)`
+- `def _digest_prefab(prefab, registry)`
 - `def _digest_mesh(mesh)`
 - `def _digest_material(material)`
 
@@ -1019,9 +1020,9 @@
 ---
 
 ### [`keystone/prefab.py`](keystone/prefab.py)
-> *Deterministic prefabs: capture a scene subtree and instantiate reusable copies.*
+> *Deterministic prefabs: capture, persist and instantiate reusable subtrees.*
 
-**Size**: `162` lines (`5998` bytes)
+**Size**: `444` lines (`18317` bytes)
 
 **Classes:**
 - `class Prefab` - *An immutable-name, detached template of one or more scene subtrees.*
@@ -1029,12 +1030,23 @@
   - Method `.from_node(node, name)` - *Capture one detached subtree.*
   - Method `.from_scene(scene, name)` - *Capture every child of a scene root as a multi-root prefab.*
   - Property `.node_count`
+  - Method `.asset_ids(registry)` - *Return the mesh/material asset ids referenced by this prefab.*
+  - Method `.to_dict(registry)` - *Serialize to versioned JSON; mesh/material payloads need registered assets.*
+  - Method `.from_dict(data, registry, component_types)` - *Load versioned JSON; asset ids resolve through the registry.*
+  - Method `.save(path, registry)` - *Write a versioned JSON prefab atomically.*
+  - Method `.load(path, registry, component_types)` - *Load a versioned JSON prefab from disk.*
   - Method `.instantiate(scene, parent, instance)` - *Attach fresh copies to a scene, returning the new root nodes.*
   - Method `.describe()` - *Return a JSON-safe structural summary for AI clients and tooling.*
 
 **Functions:**
 - `def _clone_template(node)`
 - `def _collect_ids(node)`
+- `def _json_safe(value, label)`
+- `def _component_to_dict(component)`
+- `def _component_from_dict(item, component_types)`
+- `def _asset_id(registry, payload, label, kind)`
+- `def _transform_to_dict(transform)`
+- `def _transform_from_dict(value)`
 
 ---
 
@@ -1195,7 +1207,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `7` lines (`173` bytes)
+**Size**: `8` lines (`199` bytes)
 
 ---
 
@@ -1648,9 +1660,10 @@
 ### [`tests/test_assets.py`](tests/test_assets.py)
 > *Unit tests for the asset registry: identity, digests and dependencies.*
 
-**Size**: `347` lines (`16142` bytes)
+**Size**: `487` lines (`22416` bytes)
 
 **Classes:**
+- `class PrefabHealth`
 - `class AssetRegistryTest`
   - Method `.setUp()`
   - Method `.test_register_infers_kind_and_preserves_order()`
@@ -1661,6 +1674,9 @@
   - Method `.test_mesh_digest_covers_skinning()`
   - Method `.test_dependencies_are_sorted_and_missing_ones_reported()`
   - Method `.test_stats_and_describe_are_json_safe()`
+  - Method `._prefab_fixture()`
+  - Method `.test_prefab_kind_digest_and_dependencies()`
+  - Method `.test_prefab_rejects_unregistered_payloads()`
   - Method `.test_public_package_exports_the_registry()`
   - Method `.test_remove_and_clear_dispose_records()`
 - `class AssetFileSourceTest`
@@ -1672,6 +1688,10 @@
   - Method `.test_refresh_missing_then_recovers()`
   - Method `.test_refresh_reports_loader_type_error()`
   - Method `.test_dependencies_survive_refresh()`
+  - Method `.test_prefab_suffix_and_default_loader()`
+  - Method `.test_register_prefab_file_and_refresh()`
+  - Method `.test_register_prefab_file_with_component_types()`
+  - Method `.test_prefab_file_requires_registered_assets()`
   - Method `.test_clear_and_remove_drop_sources()`
 
 **Functions:**
@@ -2335,12 +2355,16 @@
 ---
 
 ### [`tests/test_prefab.py`](tests/test_prefab.py)
-> *Tests for deterministic prefab capture and instantiation.*
+> *Tests for deterministic prefab capture, persistence and instantiation.*
 
-**Size**: `96` lines (`3569` bytes)
+**Size**: `208` lines (`8970` bytes)
 
 **Classes:**
 - `class Health`
+- `class Counter` - *A component with an explicit codec.*
+  - Method `.__init__(value)`
+  - Method `.to_dict()`
+  - Method `.from_dict(data)`
 - `class PrefabTest`
   - Method `._scene()`
   - Method `.test_capture_and_instantiate_a_subtree()`
@@ -2348,6 +2372,12 @@
   - Method `.test_auto_ids()`
   - Method `.test_describe_is_json_safe()`
   - Method `.test_validation()`
+  - Method `._registered_scene()`
+  - Method `.test_dict_round_trip_resolves_registered_assets()`
+  - Method `.test_save_and_load_versioned_file()`
+  - Method `.test_load_errors_are_explicit()`
+  - Method `.test_unregistered_payloads_cannot_be_serialized()`
+  - Method `.test_json_primitive_components_round_trip()`
 
 ---
 

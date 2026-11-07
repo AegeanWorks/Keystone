@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import struct
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass, replace
 from pathlib import Path
 
@@ -21,6 +22,7 @@ from keystone.asset_io import (
     load_asset,
 )
 from keystone.geometry import Material, MeshData
+from keystone.prefab import Prefab
 from keystone.texture import TextureData
 
 
@@ -60,7 +62,7 @@ class AssetRecord:
 
 
 class AssetRegistry:
-    """Caller-owned registry for meshes, materials and textures.
+    """Caller-owned registry for meshes, materials, textures and prefabs.
 
     The registry is intentionally synchronous: it starts no thread and watches no files. A game
     that wants hot reload calls ``refresh()`` from its own loop. Registering or replacing one asset
@@ -103,6 +105,10 @@ class AssetRegistry:
                 f"asset {asset_id!r} is already registered; pass replace=True to replace it"
             )
         resolved_dependencies = _dependencies(asset_id, dependencies)
+        if isinstance(payload, Prefab):
+            resolved_dependencies = _dependencies(
+                asset_id, (*resolved_dependencies, *payload.asset_ids(self))
+            )
         pending = list(resolved_dependencies)
         seen: set[str] = set()
         while pending:
@@ -119,7 +125,7 @@ class AssetRegistry:
             id=asset_id,
             kind=kind,
             payload=payload,
-            sha256=_digest(kind, payload),
+            sha256=_digest(kind, payload, self),
             source=Path(source) if source is not None else None,
             dependencies=resolved_dependencies,
         )
@@ -134,9 +140,10 @@ class AssetRegistry:
         kind: str | None = None,
         loader: AssetLoader | None = None,
         dependencies: Iterable[str] = (),
+        component_types: Mapping[str, type] | None = None,
         replace: bool = False,
     ) -> AssetRecord:
-        """Load a .obj or .png file, register it and bind it for hot reload."""
+        """Load a .obj, .png or .kprefab file and bind it for hot reload."""
         _validate_id(asset_id)
         if asset_id in self._records and not replace:
             raise ValueError(
@@ -147,10 +154,20 @@ class AssetRegistry:
             kind = kind_from_suffix(source_path)
         else:
             _validate_kind(kind)
+        if component_types is not None:
+            if kind != "prefab":
+                raise ValueError("component_types only applies to prefab assets")
+            if loader is not None:
+                raise ValueError("component_types cannot be combined with a custom loader")
         mark = fingerprint(source_path)
         if mark is None:
             raise FileNotFoundError(f"asset source {source_path} does not exist")
         selected = loader or default_loader(kind)
+        if kind == "prefab" and loader is None:
+            types = None if component_types is None else dict(component_types)
+            selected = lambda source: Prefab.load(
+                source, registry=self, component_types=types
+            )
         payload = load_asset(kind, source_path, selected)
         record = self.register(
             asset_id,
@@ -321,7 +338,7 @@ def _dependencies(asset_id: str, dependencies: Iterable[str]) -> tuple[str, ...]
     return tuple(sorted(cleaned))
 
 
-def _digest(kind: str, payload: AssetPayload) -> str:
+def _digest(kind: str, payload: AssetPayload, registry: AssetRegistry | None = None) -> str:
     if kind == "texture" and isinstance(payload, TextureData):
         digest = hashlib.sha256()
         digest.update(struct.pack("<2q", payload.width, payload.height))
@@ -331,7 +348,21 @@ def _digest(kind: str, payload: AssetPayload) -> str:
         return _digest_mesh(payload)
     if kind == "material" and isinstance(payload, Material):
         return _digest_material(payload)
+    if kind == "prefab" and isinstance(payload, Prefab):
+        return _digest_prefab(payload, registry)
     raise TypeError(f"payload is a {asset_kind(payload)}, not a {kind}")
+
+
+def _digest_prefab(prefab: Prefab, registry: AssetRegistry | None) -> str:
+    document = prefab.to_dict(registry)
+    encoded = json.dumps(
+        document,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    )
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
 def _digest_mesh(mesh: MeshData) -> str:

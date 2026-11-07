@@ -81,7 +81,7 @@ A game may additionally expose `draw_ui(canvas, state)`. It is an optional prese
 
 ### Scene identity
 
-`Node` exposes `id`, `tags`, `layer` and `components`. `Scene` allocates deterministic per-scene IDs (`node-1`, `node-2`, ...) when a node is attached or first traversed, preserves explicit IDs, rejects duplicates, and keeps an ID across reparenting. `Scene.query()` and `Scene.find()` filter by name, tag, layer and component type; `Scene.find_by_id()` resolves an ID. Tags are strings, a node has one layer, and components are keyed by their class (one per type). Queries are linear scans; an index is a future optimization. `Prefab.from_node()`/`from_scene()` capture detached templates; `Prefab.instantiate(scene)` clones them with `instance:original-id` or scene-allocated IDs, deep-copies components and returns JSON-safe `describe()` metadata.
+`Node` exposes `id`, `tags`, `layer` and `components`. `Scene` allocates deterministic per-scene IDs (`node-1`, `node-2`, ...) when a node is attached or first traversed, preserves explicit IDs, rejects duplicates, and keeps an ID across reparenting. `Scene.query()` and `Scene.find()` filter by name, tag, layer and component type; `Scene.find_by_id()` resolves an ID. Tags are strings, a node has one layer, and components are keyed by their class (one per type). Queries are linear scans; an index is a future optimization. `Prefab.from_node()`/`from_scene()` capture detached templates; `Prefab.to_dict()`/`from_dict()` persist a schema-1 document whose mesh/material fields are registered asset ids, `Prefab.save()`/`load()` write atomically, and `Prefab.instantiate(scene)` clones templates with `instance:original-id` or scene-allocated IDs, deep-copies components and returns JSON-safe `describe()` metadata. Loading custom components requires an explicit `component_types` name map.
 
 ### Loading
 
@@ -146,12 +146,12 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 |---|---|---|
 | Math | Implemented | Vec3, Mat4, Quat, transforms |
 | Scene | Implemented | hierarchy, visibility, lights, IDs, tags, layers and components |
-| Prefabs | Implemented | detached subtree capture, deterministic instance IDs, component copy isolation, JSON-safe describe |
+| Prefabs | Implemented | detached subtree capture, versioned `.kprefab` save/load, deterministic instance IDs, component copy isolation, JSON-safe describe |
 | Projects | Implemented | versioned `keystone.json` manifest, `--new` scaffold, `--project` loader and generated five-op game |
 | Scene queries | Implemented | name/tag/layer/component filters and ID lookup |
 | Camera | Implemented | perspective and view matrices |
 | Geometry | Implemented | indexed meshes, materials, vertex colors |
-| Assets | Implemented | indexed meshes, materials, RGBA textures, OBJ, PNG; asset registry with stable ids, digests, dependencies and hot reload |
+| Assets | Implemented | indexed meshes, materials, RGBA textures, OBJ, PNG and `.kprefab`; asset registry with stable ids, digests, dependencies and hot reload |
 | State snapshots | Implemented | versioned scene save/load with camera, environment, asset references and bounded undo/redo history; duplicate ids, dangling parents and cycles rejected |
 | Material graphs | Implemented | declarative node graphs evaluating to Material: color, float, checker, texture, mix, material and pbr nodes, cycle detection, JSON serialization |
 | glTF 2.0 | Implemented | dependency-free importer for meshes, materials, textures and scenes; GLB containers, external and embedded buffers, normalized accessors, PNG textures, TRS and matrix transforms; sparse accessors and non-triangle primitives rejected |
@@ -216,7 +216,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - `TriggerTracker` reports sorted enter/exit tuples and an immutable active set; `raycast()` filters candidates and returns the nearest hit.
 - `Scene` assigns unique IDs, preserves them across reparenting and rejects duplicate explicit IDs.
 - `Scene.query()`/`find()` filter by name, tag, layer and component; `find_by_id()` resolves an ID.
-- `Prefab` captures a detached subtree, instantiates deterministic IDs, preserves tags/layers/components and isolates component copies.
+- `Prefab` captures a detached subtree, saves/loads schema-1 `.kprefab` files through registered mesh/material ids, instantiates deterministic IDs, preserves tags/layers/components and isolates component copies.
 - `python -m keystone --new <dir>` scaffolds a project whose `--project <dir> --describe` and `--simulate` paths pass the five-operation contract.
 - Schema-4 reports include node ID, parent ID, tags, layer and component names; older reports still compare by name.
 - `TextureData.checker()` renders through a textured plane and material metadata appears in reports.

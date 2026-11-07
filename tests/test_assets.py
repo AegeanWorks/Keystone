@@ -4,14 +4,18 @@ import json
 import os
 import tempfile
 import unittest
+from dataclasses import dataclass
 from pathlib import Path
 
 import keystone
+from keystone.asset_io import asset_kind, default_loader, kind_from_suffix
 from keystone.assets import ASSET_KINDS, AssetRegistry
 from keystone.geometry import Material, MeshData
 from keystone.math3d import Vec3
 from keystone.png import read_png, write_png
+from keystone.prefab import Prefab
 from keystone.primitives import cube, sphere
+from keystone.scene import Node
 from keystone.texture import TextureData
 
 FIRST_PIXELS = bytes((10, 20, 30, 255, 40, 50, 60, 255, 70, 80, 90, 255, 100, 110, 120, 255))
@@ -22,6 +26,11 @@ v 0 1 0
 vn 0 0 1
 f 1//1 2//1 3//1
 """
+
+
+@dataclass
+class PrefabHealth:
+    value: int
 
 
 def _touch(path: Path) -> None:
@@ -40,7 +49,7 @@ class AssetRegistryTest(unittest.TestCase):
         mesh_record = self.registry.register("mesh.cube", mesh)
         material_record = self.registry.register("material.blue", material)
         texture_record = self.registry.register("texture.grid", texture)
-        self.assertEqual(ASSET_KINDS, ("mesh", "material", "texture"))
+        self.assertEqual(ASSET_KINDS, ("mesh", "material", "texture", "prefab"))
         self.assertEqual(mesh_record.kind, "mesh")
         self.assertEqual(material_record.kind, "material")
         self.assertEqual(texture_record.kind, "texture")
@@ -150,7 +159,7 @@ class AssetRegistryTest(unittest.TestCase):
         self.registry.register("a.mesh", cube())
         self.assertEqual(
             self.registry.stats(),
-            {"total": 2, "kinds": {"mesh": 1, "material": 0, "texture": 1}},
+            {"total": 2, "kinds": {"mesh": 1, "material": 0, "texture": 1, "prefab": 0}},
         )
         document = self.registry.describe()
         self.assertEqual(document["schema"], 1)
@@ -159,6 +168,50 @@ class AssetRegistryTest(unittest.TestCase):
         self.assertEqual(len(document["assets"][1]["sha256"]), 64)
         self.assertEqual(document["stats"], self.registry.stats())
         json.dumps(document)
+
+    def _prefab_fixture(self):
+        mesh = cube()
+        material = Material(color=Vec3(0.2, 0.4, 0.6))
+        self.registry.register("mesh.hero", mesh)
+        self.registry.register("material.hero", material)
+        node = Node("hero", id="hero", mesh=mesh, material=material, tags={"player"}, layer="actors")
+        return Prefab.from_node(node, name="hero"), mesh, material
+
+    def test_prefab_kind_digest_and_dependencies(self):
+        prefab, mesh, material = self._prefab_fixture()
+        record = self.registry.register("prefab.hero", prefab)
+        self.assertEqual(record.kind, "prefab")
+        self.assertEqual(record.dependencies, ("material.hero", "mesh.hero"))
+        self.assertEqual(len(record.sha256), 64)
+        self.assertEqual(self.registry.ids("prefab"), ("prefab.hero",))
+        self.assertEqual(self.registry.missing_dependencies(), ())
+        self.assertEqual(
+            self.registry.stats()["kinds"],
+            {"mesh": 1, "material": 1, "texture": 0, "prefab": 1},
+        )
+        self.assertIs(self.registry.require("prefab.hero").payload, prefab)
+        self.assertEqual(asset_kind(prefab), "prefab")
+
+        same = Prefab.from_node(
+            Node("hero", id="hero", mesh=mesh, material=material, tags={"player"}, layer="actors"),
+            name="hero",
+        )
+        duplicate = self.registry.register("prefab.copy", same)
+        self.assertEqual(duplicate.sha256, record.sha256)
+
+        changed = Prefab.from_node(
+            Node("hero", id="hero", mesh=mesh, material=material, tags={"enemy"}, layer="actors"),
+            name="hero",
+        )
+        changed_record = self.registry.register("prefab.changed", changed)
+        self.assertNotEqual(changed_record.sha256, record.sha256)
+
+    def test_prefab_rejects_unregistered_payloads(self):
+        orphan = Prefab.from_node(Node("orphan", id="orphan", mesh=cube()), name="orphan")
+        with self.assertRaises(ValueError):
+            self.registry.register("prefab.orphan", orphan)
+        self.assertNotIn("prefab.orphan", self.registry)
+        self.assertEqual(self.registry.stats()["kinds"]["prefab"], 0)
 
     def test_public_package_exports_the_registry(self):
         self.assertIs(keystone.AssetRegistry, AssetRegistry)
@@ -327,6 +380,93 @@ class AssetFileSourceTest(unittest.TestCase):
             self.assertEqual(report.reloaded, ("texture.grid",))
             self.assertEqual(registry.require("material.floor").dependencies, ("texture.grid",))
             self.assertEqual(registry.missing_dependencies(), ())
+
+    def test_prefab_suffix_and_default_loader(self):
+        self.assertEqual(kind_from_suffix("hero.kprefab"), "prefab")
+        self.assertEqual(default_loader("prefab"), Prefab.load)
+
+    def test_register_prefab_file_and_refresh(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "hero.kprefab"
+            registry = AssetRegistry()
+            mesh = cube()
+            material = Material()
+            registry.register("mesh.hero", mesh)
+            registry.register("material.hero", material)
+            prefab = Prefab.from_node(
+                Node("hero", id="hero", mesh=mesh, material=material), name="hero"
+            )
+            prefab.save(path, registry)
+            record = registry.register_file("prefab.hero", path)
+            self.assertEqual(record.kind, "prefab")
+            self.assertEqual(record.payload.name, "hero")
+            self.assertEqual(record.dependencies, ("material.hero", "mesh.hero"))
+            self.assertEqual(record.source, path)
+            sources = {entry["id"]: entry for entry in registry.describe()["sources"]}
+            self.assertEqual(sources["prefab.hero"]["kind"], "prefab")
+            self.assertTrue(registry.refresh().ok)
+
+            changed = Prefab.from_node(
+                Node("hero", id="hero", mesh=mesh, material=material, tags={"boss"}), name="hero"
+            )
+            changed.save(path, registry)
+            _touch(path)
+            report = registry.refresh()
+            self.assertEqual(report.reloaded, ("prefab.hero",))
+            self.assertEqual(registry.require("prefab.hero").payload.roots[0].tags, {"boss"})
+
+    def test_register_prefab_file_with_component_types(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "hero.kprefab"
+            source = AssetRegistry()
+            source.register("mesh.hero", cube())
+            node = Node(
+                "hero",
+                id="hero",
+                mesh=source.require("mesh.hero").payload,
+                components={PrefabHealth: PrefabHealth(5)},
+            )
+            Prefab.from_node(node, name="hero").save(path, source)
+            target = AssetRegistry()
+            target.register("mesh.hero", cube())
+            with self.assertRaises(ValueError):
+                target.register_file("prefab.hero", path)
+            record = target.register_file(
+                "prefab.hero", path, component_types={"PrefabHealth": PrefabHealth}
+            )
+            self.assertEqual(
+                record.payload.roots[0].require_component(PrefabHealth), PrefabHealth(5)
+            )
+
+            changed = Prefab.from_node(
+                Node(
+                    "hero",
+                    id="hero",
+                    mesh=target.require("mesh.hero").payload,
+                    components={PrefabHealth: PrefabHealth(9)},
+                ),
+                name="hero",
+            )
+            changed.save(path, target)
+            _touch(path)
+            self.assertEqual(target.refresh().reloaded, ("prefab.hero",))
+            self.assertEqual(
+                target.require("prefab.hero").payload.roots[0].require_component(PrefabHealth),
+                PrefabHealth(9),
+            )
+
+    def test_prefab_file_requires_registered_assets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "hero.kprefab"
+            source = AssetRegistry()
+            source.register("mesh.hero", cube())
+            Prefab.from_node(
+                Node("hero", id="hero", mesh=source.require("mesh.hero").payload), name="hero"
+            ).save(path, source)
+            target = AssetRegistry()
+            with self.assertRaises(KeyError):
+                target.register_file("prefab.hero", path)
+            self.assertNotIn("prefab.hero", target)
 
     def test_clear_and_remove_drop_sources(self):
         with tempfile.TemporaryDirectory() as directory:

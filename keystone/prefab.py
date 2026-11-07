@@ -1,18 +1,27 @@
-"""Deterministic prefabs: capture a scene subtree and instantiate reusable copies.
+"""Deterministic prefabs: capture, persist and instantiate reusable subtrees.
 
 A prefab is a detached template. Instances get fresh, caller-prefixed or
 scene-allocated IDs, while names, transforms, tags, layers, components and
-mesh/material payloads are preserved. The template is never attached.
+mesh/material payloads are preserved. Persistent prefabs reference registered
+mesh/material assets by id and require an explicit component type map on load.
 """
 
 from __future__ import annotations
 
 import copy
-from dataclasses import dataclass
+import json
+from collections.abc import Mapping
+from dataclasses import asdict, dataclass, is_dataclass
+from pathlib import Path
 
-from keystone.scene import Node, Scene
+from keystone.math3d import Quat, Vec3
+from keystone.scene import Node, Scene, Transform
+from keystone.schema import PREFAB_SCHEMA_VERSION
+from keystone.serialization import read_json, write_json_atomic
 
-__all__ = ["Prefab"]
+__all__ = ["PREFAB_SCHEMA_VERSION", "Prefab"]
+
+ComponentTypes = Mapping[str, type]
 
 
 def _clone_template(node: Node) -> Node:
@@ -34,6 +43,124 @@ def _clone_template(node: Node) -> Node:
 
 def _collect_ids(node: Node) -> list[str]:
     return [item.id for item in node.traverse() if item.id]
+
+
+def _json_safe(value: object, label: str) -> object:
+    try:
+        json.dumps(value, allow_nan=False)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{label} must be JSON-safe") from exc
+    return value
+
+
+def _component_to_dict(component: object) -> dict:
+    component_type = type(component)
+    if callable(getattr(component, "to_dict", None)):
+        data = component.to_dict()
+    elif is_dataclass(component):
+        data = asdict(component)
+    elif isinstance(component, (str, int, float, bool, type(None), list, tuple, dict)):
+        data = component
+    else:
+        raise TypeError(f"component {component_type.__name__} is not serializable")
+    return {"type": component_type.__name__, "data": _json_safe(data, f"component {component_type.__name__}")}
+
+
+def _component_from_dict(item: object, component_types: ComponentTypes | None) -> object:
+    if not isinstance(item, Mapping) or not isinstance(item.get("type"), str) or "data" not in item:
+        raise ValueError("prefab component must hold 'type' and 'data'")
+    if component_types is None:
+        raise ValueError("loading prefab components needs component_types")
+    name = item["type"]
+    component_type = component_types.get(name)
+    if component_type is None:
+        raise ValueError(f"unknown prefab component type {name!r}")
+    data = item["data"]
+    from_dict = getattr(component_type, "from_dict", None)
+    if callable(from_dict):
+        return from_dict(data)
+    if is_dataclass(component_type):
+        if not isinstance(data, Mapping):
+            raise ValueError(f"prefab component {name!r} data must be a mapping")
+        return component_type(**data)
+    if component_type is type(None):
+        if data is not None:
+            raise ValueError(f"prefab component {name!r} data must be null")
+        return None
+    if component_type in (list, tuple):
+        if not isinstance(data, (list, tuple)):
+            raise ValueError(f"prefab component {name!r} data must be a list")
+        return component_type(data)
+    if component_type is dict:
+        if not isinstance(data, Mapping):
+            raise ValueError(f"prefab component {name!r} data must be a mapping")
+        return dict(data)
+    if component_type is bool:
+        if not isinstance(data, bool):
+            raise ValueError(f"prefab component {name!r} data must be a boolean")
+        return data
+    if component_type is int:
+        if isinstance(data, bool) or not isinstance(data, int):
+            raise ValueError(f"prefab component {name!r} data must be an integer")
+        return data
+    if component_type is float:
+        if isinstance(data, bool) or not isinstance(data, (int, float)):
+            raise ValueError(f"prefab component {name!r} data must be a number")
+        return float(data)
+    if component_type is str:
+        if not isinstance(data, str):
+            raise ValueError(f"prefab component {name!r} data must be a string")
+        return data
+    if isinstance(data, (list, tuple)):
+        return component_type(*data)
+    return component_type(data)
+
+
+def _asset_id(
+    registry: object | None,
+    payload: object | None,
+    label: str,
+    kind: str,
+) -> str | None:
+    if payload is None:
+        return None
+    if registry is None:
+        raise ValueError(f"{label} needs an AssetRegistry")
+    for record in registry:  # type: ignore[union-attr]
+        if (
+            getattr(record, "payload", None) is payload
+            and getattr(record, "kind", None) == kind
+        ):
+            return str(record.id)
+    raise ValueError(f"{label} is not registered as a {kind} asset")
+
+
+def _transform_to_dict(transform: Transform) -> dict:
+    rotation = transform.rotation
+    return {
+        "position": [transform.position.x, transform.position.y, transform.position.z],
+        "rotation": [rotation.x, rotation.y, rotation.z, rotation.w],
+        "scale": [transform.scale.x, transform.scale.y, transform.scale.z],
+    }
+
+
+def _transform_from_dict(value: object) -> Transform:
+    if not isinstance(value, Mapping):
+        raise TypeError("prefab transform must be a mapping")
+    position = value.get("position", [0.0, 0.0, 0.0])
+    rotation = value.get("rotation", [0.0, 0.0, 0.0, 1.0])
+    scale = value.get("scale", [1.0, 1.0, 1.0])
+    if not (isinstance(position, (list, tuple)) and len(position) == 3):
+        raise ValueError("prefab transform position must have three values")
+    if not (isinstance(rotation, (list, tuple)) and len(rotation) == 4):
+        raise ValueError("prefab transform rotation must have four values")
+    if not (isinstance(scale, (list, tuple)) and len(scale) == 3):
+        raise ValueError("prefab transform scale must have three values")
+    return Transform(
+        position=Vec3(float(position[0]), float(position[1]), float(position[2])),
+        rotation=Quat(float(rotation[3]), float(rotation[0]), float(rotation[1]), float(rotation[2])),
+        scale=Vec3(float(scale[0]), float(scale[1]), float(scale[2])),
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,6 +209,161 @@ class Prefab:
     @property
     def node_count(self) -> int:
         return sum(1 for root in self.roots for _ in root.traverse())
+
+    def asset_ids(self, registry: object) -> tuple[str, ...]:
+        """Return the mesh/material asset ids referenced by this prefab."""
+        found: set[str] = set()
+
+        def visit(node: Node) -> None:
+            for label, payload in (("mesh", node.mesh), ("material", node.material)):
+                asset_id = _asset_id(
+                    registry, payload, f"{node.id or node.name!r} {label}", label
+                )
+                if asset_id is not None:
+                    found.add(asset_id)
+            for child in node.children:
+                visit(child)
+
+        for root in self.roots:
+            visit(root)
+        return tuple(sorted(found))
+
+    def to_dict(self, registry: object | None = None) -> dict:
+        """Serialize to versioned JSON; mesh/material payloads need registered assets."""
+
+        def entry(node: Node) -> dict:
+            return {
+                "id": node.id,
+                "name": node.name,
+                "visible": node.visible,
+                "tags": sorted(node.tags),
+                "layer": node.layer,
+                "transform": _transform_to_dict(node.transform),
+                "mesh": _asset_id(
+                    registry, node.mesh, f"{node.id or node.name!r} mesh", "mesh"
+                ),
+                "material": _asset_id(
+                    registry, node.material, f"{node.id or node.name!r} material", "material"
+                ),
+                "components": [
+                    _component_to_dict(component)
+                    for _, component in sorted(
+                        node.components.items(),
+                        key=lambda item: (item[0].__module__, item[0].__qualname__),
+                    )
+                ],
+                "children": [entry(child) for child in node.children],
+            }
+
+        return {
+            "schema": PREFAB_SCHEMA_VERSION,
+            "name": self.name,
+            "roots": [entry(root) for root in self.roots],
+        }
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: object,
+        registry: object | None = None,
+        component_types: ComponentTypes | None = None,
+    ) -> Prefab:
+        """Load versioned JSON; asset ids resolve through the registry."""
+        if not isinstance(data, Mapping):
+            raise TypeError("prefab document must be a mapping")
+        if "schema" not in data:
+            raise ValueError("prefab document needs a schema")
+        schema = data["schema"]
+        if isinstance(schema, bool) or not isinstance(schema, int) or schema != PREFAB_SCHEMA_VERSION:
+            raise ValueError(f"unsupported prefab schema {schema}")
+        name = data.get("name")
+        raw_roots = data.get("roots")
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("prefab name must be a non-blank string")
+        if not isinstance(raw_roots, list) or not raw_roots:
+            raise ValueError("prefab roots must be a non-empty list")
+
+        def resolve(value: object, kind: str, label: str) -> object | None:
+            if value is None:
+                return None
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{label} asset id must be a non-blank string or null")
+            if registry is None:
+                raise ValueError(f"{label} needs an AssetRegistry")
+            record = registry.require(value)  # type: ignore[union-attr]
+            if getattr(record, "kind", None) != kind:
+                raise ValueError(f"{label} asset {value!r} is not a {kind}")
+            return getattr(record, "payload", None)
+
+        def node(value: object) -> Node:
+            if not isinstance(value, Mapping):
+                raise TypeError("prefab node must be a mapping")
+            node_id = value.get("id", "")
+            node_name = value.get("name", "")
+            visible = value.get("visible", True)
+            layer = value.get("layer", "default")
+            tags = value.get("tags", [])
+            if not isinstance(node_id, str):
+                raise TypeError("prefab node id must be a string")
+            if not isinstance(node_name, str):
+                raise TypeError("prefab node name must be a string")
+            if not isinstance(visible, bool):
+                raise TypeError("prefab node visible must be a boolean")
+            if not isinstance(layer, str) or not layer:
+                raise ValueError("prefab node layer must be a non-empty string")
+            if not isinstance(tags, (list, tuple)) or any(not isinstance(tag, str) for tag in tags):
+                raise TypeError("prefab node tags must be a list of strings")
+            raw_components = value.get("components", [])
+            if not isinstance(raw_components, list):
+                raise TypeError("prefab node components must be a list")
+            components = {}
+            for item in raw_components:
+                component = _component_from_dict(item, component_types)
+                if type(component) in components:
+                    raise ValueError(
+                        f"prefab node {node_id!r} has duplicate {type(component).__name__} components"
+                    )
+                components[type(component)] = component
+            built = Node(
+                node_name,
+                transform=_transform_from_dict(value.get("transform", {})),
+                mesh=resolve(value.get("mesh"), "mesh", f"{node_id!r} mesh"),
+                material=resolve(value.get("material"), "material", f"{node_id!r} material"),
+                visible=visible,
+                id=node_id,
+                tags=set(tags),
+                layer=layer,
+                components=components,
+            )
+            raw_children = value.get("children", [])
+            if not isinstance(raw_children, list):
+                raise TypeError("prefab node children must be a list")
+            for child in raw_children:
+                built.add_child(node(child))
+            return built
+
+        return cls(name, tuple(node(root) for root in raw_roots))
+
+    def save(self, path: str | Path, registry: object | None = None) -> Path:
+        """Write a versioned JSON prefab atomically."""
+        target = Path(path)
+        write_json_atomic(target, self.to_dict(registry), backup=False)
+        return target
+
+    @classmethod
+    def load(
+        cls,
+        path: str | Path,
+        registry: object | None = None,
+        component_types: ComponentTypes | None = None,
+    ) -> Prefab:
+        """Load a versioned JSON prefab from disk."""
+        source = Path(path)
+        try:
+            data = read_json(source)
+        except (OSError, ValueError) as exc:
+            raise ValueError(f"could not read prefab from {source}: {exc}") from exc
+        return cls.from_dict(data, registry=registry, component_types=component_types)
 
     def instantiate(
         self,
@@ -155,7 +437,7 @@ class Prefab:
             }
 
         return {
-            "schema": 1,
+            "schema": PREFAB_SCHEMA_VERSION,
             "name": self.name,
             "node_count": self.node_count,
             "nodes": [entry(root) for root in self.roots],

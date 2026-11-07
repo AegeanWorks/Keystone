@@ -8,18 +8,20 @@ from pathlib import Path
 
 from keystone.geometry import Material, MeshData
 from keystone.obj_loader import load_obj
+from keystone.prefab import Prefab
 from keystone.texture import TextureData
 
-ASSET_KINDS = ("mesh", "material", "texture")
-AssetPayload = MeshData | Material | TextureData
+ASSET_KINDS = ("mesh", "material", "texture", "prefab")
+AssetPayload = MeshData | Material | TextureData | Prefab
 AssetLoader = Callable[[Path], object]
 Fingerprint = tuple[int, int]
 
 LOADERS: dict[str, AssetLoader] = {
     "mesh": load_obj,
     "texture": TextureData.from_png,
+    "prefab": Prefab.load,
 }
-SUFFIX_KINDS = {".obj": "mesh", ".png": "texture"}
+SUFFIX_KINDS = {".obj": "mesh", ".png": "texture", ".kprefab": "prefab"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,7 +85,7 @@ def default_loader(kind: str) -> AssetLoader:
 
 
 def kind_from_suffix(path: str | Path) -> str:
-    """Infer an asset kind from a .obj or .png path."""
+    """Infer an asset kind from a .obj, .png or .kprefab path."""
     suffix = Path(path).suffix.lower()
     try:
         return SUFFIX_KINDS[suffix]
@@ -110,7 +112,9 @@ def asset_kind(payload: object) -> str:
         return "material"
     if isinstance(payload, TextureData):
         return "texture"
-    raise TypeError("payload must be a MeshData, Material or TextureData")
+    if isinstance(payload, Prefab):
+        return "prefab"
+    raise TypeError("payload must be a MeshData, Material, TextureData or Prefab")
 
 
 def load_asset(kind: str, path: str | Path, loader: AssetLoader | None = None) -> AssetPayload:
