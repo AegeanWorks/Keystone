@@ -1115,6 +1115,9 @@ class WebServerTest(unittest.TestCase):
             "component-remove",
             "view-reset",
             "view-focus",
+            "gizmo-move",
+            "gizmo-rotate",
+            "gizmo-scale",
             "prefab-save",
             "prefab-insert",
             "transform-apply",
@@ -1157,6 +1160,13 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("apply_prefab", script)
         self.assertIn("revertPrefabInstance", script)
         self.assertIn("applyPrefabInstance", script)
+        self.assertIn("onRotate", script)
+        self.assertIn("onScale", script)
+        self.assertIn("applyGizmoRotation", script)
+        self.assertIn("applyGizmoScale", script)
+        self.assertIn("setGizmoMode", script)
+        self.assertIn("axisAngleQuaternion", script)
+        self.assertIn("multiplyQuaternion", script)
         status, _, body = self._request("/viewer.js")
         self.assertEqual(status, 200)
         viewer_script = body.decode("utf-8")
@@ -1176,6 +1186,13 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("finishGizmoDrag", viewer_script)
         self.assertIn("renderGizmo", viewer_script)
         self.assertIn("GIZMO_VERTEX_SHADER", viewer_script)
+        self.assertIn("setGizmoMode", viewer_script)
+        self.assertIn("gizmoRing", viewer_script)
+        self.assertIn("gizmoScaleArrow", viewer_script)
+        self.assertIn("ringDistance", viewer_script)
+        self.assertIn("rotationVector", viewer_script)
+        self.assertIn("axisAngleMatrix", viewer_script)
+        self.assertIn("scaleMatrix", viewer_script)
         status, _, payload = self._json("/api")
         self.assertEqual(status, 200)
         self.assertIn("editor", payload["endpoints"])

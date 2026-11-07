@@ -257,11 +257,7 @@ function pointSegmentDistance(px, py, ax, ay, bx, by) {
   return Math.hypot(px - (ax + dx * t), py - (ay + dy * t));
 }
 
-function gizmoArrow() {
-  const positions = [];
-  const half = 0.035;
-  const start = 0.08;
-  const end = 0.78;
+function pushBox(positions, start, end, half) {
   const corners = [
     [start, -half, -half], [start, half, -half], [start, half, half], [start, -half, half],
     [end, -half, -half], [end, half, -half], [end, half, half], [end, -half, half],
@@ -279,6 +275,11 @@ function gizmoArrow() {
       positions.push(...corners[index]);
     }
   }
+}
+
+function gizmoArrow() {
+  const positions = [];
+  pushBox(positions, 0.08, 0.78, 0.035);
   const headHalf = 0.075;
   const headBase = 0.78;
   const baseCorners = [
@@ -294,6 +295,72 @@ function gizmoArrow() {
   positions.push(...baseCorners[0], ...baseCorners[2], ...baseCorners[1]);
   positions.push(...baseCorners[0], ...baseCorners[3], ...baseCorners[2]);
   return { positions: new Float32Array(positions), count: positions.length / 3 };
+}
+
+function gizmoScaleArrow() {
+  const positions = [];
+  pushBox(positions, 0.08, 0.82, 0.025);
+  pushBox(positions, 0.82, 0.98, 0.065);
+  return { positions: new Float32Array(positions), count: positions.length / 3 };
+}
+
+function gizmoRing() {
+  const positions = [];
+  const segments = 48;
+  const inner = 0.72;
+  const outer = 0.78;
+  for (let index = 0; index < segments; index += 1) {
+    const first = (index / segments) * Math.PI * 2;
+    const second = ((index + 1) / segments) * Math.PI * 2;
+    const y0 = Math.cos(first);
+    const z0 = Math.sin(first);
+    const y1 = Math.cos(second);
+    const z1 = Math.sin(second);
+    positions.push(
+      0, y0 * inner, z0 * inner,
+      0, y1 * inner, z1 * inner,
+      0, y1 * outer, z1 * outer,
+      0, y0 * inner, z0 * inner,
+      0, y1 * outer, z1 * outer,
+      0, y0 * outer, z0 * outer,
+    );
+  }
+  return { positions: new Float32Array(positions), count: positions.length / 3 };
+}
+
+function negate(value) {
+  return [-value[0], -value[1], -value[2]];
+}
+
+function translationMatrix(offset) {
+  return new Float32Array([
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    offset[0], offset[1], offset[2], 1,
+  ]);
+}
+
+function axisAngleMatrix(axis, angle) {
+  const [x, y, z] = normalize(axis);
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const rest = 1 - cos;
+  return new Float32Array([
+    rest * x * x + cos, rest * x * y + sin * z, rest * x * z - sin * y, 0,
+    rest * x * y - sin * z, rest * y * y + cos, rest * y * z + sin * x, 0,
+    rest * x * z + sin * y, rest * y * z - sin * x, rest * z * z + cos, 0,
+    0, 0, 0, 1,
+  ]);
+}
+
+function scaleMatrix(axis, factor) {
+  return new Float32Array([
+    axis === "x" ? factor : 1, 0, 0, 0,
+    0, axis === "y" ? factor : 1, 0, 0,
+    0, 0, axis === "z" ? factor : 1, 0,
+    0, 0, 0, 1,
+  ]);
 }
 
 function base64ToBytes(encoded) {
@@ -318,15 +385,9 @@ export class SceneViewer {
       mvp: this.gl.getUniformLocation(this.gizmoProgram, "u_mvp"),
       color: this.gl.getUniformLocation(this.gizmoProgram, "u_color"),
     };
-    this.gizmoArrow = gizmoArrow();
-    this.gizmoVao = this.gl.createVertexArray();
-    this.gizmoBuffer = this.gl.createBuffer();
-    this.gl.bindVertexArray(this.gizmoVao);
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.gizmoBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, this.gizmoArrow.positions, this.gl.STATIC_DRAW);
-    this.gl.enableVertexAttribArray(0);
-    this.gl.vertexAttribPointer(0, 3, this.gl.FLOAT, false, 0, 0);
-    this.gl.bindVertexArray(null);
+    this.gizmoArrow = this.buildGizmoVao(gizmoArrow());
+    this.gizmoRing = this.buildGizmoVao(gizmoRing());
+    this.gizmoScaleHandle = this.buildGizmoVao(gizmoScaleArrow());
     this.uniforms = {};
     for (const name of [
       "world", "view_proj", "normal", "color", "texture", "has_texture", "specular",
@@ -350,6 +411,7 @@ export class SceneViewer {
     this.nodeBounds = new Map();
     this.dragging = false;
     this.gizmoDrag = null;
+    this.gizmoMode = "translate";
     this.hoverAxis = null;
     this.editable = true;
     this.pointerStart = [0, 0];
@@ -460,6 +522,19 @@ export class SceneViewer {
     this.resize();
   }
 
+  buildGizmoVao(geometry) {
+    const gl = this.gl;
+    const vao = gl.createVertexArray();
+    const buffer = gl.createBuffer();
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, geometry.positions, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+    gl.bindVertexArray(null);
+    return { vao, buffer, count: geometry.count };
+  }
+
   ensureCamera(scene) {
     if (this.cameraState) {
       return;
@@ -496,6 +571,17 @@ export class SceneViewer {
       this.canvas.style.cursor = "";
       this.render();
     }
+  }
+
+  setGizmoMode(mode) {
+    if (!["translate", "rotate", "scale"].includes(mode)) {
+      return;
+    }
+    this.gizmoMode = mode;
+    this.cancelGizmoDrag();
+    this.hoverAxis = null;
+    this.canvas.style.cursor = "";
+    this.render();
   }
 
   selectedNode() {
@@ -631,25 +717,42 @@ export class SceneViewer {
   }
 
   gizmoAxes() {
+    const colors = {
+      x: [0.93, 0.29, 0.32],
+      y: [0.36, 0.88, 0.42],
+      z: [0.36, 0.58, 0.97],
+    };
+    if (this.gizmoMode === "translate") {
+      return [
+        {
+          name: "x",
+          vector: [1, 0, 0],
+          basis: [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+          color: colors.x,
+        },
+        {
+          name: "y",
+          vector: [0, 1, 0],
+          basis: [[0, 1, 0], [-1, 0, 0], [0, 0, 1]],
+          color: colors.y,
+        },
+        {
+          name: "z",
+          vector: [0, 0, 1],
+          basis: [[0, 0, 1], [0, 1, 0], [-1, 0, 0]],
+          color: colors.z,
+        },
+      ];
+    }
+    const node = this.selectedNode();
+    const world = (node && node.world) || [];
+    const x = normalize([world[0] || 1, world[1] || 0, world[2] || 0]);
+    const y = normalize([world[4] || 0, world[5] || 1, world[6] || 0]);
+    const z = normalize([world[8] || 0, world[9] || 0, world[10] || 1]);
     return [
-      {
-        name: "x",
-        vector: [1, 0, 0],
-        basis: [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
-        color: [0.93, 0.29, 0.32],
-      },
-      {
-        name: "y",
-        vector: [0, 1, 0],
-        basis: [[0, 1, 0], [-1, 0, 0], [0, 0, 1]],
-        color: [0.36, 0.88, 0.42],
-      },
-      {
-        name: "z",
-        vector: [0, 0, 1],
-        basis: [[0, 0, 1], [0, 1, 0], [-1, 0, 0]],
-        color: [0.36, 0.58, 0.97],
-      },
+      { name: "x", vector: x, basis: [x, y, z], color: colors.x },
+      { name: "y", vector: y, basis: [y, negate(x), z], color: colors.y },
+      { name: "z", vector: z, basis: [z, y, negate(x)], color: colors.z },
     ];
   }
 
@@ -693,7 +796,26 @@ export class SceneViewer {
     }
     let best = null;
     let bestDistance = 10.0;
-    for (const handle of this.gizmoAxes()) {
+    const handles = this.gizmoAxes();
+    if (this.gizmoMode === "rotate") {
+      for (const handle of handles) {
+        const distance = this.ringDistance(
+          clientX,
+          clientY,
+          origin,
+          handle,
+          scale,
+          matrix,
+          rect,
+        );
+        if (distance < bestDistance) {
+          best = handle.name;
+          bestDistance = distance;
+        }
+      }
+      return best;
+    }
+    for (const handle of handles) {
       const end = this.projectToScreen(
         [
           origin[0] + handle.vector[0] * scale,
@@ -718,6 +840,43 @@ export class SceneViewer {
         best = handle.name;
         bestDistance = distance;
       }
+    }
+    return best;
+  }
+
+  ringDistance(clientX, clientY, origin, handle, scale, matrix, rect) {
+    const basis = handle.basis;
+    const radius = 0.75 * scale;
+    let previous = null;
+    let best = Infinity;
+    for (let index = 0; index <= 32; index += 1) {
+      const angle = (index / 32) * Math.PI * 2;
+      const cosine = Math.cos(angle);
+      const sine = Math.sin(angle);
+      const point = [
+        origin[0] + (basis[1][0] * cosine + basis[2][0] * sine) * radius,
+        origin[1] + (basis[1][1] * cosine + basis[2][1] * sine) * radius,
+        origin[2] + (basis[1][2] * cosine + basis[2][2] * sine) * radius,
+      ];
+      const screen = this.projectToScreen(point, matrix, rect);
+      if (!screen) {
+        previous = null;
+        continue;
+      }
+      if (previous) {
+        best = Math.min(
+          best,
+          pointSegmentDistance(
+            clientX,
+            clientY,
+            previous[0],
+            previous[1],
+            screen[0],
+            screen[1],
+          ),
+        );
+      }
+      previous = screen;
     }
     return best;
   }
@@ -794,27 +953,120 @@ export class SceneViewer {
     }
     const world = node.world || [];
     const origin = [world[12] || 0, world[13] || 0, world[14] || 0];
-    const start = this.axisParameter(event.clientX, event.clientY, origin, handle.vector);
-    if (start === null) {
-      return false;
+    if (this.gizmoMode === "rotate") {
+      const basis = this.ringBasis(handle.vector);
+      const start = this.rotationVector(
+        event.clientX,
+        event.clientY,
+        origin,
+        handle.vector,
+        basis,
+      );
+      if (start === null) {
+        return false;
+      }
+      this.gizmoDrag = {
+        mode: "rotate",
+        axis,
+        vector: handle.vector,
+        origin,
+        basis,
+        start,
+        angle: 0,
+        bases: this.previewBases(node.id),
+      };
+    } else {
+      const start = this.axisParameter(
+        event.clientX,
+        event.clientY,
+        origin,
+        handle.vector,
+      );
+      if (start === null) {
+        return false;
+      }
+      this.gizmoDrag = {
+        mode: this.gizmoMode,
+        axis,
+        vector: handle.vector,
+        origin,
+        start,
+        delta: [0, 0, 0],
+        factor: 1,
+        bases: this.previewBases(node.id),
+      };
     }
-    this.gizmoDrag = {
-      axis,
-      vector: handle.vector,
-      origin,
-      start,
-      delta: [0, 0, 0],
-      bases: this.previewBases(node.id),
-    };
     this.hoverAxis = axis;
     this.canvas.style.cursor = "grabbing";
     this.render();
     return true;
   }
 
+  ringBasis(axis) {
+    const helper = Math.abs(axis[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+    const u = normalize(cross(axis, helper));
+    const v = cross(axis, u);
+    return { u, v };
+  }
+
+  rotationVector(clientX, clientY, origin, axis, basis) {
+    const ray = this.rayAt(clientX, clientY);
+    if (!ray) {
+      return null;
+    }
+    const denominator = dot(ray.direction, axis);
+    if (Math.abs(denominator) < 1e-5) {
+      return null;
+    }
+    const distance = dot(subtract(origin, ray.origin), axis) / denominator;
+    if (distance < 0) {
+      return null;
+    }
+    const point = [
+      ray.origin[0] + ray.direction[0] * distance,
+      ray.origin[1] + ray.direction[1] * distance,
+      ray.origin[2] + ray.direction[2] * distance,
+    ];
+    const relative = subtract(point, origin);
+    return [dot(relative, basis.u), dot(relative, basis.v)];
+  }
+
   updateGizmoDrag(event) {
     const drag = this.gizmoDrag;
     if (!drag) {
+      return;
+    }
+    if (drag.mode === "rotate") {
+      const current = this.rotationVector(
+        event.clientX,
+        event.clientY,
+        drag.origin,
+        drag.vector,
+        drag.basis,
+      );
+      if (current === null) {
+        return;
+      }
+      let angle = Math.atan2(
+        drag.start[0] * current[1] - drag.start[1] * current[0],
+        drag.start[0] * current[0] + drag.start[1] * current[1],
+      );
+      if (event.ctrlKey || event.metaKey) {
+        const step = Math.PI / 12;
+        angle = Math.round(angle / step) * step;
+      }
+      drag.angle = Math.round(angle * 1e6) / 1e6;
+      const transform = multiply(
+        multiply(
+          translationMatrix(drag.origin),
+          axisAngleMatrix(drag.vector, drag.angle),
+        ),
+        translationMatrix(negate(drag.origin)),
+      );
+      for (const base of drag.bases) {
+        base.node.world = multiply(transform, base.world);
+      }
+      this.render();
       return;
     }
     const current = this.axisParameter(
@@ -824,6 +1076,20 @@ export class SceneViewer {
       drag.vector,
     );
     if (current === null) {
+      return;
+    }
+    if (drag.mode === "scale") {
+      let factor = 1 + (current - drag.start) / (this.gizmoScale(drag.origin) * 2.0);
+      if (event.ctrlKey || event.metaKey) {
+        factor = Math.round(factor / 0.1) * 0.1;
+      }
+      factor = Math.max(0.01, Math.round(factor * 1e6) / 1e6);
+      drag.factor = factor;
+      const matrix = scaleMatrix(drag.axis, factor);
+      for (const base of drag.bases) {
+        base.node.world = multiply(base.world, matrix);
+      }
+      this.render();
       return;
     }
     let distance = current - drag.start;
@@ -855,12 +1121,19 @@ export class SceneViewer {
     for (const base of drag.bases) {
       base.node.world = Array.from(base.world);
     }
-    const delta = drag.delta;
-    if (
-      (delta[0] !== 0 || delta[1] !== 0 || delta[2] !== 0) &&
+    if (drag.mode === "rotate") {
+      if (drag.angle !== 0 && typeof this.onRotate === "function") {
+        this.onRotate(drag.axis, (drag.angle * 180) / Math.PI);
+      }
+    } else if (drag.mode === "scale") {
+      if (drag.factor !== 1 && typeof this.onScale === "function") {
+        this.onScale(drag.axis, drag.factor);
+      }
+    } else if (
+      (drag.delta[0] !== 0 || drag.delta[1] !== 0 || drag.delta[2] !== 0) &&
       typeof this.onTransform === "function"
     ) {
-      this.onTransform(drag.axis, delta);
+      this.onTransform(drag.axis, drag.delta);
     }
     this.render();
   }
@@ -1092,6 +1365,11 @@ export class SceneViewer {
     const origin = [world[12] || 0, world[13] || 0, world[14] || 0];
     const scale = this.gizmoScale(origin);
     const active = this.gizmoDrag ? this.gizmoDrag.axis : this.hoverAxis;
+    const geometry = this.gizmoMode === "rotate"
+      ? this.gizmoRing
+      : this.gizmoMode === "scale"
+        ? this.gizmoScaleHandle
+        : this.gizmoArrow;
     gl.useProgram(this.gizmoProgram);
     gl.disable(gl.DEPTH_TEST);
     gl.disable(gl.CULL_FACE);
@@ -1113,8 +1391,8 @@ export class SceneViewer {
         multiply(viewProjection, model),
       );
       gl.uniform3fv(this.gizmoUniforms.color, color);
-      gl.bindVertexArray(this.gizmoVao);
-      gl.drawArrays(gl.TRIANGLES, 0, this.gizmoArrow.count);
+      gl.bindVertexArray(geometry.vao);
+      gl.drawArrays(gl.TRIANGLES, 0, geometry.count);
     }
     gl.bindVertexArray(null);
     gl.enable(gl.DEPTH_TEST);

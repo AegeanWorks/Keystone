@@ -115,6 +115,11 @@
         <div class="field-grid">
           <label>Instance prefix <input id="prefab-instance" type="text" placeholder="optional"></label>
         </div>
+        <div class="buttons">
+          <button id="gizmo-move" type="button">Move</button>
+          <button id="gizmo-rotate" type="button">Rotate</button>
+          <button id="gizmo-scale" type="button">Scale</button>
+        </div>
         <label class="stack" for="position">Position x/y/z</label>
         <input id="position" type="text" value="0, 0, 0">
         <label class="stack" for="rotation">Rotation x/y/z/w</label>
@@ -165,7 +170,7 @@
       <canvas id="canvas"></canvas>
       <button id="view-reset" class="viewer-control" type="button">Reset view</button>
       <button id="view-focus" class="viewer-control viewer-control-secondary" type="button">Focus selected</button>
-      <div id="viewer-status" class="viewer-status">WebGL2 viewer · drag X/Y/Z to move · drag orbit · wheel zoom</div>
+      <div id="viewer-status" class="viewer-status">WebGL2 viewer · W/E/R move/rotate/scale · drag orbit · wheel zoom</div>
       <div id="hud" class="hud"></div>
     </section>
   </main>

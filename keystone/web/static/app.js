@@ -78,6 +78,9 @@ const elements = {
   viewerStatus: document.getElementById("viewer-status"),
   viewReset: document.getElementById("view-reset"),
   viewFocus: document.getElementById("view-focus"),
+  gizmoMove: document.getElementById("gizmo-move"),
+  gizmoRotate: document.getElementById("gizmo-rotate"),
+  gizmoScale: document.getElementById("gizmo-scale"),
   hud: document.getElementById("hud"),
 };
 
@@ -90,6 +93,10 @@ try {
   viewer.onSelect = (nodeId) => run(() => selectNode(nodeId));
   viewer.onTransform = (axis, delta) =>
     run(() => applyGizmoTransform(axis, delta));
+  viewer.onRotate = (axis, degrees) =>
+    run(() => applyGizmoRotation(axis, degrees));
+  viewer.onScale = (axis, factor) =>
+    run(() => applyGizmoScale(axis, factor));
 } catch (error) {
   elements.viewerStatus.textContent = `Viewer unavailable: ${error.message}`;
 }
@@ -664,6 +671,76 @@ async function applyGizmoTransform(axis, delta) {
   await refreshScene(false);
 }
 
+function axisAngleQuaternion(axis, degrees) {
+  const half = (degrees * Math.PI) / 360;
+  const sine = Math.sin(half);
+  return [
+    axis === "x" ? sine : 0,
+    axis === "y" ? sine : 0,
+    axis === "z" ? sine : 0,
+    Math.cos(half),
+  ];
+}
+
+function multiplyQuaternion(left, right) {
+  const [lx, ly, lz, lw] = left;
+  const [rx, ry, rz, rw] = right;
+  return [
+    lw * rx + lx * rw + ly * rz - lz * ry,
+    lw * ry - lx * rz + ly * rw + lz * rx,
+    lw * rz + lx * ry - ly * rx + lz * rw,
+    lw * rw - lx * rx - ly * ry - lz * rz,
+  ];
+}
+
+async function applyGizmoRotation(axis, degrees) {
+  if (!editorState || !editorState.selection) {
+    return;
+  }
+  const selection = editorState.selection;
+  const rotation = multiplyQuaternion(
+    selection.transform.rotation,
+    axisAngleQuaternion(axis, degrees),
+  );
+  const size = Math.hypot(...rotation) || 1;
+  await editorAction(
+    {
+      action: "transform",
+      id: selection.id,
+      rotation: rotation.map(
+        (value) => Math.round((value / size) * 1e6) / 1e6,
+      ),
+    },
+    `rotating node on ${axis.toUpperCase()}`,
+  );
+  await refreshScene(false);
+}
+
+async function applyGizmoScale(axis, factor) {
+  if (!editorState || !editorState.selection) {
+    return;
+  }
+  const selection = editorState.selection;
+  const index = { x: 0, y: 1, z: 2 }[axis];
+  const scale = selection.transform.scale.map((value, position) =>
+    position === index
+      ? Math.round(value * factor * 1e6) / 1e6
+      : value,
+  );
+  await editorAction(
+    { action: "transform", id: selection.id, scale },
+    `scaling node on ${axis.toUpperCase()}`,
+  );
+  await refreshScene(false);
+}
+
+function setGizmoMode(mode) {
+  if (viewer) {
+    viewer.setGizmoMode(mode);
+  }
+  setStatus(`gizmo: ${mode}`);
+}
+
 async function applyTransform() {
   if (!editorState || !editorState.selection) {
     throw new Error("Select a node before editing its transform.");
@@ -1138,6 +1215,11 @@ document.addEventListener("keydown", (event) => {
     run(redoEditor);
     return;
   }
+  if (!modifier && (key === "w" || key === "e" || key === "r")) {
+    event.preventDefault();
+    setGizmoMode({ w: "translate", e: "rotate", r: "scale" }[key]);
+    return;
+  }
   const direction = NUDGE_DIRECTIONS[event.key];
   if (direction && editorState.selection) {
     event.preventDefault();
@@ -1229,5 +1311,8 @@ elements.prefabRestore.addEventListener("click", () => run(restorePrefab));
 elements.prefabInsert.addEventListener("click", () => run(insertPrefab));
 elements.prefabRevert.addEventListener("click", () => run(revertPrefabInstance));
 elements.prefabApply.addEventListener("click", () => run(applyPrefabInstance));
+elements.gizmoMove.addEventListener("click", () => setGizmoMode("translate"));
+elements.gizmoRotate.addEventListener("click", () => setGizmoMode("rotate"));
+elements.gizmoScale.addEventListener("click", () => setGizmoMode("scale"));
 
 init();
