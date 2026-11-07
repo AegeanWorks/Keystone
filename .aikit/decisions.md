@@ -776,3 +776,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The hierarchy and inspector showed the selected node, but the 3D viewport did not, so selection was ambiguous in dense scenes.
 - **Decision**: Add `SceneViewer.setSelected(nodeId)`, pass the current editor selection on every `showEditor`, and add a `u_selected` fragment-shader rim term. No API or schema change.
 - **Consequences**: 710 tests green and both JS modules pass `node --check`; selected geometry is visibly outlined without affecting the game camera or scene data. Asset previews and richer viewport tools remain future work.
+
+### ADR-094: Add console keyboard shortcuts for common editor actions
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: The console exposed buttons for undo, redo, delete and focus, but keyboard-driven editing was unavailable and the interface encouraged mouse-only use.
+- **Decision**: Add document-level shortcuts when focus is outside inputs/textareas/selects/contenteditable: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo, Delete deletes the selected node, F focuses it, Escape clears selection. Reuse the existing `run()` busy guard and editor actions; no API or schema change.
+- **Consequences**: 710 tests green and `app.js` passes `node --check`; shortcuts and buttons share one validated command path. Asset previews and richer viewport tools remain future work.

@@ -859,6 +859,8 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("assign_asset", script)
         self.assertIn("fillDatalist", script)
         self.assertIn("setSelected", script)
+        self.assertIn("isEditingTarget", script)
+        self.assertIn("keydown", script)
         self.assertIn("set_component", script)
         self.assertIn("renderComponentFields", script)
         self.assertIn("play_start", script)

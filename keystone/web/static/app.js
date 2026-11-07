@@ -818,6 +818,48 @@ async function init() {
   }
 }
 
+function isEditingTarget(target) {
+  const tag = target && target.tagName;
+  return (
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    tag === "SELECT" ||
+    Boolean(target && target.isContentEditable)
+  );
+}
+
+document.addEventListener("keydown", (event) => {
+  if (isEditingTarget(event.target) || !editorState) {
+    return;
+  }
+  const modifier = event.ctrlKey || event.metaKey;
+  const key = event.key.toLowerCase();
+  if (modifier && key === "z") {
+    event.preventDefault();
+    run(() => (event.shiftKey ? redoEditor() : undoEditor()));
+    return;
+  }
+  if (modifier && key === "y") {
+    event.preventDefault();
+    run(redoEditor);
+    return;
+  }
+  if (event.key === "Delete" && editorState.selection) {
+    event.preventDefault();
+    run(deleteNode);
+    return;
+  }
+  if (key === "f" && editorState.selection && viewer) {
+    event.preventDefault();
+    viewer.focusNode(editorState.selection.id);
+    return;
+  }
+  if (event.key === "Escape") {
+    event.preventDefault();
+    run(() => selectNode(null));
+  }
+});
+
 elements.viewReset.addEventListener("click", () => {
   if (viewer) {
     viewer.resetCamera();
