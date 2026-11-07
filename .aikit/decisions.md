@@ -768,3 +768,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The orbit camera could navigate freely but could not jump to the selected node, which made large scenes slow to inspect.
 - **Decision**: Add `SceneViewer.focusNode(nodeId)`: read the selected node's world translation, set it as the orbit target, clamp the distance to a useful range, and re-render. Add a Focus selected viewport control and cover the JS with `node --check`.
 - **Consequences**: 710 tests green; selection and viewport navigation share one workflow, while selection highlighting and asset previews remain future work.
+
+### ADR-093: Highlight the selected node in the viewport
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: The hierarchy and inspector showed the selected node, but the 3D viewport did not, so selection was ambiguous in dense scenes.
+- **Decision**: Add `SceneViewer.setSelected(nodeId)`, pass the current editor selection on every `showEditor`, and add a `u_selected` fragment-shader rim term. No API or schema change.
+- **Consequences**: 710 tests green and both JS modules pass `node --check`; selected geometry is visibly outlined without affecting the game camera or scene data. Asset previews and richer viewport tools remain future work.

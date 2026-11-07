@@ -432,6 +432,9 @@ function fillTransform(selection) {
 
 function showEditor(editor) {
   editorState = editor;
+  if (viewer) {
+    viewer.setSelected(editor.selection ? editor.selection.id : null);
+  }
   renderHierarchy(editor);
   renderLibraryOptions(editor);
   renderAssets(editor);

@@ -35,6 +35,7 @@ uniform float u_metallic;
 uniform float u_roughness;
 uniform vec3 u_emissive;
 uniform float u_checker_scale;
+uniform float u_selected;
 uniform vec3 u_camera_pos;
 uniform vec3 u_light_dir;
 uniform vec3 u_light_color;
@@ -73,6 +74,8 @@ void main() {
     float tile = mod(floor(v_world.x * u_checker_scale) + floor(v_world.z * u_checker_scale), 2.0);
     color *= mix(0.62, 1.0, tile);
   }
+  float rim = pow(1.0 - max(dot(normal, view), 0.0), 2.0);
+  color += vec3(0.18, 0.50, 0.38) * rim * u_selected;
   float fog = 1.0 - exp(-u_fog_density * u_fog_density * distance * distance);
   frag_color = vec4(mix(color, u_fog_color, clamp(fog, 0.0, 1.0)), 1.0);
 }
@@ -217,7 +220,7 @@ export class SceneViewer {
     this.uniforms = {};
     for (const name of [
       "world", "view_proj", "normal", "color", "texture", "has_texture", "specular",
-      "shininess", "metallic", "roughness", "emissive", "checker_scale", "camera_pos",
+      "shininess", "metallic", "roughness", "emissive", "checker_scale", "selected", "camera_pos",
       "light_dir", "light_color", "ambient",
       "fog_color", "fog_density", "point_pos", "point_color", "point_radius",
     ]) {
@@ -232,6 +235,7 @@ export class SceneViewer {
     this.meshes = new Map();
     this.textures = new Map();
     this.scene = null;
+    this.selectedId = null;
     this.cameraState = null;
     this.dragging = false;
     this.lastPointer = [0, 0];
@@ -308,6 +312,11 @@ export class SceneViewer {
     if (this.scene) {
       this.ensureCamera(this.scene);
     }
+    this.render();
+  }
+
+  setSelected(nodeId) {
+    this.selectedId = nodeId || null;
     this.render();
   }
 
@@ -504,6 +513,7 @@ export class SceneViewer {
       gl.uniform1f(this.uniforms.roughness, material.roughness ?? 0.7);
       gl.uniform3fv(this.uniforms.emissive, material.emissive || [0, 0, 0]);
       gl.uniform1f(this.uniforms.checker_scale, material.checker_scale || 0);
+      gl.uniform1f(this.uniforms.selected, node.id === this.selectedId ? 1 : 0);
       const texture = material.texture ? this.textures.get(material.texture) : null;
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, texture || this.white);
