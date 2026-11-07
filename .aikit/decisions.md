@@ -656,3 +656,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: AI clients often need several related edits (create a node, name it, assign assets, parent a child). Sending them one by one leaves partial scenes on failure and creates many undo steps.
 - **Decision**: Bump the editor schema to 8 and add `batch` with up to 100 actions from a fixed scene-mutating set (`transform`, `set_node`, `assign_asset`, `set_component`, `remove_component`, `create_node`, `delete_node`, `duplicate_node`, `reparent_node`, `insert_prefab`). Run sub-actions through a reentrant session lock with history suppressed, take one pre-batch snapshot, restore the whole scene and selection on failure, and reject nested batches, undo/redo, play and file actions.
 - **Consequences**: 696 tests green; an AI can apply a complete structural edit atomically and undo it in one step, while invalid or unsupported sub-actions fail before mutation. Asset previews and richer schema hints remain future work.
+
+### ADR-079: Import project prefabs after their asset dependencies
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: Manifest assets were imported in list order. A `.kprefab` listed before its mesh dependency failed even though both files existed, which made manifest ordering a hidden constraint.
+- **Decision**: Resolve and validate every manifest path first, import non-prefab assets in manifest order, then prefabs, and return records in the original manifest order. Missing paths fail before any registration.
+- **Consequences**: 697 tests green; manifest order no longer constrains prefab dependencies and a missing file cannot leave a partially imported project. Asset metadata introspection remains future work.

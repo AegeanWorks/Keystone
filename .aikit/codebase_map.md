@@ -9,8 +9,8 @@
 - **Total Python Modules**: `128`
 - **Total Classes**: `202`
 - **Total Top-Level Functions**: `290`
-- **Total Class Methods**: `1224`
-- **Total Source Lines**: `25219`
+- **Total Class Methods**: `1225`
+- **Total Source Lines**: `25261`
 
 ---
 
@@ -1100,7 +1100,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `337` lines (`12510` bytes)
+**Size**: `344` lines (`12967` bytes)
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -2499,7 +2499,7 @@
 ### [`tests/test_project.py`](tests/test_project.py)
 > *Tests for project manifests, scaffolding and the --project CLI path.*
 
-**Size**: `234` lines (`9785` bytes)
+**Size**: `269` lines (`11411` bytes)
 
 **Classes:**
 - `class ProjectManifestTest`
@@ -2511,6 +2511,7 @@
   - Method `.test_create_project_loads_and_simulates()`
   - Method `._project_with_assets(root, name)`
   - Method `.test_project_assets_import_with_stable_ids()`
+  - Method `.test_project_assets_import_prefab_dependencies_first()`
   - Method `.test_project_game_imports_manifest_assets()`
   - Method `.test_project_assets_reject_unsafe_missing_and_unknown()`
   - Method `.test_cli_project_asset_failure_is_actionable()`

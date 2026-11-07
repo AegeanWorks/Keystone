@@ -228,7 +228,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - Editor schema 8 applies up to 100 scene-mutating actions atomically with one undo entry and full rollback on failure.
 - `--project . --serve` uses `<project>/prefabs/*.kprefab`; `--prefab-dir DIR` overrides the library, and library entries report load errors instead of breaking the editor.
 - `python -m keystone --new <dir>` scaffolds a project whose `--project <dir> --describe` and `--simulate` paths pass the five-operation contract.
-- A project manifest may list relative `.obj`, `.png` and `.kprefab` assets; `--project` imports them as `project:<path>` and rejects absolute, escaping, missing or unsupported paths.
+- A project manifest may list relative `.obj`, `.png` and `.kprefab` assets; `--project` imports them as `project:<path>` after dependencies, rejects absolute, escaping, missing or unsupported paths, and returns records in manifest order.
 - Schema-4 reports include node ID, parent ID, tags, layer and component names; older reports still compare by name.
 - `TextureData.checker()` renders through a textured plane and material metadata appears in reports.
 - `python -m keystone --headless --frames 1 --out frame.png --report frame.json` writes both artifacts.

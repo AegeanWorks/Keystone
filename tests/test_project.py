@@ -12,6 +12,7 @@ from keystone.__main__ import main
 from keystone.assets import AssetRegistry
 from keystone.headless import run_simulation
 from keystone.png import write_png
+from keystone.prefab import Prefab
 from keystone.project import (
     PROJECT_FILE,
     ProjectManifest,
@@ -22,6 +23,7 @@ from keystone.project import (
     project_asset_id,
     save_project,
 )
+from keystone.scene import Node
 
 OBJ_TEXT = """v 0 0 0
 v 1 0 0
@@ -119,6 +121,39 @@ class ProjectScaffoldTest(unittest.TestCase):
                 registry.require("project:assets/cube.obj").source,
                 (root / "assets" / "cube.obj").resolve(),
             )
+
+    def test_project_assets_import_prefab_dependencies_first(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            context = create_project(root, name=self._name())
+            assets = root / "assets"
+            assets.mkdir()
+            (assets / "cube.obj").write_text(OBJ_TEXT, encoding="utf-8")
+            source = AssetRegistry()
+            mesh = source.register_file(
+                project_asset_id("assets/cube.obj"),
+                assets / "cube.obj",
+                kind="mesh",
+            )
+            Prefab.from_node(Node("hero", id="hero", mesh=mesh.payload), name="hero").save(
+                assets / "hero.kprefab", source
+            )
+            manifest = ProjectManifest(
+                name=context.manifest.name,
+                game=context.manifest.game,
+                assets=("assets/hero.kprefab", "assets/cube.obj"),
+            )
+            save_project(root, manifest)
+            registry = AssetRegistry()
+            records = import_project_assets(load_project(root), registry)
+            self.assertEqual(
+                [record.id for record in records],
+                ["project:assets/hero.kprefab", "project:assets/cube.obj"],
+            )
+            prefab = registry.require("project:assets/hero.kprefab")
+            self.assertEqual(prefab.kind, "prefab")
+            self.assertEqual(prefab.dependencies, ("project:assets/cube.obj",))
+            self.assertEqual(registry.require("project:assets/cube.obj").kind, "mesh")
 
     def test_project_game_imports_manifest_assets(self):
         with tempfile.TemporaryDirectory() as directory:

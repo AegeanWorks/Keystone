@@ -174,8 +174,8 @@ def import_project_assets(
         raise TypeError("project context must be a ProjectContext")
     if not isinstance(registry, AssetRegistry):
         raise TypeError("project assets need an AssetRegistry")
-    records: list[AssetRecord] = []
     root = context.directory.resolve()
+    pending: list[tuple[str, Path, Path, str]] = []
     for value in context.manifest.assets:
         relative = _relative_asset_path(value)
         target = (root / relative).resolve()
@@ -183,15 +183,22 @@ def import_project_assets(
             target.relative_to(root)
         except ValueError as exc:
             raise ValueError(f"project asset escapes the project directory: {value}") from exc
-        kind = kind_from_suffix(target)
-        record = registry.register_file(
-            project_asset_id(relative),
+        if not target.is_file():
+            raise FileNotFoundError(f"project asset does not exist: {target}")
+        pending.append((value, relative, target, kind_from_suffix(target)))
+    ordered = [item for item in pending if item[3] != "prefab"] + [
+        item for item in pending if item[3] == "prefab"
+    ]
+    records: dict[str, AssetRecord] = {}
+    for _, relative, target, kind in ordered:
+        identifier = project_asset_id(relative)
+        records[identifier] = registry.register_file(
+            identifier,
             target,
             kind=kind,
             component_types=component_types if kind == "prefab" else None,
         )
-        records.append(record)
-    return tuple(records)
+    return tuple(records[project_asset_id(value)] for value in context.manifest.assets)
 
 
 def attach_project_assets(

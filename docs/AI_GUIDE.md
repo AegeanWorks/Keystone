@@ -23,7 +23,7 @@ python -m keystone --project my-game --describe
 python -m keystone --project my-game --simulate --frames 120
 ```
 
-`--new` creates `keystone.json`, a five-operation game module, a README and a `.gitignore`. `--project` accepts the project directory or the manifest file, adds the project directory to the import path, validates the game contract and uses the manifest's `game` spec unless `--game` overrides it. Relative `.obj`, `.png` and `.kprefab` paths in the manifest `assets` list are imported as `project:<relative-path>` when the game exposes `self.assets = AssetRegistry()`; bad paths fail with `Why:`/`Fix:` text. `--describe` includes a `project` object with the resolved directory and manifest when `--project` is used.
+`--new` creates `keystone.json`, a five-operation game module, a README and a `.gitignore`. `--project` accepts the project directory or the manifest file, adds the project directory to the import path, validates the game contract and uses the manifest's `game` spec unless `--game` overrides it. Relative `.obj`, `.png` and `.kprefab` paths in the manifest `assets` list are imported as `project:<relative-path>` when the game exposes `self.assets = AssetRegistry()`; prefabs are imported after their mesh/material dependencies regardless of manifest order, and bad paths fail with `Why:`/`Fix:` text. `--describe` includes a `project` object with the resolved directory and manifest when `--project` is used.
 
 ## 2. Simulate without OpenGL
 
