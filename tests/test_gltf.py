@@ -234,6 +234,25 @@ class GltfImportTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             load_gltf(document)
 
+    def test_rejects_negative_accessor_count_without_a_buffer_view(self):
+        document = _triangle_gltf()
+        document["accessors"][0] = {"componentType": 5126, "count": -1, "type": "VEC3"}
+        with self.assertRaises(ValueError):
+            load_gltf(document)
+
+    def test_rejects_float_indices_and_scalar_positions(self):
+        document = _triangle_gltf()
+        document["meshes"][0]["primitives"][0]["indices"] = 1
+        document["accessors"].append(
+            {"bufferView": 0, "componentType": 5126, "count": 3, "type": "SCALAR"}
+        )
+        with self.assertRaises(ValueError):
+            load_gltf(document)
+        document = _triangle_gltf()
+        document["accessors"][0]["type"] = "SCALAR"
+        with self.assertRaises(ValueError):
+            load_gltf(document)
+
     def test_reflected_matrix_preserves_the_reflection(self):
         document = _triangle_gltf()
         document["nodes"][0].pop("translation", None)

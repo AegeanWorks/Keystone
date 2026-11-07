@@ -136,6 +136,9 @@ class AssetRegistryTest(unittest.TestCase):
         self.assertEqual(self.registry.missing_dependencies(), (("material.floor", "texture.missing"),))
         with self.assertRaises(ValueError):
             self.registry.register("selfish", Material(), dependencies=("selfish",))
+        self.registry.register("cycle.a", Material(), dependencies=("cycle.b",))
+        with self.assertRaises(ValueError):
+            self.registry.register("cycle.b", Material(), dependencies=("cycle.a",))
         with self.assertRaises(ValueError):
             self.registry.register("blank", Material(), dependencies=("",))
         with self.assertRaises(TypeError):

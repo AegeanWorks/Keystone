@@ -25,10 +25,11 @@ class PerspectiveCamera:
         self.pitch = max(-MAX_PITCH, min(MAX_PITCH, self.pitch))
 
     def forward(self) -> Vec3:
-        cos_pitch = math.cos(self.pitch)
+        pitch = max(-MAX_PITCH, min(MAX_PITCH, self.pitch))
+        cos_pitch = math.cos(pitch)
         return Vec3(
             math.sin(self.yaw) * cos_pitch,
-            math.sin(self.pitch),
+            math.sin(pitch),
             -math.cos(self.yaw) * cos_pitch,
         )
 

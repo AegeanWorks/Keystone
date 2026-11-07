@@ -9,8 +9,8 @@
 - **Total Python Modules**: `118`
 - **Total Classes**: `182`
 - **Total Top-Level Functions**: `237`
-- **Total Class Methods**: `1112`
-- **Total Source Lines**: `21309`
+- **Total Class Methods**: `1115`
+- **Total Source Lines**: `21355`
 
 ---
 
@@ -169,7 +169,7 @@
 ### [`keystone/assets.py`](keystone/assets.py)
 > *Game-agnostic asset registry with stable ids, content hashes and dependencies.*
 
-**Size**: `365` lines (`13978` bytes)
+**Size**: `378` lines (`14526` bytes)
 
 **Classes:**
 - `class AssetRecord` - *One registered asset: a stable id, kind, immutable payload and content digest.*
@@ -276,7 +276,7 @@
 ### [`keystone/camera.py`](keystone/camera.py)
 > *Perspective camera with yaw/pitch orientation and fly-style movement.*
 
-**Size**: `64` lines (`2103` bytes)
+**Size**: `65` lines (`2153` bytes)
 
 **Classes:**
 - `class PerspectiveCamera` - *A right-handed camera looking down -Z when yaw and pitch are zero.*
@@ -378,7 +378,7 @@
 ### [`keystone/gltf/io.py`](keystone/gltf/io.py)
 > *glTF source reading, buffers and typed accessor decoding.*
 
-**Size**: `210` lines (`8510` bytes)
+**Size**: `212` lines (`8593` bytes)
 
 **Functions:**
 - `def _decode_glb(data)`
@@ -416,7 +416,7 @@
 ### [`keystone/gltf/meshes.py`](keystone/gltf/meshes.py)
 > *glTF mesh and primitive decoding.*
 
-**Size**: `225` lines (`10796` bytes)
+**Size**: `227` lines (`11425` bytes)
 
 **Functions:**
 - `def _as_vec3(value)`
@@ -1584,7 +1584,7 @@
 ### [`tests/test_assets.py`](tests/test_assets.py)
 > *Unit tests for the asset registry: identity, digests and dependencies.*
 
-**Size**: `344` lines (`15932` bytes)
+**Size**: `347` lines (`16142` bytes)
 
 **Classes:**
 - `class AssetRegistryTest`
@@ -1845,7 +1845,7 @@
 ### [`tests/test_gltf.py`](tests/test_gltf.py)
 > *Unit tests for dependency-free glTF 2.0 import.*
 
-**Size**: `289` lines (`12878` bytes)
+**Size**: `308` lines (`13686` bytes)
 
 **Classes:**
 - `class GltfImportTest`
@@ -1869,6 +1869,8 @@
   - Method `.test_rejects_unknown_material_texture_indices()`
   - Method `.test_rejects_negative_accessor_offsets()`
   - Method `.test_rejects_accessor_reads_outside_the_buffer_view()`
+  - Method `.test_rejects_negative_accessor_count_without_a_buffer_view()`
+  - Method `.test_rejects_float_indices_and_scalar_positions()`
   - Method `.test_reflected_matrix_preserves_the_reflection()`
   - Method `.test_singular_and_non_affine_matrices_are_rejected()`
   - Method `.test_uv_origin_is_converted_from_gltf_top_left()`
@@ -2331,7 +2333,7 @@
 ### [`tests/test_scene.py`](tests/test_scene.py)
 > *Unit tests for the Keystone scene graph and perspective camera.*
 
-**Size**: `324` lines (`12338` bytes)
+**Size**: `330` lines (`12587` bytes)
 
 **Classes:**
 - `class Health`
@@ -2368,6 +2370,7 @@
   - Method `.test_projection_rejects_invalid_aspect()`
   - Method `.test_look_at_points_forward_at_target()`
   - Method `.test_direct_pitch_construction_stays_usable()`
+  - Method `.test_direct_pitch_assignment_is_clamped_for_rendering()`
   - Method `.test_look_at_straight_up_stays_usable()`
 - `class SceneTest`
   - Method `.test_scene_traverse_starts_at_root()`

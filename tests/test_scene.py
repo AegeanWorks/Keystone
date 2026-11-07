@@ -240,6 +240,12 @@ class CameraTest(unittest.TestCase):
         camera = PerspectiveCamera(pitch=math.pi / 2)
         camera.view_matrix()
 
+    def test_direct_pitch_assignment_is_clamped_for_rendering(self):
+        camera = PerspectiveCamera()
+        camera.pitch = 3.0
+        camera.view_matrix()
+        self.assertLessEqual(camera.forward().y, math.sin(math.radians(89.0)) + 1e-9)
+
     def test_look_at_straight_up_stays_usable(self):
         camera = PerspectiveCamera(position=Vec3(0, 0, 5))
         camera.look_at(Vec3(0, 10, 5))

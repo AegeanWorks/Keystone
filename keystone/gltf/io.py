@@ -149,8 +149,10 @@ def read_accessor(
         raise TypeError("glTF accessor must be an object")
     if "sparse" in accessor:
         raise ValueError("glTF sparse accessors are not supported")
+    count = int(accessor.get("count", 0))
+    if count < 0:
+        raise ValueError("glTF accessor count must be non-negative")
     if "bufferView" not in accessor:
-        count = int(accessor.get("count", 0))
         return [0] * count
     view_index = int(accessor["bufferView"])
     if view_index < 0 or view_index >= len(buffer_views):

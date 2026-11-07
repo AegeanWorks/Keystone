@@ -74,11 +74,12 @@ def load_meshes(
                 raise TypeError(f"glTF mesh {mesh_index} attributes must be an object")
             if "POSITION" not in attributes:
                 raise ValueError(f"glTF mesh {mesh_index} primitive is missing POSITION")
-            positions_raw = read_accessor(
-                _accessor(document, int(attributes["POSITION"])),
-                buffer_views,
-                buffers,
-            )
+            position_accessor = _accessor(document, int(attributes["POSITION"]))
+            if str(position_accessor.get("type", "SCALAR")) != "VEC3":
+                raise ValueError(f"glTF mesh {mesh_index} POSITION must be VEC3")
+            if int(position_accessor.get("componentType", 5126)) != 5126:
+                raise ValueError(f"glTF mesh {mesh_index} POSITION must use FLOAT components")
+            positions_raw = read_accessor(position_accessor, buffer_views, buffers)
             positions = [_as_vec3(value) for value in positions_raw]
             if len(positions) < 3:
                 raise ValueError(f"glTF mesh {mesh_index} needs at least three vertices")
@@ -89,11 +90,12 @@ def load_meshes(
                 )
             indices_raw = None
             if "indices" in primitive:
-                indices_raw = read_accessor(
-                    _accessor(document, int(primitive["indices"])),
-                    buffer_views,
-                    buffers,
-                )
+                index_accessor = _accessor(document, int(primitive["indices"]))
+                if str(index_accessor.get("type", "SCALAR")) != "SCALAR":
+                    raise ValueError(f"glTF mesh {mesh_index} indices must be SCALAR")
+                if int(index_accessor.get("componentType", 5126)) not in (5121, 5123, 5125):
+                    raise ValueError(f"glTF mesh {mesh_index} indices must be unsigned integer")
+                indices_raw = read_accessor(index_accessor, buffer_views, buffers)
             if indices_raw is None:
                 indices = list(range(len(positions)))
             else:

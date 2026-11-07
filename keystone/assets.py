@@ -102,13 +102,26 @@ class AssetRegistry:
             raise ValueError(
                 f"asset {asset_id!r} is already registered; pass replace=True to replace it"
             )
+        resolved_dependencies = _dependencies(asset_id, dependencies)
+        pending = list(resolved_dependencies)
+        seen: set[str] = set()
+        while pending:
+            dependency = pending.pop()
+            if dependency == asset_id:
+                raise ValueError(f"asset {asset_id!r} has a dependency cycle")
+            if dependency in seen:
+                continue
+            seen.add(dependency)
+            existing = self._records.get(dependency)
+            if existing is not None:
+                pending.extend(existing.dependencies)
         record = AssetRecord(
             id=asset_id,
             kind=kind,
             payload=payload,
             sha256=_digest(kind, payload),
             source=Path(source) if source is not None else None,
-            dependencies=_dependencies(asset_id, dependencies),
+            dependencies=resolved_dependencies,
         )
         self._records[asset_id] = record
         return record
