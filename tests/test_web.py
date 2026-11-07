@@ -189,7 +189,7 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 16)
+        self.assertEqual(editor["schema"], 17)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
         self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
@@ -506,6 +506,45 @@ class WebServerTest(unittest.TestCase):
             self.assertEqual(result["scenes"], [])
             with self.assertRaises(WebProblem) as caught:
                 session.editor_action({"action": "load_scene", "name": "level-alt"})
+            self.assertEqual(caught.exception.status, 404)
+
+    def test_editor_library_trash_and_restore(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefab_dir = Path(directory) / "prefabs"
+            scene_dir = Path(directory) / "scenes"
+            session = GameSession(CubeDemo(), prefab_dir=prefab_dir, scene_dir=scene_dir)
+            editor = session.editor()
+            cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+            session.editor_action({"action": "select", "id": cube["id"]})
+            session.editor_action({"action": "save_prefab", "name": "cube-template"})
+            session.editor_action({"action": "save_scene", "name": "level"})
+
+            result = session.editor_action(
+                {"action": "delete_prefab", "name": "cube-template"}
+            )
+            self.assertEqual(result["prefabs"], [])
+            self.assertEqual(result["trash"]["prefabs"][0]["name"], "cube-template")
+            trash = result["trash"]["prefabs"][0]["trash"]
+            result = session.editor_action(
+                {"action": "restore_prefab", "trash": trash}
+            )
+            self.assertEqual(
+                [item["name"] for item in result["prefabs"]], ["cube-template"]
+            )
+            self.assertIn("cube-template", session.prefabs)
+
+            result = session.editor_action({"action": "delete_scene", "name": "level"})
+            self.assertEqual(result["scenes"], [])
+            trash = result["trash"]["scenes"][0]["trash"]
+            result = session.editor_action(
+                {"action": "restore_scene", "trash": trash}
+            )
+            self.assertEqual([item["name"] for item in result["scenes"]], ["level"])
+
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "restore_prefab", "trash": "missing.kprefab"}
+                )
             self.assertEqual(caught.exception.status, 404)
 
     def test_editor_library_duplicate(self):
@@ -1003,6 +1042,7 @@ class WebServerTest(unittest.TestCase):
             "scene-rename",
             "scene-duplicate",
             "scene-delete",
+            "scene-restore",
             "scene-settings",
             "scene-settings-apply",
             "prefab-names",
@@ -1010,6 +1050,7 @@ class WebServerTest(unittest.TestCase):
             "prefab-rename",
             "prefab-duplicate",
             "prefab-delete",
+            "prefab-restore",
             "mesh-asset",
             "material-asset",
             "assign-asset",
@@ -1039,6 +1080,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("duplicate_scene", script)
         self.assertIn("diff_scene", script)
         self.assertIn("applySceneSettings", script)
+        self.assertIn("restore_scene", script)
         self.assertIn("nudgeSelection", script)
         self.assertIn("ArrowLeft", script)
         self.assertIn("hierarchyFilter", script)

@@ -797,6 +797,7 @@ def editor_document(
     component_schema_documents: dict[str, dict[str, object]] | None = None,
     play_state: dict[str, object] | None = None,
     diff: dict[str, object] | None = None,
+    trash: dict[str, list[dict[str, str]]] | None = None,
 ) -> dict:
     nodes = [node_document(node, selected_id, registry) for node in scene.traverse()]
     selection = next((node for node in nodes if node["id"] == selected_id), None)
@@ -827,6 +828,7 @@ def editor_document(
             else {"active": False, "frames": 0, "step": 0.0}
         ),
         "diff": diff,
+        "trash": trash if trash is not None else {"prefabs": [], "scenes": []},
         "actions": list(EDITOR_ACTIONS),
         "history": (
             history.describe()

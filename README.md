@@ -255,7 +255,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 - **Textured PBR materials**: `Material` keeps specular/shininess plus metallic, roughness and emissive; `Material.texture` samples RGBA with wrapping/mipmaps; glTF PBR and emissive survive import; material graphs add `pbr`; one cached GPU texture per payload.
 - **Fixed-step runtime**: `FixedStepClock` releases whole steps with a bounded catch-up budget; the headless path advances one step per frame for deterministic tests.
 - **Action input**: `InputMap` maps keys/pointer motion to `forward`, `right`, `up`, `look_yaw`, `look_pitch`, `pressed` and `held` with rebindable bindings and action contexts (`gameplay`, `menu`, custom) as JSON; no direct GLFW access.
-- **Audio core**: dependency-free synth (`sine`, `square`, `noise`), named-bus `Mixer` with deterministic mixdown, mono 16-bit WAV IO and `audio_report()`; no hardware.
+- **Audio core**: synth (`sine`, `square`, `noise`), named-bus `Mixer` with deterministic mixdown, mono 16-bit WAV IO and `audio_report()`; no hardware.
 - **Animation core**: keyframe `Track`/`AnimationClip` linear/step, looping, crossfade blending, timed events, `apply_pose()`, linear-blend skinning (CPU + GPU), JSON round trips and `animation_report()`.
 - **Replay runner**: `run_log()`/`verify_log()` replay a `CommandLog`, and `--replay` audits logs.
 - **Particles**: CPU `Emitter`/`ParticleSystem` (seeded spawn, forces, swept collision, bursts, culling, JSON reports); HUD/inspector/describe counts; one GPU billboard each.
@@ -392,6 +392,7 @@ keystone/
 │   ├── project.py           <- manifests, scaffolding and --project loading
 │   ├── prefab.py            <- deterministic subtree templates
 │   ├── prefab_library.py    <- file-backed prefab library
+│   ├── library_trash.py      <- recoverable library deletes
 │   ├── scene.py              <- hierarchy, identity, components, transforms and lights
 │   ├── geometry.py           <- MeshData, Material
 │   ├── skin.py               <- bone palettes, CPU skinning

@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `132`
+- **Total Python Modules**: `133`
 - **Total Classes**: `205`
-- **Total Top-Level Functions**: `313`
-- **Total Class Methods**: `1259`
-- **Total Source Lines**: `27412`
+- **Total Top-Level Functions**: `318`
+- **Total Class Methods**: `1266`
+- **Total Source Lines**: `27636`
 
 ---
 
@@ -801,6 +801,20 @@
 
 ---
 
+### [`keystone/library_trash.py`](keystone/library_trash.py)
+> *Soft-delete helpers for file-backed scene and prefab libraries.*
+
+**Size**: `82` lines (`2633` bytes)
+
+**Functions:**
+- `def _trash_root(directory)`
+- `def move_to_trash(path, suffix)` - *Move one library file into the trash directory and return its new path.*
+- `def _original_name(trash_name)`
+- `def trash_entries(directory, suffix)` - *Return JSON-safe summaries of trashed entries in stable order.*
+- `def restore_from_trash(directory, trash_name, suffix, validate_name)` - *Move one trashed entry back into the library without overwriting.*
+
+---
+
 ### [`keystone/material_graph.py`](keystone/material_graph.py)
 > *Declarative, deterministic material graphs that evaluate to a Material.*
 
@@ -1075,7 +1089,7 @@
 ### [`keystone/prefab_library.py`](keystone/prefab_library.py)
 > *File-backed prefab libraries for editors, tools and AI clients.*
 
-**Size**: `174` lines (`6732` bytes)
+**Size**: `186` lines (`7291` bytes)
 
 **Classes:**
 - `class PrefabEntry` - *One library file and its loaded summary, or why it could not load.*
@@ -1087,7 +1101,9 @@
   - Method `.load(name)` - *Load one prefab or raise KeyError when the entry is absent.*
   - Method `.rename(old, new)` - *Rename one entry, updating its internal name and rejecting collisions.*
   - Method `.duplicate(old, new)` - *Copy one entry to a new name, updating its internal name.*
-  - Method `.delete(name)` - *Delete one entry and return its former path.*
+  - Method `.delete(name)` - *Move one entry to the library trash and return its former path.*
+  - Method `.trash()` - *Return recoverable deleted entries.*
+  - Method `.restore(trash_name)` - *Restore one trashed entry and return its summary.*
   - Method `.entry(name)` - *Load one entry's summary, capturing load failures as ``error``.*
   - Method `.entries()` - *Return every ``.kprefab`` file in stable name order.*
   - Method `.describe()` - *Return JSON-safe summaries for every library file.*
@@ -1251,7 +1267,7 @@
 ### [`keystone/scene_library.py`](keystone/scene_library.py)
 > *File-backed scene libraries for editors, tools and AI clients.*
 
-**Size**: `220` lines (`8787` bytes)
+**Size**: `232` lines (`9342` bytes)
 
 **Classes:**
 - `class SceneEntry` - *One library file and its loaded summary, or why it could not load.*
@@ -1266,7 +1282,9 @@
   - Method `.load_into(name, scene)` - *Replace one existing Scene in place from a library entry.*
   - Method `.rename(old, new)` - *Rename one entry, updating its internal name and rejecting collisions.*
   - Method `.duplicate(old, new)` - *Copy one entry to a new name, updating its internal name.*
-  - Method `.delete(name)` - *Delete one entry and return its former path.*
+  - Method `.delete(name)` - *Move one entry to the library trash and return its former path.*
+  - Method `.trash()` - *Return recoverable deleted entries.*
+  - Method `.restore(trash_name)` - *Restore one trashed entry and return its summary.*
   - Method `.entry(name)` - *Load one entry's summary, capturing load failures as ``error``.*
   - Method `.entries()` - *Return every ``.kscene`` file in stable name order.*
   - Method `.describe()` - *Return JSON-safe summaries for every library file.*
@@ -1303,7 +1321,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `38` lines (`743` bytes)
+**Size**: `40` lines (`786` bytes)
 
 ---
 
@@ -1482,7 +1500,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `1057` lines (`39244` bytes)
+**Size**: `1059` lines (`39382` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene and environment edits.*
@@ -1522,7 +1540,7 @@
 - `def _restore_scene_state(scene, snapshot)`
 - `def _component_documents(node)`
 - `def node_document(node, selected_id, registry)`
-- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, component_schema_documents, play_state, diff)`
+- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, component_schema_documents, play_state, diff, trash)`
 - `def find_node(scene, node_id)`
 - `def create_node(scene, payload, parent, registry)` - *Create, validate and attach one node from an editor payload.*
 - `def delete_node(scene, node)` - *Detach one node subtree and return its former parent.*
@@ -1555,14 +1573,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `172` lines (`7757` bytes)
+**Size**: `178` lines (`8118` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `963` lines (`42123` bytes)
+**Size**: `985` lines (`43150` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2552,7 +2570,7 @@
 ### [`tests/test_prefab_library.py`](tests/test_prefab_library.py)
 > *Tests for file-backed prefab libraries.*
 
-**Size**: `166` lines (`7244` bytes)
+**Size**: `188` lines (`8311` bytes)
 
 **Classes:**
 - `class Health`
@@ -2563,6 +2581,7 @@
   - Method `.test_names_are_safe_and_must_match_the_prefab()`
   - Method `.test_rename_and_delete_entries()`
   - Method `.test_duplicate_entries()`
+  - Method `.test_delete_moves_to_trash_and_restore()`
   - Method `.test_load_requires_assets_and_component_types()`
 
 ---
@@ -2727,7 +2746,7 @@
 ### [`tests/test_scene_library.py`](tests/test_scene_library.py)
 > *Tests for file-backed scene libraries.*
 
-**Size**: `188` lines (`8126` bytes)
+**Size**: `210` lines (`9125` bytes)
 
 **Classes:**
 - `class Health`
@@ -2739,6 +2758,7 @@
   - Method `.test_names_and_missing_entries()`
   - Method `.test_rename_and_delete_entries()`
   - Method `.test_duplicate_entries()`
+  - Method `.test_delete_moves_to_trash_and_restore()`
   - Method `.test_load_requires_assets_and_component_types()`
 
 ---
@@ -2994,7 +3014,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `1187` lines (`50768` bytes)
+**Size**: `1229` lines (`52820` bytes)
 
 **Classes:**
 - `class Health`
@@ -3026,6 +3046,7 @@
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_library_rename_and_delete()`
+  - Method `.test_editor_library_trash_and_restore()`
   - Method `.test_editor_library_duplicate()`
   - Method `.test_editor_scene_diff()`
   - Method `.test_editor_initial_scene_loads_at_startup()`

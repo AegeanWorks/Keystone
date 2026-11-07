@@ -904,3 +904,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: AI clients could save and load scenes but could not tell what had changed since the last save, forcing full-document comparisons or blind overwrites.
 - **Decision**: Add `keystone.scene_diff.diff_scene_documents()`: deterministic node diffs keyed by id (name, parent, tags, layer, visibility, transform, mesh/material ids, components) plus one-level camera/environment/root section diffs. Expose `diff_scene` against a saved `.kscene`, keep the last diff on the editor document, add a console Diff scene button and bump the editor schema to 16.
 - **Consequences**: 725 tests green; AI and human editors can inspect deltas without loading the saved scene or diffing full JSON. Three-way merges, transform gizmos and prefab overrides remain future work.
+
+### ADR-110: Make library deletes recoverable through trash/restore
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Scene and prefab deletes unlinked files immediately, so an AI or human mistake was irreversible and no recovery path existed in the editor.
+- **Decision**: Add `library_trash.py` and route library deletes into a `.trash` directory with unique file names. Add `trash()` and `restore(trash_name)` to both libraries, expose entries in `/api/editor`, add `restore_prefab`/`restore_scene` and console buttons, and keep cached prefabs synchronized. Bump the editor schema to 17.
+- **Consequences**: 728 tests green; deletes are recoverable without overwriting live entries, and corrupt/legacy trash files remain inert. Transform gizmos, prefab overrides and behavior systems remain future work.

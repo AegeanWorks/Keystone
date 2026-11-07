@@ -144,6 +144,28 @@ class PrefabLibraryTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 library.duplicate("hero-template", "hero-template")
 
+    def test_delete_moves_to_trash_and_restore(self):
+        with tempfile.TemporaryDirectory() as directory:
+            library, _, prefab = self._fixture(directory)
+            library.save("hero-template", prefab)
+            path = library.delete("hero-template")
+            self.assertFalse(path.exists())
+            entries = library.trash()
+            self.assertEqual(len(entries), 1)
+            self.assertEqual(entries[0]["name"], "hero-template")
+            restored = library.restore(entries[0]["trash"])
+            self.assertEqual(restored.name, "hero-template")
+            self.assertTrue(library.path_for("hero-template").is_file())
+            self.assertEqual(library.trash(), [])
+            with self.assertRaises(KeyError):
+                library.restore(entries[0]["trash"])
+
+            library.save("hero-template", prefab)
+            library.delete("hero-template")
+            library.save("hero-template", prefab)
+            with self.assertRaises(FileExistsError):
+                library.restore(library.trash()[0]["trash"])
+
     def test_load_requires_assets_and_component_types(self):
         with tempfile.TemporaryDirectory() as directory:
             library, registry, prefab = self._fixture(directory)

@@ -286,6 +286,18 @@ class GameSession:
                 "step": FIXED_STEP,
             },
             diff=self.last_diff,
+            trash={
+                "prefabs": (
+                    self.prefab_library.trash()
+                    if self.prefab_library is not None
+                    else []
+                ),
+                "scenes": (
+                    self.scene_library.trash()
+                    if self.scene_library is not None
+                    else []
+                ),
+            },
         )
         document["game"] = self.name
         document["workspace"] = {
@@ -485,6 +497,10 @@ class GameSession:
                     if self.scene_library is None:
                         raise ValueError("no scene library is configured")
                     self.scene_library.delete(payload.get("name"))
+                elif action == "restore_scene":
+                    if self.scene_library is None:
+                        raise ValueError("no scene library is configured")
+                    self.scene_library.restore(payload.get("trash"))
                 elif action == "save_prefab":
                     node_id = payload.get("id") or self.selected_id
                     if node_id is None:
@@ -525,6 +541,12 @@ class GameSession:
                     name = payload.get("name")
                     self.prefab_library.delete(name)
                     self.prefabs.pop(name, None)
+                elif action == "restore_prefab":
+                    if self.prefab_library is None:
+                        raise ValueError("no prefab library is configured")
+                    entry = self.prefab_library.restore(payload.get("trash"))
+                    self.prefabs.pop(entry.name, None)
+                    self.prefabs[entry.name] = self.prefab_library.load(entry.name)
                 elif action == "insert_prefab":
                     name = payload.get("name")
                     self._ensure_prefab_locked(name)

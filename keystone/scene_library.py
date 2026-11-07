@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from keystone.component_codec import validate_component_types
+from keystone.library_trash import move_to_trash, restore_from_trash, trash_entries
 from keystone.prefab_library import validate_library_name
 from keystone.scene import Scene
 from keystone.scene_snapshot import restore_scene, scene_from_dict, scene_to_dict
@@ -180,12 +181,23 @@ class SceneLibrary:
         return self.entry(new)
 
     def delete(self, name: str) -> Path:
-        """Delete one entry and return its former path."""
+        """Move one entry to the library trash and return its former path."""
         path = self.path_for(name)
         if not path.is_file():
             raise KeyError(f"no saved scene {name!r} in {self.directory}")
-        path.unlink()
+        move_to_trash(path, SCENE_SUFFIX)
         return path
+
+    def trash(self) -> list[dict[str, str]]:
+        """Return recoverable deleted entries."""
+        return trash_entries(self.directory, SCENE_SUFFIX)
+
+    def restore(self, trash_name: str) -> SceneEntry:
+        """Restore one trashed entry and return its summary."""
+        path = restore_from_trash(
+            self.directory, trash_name, SCENE_SUFFIX, validate_library_name
+        )
+        return self.entry(path.stem)
 
     def entry(self, name: str) -> SceneEntry:
         """Load one entry's summary, capturing load failures as ``error``."""

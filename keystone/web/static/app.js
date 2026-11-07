@@ -39,6 +39,7 @@ const elements = {
   sceneRename: document.getElementById("scene-rename"),
   sceneDuplicate: document.getElementById("scene-duplicate"),
   sceneDelete: document.getElementById("scene-delete"),
+  sceneRestore: document.getElementById("scene-restore"),
   sceneSettings: document.getElementById("scene-settings"),
   sceneSettingsApply: document.getElementById("scene-settings-apply"),
   prefabName: document.getElementById("prefab-name"),
@@ -50,6 +51,7 @@ const elements = {
   prefabRename: document.getElementById("prefab-rename"),
   prefabDuplicate: document.getElementById("prefab-duplicate"),
   prefabDelete: document.getElementById("prefab-delete"),
+  prefabRestore: document.getElementById("prefab-restore"),
   position: document.getElementById("position"),
   rotation: document.getElementById("rotation"),
   scale: document.getElementById("scale"),
@@ -107,11 +109,11 @@ function setBusy(value) {
     elements.nodeCreate, elements.nodeDuplicate, elements.nodeDelete, elements.nodeReparent,
     elements.nodeProperties,
     elements.sceneSave, elements.sceneLoad, elements.sceneDiff, elements.sceneRename,
-    elements.sceneDuplicate, elements.sceneDelete, elements.sceneSettingsApply,
-    elements.assignAsset, elements.playStart, elements.playStep, elements.playStop,
-    elements.componentSet, elements.componentRemove,
+    elements.sceneDuplicate, elements.sceneDelete, elements.sceneRestore,
+    elements.sceneSettingsApply, elements.assignAsset, elements.playStart,
+    elements.playStep, elements.playStop, elements.componentSet, elements.componentRemove,
     elements.prefabSave, elements.prefabInsert, elements.prefabRename,
-    elements.prefabDuplicate, elements.prefabDelete,
+    elements.prefabDuplicate, elements.prefabDelete, elements.prefabRestore,
     elements.transformApply, elements.editorRefresh,
   ]) {
     button.disabled = value;
@@ -643,6 +645,17 @@ async function duplicatePrefab() {
   elements.prefabName.value = newName;
 }
 
+async function restorePrefab() {
+  const entry = ((editorState && editorState.trash && editorState.trash.prefabs) || [])[0];
+  if (!entry) {
+    throw new Error("No trashed prefab is available.");
+  }
+  await editorAction(
+    { action: "restore_prefab", trash: entry.trash },
+    "restoring prefab",
+  );
+}
+
 async function deletePrefab() {
   const name = elements.prefabName.value.trim();
   if (!name) {
@@ -840,6 +853,17 @@ async function duplicateScene() {
     "duplicating scene",
   );
   elements.sceneName.value = newName;
+}
+
+async function restoreScene() {
+  const entry = ((editorState && editorState.trash && editorState.trash.scenes) || [])[0];
+  if (!entry) {
+    throw new Error("No trashed scene is available.");
+  }
+  await editorAction(
+    { action: "restore_scene", trash: entry.trash },
+    "restoring scene",
+  );
 }
 
 async function deleteScene() {
@@ -1114,11 +1138,13 @@ elements.sceneDiff.addEventListener("click", () => run(diffScene));
 elements.sceneRename.addEventListener("click", () => run(renameScene));
 elements.sceneDuplicate.addEventListener("click", () => run(duplicateScene));
 elements.sceneDelete.addEventListener("click", () => run(deleteScene));
+elements.sceneRestore.addEventListener("click", () => run(restoreScene));
 elements.sceneSettingsApply.addEventListener("click", () => run(applySceneSettings));
 elements.prefabSave.addEventListener("click", () => run(savePrefab));
 elements.prefabRename.addEventListener("click", () => run(renamePrefab));
 elements.prefabDuplicate.addEventListener("click", () => run(duplicatePrefab));
 elements.prefabDelete.addEventListener("click", () => run(deletePrefab));
+elements.prefabRestore.addEventListener("click", () => run(restorePrefab));
 elements.prefabInsert.addEventListener("click", () => run(insertPrefab));
 
 init();

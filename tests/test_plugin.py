@@ -31,7 +31,7 @@ class PluginTest(unittest.TestCase):
         self.assertEqual(payload["capabilities"]["report_schema"]["version"], 11)
         self.assertEqual(payload["capabilities"]["web"]["api_version"], 1)
         self.assertIn("/api/scene", payload["capabilities"]["web"]["endpoints"])
-        self.assertEqual(payload["capabilities"]["editor"]["schema"], 16)
+        self.assertEqual(payload["capabilities"]["editor"]["schema"], 17)
         self.assertIn("create_node", payload["capabilities"]["editor"]["actions"])
         self.assertIn("undo", payload["capabilities"]["editor"]["actions"])
         self.assertIn("/api/editor", payload["capabilities"]["web"]["endpoints"])

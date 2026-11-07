@@ -168,6 +168,28 @@ class SceneLibraryTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 library.duplicate("level", "level")
 
+    def test_delete_moves_to_trash_and_restore(self):
+        with tempfile.TemporaryDirectory() as directory:
+            library, _, scene = self._fixture(directory)
+            library.save("level", scene)
+            path = library.delete("level")
+            self.assertFalse(path.exists())
+            entries = library.trash()
+            self.assertEqual(len(entries), 1)
+            self.assertEqual(entries[0]["name"], "level")
+            restored = library.restore(entries[0]["trash"])
+            self.assertEqual(restored.name, "level")
+            self.assertTrue(library.path_for("level").is_file())
+            self.assertEqual(library.trash(), [])
+            with self.assertRaises(KeyError):
+                library.restore(entries[0]["trash"])
+
+            library.save("level", scene)
+            library.delete("level")
+            library.save("level", scene)
+            with self.assertRaises(FileExistsError):
+                library.restore(library.trash()[0]["trash"])
+
     def test_load_requires_assets_and_component_types(self):
         with tempfile.TemporaryDirectory() as directory:
             library, registry, scene = self._fixture(directory)

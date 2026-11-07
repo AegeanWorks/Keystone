@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from keystone.component_codec import validate_component_types
+from keystone.library_trash import move_to_trash, restore_from_trash, trash_entries
 from keystone.prefab import Prefab
 from keystone.serialization import read_json, write_json_atomic
 
@@ -134,12 +135,23 @@ class PrefabLibrary:
         return self.entry(new)
 
     def delete(self, name: str) -> Path:
-        """Delete one entry and return its former path."""
+        """Move one entry to the library trash and return its former path."""
         path = self.path_for(name)
         if not path.is_file():
             raise KeyError(f"no saved prefab {name!r} in {self.directory}")
-        path.unlink()
+        move_to_trash(path, PREFAB_SUFFIX)
         return path
+
+    def trash(self) -> list[dict[str, str]]:
+        """Return recoverable deleted entries."""
+        return trash_entries(self.directory, PREFAB_SUFFIX)
+
+    def restore(self, trash_name: str) -> PrefabEntry:
+        """Restore one trashed entry and return its summary."""
+        path = restore_from_trash(
+            self.directory, trash_name, PREFAB_SUFFIX, validate_library_name
+        )
+        return self.entry(path.stem)
 
     def entry(self, name: str) -> PrefabEntry:
         """Load one entry's summary, capturing load failures as ``error``."""
