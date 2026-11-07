@@ -556,15 +556,52 @@ class WebServerTest(unittest.TestCase):
         roots = session.prefabs["pair"].roots
         self.assertEqual([root.id for root in roots], ["left", "right"])
         self.assertEqual([root.transform.position.x for root in roots], [-5.0, 5.0])
-        cube = next(node for node in applied["nodes"] if node["name"] == "cube-0")
-        session.editor_action(
-            {"action": "reparent_node", "id": "pair-1:right", "parent": cube["id"]}
+
+    def test_editor_multi_root_group_delete_and_reparent(self):
+        session = GameSession(CubeDemo())
+        session.prefabs["pair"] = Prefab(
+            "pair",
+            (
+                Node("left", id="left"),
+                Node("right", id="right"),
+            ),
+        )
+        inserted = session.editor_action(
+            {"action": "insert_prefab", "name": "pair", "instance": "pair-1"}
+        )
+        cube = next(node for node in inserted["nodes"] if node["name"] == "cube-0")
+        reparented = session.editor_action(
+            {"action": "reparent_node", "id": "pair-1:left", "parent": cube["id"]}
+        )
+        parents = {
+            node["id"]: node["parent_id"]
+            for node in reparented["nodes"]
+            if node["id"] in ("pair-1:left", "pair-1:right")
+        }
+        self.assertEqual(
+            parents,
+            {"pair-1:left": cube["id"], "pair-1:right": cube["id"]},
         )
         with self.assertRaises(WebProblem) as caught:
             session.editor_action(
-                {"action": "revert_prefab", "id": "pair-1:left"}
+                {
+                    "action": "reparent_node",
+                    "id": "pair-1:left",
+                    "parent": "pair-1:right",
+                }
             )
         self.assertEqual(caught.exception.status, 400)
+        deleted = session.editor_action(
+            {"action": "delete_node", "id": "pair-1:right"}
+        )
+        ids = {node["id"] for node in deleted["nodes"]}
+        self.assertNotIn("pair-1:left", ids)
+        self.assertNotIn("pair-1:right", ids)
+        self.assertEqual(deleted["prefab_instances"], [])
+        undone = session.editor_action({"action": "undo"})
+        ids = {node["id"] for node in undone["nodes"]}
+        self.assertIn("pair-1:left", ids)
+        self.assertIn("pair-1:right", ids)
 
     def test_editor_batch_can_revert_prefab_instance(self):
         session = GameSession(CubeDemo())

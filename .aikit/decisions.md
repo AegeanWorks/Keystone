@@ -976,3 +976,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Only single-root prefabs received instance links, so multi-root prefab assets could be inserted but not reverted or applied as a unit.
 - **Decision**: Link every inserted root with the same `PrefabLink`. Add `Prefab.from_nodes()` for multi-root capture and strip the source instance prefix from template IDs. Group helpers require all linked roots to share one parent and read their order from that parent. Revert removes the whole group, instantiates the prefab, and reinserts the new roots at the group's earliest sibling index. Apply captures the whole group as a multi-root prefab. Bump the editor schema to 21.
 - **Consequences**: 735 tests green; multi-root insert, revert, apply and undo are covered, `prefab_instance_count` counts groups, and split groups fail with a clear 400 instead of silently replacing one root. Nested prefabs and per-property override tracking remain future work.
+
+### ADR-119: Keep multi-root prefab groups atomic for delete and reparent
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: After multi-root support, deleting or reparenting one linked root could split a group, making later revert/apply fail.
+- **Decision**: Make `delete_node` remove every root sharing the clicked link and return the group parent. Make `reparent_node` move every group root to the target and reject moves into the group itself. Split groups now fail with a clear 400.
+- **Consequences**: 736 tests green; multi-root groups stay atomic through deletion, reparenting and undo. A future explicit unlink action can expose per-root detachment when needed.

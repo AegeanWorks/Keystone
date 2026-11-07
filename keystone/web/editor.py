@@ -905,13 +905,22 @@ def create_node(
 
 
 def delete_node(scene: Scene, node: Node) -> Node:
-    """Detach one node subtree and return its former parent."""
+    """Detach one node subtree or its whole prefab instance and return the parent."""
     if not isinstance(scene, Scene):
         raise TypeError("delete_node target must be a Scene")
     if node is scene.root:
         raise ValueError("cannot delete the scene root")
     if node.parent is None:
         raise ValueError("node is not attached to this scene")
+    link = node.prefab_link
+    if link is not None:
+        roots = _prefab_instance_roots(scene, link)
+        parent = roots[0].parent
+        if parent is None:
+            raise ValueError("prefab instance root is detached")
+        for root in roots:
+            parent.remove_child(root)
+        return parent
     parent = node.parent
     parent.remove_child(node)
     return parent
@@ -933,7 +942,7 @@ def duplicate_node(scene: Scene, node: Node, name: str | None = None) -> Node:
 
 
 def reparent_node(scene: Scene, node: Node, parent: Node | None) -> Node:
-    """Move one node subtree below a new parent, or the scene root."""
+    """Move one node subtree or its whole prefab instance below a new parent."""
     if not isinstance(scene, Scene):
         raise TypeError("reparent_node target must be a Scene")
     if node is scene.root or node.parent is None:
@@ -941,9 +950,13 @@ def reparent_node(scene: Scene, node: Node, parent: Node | None) -> Node:
     if parent is not None and not isinstance(parent, Node):
         raise TypeError("reparent parent must be a Node or None")
     target = scene.root if parent is None else parent
-    if target is node:
-        raise ValueError("cannot parent a node to itself")
-    target.add_child(node)
+    link = node.prefab_link
+    roots = _prefab_instance_roots(scene, link) if link is not None else [node]
+    for root in roots:
+        if target is root or root.is_ancestor_of(target):
+            raise ValueError("cannot move a prefab instance into itself")
+    for root in roots:
+        target.add_child(root)
     list(scene.traverse())
     return node
 

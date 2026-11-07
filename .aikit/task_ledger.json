@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-multi-root-prefabs-v1",
+    "task_id": "keystone-prefab-group-integrity-v1",
     "last_phase": "verification",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794094665.570868,
+    "updated_at": 1794095055.9376328,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794094666.1223733
+    "completed_at": 1794095056.3144956
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-rotate-scale-gizmo-v1",
-      "phase": "verification",
-      "phase_num": 4,
-      "description": "[2/3] Rotate/scale gizmos implemented: local-axis rings and box handles, W/E/R modes, snap, one transform action per drag; 731 tests green, node --check clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless and describe green, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794092809.899896,
-      "timestamp_str": "2026-11-08 02:06:49",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-rotate-scale-gizmo-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-rotate-scale-gizmo-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794092810.2416184,
-      "timestamp_str": "2026-11-08 02:06:50",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-gizmo-space-v1",
-      "phase": "planning",
-      "phase_num": 2,
-      "description": "[1/2] Plan a world/local-space toggle for viewport translation with keyboard and console controls",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794092838.2227035,
-      "timestamp_str": "2026-11-08 02:07:18",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Translate handles are world-axis only; Unity/Unreal-style placement also needs local-axis movement for rotated parents.",
-        "benefits": "A Space toggle and X shortcut switch translate handles between world and local axes, while rotate/scale stay local and every drag remains one transform action.",
-        "risks": "contract: no REST or schema change; dependency: none; concurrency: existing drag state is cancelled on toggle; state: no persistence needed.",
-        "mitigation": "Reuse the mode-aware gizmo basis, add static tests, run node --check and the full gate cycle."
-      },
-      "plan_digest": "3052789622fb9f80f85f6449939a6cf281c66014b8287ce7036c735d7b6193bc"
-    },
     {
       "task_id": "keystone-gizmo-space-v1",
       "phase": "verification",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794094666.1223764,
       "timestamp_str": "2026-11-08 02:37:46",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-prefab-group-integrity-v1",
+      "phase": "planning",
+      "phase_num": 2,
+      "description": "[1/2] Plan atomic delete and reparent for multi-root prefab instance groups",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794094904.3259223,
+      "timestamp_str": "2026-11-08 02:41:44",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "Deleting or reparenting one linked root could split a multi-root group and make later revert/apply fail.",
+        "benefits": "Deleting a linked root removes the whole group, reparenting moves all roots together, moves into the group are rejected, and each operation stays one undo entry.",
+        "risks": "contract: no REST or schema change; dependency: none; concurrency: existing editor lock; state: group roots must share a parent and delete/reparent must not leave partial links.",
+        "mitigation": "Reuse the group helper, reject moves into the group, cover reparent/delete/undo, and run the full gate cycle."
+      },
+      "plan_digest": "31b7beccb3747ed8861b20a6e6e26cf1190b07e405502291a54af645b45a6c09"
+    },
+    {
+      "task_id": "keystone-prefab-group-integrity-v1",
+      "phase": "verification",
+      "phase_num": 4,
+      "description": "[2/2] Atomic group delete/reparent implemented with move-into-group rejection and undo coverage; 736 tests green, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 21, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794095055.9376328,
+      "timestamp_str": "2026-11-08 02:44:15",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-prefab-group-integrity-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-prefab-group-integrity-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794095056.314498,
+      "timestamp_str": "2026-11-08 02:44:16",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

@@ -9,8 +9,8 @@
 - **Total Python Modules**: `133`
 - **Total Classes**: `206`
 - **Total Top-Level Functions**: `323`
-- **Total Class Methods**: `1277`
-- **Total Source Lines**: `28158`
+- **Total Class Methods**: `1278`
+- **Total Source Lines**: `28208`
 
 ---
 
@@ -1505,7 +1505,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `1166` lines (`43021` bytes)
+**Size**: `1179` lines (`43578` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene and environment edits.*
@@ -1548,9 +1548,9 @@
 - `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, component_schema_documents, play_state, diff, trash)`
 - `def find_node(scene, node_id)`
 - `def create_node(scene, payload, parent, registry)` - *Create, validate and attach one node from an editor payload.*
-- `def delete_node(scene, node)` - *Detach one node subtree and return its former parent.*
+- `def delete_node(scene, node)` - *Detach one node subtree or its whole prefab instance and return the parent.*
 - `def duplicate_node(scene, node, name)` - *Clone one node subtree as a sibling with fresh scene-allocated ids.*
-- `def reparent_node(scene, node, parent)` - *Move one node subtree below a new parent, or the scene root.*
+- `def reparent_node(scene, node, parent)` - *Move one node subtree or its whole prefab instance below a new parent.*
 - `def transform_from_payload(node, payload)`
 - `def set_node_properties(node, payload)` - *Update a node's name, visibility, tags or layer atomically.*
 - `def set_component(node, type_name, data, component_types)` - *Decode and add/replace one component on a node.*
@@ -1583,7 +1583,7 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `187` lines (`8778` bytes)
+**Size**: `187` lines (`8794` bytes)
 
 ---
 
@@ -3028,7 +3028,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `1438` lines (`61893` bytes)
+**Size**: `1475` lines (`63251` bytes)
 
 **Classes:**
 - `class Health`
@@ -3060,6 +3060,7 @@
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_prefab_instance_revert_and_apply()`
   - Method `.test_editor_multi_root_prefab_instance_group()`
+  - Method `.test_editor_multi_root_group_delete_and_reparent()`
   - Method `.test_editor_batch_can_revert_prefab_instance()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_library_rename_and_delete()`
