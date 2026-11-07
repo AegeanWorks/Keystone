@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `130`
 - **Total Classes**: `204`
-- **Total Top-Level Functions**: `309`
-- **Total Class Methods**: `1253`
-- **Total Source Lines**: `26995`
+- **Total Top-Level Functions**: `310`
+- **Total Class Methods**: `1255`
+- **Total Source Lines**: `27181`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `570` lines (`30498` bytes)
+**Size**: `597` lines (`32106` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -1115,7 +1115,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `425` lines (`16165` bytes)
+**Size**: `538` lines (`20288` bytes)
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -1135,6 +1135,7 @@
 - `def _resolve_project_asset(context, value)`
 - `def import_project_assets(context, registry, component_types)` - *Load every manifest asset into an existing registry.*
 - `def attach_project_assets(game, context, component_types, prefab_library)` - *Import manifest assets, including glTF scenes as prefab entries.*
+- `def validate_project(context, game)` - *Validate project assets, scenes and prefabs without writing project files.*
 - `def load_project_game(context)` - *Import and validate a project's game after adding its directory to sys.path.*
 - `def _game_source(manifest)`
 - `def _project_readme(manifest)`
@@ -1725,7 +1726,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `533` lines (`21677` bytes)
+**Size**: `538` lines (`21921` bytes)
 
 **Classes:**
 - `class HudCube`
@@ -1745,6 +1746,7 @@
   - Method `.test_windowless_commands_reject_window_flags()`
   - Method `.test_web_flags_require_serve()`
   - Method `.test_scene_startup_requires_a_library()`
+  - Method `.test_validate_project_requires_project()`
   - Method `.test_scene_is_rejected_with_describe()`
   - Method `.test_bad_web_port_is_a_usage_error()`
   - Method `.test_headless_ui_capture_writes_a_report()`
@@ -2556,7 +2558,7 @@
 ### [`tests/test_project.py`](tests/test_project.py)
 > *Tests for project manifests, scaffolding and the --project CLI path.*
 
-**Size**: `394` lines (`16157` bytes)
+**Size**: `435` lines (`17825` bytes)
 
 **Classes:**
 - `class ProjectManifestTest`
@@ -2576,6 +2578,7 @@
   - Method `.test_cli_new_and_project()`
   - Method `.test_cli_simulate_uses_a_saved_scene()`
   - Method `.test_cli_replay_and_playtest_use_a_saved_scene()`
+  - Method `.test_validate_project_reports_clean_and_broken_content()`
   - Method `.test_cli_new_is_standalone_and_missing_project_has_why_fix()`
 
 ---

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import sys
+import tempfile
 from collections.abc import Mapping
 from dataclasses import dataclass
 from importlib import util
@@ -39,6 +40,7 @@ __all__ = [
     "load_project_game",
     "project_asset_id",
     "save_project",
+    "validate_project",
 ]
 
 
@@ -252,6 +254,117 @@ def attach_project_assets(
             _, target = _resolve_project_asset(context, value)
             import_gltf_prefab(target, registry, library)
     return records
+
+
+def validate_project(
+    context: ProjectContext,
+    game: GameModule | None = None,
+) -> dict[str, object]:
+    """Validate project assets, scenes and prefabs without writing project files."""
+    if not isinstance(context, ProjectContext):
+        raise TypeError("project context must be a ProjectContext")
+    errors: list[dict[str, str]] = []
+    registry = AssetRegistry()
+    if game is not None:
+        build = getattr(game, "build_scene", None)
+        if callable(build):
+            try:
+                build()
+            except Exception as exc:  # noqa: BLE001 - validation reports failures
+                errors.append(
+                    {"kind": "game", "message": f"{type(exc).__name__}: {exc}"}
+                )
+        game_assets = getattr(game, "assets", None)
+        if isinstance(game_assets, AssetRegistry):
+            for record in game_assets:
+                try:
+                    registry.register(
+                        record.id,
+                        record.payload,
+                        kind=record.kind,
+                        source=record.source,
+                        dependencies=record.dependencies,
+                        replace=True,
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    errors.append(
+                        {
+                            "kind": "game",
+                            "message": f"{record.id}: {type(exc).__name__}: {exc}",
+                        }
+                    )
+        else:
+            errors.append(
+                {"kind": "game", "message": "game.assets is not an AssetRegistry"}
+            )
+    component_types = (
+        getattr(game, "component_types", None) if game is not None else None
+    )
+    try:
+        import_project_assets(context, registry, component_types)
+    except Exception as exc:  # noqa: BLE001
+        errors.append(
+            {"kind": "assets", "message": f"{type(exc).__name__}: {exc}"}
+        )
+    with tempfile.TemporaryDirectory() as directory:
+        library = PrefabLibrary(
+            Path(directory) / "prefabs",
+            registry=registry,
+            component_types=component_types,
+        )
+        for value in context.manifest.assets:
+            if not is_gltf_asset(value):
+                continue
+            try:
+                _, target = _resolve_project_asset(context, value)
+                import_gltf_prefab(target, registry, library)
+            except Exception as exc:  # noqa: BLE001
+                errors.append(
+                    {
+                        "kind": "gltf",
+                        "message": f"{value}: {type(exc).__name__}: {exc}",
+                    }
+                )
+    prefabs: list[dict[str, object]] = []
+    try:
+        prefab_library = PrefabLibrary(
+            context.directory / "prefabs",
+            registry=registry,
+            component_types=component_types,
+        )
+        prefabs = [entry.describe() for entry in prefab_library.entries()]
+    except Exception as exc:  # noqa: BLE001
+        errors.append(
+            {"kind": "prefabs", "message": f"{type(exc).__name__}: {exc}"}
+        )
+    scenes: list[dict[str, object]] = []
+    try:
+        scene_library = SceneLibrary(
+            context.directory / "scenes",
+            registry=registry,
+            component_types=component_types,
+        )
+        scenes = [entry.describe() for entry in scene_library.entries()]
+    except Exception as exc:  # noqa: BLE001
+        errors.append(
+            {"kind": "scenes", "message": f"{type(exc).__name__}: {exc}"}
+        )
+    ok = not errors and all(
+        entry["error"] is None for entry in prefabs + scenes
+    )
+    return {
+        "schema": 1,
+        "ok": ok,
+        "project": context.describe(),
+        "game": getattr(game, "name", None),
+        "assets": {
+            "count": len(registry),
+            "errors": [item for item in errors if item["kind"] in ("assets", "gltf")],
+        },
+        "prefabs": prefabs,
+        "scenes": scenes,
+        "errors": errors,
+    }
 
 
 def load_project_game(context: ProjectContext) -> GameModule:

@@ -24,6 +24,7 @@ from keystone.project import (
     load_project_game,
     project_asset_id,
     save_project,
+    validate_project,
 )
 from keystone.replay import CommandLog
 from keystone.scene import Node
@@ -374,6 +375,46 @@ class ProjectScaffoldTest(unittest.TestCase):
                     0,
                 )
             self.assertTrue(json.loads(out.getvalue())["ok"])
+
+    def test_validate_project_reports_clean_and_broken_content(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            context = create_project(root, name=self._name())
+            game = load_project_game(context)
+            report = validate_project(context, game)
+            self.assertTrue(report["ok"], report["errors"])
+            self.assertEqual(report["errors"], [])
+            self.assertGreater(report["assets"]["count"], 0)
+            self.assertTrue(
+                all(
+                    entry["error"] is None
+                    for entry in report["prefabs"] + report["scenes"]
+                )
+            )
+
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(
+                    main(["--project", str(root), "--validate-project"]), 0
+                )
+            self.assertTrue(json.loads(out.getvalue())["ok"])
+
+            (root / "prefabs" / "broken.kprefab").write_text(
+                "{}", encoding="utf-8"
+            )
+            report = validate_project(load_project(root), game)
+            self.assertFalse(report["ok"])
+            broken = next(
+                entry for entry in report["prefabs"] if entry["name"] == "broken"
+            )
+            self.assertIsNotNone(broken["error"])
+
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(
+                    main(["--project", str(root), "--validate-project"]), 1
+                )
+            self.assertFalse(json.loads(out.getvalue())["ok"])
 
     def test_cli_new_is_standalone_and_missing_project_has_why_fix(self):
         with tempfile.TemporaryDirectory() as directory:

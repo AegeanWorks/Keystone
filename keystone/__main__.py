@@ -61,6 +61,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--game", default="keystone.samples:CubeDemo", help="game factory spec")
     parser.add_argument("--new", type=Path, default=None, metavar="DIR", help="scaffold a new Keystone game project")
     parser.add_argument("--project", type=Path, default=None, metavar="PATH", help="open a keystone.json project directory or file")
+    parser.add_argument("--validate-project", action="store_true", help="validate project assets, scenes and prefabs and exit")
     parser.add_argument("--name", default=None, help="project name for --new (default: directory name)")
     parser.add_argument("--force", action="store_true", help="allow --new to write into a non-empty directory")
     parser.add_argument("--describe", action="store_true", help="print the game capability/action/snapshot schema")
@@ -122,6 +123,7 @@ def main(argv: list[str] | None = None) -> int:
             or args.culling or args.no_culling or args.start_paused or args.serve
             or args.host is not None or args.port is not None or args.prefab_dir is not None
             or args.scene_dir is not None or args.scene is not None or args.out is not None
+            or args.validate_project
             or args.report is not None or args.game != "keystone.samples:CubeDemo"
         )
         if incompatible:
@@ -147,9 +149,28 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--name requires --new")
     if args.force:
         parser.error("--force requires --new")
+    if args.validate_project and args.project is None:
+        parser.error("--validate-project requires --project")
+    if args.validate_project and (
+        args.serve or args.describe or args.headless or args.simulate
+        or args.verify_determinism or args.expect_hash is not None
+        or args.compare_baseline is not None or args.diff_out is not None
+        or args.actions is not None or args.replay is not None or args.playtest
+        or args.script is not None or args.transcript_out is not None
+        or args.trace or args.frames or args.size != (960, 540)
+        or args.ui or args.no_ui or args.shadows or args.no_shadows
+        or args.srgb or args.no_srgb or args.post or args.no_post
+        or args.bloom or args.no_bloom or args.sprites or args.no_sprites
+        or args.culling or args.no_culling or args.start_paused
+        or args.out is not None or args.report is not None
+        or args.scene is not None or args.scene_dir is not None
+        or args.prefab_dir is not None
+    ):
+        parser.error("--validate-project is a standalone project command")
     if args.serve and (
         args.describe or args.headless or args.simulate or args.verify_determinism or args.expect_hash
         or args.compare_baseline or args.diff_out or args.actions or args.trace or args.ui or args.no_ui
+        or args.validate_project
         or args.shadows or args.no_shadows or args.srgb or args.no_srgb or args.post or args.no_post
         or args.bloom or args.no_bloom or args.sprites or args.no_sprites or args.culling or args.no_culling
         or args.start_paused or args.out or args.report or args.replay or args.playtest or args.script
@@ -175,7 +196,7 @@ def main(argv: list[str] | None = None) -> int:
         or args.compare_baseline or args.diff_out or args.out or args.report or args.actions or args.trace
         or args.ui or args.no_ui or args.shadows or args.no_shadows
         or args.srgb or args.no_srgb or args.post or args.no_post or args.bloom or args.no_bloom or args.sprites or args.no_sprites or args.culling or args.no_culling or args.start_paused
-        or args.replay or args.playtest
+        or args.replay or args.playtest or args.validate_project
         or args.script or args.transcript_out or args.policy != "random" or args.seed != 0
         or args.frames or args.size != (960, 540)
     ):
@@ -281,7 +302,7 @@ def main(argv: list[str] | None = None) -> int:
     engine = None
     try:
         game = load_game(args.game)
-        if project_context is not None:
+        if project_context is not None and not args.validate_project:
             from keystone.project import attach_project_assets
 
             try:
@@ -294,6 +315,12 @@ def main(argv: list[str] | None = None) -> int:
                     file=sys.stderr,
                 )
                 return 1
+        if args.validate_project:
+            from keystone.project import validate_project
+
+            report = validate_project(project_context, game)
+            print(json.dumps(report, indent=2, sort_keys=True))
+            return 0 if report["ok"] else 1
         prefab_dir = args.prefab_dir
         scene_dir = args.scene_dir
         if project_context is not None:

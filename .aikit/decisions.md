@@ -888,3 +888,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Large scenes and registries produced long select lists, making the target node or mesh/material hard to find.
 - **Decision**: Add case-insensitive hierarchy and asset filter inputs. Hierarchy matching covers id, name, layer, tags and component names while preserving indentation; asset matching covers id, kind and metadata. Filters update client-side without API calls.
 - **Consequences**: 719 tests green and `app.js` passes `node --check`; navigation stays fast without changing the editor document contract. Transform gizmos and prefab overrides remain future work.
+
+### ADR-108: Add non-destructive project validation for AI/CI
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Project failures surfaced only when a game was loaded or a scene/prefab was opened. AI and CI needed one command that checked assets, glTF imports and both libraries without mutating the project.
+- **Decision**: Add `validate_project(context, game=None)`: build the game scene, copy game assets into an isolated registry, import manifest assets, import glTF scenes into a temporary prefab library, then report per-entry scene/prefab errors. Add `--project DIR --validate-project` as a standalone command, print a schema-1 JSON report and exit 1 on errors. Skip the normal project asset attachment on validation so no glTF prefabs are written.
+- **Consequences**: 721 tests green; AI/CI can validate the full project authoring surface without side effects. Transform gizmos, prefab overrides and behavior systems remain future work.

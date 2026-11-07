@@ -189,6 +189,11 @@ class EngineTest(unittest.TestCase):
                 main(argv)
             self.assertEqual(caught.exception.code, 2)
 
+    def test_validate_project_requires_project(self):
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+            main(["--validate-project"])
+        self.assertEqual(caught.exception.code, 2)
+
     def test_scene_is_rejected_with_describe(self):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
             main(["--describe", "--scene", "level", "--scene-dir", "scenes"])
