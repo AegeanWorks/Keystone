@@ -49,6 +49,8 @@ const elements = {
   materialAsset: document.getElementById("material-asset"),
   assignAsset: document.getElementById("assign-asset"),
   componentType: document.getElementById("component-type"),
+  componentFields: document.getElementById("component-fields"),
+  componentHint: document.getElementById("component-hint"),
   componentData: document.getElementById("component-data"),
   componentSet: document.getElementById("component-set"),
   componentRemove: document.getElementById("component-remove"),
@@ -287,11 +289,125 @@ function renderComponentTypes(editor) {
     : values[0] || "";
 }
 
-function fillComponentData(selection) {
+const COMPONENT_INPUTS = {
+  int: { type: "number", step: "1" },
+  float: { type: "number", step: "any" },
+  str: { type: "text" },
+  bool: { type: "checkbox" },
+};
+
+function componentDataFor(selection) {
   const documents = (selection && selection.component_data) || [];
-  const selected = documents.find((item) => item.type === elements.componentType.value);
-  elements.componentData.value =
-    selected && !selected.error ? JSON.stringify(selected.data, null, 2) : "{}";
+  return (
+    documents.find(
+      (item) => item.type === elements.componentType.value && !item.error,
+    ) || null
+  );
+}
+
+function componentFieldValue(entry, field) {
+  if (
+    entry &&
+    entry.data &&
+    Object.prototype.hasOwnProperty.call(entry.data, field.name)
+  ) {
+    return entry.data[field.name];
+  }
+  if (
+    field.default !== null &&
+    field.default !== undefined &&
+    field.default !== "<factory>"
+  ) {
+    return field.default;
+  }
+  return field.type === "bool" ? false : "";
+}
+
+function renderComponentFields(editor, selection) {
+  const type = elements.componentType.value;
+  const schema =
+    (editor && editor.component_schemas && editor.component_schemas[type]) || null;
+  const fields = (schema && schema.fields) || [];
+  const entry = componentDataFor(selection);
+  elements.componentFields.replaceChildren();
+  if (!fields.length) {
+    elements.componentHint.textContent =
+      (schema && schema.note) || "Custom codec: edit the JSON data.";
+    return;
+  }
+  elements.componentHint.textContent =
+    "Typed fields for dataclass components; use JSON for other constructors.";
+  for (const field of fields) {
+    const label = document.createElement("label");
+    label.textContent = field.name;
+    const input = document.createElement("input");
+    const spec = COMPONENT_INPUTS[field.type];
+    input.dataset.fieldName = field.name;
+    input.dataset.fieldType = field.type;
+    if (spec) {
+      input.type = spec.type;
+      if (spec.step) {
+        input.step = spec.step;
+      }
+    } else {
+      input.type = "text";
+    }
+    const value = componentFieldValue(entry, field);
+    if (field.type === "bool") {
+      input.checked = Boolean(value);
+    } else {
+      input.value = value === null ? "" : String(value);
+    }
+    label.append(input);
+    elements.componentFields.append(label);
+  }
+}
+
+function readComponentFields() {
+  const data = {};
+  for (const input of elements.componentFields.querySelectorAll(
+    "input[data-field-name]",
+  )) {
+    const name = input.dataset.fieldName;
+    const type = input.dataset.fieldType;
+    if (type === "bool") {
+      data[name] = input.checked;
+    } else if (type === "int") {
+      if (input.value.trim() === "") {
+        throw new Error(`${name} is required.`);
+      }
+      const value = Number(input.value);
+      if (!Number.isInteger(value)) {
+        throw new Error(`${name} must be an integer.`);
+      }
+      data[name] = value;
+    } else if (type === "float") {
+      if (input.value.trim() === "") {
+        throw new Error(`${name} is required.`);
+      }
+      const value = Number(input.value);
+      if (!Number.isFinite(value)) {
+        throw new Error(`${name} must be a finite number.`);
+      }
+      data[name] = value;
+    } else if (type === "str") {
+      data[name] = input.value;
+    } else {
+      try {
+        data[name] = JSON.parse(input.value);
+      } catch (error) {
+        throw new Error(`${name}: ${error.message}`);
+      }
+    }
+  }
+  return data;
+}
+
+function fillComponentData(selection) {
+  const selected = componentDataFor(selection);
+  elements.componentData.value = selected
+    ? JSON.stringify(selected.data, null, 2)
+    : "{}";
 }
 
 function fillNodeProperties(selection) {
@@ -323,6 +439,7 @@ function showEditor(editor) {
   fillTransform(editor.selection);
   fillAssets(editor.selection);
   fillComponentData(editor.selection);
+  renderComponentFields(editor, editor.selection);
   const history = editor.history || { undo: 0, redo: 0 };
   const play = editor.play || { active: false, frames: 0 };
   elements.playState.textContent = play.active
@@ -492,10 +609,14 @@ async function setComponent() {
     throw new Error("The game exposes no component types.");
   }
   let data;
-  try {
-    data = JSON.parse(elements.componentData.value || "null");
-  } catch (error) {
-    throw new Error(`Component data JSON: ${error.message}`);
+  if (elements.componentFields.querySelector("input[data-field-name]")) {
+    data = readComponentFields();
+  } else {
+    try {
+      data = JSON.parse(elements.componentData.value || "null");
+    } catch (error) {
+      throw new Error(`Component data JSON: ${error.message}`);
+    }
   }
   await editorAction(
     { action: "set_component", id: editorState.selection.id, type, data },
@@ -711,7 +832,10 @@ elements.playStop.addEventListener("click", () => run(playStop));
 elements.assignAsset.addEventListener("click", () => run(assignAssets));
 elements.componentSet.addEventListener("click", () => run(setComponent));
 elements.componentRemove.addEventListener("click", () => run(removeComponent));
-elements.componentType.addEventListener("change", () => fillComponentData(editorState && editorState.selection));
+elements.componentType.addEventListener("change", () => {
+  fillComponentData(editorState && editorState.selection);
+  renderComponentFields(editorState, editorState && editorState.selection);
+});
 elements.nodeCreate.addEventListener("click", () => run(createNode));
 elements.nodeDuplicate.addEventListener("click", () => run(duplicateNode));
 elements.nodeDelete.addEventListener("click", () => run(deleteNode));

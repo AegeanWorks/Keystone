@@ -752,3 +752,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: After simulate, headless, replay and playtest support, `--scene` was still rejected for verify-determinism and windowed runs even though both already build a scene and can accept a prepared one.
 - **Decision**: Add optional `scene_loader` to `run_script`, `verify_determinism` and `assert_deterministic`, pass the CLI scene loader through both verify passes, and allow `--scene` on the windowed path where the prepared scene already reaches `Engine`. `--describe` remains the only incompatible command.
 - **Consequences**: 710 tests green; every runnable path accepts authored scenes except discovery, while windowed execution itself remains covered by the existing startup checks rather than a display-dependent test.
+
+### ADR-091: Render dataclass component schemas as console inputs
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: The API exposed dataclass field schemas but the console still required hand-written JSON, so human component authoring remained error-prone despite the schema data.
+- **Decision**: Generate typed inputs from `component_schemas` for int, float, string, boolean and JSON-valued fields, prefill from the selected component or defaults, parse values back into a data object for `set_component`, and retain the JSON editor for custom `to_dict`/`from_dict` codecs. No API or schema change.
+- **Consequences**: 710 tests green and `app.js` passes `node --check`; dataclass components are form-editable while custom types keep the explicit JSON path. Visual selection focus and asset previews remain future work.

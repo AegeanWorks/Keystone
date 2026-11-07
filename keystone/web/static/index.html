@@ -116,7 +116,9 @@
         <div class="field-grid">
           <label>Component type <select id="component-type"></select></label>
         </div>
-        <label class="stack" for="component-data">Component data JSON</label>
+        <div id="component-fields" class="field-grid"></div>
+        <div id="component-hint" class="hint">Select a component type to edit fields.</div>
+        <label class="stack" for="component-data">Component data JSON (custom codecs)</label>
         <textarea id="component-data" spellcheck="false" rows="4">{}</textarea>
         <div class="buttons">
           <button id="component-set" type="button">Set component</button>
