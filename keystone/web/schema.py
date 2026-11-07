@@ -2,9 +2,19 @@
 
 from __future__ import annotations
 
-from keystone.schema import SCENE_SCHEMA_VERSION, WEB_API_VERSION
+from keystone.schema import EDITOR_SCHEMA_VERSION, SCENE_SCHEMA_VERSION, WEB_API_VERSION
 
-__all__ = ["SCENE_SCHEMA", "WEB_API_VERSION"]
+__all__ = ["EDITOR_SCHEMA", "SCENE_SCHEMA", "WEB_API_VERSION"]
+
+EDITOR_SCHEMA = {
+    "version": EDITOR_SCHEMA_VERSION,
+    "actions": ["select", "transform", "save_prefab", "insert_prefab"],
+    "fields": {
+        "node": ["id", "name", "parent_id", "children", "visible", "selected", "tags", "layer", "components", "transform", "world"],
+        "transform": ["position", "rotation", "scale"],
+    },
+    "notes": ["rotation is [x, y, z, w]; transforms are local; world is column-major"],
+}
 
 SCENE_SCHEMA = {
     "version": SCENE_SCHEMA_VERSION,

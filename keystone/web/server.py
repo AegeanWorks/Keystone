@@ -16,8 +16,15 @@ from keystone.input import ActionState
 from keystone.plugin import GameModule, describe_game
 from keystone.replay import FIXED_STEP
 from keystone.scene import Scene
+from keystone.web.editor import (
+    editor_document,
+    find_node,
+    insert_prefab,
+    save_prefab,
+    transform_from_payload,
+)
 from keystone.web.scene import scene_document
-from keystone.web.schema import SCENE_SCHEMA, WEB_API_VERSION
+from keystone.web.schema import EDITOR_SCHEMA, SCENE_SCHEMA, WEB_API_VERSION
 
 MAX_BODY = 1_000_000
 MAX_FRAMES = 1_000_000
@@ -53,6 +60,8 @@ class GameSession:
         self.game = game
         self.lock = threading.Lock()
         self._built = False
+        self.selected_id: str | None = None
+        self.prefabs: dict[str, object] = {}
 
     @property
     def name(self) -> str:
@@ -100,6 +109,62 @@ class GameSession:
     def scene(self) -> dict:
         with self.lock:
             return scene_document(self._scene_locked(), game=self.name)
+
+    def _editor_locked(self, scene: Scene) -> dict:
+        if self.selected_id is not None and scene.find_by_id(self.selected_id) is None:
+            self.selected_id = None
+        document = editor_document(scene, self.selected_id, self.prefabs)
+        document["game"] = self.name
+        return document
+
+    def editor(self) -> dict:
+        with self.lock:
+            return self._editor_locked(self._scene_locked())
+
+    def editor_action(self, payload: object) -> dict:
+        if not isinstance(payload, dict):
+            raise WebProblem(400, "editor request must be a JSON object", 'send {"action": "select", "id": "cube"}')
+        action = payload.get("action")
+        if not isinstance(action, str) or not action.strip():
+            raise WebProblem(400, "editor action must be a non-blank string", "use select, transform, save_prefab or insert_prefab")
+        with self.lock:
+            scene = self._scene_locked()
+            try:
+                if action == "select":
+                    node_id = payload.get("id")
+                    if node_id is None:
+                        self.selected_id = None
+                    elif isinstance(node_id, str):
+                        find_node(scene, node_id)
+                        self.selected_id = node_id
+                    else:
+                        raise ValueError("select id must be a string or null")
+                elif action == "transform":
+                    node = find_node(scene, payload.get("id"))
+                    node.transform = transform_from_payload(node, payload)
+                    self.selected_id = node.id
+                elif action == "save_prefab":
+                    node_id = payload.get("id") or self.selected_id
+                    if node_id is None:
+                        raise ValueError("select a node before saving a prefab")
+                    node = find_node(scene, node_id)
+                    name = payload.get("name") or node.id or node.name
+                    save_prefab(scene, node, name, self.prefabs)
+                    self.selected_id = node.id
+                elif action == "insert_prefab":
+                    name = payload.get("name")
+                    parent_id = payload.get("parent")
+                    parent = None if parent_id in (None, "", "root") else find_node(scene, parent_id)
+                    roots = insert_prefab(scene, self.prefabs, name, parent, payload.get("instance"))
+                    if roots:
+                        self.selected_id = roots[0].id
+                else:
+                    raise ValueError(f"unknown editor action {action!r}")
+            except KeyError as exc:
+                raise WebProblem(404, str(exc), "refresh /api/editor and choose an existing node or prefab") from exc
+            except (TypeError, ValueError) as exc:
+                raise WebProblem(400, str(exc), "send a valid editor action and finite transform values") from exc
+            return self._editor_locked(scene)
 
     def inspector(self) -> dict:
         from keystone.batch import merge_batches, plan_batches
@@ -246,7 +311,7 @@ class ConsoleHandler(BaseHTTPRequestHandler):
         return
 
     _GET_PATHS: ClassVar[frozenset[str]] = frozenset(
-        {"/", "/index.html", "/app.js", "/viewer.js", "/style.css", "/api", "/api/health", "/api/describe", "/api/scene", "/api/inspector"}
+        {"/", "/index.html", "/app.js", "/viewer.js", "/style.css", "/api", "/api/health", "/api/describe", "/api/scene", "/api/inspector", "/api/editor"}
     )
 
     def do_OPTIONS(self) -> None:
@@ -277,6 +342,8 @@ class ConsoleHandler(BaseHTTPRequestHandler):
                 self._send_json(200, self.session.scene())
             elif path == "/api/inspector":
                 self._send_json(200, self.session.inspector())
+            elif path == "/api/editor":
+                self._send_json(200, self.session.editor())
             elif path == "/api/simulate":
                 raise WebProblem(405, "method not allowed", "use POST /api/simulate")
             else:
@@ -289,19 +356,22 @@ class ConsoleHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         path = urlparse(self.path).path
         try:
-            if path != "/api/simulate":
+            if path == "/api/simulate":
+                payload = self._read_json()
+                if not isinstance(payload, dict):
+                    raise WebProblem(400, "request body must be a JSON object", 'send {"frames": 1}')
+                actions = payload.get("actions", [])
+                frames = payload.get("frames")
+                if frames is None:
+                    frames = len(actions) if isinstance(actions, list) and actions else 1
+                step = payload.get("step", FIXED_STEP)
+                trace = payload.get("trace", False)
+                self._send_json(200, self.session.simulate(frames, actions, step, trace))
+            elif path == "/api/editor":
+                self._send_json(200, self.session.editor_action(self._read_json()))
+            else:
                 status = 405 if path in self._GET_PATHS else 404
-                raise WebProblem(status, f"method not allowed for {path}" if status == 405 else f"no route for {path}", "POST /api/simulate")
-            payload = self._read_json()
-            if not isinstance(payload, dict):
-                raise WebProblem(400, "request body must be a JSON object", 'send {"frames": 1}')
-            actions = payload.get("actions", [])
-            frames = payload.get("frames")
-            if frames is None:
-                frames = len(actions) if isinstance(actions, list) and actions else 1
-            step = payload.get("step", FIXED_STEP)
-            trace = payload.get("trace", False)
-            self._send_json(200, self.session.simulate(frames, actions, step, trace))
+                raise WebProblem(status, f"method not allowed for {path}" if status == 405 else f"no route for {path}", "POST /api/simulate or /api/editor")
         except WebProblem as exc:
             self._send_problem(exc)
         except Exception as exc:  # noqa: BLE001 - HTTP must never leak a traceback
@@ -331,6 +401,7 @@ class ConsoleHandler(BaseHTTPRequestHandler):
                 "describe": {"method": "GET", "path": "/api/describe"},
                 "scene": {"method": "GET", "path": "/api/scene"},
                 "inspector": {"method": "GET", "path": "/api/inspector"},
+                "editor": {"method": "GET/POST", "path": "/api/editor", "schema": EDITOR_SCHEMA},
                 "simulate": {
                     "method": "POST",
                     "path": "/api/simulate",
@@ -340,7 +411,13 @@ class ConsoleHandler(BaseHTTPRequestHandler):
         }
 
     def _health(self) -> dict:
-        return {"ok": True, "api": WEB_API_VERSION, "scene_schema": SCENE_SCHEMA["version"], "game": self.session.name}
+        return {
+            "ok": True,
+            "api": WEB_API_VERSION,
+            "scene_schema": SCENE_SCHEMA["version"],
+            "editor_schema": EDITOR_SCHEMA["version"],
+            "game": self.session.name,
+        }
 
     def _read_json(self) -> object:
         header = self.headers.get("Content-Length")

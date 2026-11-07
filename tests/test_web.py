@@ -170,6 +170,87 @@ class WebServerTest(unittest.TestCase):
         self.assertEqual(payload["frames"], 2)
         self.assertEqual(len(payload["hash"]), 32)
 
+    def test_editor_hierarchy_selection_and_transform(self):
+        status, _, editor = self._json("/api/editor")
+        self.assertEqual(status, 200)
+        self.assertEqual(editor["schema"], 1)
+        self.assertIsNone(editor["selection"])
+        self.assertIn("select", editor["actions"])
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+
+        status, _, editor = self._json(
+            "/api/editor", method="POST", payload={"action": "select", "id": cube["id"]}
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(editor["selection"]["id"], cube["id"])
+
+        status, _, editor = self._json(
+            "/api/editor",
+            method="POST",
+            payload={
+                "action": "transform",
+                "id": cube["id"],
+                "position": [1.0, 2.0, 3.0],
+                "rotation": [0.0, 0.0, 0.0, 1.0],
+                "scale": [2.0, 2.0, 2.0],
+            },
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(editor["selection"]["transform"]["position"], [1.0, 2.0, 3.0])
+        status, _, scene = self._json("/api/scene")
+        node = next(item for item in scene["nodes"] if item["id"] == cube["id"])
+        self.assertEqual(node["world"][12:15], [1.0, 2.0, 3.0])
+
+        status, _, _ = self._json(
+            "/api/editor",
+            method="POST",
+            payload={"action": "transform", "id": cube["id"], "position": [float("nan"), 0, 0]},
+        )
+        self.assertEqual(status, 400)
+        status, _, _ = self._json(
+            "/api/editor", method="POST", payload={"action": "select", "id": "missing"}
+        )
+        self.assertEqual(status, 404)
+        status, _, _ = self._json(
+            "/api/editor", method="POST", payload={"action": "explode"}
+        )
+        self.assertEqual(status, 400)
+
+    def test_editor_prefab_capture_and_insert(self):
+        _, _, editor = self._json("/api/editor")
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        self._json("/api/editor", method="POST", payload={"action": "select", "id": cube["id"]})
+        status, _, editor = self._json(
+            "/api/editor",
+            method="POST",
+            payload={"action": "save_prefab", "name": "cube-template"},
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(editor["prefabs"], [{"name": "cube-template", "node_count": 1}])
+
+        status, _, editor = self._json(
+            "/api/editor",
+            method="POST",
+            payload={"action": "insert_prefab", "name": "cube-template", "instance": "copy"},
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(editor["selection"]["id"], "copy:" + cube["id"])
+        _, _, scene = self._json("/api/scene")
+        self.assertIn("copy:" + cube["id"], {node["id"] for node in scene["nodes"]})
+
+    def test_editor_static_controls_and_index(self):
+        status, _, body = self._request("/")
+        text = body.decode("utf-8")
+        self.assertEqual(status, 200)
+        for control in ("hierarchy", "prefab-save", "prefab-insert", "transform-apply"):
+            self.assertIn(f'id="{control}"', text)
+        status, _, body = self._request("/app.js")
+        self.assertEqual(status, 200)
+        self.assertIn("/api/editor", body.decode("utf-8"))
+        status, _, payload = self._json("/api")
+        self.assertEqual(status, 200)
+        self.assertIn("editor", payload["endpoints"])
+
     def test_step_button_documents_its_reset_semantics(self):
         status, _, body = self._request("/")
         self.assertEqual(status, 200)

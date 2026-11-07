@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `122`
+- **Total Python Modules**: `123`
 - **Total Classes**: `189`
-- **Total Top-Level Functions**: `247`
-- **Total Class Methods**: `1139`
-- **Total Source Lines**: `22058`
+- **Total Top-Level Functions**: `254`
+- **Total Class Methods**: `1145`
+- **Total Source Lines**: `22368`
 
 ---
 
@@ -989,7 +989,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `106` lines (`4041` bytes)
+**Size**: `110` lines (`4251` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1195,7 +1195,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `6` lines (`147` bytes)
+**Size**: `7` lines (`173` bytes)
 
 ---
 
@@ -1364,10 +1364,26 @@
 ### [`keystone/web/__init__.py`](keystone/web/__init__.py)
 > *Local web console and JSON API for Keystone.*
 
-**Size**: `19` lines (`641` bytes)
+**Size**: `19` lines (`673` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
+
+---
+
+### [`keystone/web/editor.py`](keystone/web/editor.py)
+> *Scene-editor helpers for the local web console.*
+
+**Size**: `135` lines (`4823` bytes)
+
+**Functions:**
+- `def _finite_array(value, length, label)`
+- `def node_document(node, selected_id)`
+- `def editor_document(scene, selected_id, prefabs)`
+- `def find_node(scene, node_id)`
+- `def transform_from_payload(node, payload)`
+- `def save_prefab(scene, node, name, prefabs)`
+- `def insert_prefab(scene, prefabs, name, parent, instance)`
 
 ---
 
@@ -1388,14 +1404,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `28` lines (`1425` bytes)
+**Size**: `38` lines (`1896` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `464` lines (`20687` bytes)
+**Size**: `541` lines (`24441` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1407,6 +1423,9 @@
   - Method `.simulate(frames, actions, step, trace)`
   - Method `._scene_locked()`
   - Method `.scene()`
+  - Method `._editor_locked(scene)`
+  - Method `.editor()`
+  - Method `.editor_action(payload)`
   - Method `.inspector()`
 - `class KeystoneHTTPServer` - *Threaded server carrying one game session for the request handler.*
   - Method `.__init__(address, session)`
@@ -2248,7 +2267,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `110` lines (`4073` bytes)
+**Size**: `112` lines (`4228` bytes)
 
 **Classes:**
 - `class PluginTest`
@@ -2713,7 +2732,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `281` lines (`11952` bytes)
+**Size**: `362` lines (`15440` bytes)
 
 **Classes:**
 - `class Health`
@@ -2736,6 +2755,9 @@
   - Method `.test_describe_includes_the_web_capability()`
   - Method `.test_scene_endpoint_returns_the_scene_document()`
   - Method `.test_simulate_endpoint_returns_a_deterministic_result()`
+  - Method `.test_editor_hierarchy_selection_and_transform()`
+  - Method `.test_editor_prefab_capture_and_insert()`
+  - Method `.test_editor_static_controls_and_index()`
   - Method `.test_step_button_documents_its_reset_semantics()`
   - Method `.test_options_preflight_and_static_assets()`
   - Method `.test_api_index_and_errors_are_json()`

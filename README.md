@@ -268,7 +268,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip loading, changed-pixel counts, bbox, visual diff, dependency-free.
 - **Frame reports for AI analysis**: `--report` writes schema-11 JSON with image hashes, pixel/luminance stats, content box, dominant colors, 8×8 grid, camera, projected bounds and per-node identity/material metadata, sprite/FX counts and UI labels/buttons when the overlay is rendered.
 - **Human overlay**: game-agnostic HUD with game/status, FPS, frame, time, resolution and profiler lines (draws, tris, audio, anim, FX, sprites), plus help/pause menu; 5×7 font, no asset. Games add HUD via `draw_ui(canvas, state)`.
-- **Web console and WebGL viewer**: `--serve` starts a loopback stdlib JSON API and dashboard sharing the CLI contract (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/simulate`); WebGL2 previews scenes with textures, lights, fog.
+- **Web console and WebGL viewer**: `--serve` starts a stdlib JSON API and dashboard sharing the CLI contract (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/editor`, `/api/simulate`); a scene editor exposes hierarchy, selection, transforms and prefabs; WebGL2 previews scenes.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code in the package.
 
 ## 🤖 AI Testing & Frame Analysis
@@ -279,7 +279,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 python -m keystone --describe
 ```
 
-The response contains the game name, `actions()`, `snapshot()`, 30 capability keys (renderer, input, audio, batching, prefabs, animation, replay, assets, particles, inspector, playtest, UI and web), and schema versions.
+The response contains the game name, actions/snapshot, 32 capability keys and schema versions.
 
 ### Verify determinism and visual regressions
 
@@ -291,7 +291,7 @@ python -m keystone --headless --frames 1 --size 1280x720 \
 
 The first command runs the scenario twice and exits 0 only when both hashes match. The second renders, writes the current report, compares it with the baseline and exits non-zero when the image changed. The diff includes luminance/content deltas and changed/added/removed nodes. Add `--diff-out diff.png` for a visual pixel diff with changed-pixel count, ratio, bbox and mean/max delta. `--expect-hash <32-hex>` pins a known final hash for either simulation mode.
 
-See [`docs/AI_GUIDE.md`](docs/AI_GUIDE.md) for the complete discover → simulate → verify → render → compare workflow.
+See [`docs/AI_GUIDE.md`](docs/AI_GUIDE.md) for the complete workflow.
 
 ### Simulate without a GPU
 
@@ -385,6 +385,7 @@ keystone/
 │   ├── schema.py             <- versioned core schema constants
 │   ├── math3d.py             <- Vec3, Mat4, Quat (column-major, OpenGL-ready)
 │   ├── camera.py             <- perspective camera
+│   ├── project.py           <- manifests, scaffolding and --project loading
 │   ├── prefab.py            <- deterministic subtree templates
 │   ├── scene.py              <- hierarchy, identity, components, transforms and lights
 │   ├── geometry.py           <- MeshData, Material
@@ -460,6 +461,7 @@ keystone/
 │   ├── test_clock.py         <- fixed-step clock
 │   ├── test_physics.py       <- rays, AABB, sphere queries and raycasts
 │   ├── test_broadphase.py    <- spatial-grid queries, updates and pairs
+│   ├── test_project.py      <- manifest, scaffold and --project workflow
 │   ├── test_prefab.py       <- prefab capture, IDs and isolation
 │   ├── test_particles.py     <- seeded emitters, forces and reports
 │   ├── test_pbr.py           <- metallic/roughness/emissive shading

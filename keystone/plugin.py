@@ -7,7 +7,7 @@ from typing import Protocol, runtime_checkable
 
 from keystone.input import ActionState
 from keystone.scene import Scene
-from keystone.schema import SCENE_SCHEMA_VERSION, WEB_API_VERSION
+from keystone.schema import EDITOR_SCHEMA_VERSION, SCENE_SCHEMA_VERSION, WEB_API_VERSION
 
 
 @runtime_checkable
@@ -62,6 +62,10 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "asset_inventory": True,
             "particles": True,
             "inspector": True,
+            "editor": {
+                "schema": EDITOR_SCHEMA_VERSION,
+                "actions": ["select", "transform", "save_prefab", "insert_prefab"],
+            },
             "playtest": True,
             "human_ui": {"overlay": "on", "toggle": "h", "pause": "p", "menu": ["resume", "toggle_ui", "quit"]},
             "game_ui": callable(getattr(game, "draw_ui", None)),
@@ -69,7 +73,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "web": {
                 "api_version": WEB_API_VERSION,
                 "scene_schema": SCENE_SCHEMA_VERSION,
-                "endpoints": ["/api", "/api/health", "/api/describe", "/api/scene", "/api/inspector", "/api/simulate"],
+                "endpoints": ["/api", "/api/health", "/api/describe", "/api/scene", "/api/inspector", "/api/editor", "/api/simulate"],
                 "notes": ["replay a CommandLog with --replay <log.json>, or translate log.frames into the actions array of POST /api/simulate"],
             },
         },

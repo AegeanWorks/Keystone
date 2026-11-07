@@ -33,6 +33,31 @@
         <p class="hint">Actions use the same JSON shape as <code>--simulate --actions</code>.</p>
       </section>
 
+      <section class="card editor-card">
+        <h2>Scene editor</h2>
+        <label class="stack" for="hierarchy">Hierarchy</label>
+        <select id="hierarchy" size="8" aria-label="Scene hierarchy"></select>
+        <div class="field-grid">
+          <label>Prefab name <input id="prefab-name" type="text" value="hero"></label>
+          <label>Instance prefix <input id="prefab-instance" type="text" placeholder="optional"></label>
+        </div>
+        <div class="buttons">
+          <button id="prefab-save" type="button">Save prefab</button>
+          <button id="prefab-insert" type="button">Insert prefab</button>
+        </div>
+        <label class="stack" for="position">Position x/y/z</label>
+        <input id="position" type="text" value="0, 0, 0">
+        <label class="stack" for="rotation">Rotation x/y/z/w</label>
+        <input id="rotation" type="text" value="0, 0, 0, 1">
+        <label class="stack" for="scale">Scale x/y/z</label>
+        <input id="scale" type="text" value="1, 1, 1">
+        <div class="buttons">
+          <button id="transform-apply" type="button" class="primary">Apply transform</button>
+          <button id="editor-refresh" type="button">Refresh editor</button>
+        </div>
+        <div id="editor-state" class="hint">Select a node to edit.</div>
+      </section>
+
       <section class="card">
         <h2>Scene</h2>
         <div id="summary" class="summary">No scene loaded.</div>

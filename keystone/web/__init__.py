@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from keystone.web.schema import SCENE_SCHEMA, WEB_API_VERSION
+from keystone.web.schema import EDITOR_SCHEMA, SCENE_SCHEMA, WEB_API_VERSION
 
-__all__ = ["SCENE_SCHEMA", "WEB_API_VERSION", "create_server", "scene_document", "serve"]
+__all__ = ["EDITOR_SCHEMA", "SCENE_SCHEMA", "WEB_API_VERSION", "create_server", "scene_document", "serve"]
 
 
 def __getattr__(name: str):

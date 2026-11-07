@@ -122,7 +122,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 - `TextureData` is immutable RGBA8 data with PNG and checker factories; `Material.texture` is sampled through mesh UVs with repeat wrapping and mipmaps, and the renderer caches one GPU texture per payload.
 - `keystone.ui.report.describe_canvas()` turns the rendered `Canvas` into `ui` metadata: visibility, pause state, label text/position/scale/color and button label/action/rect/selection/hover.
 - `describe_game()` exposes `name`, `actions()`, `snapshot()`, capabilities (`simulate`, `render`, `human_ui`, `game_ui`, `web`) and the versioned report/scene schemas; `--describe` prints it without a window.
-- `--serve` starts the local JSON API and browser console without OpenGL; `keystone.web.scene.scene_document()` exports the viewer document.
+- `--serve` starts the local JSON API and browser console without OpenGL; `keystone.web.scene.scene_document()` exports the viewer document and `/api/editor` exposes hierarchy, selection, transforms and prefab insertion.
 - `ActionState` includes `mouse_clicked` as a one-frame edge so games and menus can react without importing GLFW.
 - `testing.run_script()`, `verify_determinism()` and `assert_deterministic()` turn an action script into test evidence; `--verify-determinism` exposes the two-run check to agents; `--expect-hash` pins a final result.
 - `--simulate` requires no GPU; `--headless` renders off-screen; `--ui` adds the human overlay to a capture; `--start-paused` renders the pause menu; `--no-ui` disables it; `--report` documents a rendered frame; `--compare-baseline` gates visual changes; `--describe` discovers the contract.
@@ -170,6 +170,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Frame report | Implemented | image statistics, projected nodes, materials, UI metadata and report diff |
 | Human UI | Implemented | bitmap font, canvas, HUD/help, interactive pause menu |
 | Web console | Implemented | scene export, JSON API, CORS, static WebGL2 viewer |
+| Scene editor | Implemented | hierarchy, selection, transform edits, prefab capture/insertion via `/api/editor` and console controls |
 | Physics | Implemented | rays, AABB, sphere queries, broadphase, character movement and triggers |
 | AI adapters | Implemented | validated action parsing, fused observations, report summaries, hash-chained audit trail |
 | Playtest | Implemented | seeded bot policies, CommandLog-compatible transcripts, transcript diffing, schema-1 reports, fairness validation |
@@ -188,7 +189,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 6. **AI adapters** — implemented in v0.27.0; validated actions, fused observations, report summaries and hash-chained audit trail.
 6. **Animation** — deterministic keyframe clips, looping controller, pose application and JSON round trips in v0.29.0; crossfade blending and timed events in v0.30.0; skinning (LBS-4, CPU + GPU, glTF) in v0.41.0; deterministic CPU particles with HUD/inspector/AI reports in v0.31.0, swept AABB collision in v0.40.0, GPU point sprites in v0.42.0, bounce/friction/contact-kill in v0.43.0.
 6. **Serialization/replay** — versioned scene snapshot format and undo/redo in v0.25.0; deterministic replay runner with `--replay` in v0.30.0; seeded bot playtester with transcript diffing and fairness validation in v0.33.0.
-7. **Tooling** — the v0.20.0 web console covers discovery, simulation and scene preview; `/api/inspector` with batch plan and audio state in v0.28.0 plus merge summary and animation state in v0.29.0 plus asset inventory in v0.30.0; editor, richer HUD widgets and editor hooks remain.
+7. **Tooling** — the v0.20.0 web console covers discovery, simulation and scene preview; `/api/inspector` with batch plan and audio state in v0.28.0 plus merge summary and animation state in v0.29.0 plus asset inventory in v0.30.0; the v0.46.0 scene editor adds hierarchy, selection, transforms and prefabs; richer HUD widgets and editor hooks remain.
 
 Each core system must have a game-agnostic test and must not introduce genre vocabulary.
 
