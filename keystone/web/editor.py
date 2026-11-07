@@ -315,6 +315,7 @@ def editor_document(
     registry: object | None = None,
     assets: list[dict[str, object]] | None = None,
     component_types: list[str] | None = None,
+    play_state: dict[str, object] | None = None,
 ) -> dict:
     nodes = [node_document(node, selected_id, registry) for node in scene.traverse()]
     selection = next((node for node in nodes if node["id"] == selected_id), None)
@@ -335,6 +336,11 @@ def editor_document(
         "scenes": scene_entries if scene_entries is not None else [],
         "assets": assets if assets is not None else asset_entries(registry),
         "component_types": component_types if component_types is not None else [],
+        "play": (
+            play_state
+            if play_state is not None
+            else {"active": False, "frames": 0, "step": 0.0}
+        ),
         "actions": list(EDITOR_ACTIONS),
         "history": (
             history.describe()

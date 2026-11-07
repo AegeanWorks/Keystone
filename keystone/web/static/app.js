@@ -12,6 +12,10 @@ const elements = {
   hierarchy: document.getElementById("hierarchy"),
   nodeName: document.getElementById("node-name"),
   nodeParent: document.getElementById("node-parent"),
+  playStart: document.getElementById("play-start"),
+  playStep: document.getElementById("play-step"),
+  playStop: document.getElementById("play-stop"),
+  playState: document.getElementById("play-state"),
   nodeCreate: document.getElementById("node-create"),
   nodeDuplicate: document.getElementById("node-duplicate"),
   nodeDelete: document.getElementById("node-delete"),
@@ -74,6 +78,7 @@ function setBusy(value) {
     elements.step, elements.run, elements.simulate, elements.refresh,
     elements.nodeCreate, elements.nodeDuplicate, elements.nodeDelete, elements.nodeReparent,
     elements.sceneSave, elements.sceneLoad, elements.assignAsset,
+    elements.playStart, elements.playStep, elements.playStop,
     elements.componentSet, elements.componentRemove,
     elements.prefabSave, elements.prefabInsert, elements.transformApply, elements.editorRefresh,
   ]) {
@@ -156,6 +161,7 @@ function editorSummary(editor) {
     scenes: editor.scenes,
     assets: (editor.assets || []).length,
     component_types: editor.component_types,
+    play: editor.play,
     actions: editor.actions,
     history: editor.history,
   };
@@ -277,6 +283,10 @@ function showEditor(editor) {
   fillAssets(editor.selection);
   fillComponentData(editor.selection);
   const history = editor.history || { undo: 0, redo: 0 };
+  const play = editor.play || { active: false, frames: 0 };
+  elements.playState.textContent = play.active
+    ? `Playing · ${play.frames} frames`
+    : "Stopped";
   elements.editorState.textContent =
     `${editor.nodes.length} nodes · ${editor.prefabs.length} prefabs · ` +
     `undo ${history.undo} / redo ${history.redo} · ` +
@@ -354,6 +364,20 @@ async function insertPrefab() {
   }
   const instance = elements.prefabInstance.value.trim() || null;
   await editorAction({ action: "insert_prefab", name, instance }, "inserting prefab");
+  await refreshScene(false);
+}
+
+async function playStart() {
+  await editorAction({ action: "play_start" }, "starting play");
+}
+
+async function playStep() {
+  await editorAction({ action: "play_step", frames: 1 }, "stepping play");
+  await refreshScene(false);
+}
+
+async function playStop() {
+  await editorAction({ action: "play_stop" }, "stopping play");
   await refreshScene(false);
 }
 
@@ -566,6 +590,9 @@ elements.refresh.addEventListener("click", () => run(() => refreshScene(true)));
 elements.editorRefresh.addEventListener("click", () => run(() => refreshEditor(true)));
 elements.hierarchy.addEventListener("change", () => run(() => selectNode(elements.hierarchy.value)));
 elements.transformApply.addEventListener("click", () => run(applyTransform));
+elements.playStart.addEventListener("click", () => run(playStart));
+elements.playStep.addEventListener("click", () => run(playStep));
+elements.playStop.addEventListener("click", () => run(playStop));
 elements.assignAsset.addEventListener("click", () => run(assignAssets));
 elements.componentSet.addEventListener("click", () => run(setComponent));
 elements.componentRemove.addEventListener("click", () => run(removeComponent));

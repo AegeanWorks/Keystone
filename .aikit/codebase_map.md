@@ -9,8 +9,8 @@
 - **Total Python Modules**: `128`
 - **Total Classes**: `202`
 - **Total Top-Level Functions**: `289`
-- **Total Class Methods**: `1219`
-- **Total Source Lines**: `24873`
+- **Total Class Methods**: `1220`
+- **Total Source Lines**: `24988`
 
 ---
 
@@ -1270,7 +1270,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `25` lines (`497` bytes)
+**Size**: `28` lines (`549` bytes)
 
 ---
 
@@ -1449,7 +1449,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `528` lines (`18695` bytes)
+**Size**: `534` lines (`18895` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene-node edits.*
@@ -1476,7 +1476,7 @@
 - `def _restore_nodes(scene, snapshot)`
 - `def _component_documents(node)`
 - `def node_document(node, selected_id, registry)`
-- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types)`
+- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, play_state)`
 - `def find_node(scene, node_id)`
 - `def create_node(scene, payload, parent, registry)` - *Create, validate and attach one node from an editor payload.*
 - `def delete_node(scene, node)` - *Detach one node subtree and return its former parent.*
@@ -1508,14 +1508,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `59` lines (`2956` bytes)
+**Size**: `62` lines (`3142` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `761` lines (`33045` bytes)
+**Size**: `822` lines (`36014` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2899,7 +2899,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `683` lines (`28912` bytes)
+**Size**: `725` lines (`30861` bytes)
 
 **Classes:**
 - `class Health`
@@ -2929,6 +2929,7 @@
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_scene_library_persists_and_restores()`
+  - Method `.test_editor_play_mode_restores_authored_scene()`
   - Method `.test_editor_component_authoring_and_scene_round_trip()`
   - Method `.test_editor_static_controls_and_index()`
   - Method `.test_step_button_documents_its_reset_semantics()`

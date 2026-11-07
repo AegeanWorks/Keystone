@@ -632,3 +632,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The editor displayed component names but could not add, edit or remove them. Game-defined components already had a shared codec and optional `game.component_types` map for prefabs and scenes, so the editor lacked only the authoring contract and UI.
 - **Decision**: Bump the editor schema to 5, expose the game's `component_types` names and each node's serialized `component_data`, and add `set_component`/`remove_component` actions. Data is decoded through `component_codec`, replacements are keyed by type, unknown or non-serializable payloads fail with 400, and mutations run through `EditorHistory`. The console adds a type select, JSON data editor and set/remove buttons.
 - **Consequences**: 693 tests green; component edits undo and survive `.kscene` save/load, while games without a `component_types` map reject component authoring explicitly. Play-in-editor and richer component field forms remain future work.
+
+### ADR-076: Add play/step/stop with authored-scene restore
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: `/api/simulate` rebuilds the game scene, so running the game from the editor discarded authored changes. A Unity/Unreal-style workflow needs a play mode that advances the live scene and restores the authored state on stop.
+- **Decision**: Bump the editor schema to 6 and add `play_start`, `play_step` and `play_stop`. Start snapshots the component-aware scene with `scene_to_dict`; step calls `game.update(FIXED_STEP, ActionState)` for a bounded frame count with optional action payloads; stop restores through `restore_scene`, clears history/selection and reports `play.active`/`play.frames`. Editing actions and `/api/simulate` are blocked while playing. The console adds Play/Step/Stop controls.
+- **Consequences**: 694 tests green; authored scene graph state is restored after play, while game-owned counters (time, particles) are not rewound; play mode is a scene preview, not a full state rewind. Full game-state snapshots and inspector property editing remain future work.

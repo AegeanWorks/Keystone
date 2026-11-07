@@ -37,6 +37,12 @@
         <h2>Scene editor</h2>
         <label class="stack" for="hierarchy">Hierarchy</label>
         <select id="hierarchy" size="8" aria-label="Scene hierarchy"></select>
+        <div class="buttons">
+          <button id="play-start" type="button">Play</button>
+          <button id="play-step" type="button">Step</button>
+          <button id="play-stop" type="button">Stop</button>
+        </div>
+        <div id="play-state" class="hint">Stopped</div>
         <div class="field-grid">
           <label>Node name <input id="node-name" type="text" value="node"></label>
           <label>Parent

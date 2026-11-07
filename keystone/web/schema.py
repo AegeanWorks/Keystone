@@ -21,6 +21,8 @@ EDITOR_SCHEMA = {
         "assign_asset": ["id", "mesh", "material"],
         "set_component": ["id", "type", "data"],
         "remove_component": ["id", "type"],
+        "play_step": ["frames", "actions"],
+        "play": ["active", "frames", "step"],
         "asset": ["id", "kind", "sha256", "source", "dependencies"],
         "component_types": ["name"],
         "reparent_node": ["id", "parent"],
@@ -33,6 +35,7 @@ EDITOR_SCHEMA = {
         "schema 3 adds save_scene/load_scene with typed-component scene files",
         "schema 4 adds asset inventory and assign_asset for existing nodes",
         "schema 5 adds component_types plus set_component/remove_component authoring",
+        "schema 6 adds play_start/play_step/play_stop and restores the authored scene on stop",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

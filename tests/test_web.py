@@ -180,7 +180,7 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 5)
+        self.assertEqual(editor["schema"], 6)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
         self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
@@ -458,6 +458,43 @@ class WebServerTest(unittest.TestCase):
             entries = {entry["name"]: entry for entry in broken.editor()["scenes"]}
             self.assertIsNotNone(entries["broken"]["error"])
 
+    def test_editor_play_mode_restores_authored_scene(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        original = cube["transform"]["rotation"]
+        self.assertFalse(editor["play"]["active"])
+
+        started = session.editor_action({"action": "play_start"})
+        self.assertTrue(started["play"]["active"])
+        self.assertEqual(started["play"]["frames"], 0)
+        stepped = session.editor_action({"action": "play_step", "frames": 2})
+        self.assertEqual(stepped["play"]["frames"], 2)
+        moved = next(node for node in stepped["nodes"] if node["id"] == cube["id"])
+        self.assertNotEqual(moved["transform"]["rotation"], original)
+
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action(
+                {
+                    "action": "transform",
+                    "id": cube["id"],
+                    "position": [1.0, 2.0, 3.0],
+                }
+            )
+        self.assertEqual(caught.exception.status, 400)
+        with self.assertRaises(WebProblem) as caught:
+            session.simulate(1, [], 0.0167, False)
+        self.assertEqual(caught.exception.status, 400)
+
+        stopped = session.editor_action({"action": "play_stop"})
+        self.assertFalse(stopped["play"]["active"])
+        restored = next(node for node in stopped["nodes"] if node["id"] == cube["id"])
+        self.assertEqual(restored["transform"]["rotation"], original)
+        self.assertEqual(stopped["history"], {"undo": 0, "redo": 0, "limit": 50})
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action({"action": "play_step", "frames": 1})
+        self.assertEqual(caught.exception.status, 400)
+
     def test_editor_component_authoring_and_scene_round_trip(self):
         with tempfile.TemporaryDirectory() as directory:
             scene_dir = Path(directory) / "scenes"
@@ -537,6 +574,10 @@ class WebServerTest(unittest.TestCase):
         self.assertEqual(status, 200)
         for control in (
             "hierarchy",
+            "play-start",
+            "play-step",
+            "play-stop",
+            "play-state",
             "node-parent",
             "node-create",
             "node-duplicate",
@@ -568,6 +609,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("save_scene", script)
         self.assertIn("assign_asset", script)
         self.assertIn("set_component", script)
+        self.assertIn("play_start", script)
         status, _, payload = self._json("/api")
         self.assertEqual(status, 200)
         self.assertIn("editor", payload["endpoints"])

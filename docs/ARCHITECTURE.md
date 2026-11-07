@@ -170,7 +170,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Frame report | Implemented | image statistics, projected nodes, materials, UI metadata and report diff |
 | Human UI | Implemented | bitmap font, canvas, HUD/help, interactive pause menu |
 | Web console | Implemented | scene export, JSON API, CORS, static WebGL2 viewer |
-| Scene editor | Implemented | hierarchy, node create/duplicate/reparent/delete, transform edits, asset inventory/assignment, typed component authoring, bounded undo/redo, prefab capture/insertion and file-backed scene save/load via `/api/editor` and console controls |
+| Scene editor | Implemented | hierarchy, node create/duplicate/reparent/delete, transform edits, asset inventory/assignment, typed component authoring, play/step/stop with authored-scene restore, bounded undo/redo, prefab capture/insertion and file-backed scene save/load via `/api/editor` and console controls |
 | Physics | Implemented | rays, AABB, sphere queries, broadphase, character movement and triggers |
 | AI adapters | Implemented | validated action parsing, fused observations, report summaries, hash-chained audit trail |
 | Playtest | Implemented | seeded bot policies, CommandLog-compatible transcripts, transcript diffing, schema-1 reports, fairness validation |
@@ -223,6 +223,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - Editor schema 3 saves and loads typed-component `.kscene` files in place, clears undo history on load, and rejects missing or wrong-kind asset references.
 - Editor schema 4 lists registry assets and reassigns or clears a node's mesh/material with undo; missing or wrong-kind ids return a 400.
 - Editor schema 5 adds/removes typed components through the game's `component_types` map, with undo and scene-file round trips.
+- Editor schema 6 runs the game from the authored scene, blocks edits while playing, and restores the pre-play scene on stop.
 - `--project . --serve` uses `<project>/prefabs/*.kprefab`; `--prefab-dir DIR` overrides the library, and library entries report load errors instead of breaking the editor.
 - `python -m keystone --new <dir>` scaffolds a project whose `--project <dir> --describe` and `--simulate` paths pass the five-operation contract.
 - A project manifest may list relative `.obj`, `.png` and `.kprefab` assets; `--project` imports them as `project:<path>` and rejects absolute, escaping, missing or unsupported paths.
