@@ -882,6 +882,8 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("setSelected", viewer_script)
         self.assertIn("u_selected", viewer_script)
         self.assertIn("pointerdown", viewer_script)
+        self.assertIn("shiftKey", viewer_script)
+        self.assertIn("cameraBasis", viewer_script)
         self.assertIn("lookAt", viewer_script)
         status, _, payload = self._json("/api")
         self.assertEqual(status, 200)

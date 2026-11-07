@@ -255,11 +255,21 @@ export class SceneViewer {
       const dx = event.clientX - this.lastPointer[0];
       const dy = event.clientY - this.lastPointer[1];
       this.lastPointer = [event.clientX, event.clientY];
-      this.cameraState.yaw -= dx * 0.01;
-      this.cameraState.pitch = Math.max(
-        -1.5,
-        Math.min(1.5, this.cameraState.pitch - dy * 0.01),
-      );
+      if (event.shiftKey) {
+        const scale = this.cameraState.distance * 0.0015;
+        const { right, up } = this.cameraBasis();
+        this.cameraState.target = [
+          this.cameraState.target[0] - right[0] * dx * scale + up[0] * dy * scale,
+          this.cameraState.target[1] - right[1] * dx * scale + up[1] * dy * scale,
+          this.cameraState.target[2] - right[2] * dx * scale + up[2] * dy * scale,
+        ];
+      } else {
+        this.cameraState.yaw -= dx * 0.01;
+        this.cameraState.pitch = Math.max(
+          -1.5,
+          Math.min(1.5, this.cameraState.pitch - dy * 0.01),
+        );
+      }
       this.render();
     });
     this.canvas.addEventListener("pointerup", (event) => {
@@ -340,6 +350,22 @@ export class SceneViewer {
       Math.min(12.0, this.cameraState.distance),
     );
     this.render();
+  }
+
+  cameraBasis() {
+    const state = this.cameraState;
+    if (!state) {
+      return { right: [1, 0, 0], up: [0, 1, 0] };
+    }
+    const cosPitch = Math.cos(state.pitch);
+    const forward = [
+      -cosPitch * Math.sin(state.yaw),
+      -Math.sin(state.pitch),
+      -cosPitch * Math.cos(state.yaw),
+    ];
+    const right = normalize(cross(forward, [0, 1, 0]));
+    const up = normalize(cross(right, forward));
+    return { right, up };
   }
 
   cameraPosition() {

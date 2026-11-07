@@ -808,3 +808,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: `play_step` accepted actions, but the console always advanced one default-input frame, so play mode could not exercise gameplay controls.
 - **Decision**: Add `play-frames` and `play-actions` inputs, validate a 1..10000 frame count and JSON action list, and send both to `play_step`; the API already repeats the last action and clears pressed edges. No backend or schema change.
 - **Consequences**: 710 tests green and `app.js` passes `node --check`; play mode exercises real action scripts while preserving authored-scene restore. Thumbnail previews and camera panning remain future work.
+
+### ADR-098: Add shift-drag camera panning to the viewport
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: Orbit and zoom covered rotation and distance, but inspecting off-center geometry still required orbiting around the scene target.
+- **Decision**: Derive camera right/up basis vectors from yaw and pitch, and make shift-drag translate the orbit target in that plane with distance-scaled motion. No API or schema change.
+- **Consequences**: 710 tests green and `viewer.js` passes `node --check`; viewport navigation now covers orbit, pan, zoom, reset and focus without touching the game camera. Thumbnail previews remain future work.
