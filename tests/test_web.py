@@ -13,6 +13,7 @@ from typing import ClassVar
 
 from keystone import web
 from keystone.math3d import Vec3
+from keystone.prefab import Prefab
 from keystone.primitives import cube
 from keystone.samples import CubeDemo
 from keystone.scene import Node, Scene
@@ -180,7 +181,7 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 8)
+        self.assertEqual(editor["schema"], 9)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
         self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
@@ -318,6 +319,27 @@ class WebServerTest(unittest.TestCase):
         _, _, editor = self._json("/api/editor")
         cube_now = next(node for node in editor["nodes"] if node["id"] == cube["id"])
         self.assertEqual(cube_now["parent_id"], "root")
+
+    def test_editor_asset_metadata(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        assets = {asset["id"]: asset for asset in editor["assets"]}
+        self.assertGreater(assets["mesh.cube"]["metadata"]["vertices"], 0)
+        self.assertGreater(assets["mesh.cube"]["metadata"]["triangles"], 0)
+        self.assertIn("color", assets["material.cube.0"]["metadata"])
+        self.assertEqual(assets["texture.floor-checker"]["metadata"]["width"], 64)
+        self.assertEqual(assets["texture.floor-checker"]["metadata"]["height"], 64)
+
+        prefab = Prefab.from_node(
+            session.game.scene.find_by_id("cube-0"), name="cube-asset"
+        )
+        session.game.assets.register("prefab.cube", prefab)
+        editor = session.editor()
+        entry = next(
+            asset for asset in editor["assets"] if asset["id"] == "prefab.cube"
+        )
+        self.assertEqual(entry["metadata"]["node_count"], 1)
+        self.assertIn("mesh.cube", entry["metadata"]["asset_dependencies"])
 
     def test_editor_asset_inventory_and_assignment(self):
         _, _, editor = self._json("/api/editor")

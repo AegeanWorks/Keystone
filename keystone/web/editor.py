@@ -17,10 +17,12 @@ from keystone.component_codec import (
     component_from_dict,
     component_to_dict,
 )
+from keystone.geometry import Material, MeshData
 from keystone.math3d import Quat, Vec3
 from keystone.prefab import Prefab
 from keystone.scene import Node, Scene, Transform
 from keystone.schema import EDITOR_ACTIONS, EDITOR_SCHEMA_VERSION
+from keystone.texture import TextureData
 
 __all__ = [
     "EDITOR_ACTIONS",
@@ -114,10 +116,64 @@ def _transform_from_payload(payload: Mapping[str, object], current: Transform | 
     return Transform(position=position, rotation=rotation, scale=scale)
 
 
+def _asset_metadata(registry: object | None, kind: object, payload: object) -> dict:
+    if kind == "mesh" and isinstance(payload, MeshData):
+        return {
+            "vertices": len(payload.positions),
+            "triangles": len(payload.indices) // 3,
+            "has_uvs": bool(payload.uvs),
+            "has_colors": bool(payload.colors),
+            "skin_joints": len(payload.skin_joints),
+        }
+    if kind == "material" and isinstance(payload, Material):
+        return {
+            "color": [payload.color.x, payload.color.y, payload.color.z],
+            "specular": payload.specular,
+            "shininess": payload.shininess,
+            "metallic": payload.metallic,
+            "roughness": payload.roughness,
+            "emissive": [payload.emissive.x, payload.emissive.y, payload.emissive.z],
+            "has_texture": payload.texture is not None,
+        }
+    if kind == "texture" and isinstance(payload, TextureData):
+        return {"name": payload.name, "width": payload.width, "height": payload.height}
+    if kind == "prefab" and isinstance(payload, Prefab):
+        try:
+            dependencies = list(payload.asset_ids(registry))
+        except (TypeError, ValueError):
+            dependencies = []
+        return {"node_count": payload.node_count, "asset_dependencies": dependencies}
+    return {}
+
+
 def asset_entries(registry: object | None) -> list[dict[str, object]]:
     """Return the registry's JSON-safe asset inventory for the editor."""
     if registry is None:
         return []
+    try:
+        records = list(registry)
+    except TypeError:
+        records = []
+    if records:
+        entries: list[dict[str, object]] = []
+        for record in records:
+            describe = getattr(record, "describe", None)
+            if not callable(describe):
+                continue
+            try:
+                entry = describe()
+            except (TypeError, ValueError):
+                continue
+            if not isinstance(entry, dict):
+                continue
+            entry = dict(entry)
+            entry["metadata"] = _asset_metadata(
+                registry,
+                getattr(record, "kind", None),
+                getattr(record, "payload", None),
+            )
+            entries.append(entry)
+        return sorted(entries, key=lambda item: str(item.get("id", "")))
     describe = getattr(registry, "describe", None)
     if not callable(describe):
         return []

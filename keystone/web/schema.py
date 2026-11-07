@@ -25,7 +25,7 @@ EDITOR_SCHEMA = {
         "remove_component": ["id", "type"],
         "play_step": ["frames", "actions"],
         "play": ["active", "frames", "step"],
-        "asset": ["id", "kind", "sha256", "source", "dependencies"],
+        "asset": ["id", "kind", "sha256", "source", "dependencies", "metadata"],
         "component_types": ["name"],
         "reparent_node": ["id", "parent"],
         "history": ["undo", "redo", "limit"],
@@ -40,6 +40,7 @@ EDITOR_SCHEMA = {
         "schema 6 adds play_start/play_step/play_stop and restores the authored scene on stop",
         "schema 7 adds set_node property editing for name, visibility, tags and layer",
         "schema 8 adds atomic multi-action batches with one undo entry",
+        "schema 9 adds mesh/material/texture/prefab metadata to the asset inventory",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `128`
 - **Total Classes**: `202`
-- **Total Top-Level Functions**: `290`
-- **Total Class Methods**: `1225`
-- **Total Source Lines**: `25261`
+- **Total Top-Level Functions**: `291`
+- **Total Class Methods**: `1226`
+- **Total Source Lines**: `25340`
 
 ---
 
@@ -1449,7 +1449,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `572` lines (`20337` bytes)
+**Size**: `628` lines (`22583` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene-node edits.*
@@ -1467,6 +1467,7 @@
 - `def _node_id(value)`
 - `def _node_tags(value)`
 - `def _transform_from_payload(payload, current)`
+- `def _asset_metadata(registry, kind, payload)`
 - `def asset_entries(registry)` - *Return the registry's JSON-safe asset inventory for the editor.*
 - `def _payload_id(registry, payload, kind)`
 - `def _asset_payload(registry, value, kind, label)`
@@ -1509,7 +1510,7 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `66` lines (`3397` bytes)
+**Size**: `67` lines (`3495` bytes)
 
 ---
 
@@ -2903,7 +2904,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `853` lines (`35904` bytes)
+**Size**: `875` lines (`36974` bytes)
 
 **Classes:**
 - `class Health`
@@ -2929,6 +2930,7 @@
   - Method `.test_simulate_endpoint_returns_a_deterministic_result()`
   - Method `.test_editor_hierarchy_selection_and_transform()`
   - Method `.test_editor_node_authoring_and_undo_redo()`
+  - Method `.test_editor_asset_metadata()`
   - Method `.test_editor_asset_inventory_and_assignment()`
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`

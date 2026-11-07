@@ -664,3 +664,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Manifest assets were imported in list order. A `.kprefab` listed before its mesh dependency failed even though both files existed, which made manifest ordering a hidden constraint.
 - **Decision**: Resolve and validate every manifest path first, import non-prefab assets in manifest order, then prefabs, and return records in the original manifest order. Missing paths fail before any registration.
 - **Consequences**: 697 tests green; manifest order no longer constrains prefab dependencies and a missing file cannot leave a partially imported project. Asset metadata introspection remains future work.
+
+### ADR-080: Expose kind-specific asset metadata in the editor
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: The editor could list asset ids and kinds, but an AI client could not tell a useful mesh from an empty one, compare material factors, check texture size or see a prefab's contents without loading raw payloads.
+- **Decision**: Bump the editor schema to 9 and enrich `asset_entries()` with metadata: mesh vertices/triangles/UV/color/skin-joint flags, material color/specular/shininess/metallic/roughness/emissive/texture flag, texture name/size, and prefab node count plus resolved asset dependencies. Keep the registry's id/kind/sha256/source/dependencies fields unchanged.
+- **Consequences**: 698 tests green; AI clients can choose assets from summaries and catch empty or mismatched assets before assignment. Scene startup and asset previews remain future work.
