@@ -9,11 +9,86 @@ from keystone.schema import (
     WEB_API_VERSION,
 )
 
-__all__ = ["EDITOR_SCHEMA", "SCENE_SCHEMA", "WEB_API_VERSION"]
+__all__ = ["EDITOR_EXAMPLES", "EDITOR_SCHEMA", "SCENE_SCHEMA", "WEB_API_VERSION"]
+
+EDITOR_EXAMPLES = {
+    "select": {"action": "select", "id": "cube-0"},
+    "transform": {
+        "action": "transform",
+        "id": "cube-0",
+        "position": [1.0, 2.0, 3.0],
+        "rotation": [0.0, 0.0, 0.0, 1.0],
+        "scale": [1.0, 1.0, 1.0],
+    },
+    "set_node": {
+        "action": "set_node",
+        "id": "cube-0",
+        "name": "hero",
+        "visible": True,
+        "tags": ["player"],
+        "layer": "actors",
+    },
+    "batch": {
+        "action": "batch",
+        "actions": [
+            {"action": "create_node", "id": "prop", "name": "Prop"},
+            {"action": "assign_asset", "id": "prop", "mesh": "mesh.cube"},
+        ],
+    },
+    "assign_asset": {"action": "assign_asset", "id": "cube-0", "mesh": "mesh.cube"},
+    "set_component": {
+        "action": "set_component",
+        "id": "cube-0",
+        "type": "Health",
+        "data": {"value": 10},
+    },
+    "remove_component": {"action": "remove_component", "id": "cube-0", "type": "Health"},
+    "play_start": {"action": "play_start"},
+    "play_step": {"action": "play_step", "frames": 1, "actions": [{"forward": 1.0}]},
+    "play_stop": {"action": "play_stop"},
+    "create_node": {
+        "action": "create_node",
+        "name": "prop",
+        "parent": "cube-0",
+        "position": [0.0, 1.0, 0.0],
+        "tags": ["prop"],
+        "layer": "props",
+        "mesh": "mesh.cube",
+    },
+    "delete_node": {"action": "delete_node", "id": "prop"},
+    "duplicate_node": {"action": "duplicate_node", "id": "cube-0", "name": "cube-copy"},
+    "reparent_node": {"action": "reparent_node", "id": "prop", "parent": "cube-0"},
+    "save_prefab": {"action": "save_prefab", "id": "cube-0", "name": "cube"},
+    "insert_prefab": {
+        "action": "insert_prefab",
+        "name": "cube",
+        "parent": "root",
+        "instance": "copy",
+    },
+    "rename_prefab": {"action": "rename_prefab", "name": "cube", "new_name": "cube-alt"},
+    "duplicate_prefab": {
+        "action": "duplicate_prefab",
+        "name": "cube",
+        "new_name": "cube-copy",
+    },
+    "delete_prefab": {"action": "delete_prefab", "name": "cube"},
+    "save_scene": {"action": "save_scene", "name": "level"},
+    "load_scene": {"action": "load_scene", "name": "level"},
+    "rename_scene": {"action": "rename_scene", "name": "level", "new_name": "level-alt"},
+    "duplicate_scene": {
+        "action": "duplicate_scene",
+        "name": "level",
+        "new_name": "level-copy",
+    },
+    "delete_scene": {"action": "delete_scene", "name": "level"},
+    "undo": {"action": "undo"},
+    "redo": {"action": "redo"},
+}
 
 EDITOR_SCHEMA = {
     "version": EDITOR_SCHEMA_VERSION,
     "actions": list(EDITOR_ACTIONS),
+    "examples": EDITOR_EXAMPLES,
     "fields": {
         "node": ["id", "name", "parent_id", "children", "visible", "selected", "tags", "layer", "components", "component_data", "mesh", "material", "transform", "world"],
         "transform": ["position", "rotation", "scale"],

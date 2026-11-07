@@ -856,3 +856,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Save/load/rename/delete existed, but copying a scene or prefab required saving under a new name or manual file work. Unity/Unreal-style asset libraries treat duplicate as a first-class operation.
 - **Decision**: Add `duplicate(old, new)` to `PrefabLibrary` and `SceneLibrary`: validate names, require the source, reject same-name and destination collisions, copy the JSON with the internal `name` updated, and return the new entry. Expose `duplicate_prefab`/`duplicate_scene` and console buttons, and refresh the cached prefab under its new name. Bump the editor schema to 14.
 - **Consequences**: 717 tests green; scene/prefab libraries now cover save, load, rename, duplicate and delete with cached-prefab consistency. Transform gizmos and prefab overrides remain future work.
+
+### ADR-104: Publish ready-to-send examples for every editor action
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Field schemas told AI clients which keys existed but not how to assemble a valid request. Every action still required inference from docs or tests.
+- **Decision**: Add `EDITOR_EXAMPLES` with one JSON payload per action, include it as `endpoints.editor.schema.examples` in `/api`, and test that the example keys exactly match `EDITOR_ACTIONS` and each payload's `action` matches its key.
+- **Consequences**: 718 tests green; AI clients can copy a known-valid request shape directly from the discovery endpoint. Examples are documentation and must be updated whenever an action's required fields change. Transform gizmos and prefab overrides remain future work.

@@ -129,7 +129,7 @@ def draw_ui(self, canvas: Canvas, state: HudState) -> None:
 python -m keystone --serve --port 8899
 ```
 
-`GET http://127.0.0.1:8899/api` returns the endpoint and schema index. The API mirrors the CLI contract:
+`GET http://127.0.0.1:8899/api` returns the endpoint and schema index, including `endpoints.editor.schema.examples` with one ready-to-send payload for every editor action. The API mirrors the CLI contract:
 
 - `GET /api/health` returns `ok`, `game`, `api` and `scene_schema`;
 - `GET /api/describe` returns the same payload as `--describe`, with `capabilities.web`;

@@ -9,8 +9,8 @@
 - **Total Python Modules**: `130`
 - **Total Classes**: `204`
 - **Total Top-Level Functions**: `301`
-- **Total Class Methods**: `1251`
-- **Total Source Lines**: `26479`
+- **Total Class Methods**: `1252`
+- **Total Source Lines**: `26565`
 
 ---
 
@@ -1534,7 +1534,7 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `80` lines (`4196` bytes)
+**Size**: `155` lines (`6856` bytes)
 
 ---
 
@@ -2958,7 +2958,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `1056` lines (`44930` bytes)
+**Size**: `1067` lines (`45431` bytes)
 
 **Classes:**
 - `class Health`
@@ -2969,6 +2969,7 @@
   - Method `.test_shared_meshes_are_exported_once()`
   - Method `.test_node_identity_metadata_is_exported()`
   - Method `.test_scene_document_is_deterministic()`
+  - Method `.test_editor_schema_examples_cover_every_action()`
   - Method `.test_schema_describes_export_fields()`
   - Method `.test_public_web_exports_are_available()`
   - Method `.test_falsy_settings_are_reported_disabled()`

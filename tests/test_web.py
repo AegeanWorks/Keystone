@@ -17,7 +17,9 @@ from keystone.prefab import Prefab
 from keystone.primitives import cube
 from keystone.samples import CubeDemo
 from keystone.scene import Node, Scene
+from keystone.schema import EDITOR_ACTIONS
 from keystone.web.scene import SCENE_SCHEMA, scene_document
+from keystone.web.schema import EDITOR_SCHEMA
 from keystone.web.server import GameSession, WebProblem, create_server
 
 
@@ -83,6 +85,12 @@ class SceneDocumentTest(unittest.TestCase):
         first = scene_document(CubeDemo().build_scene())
         second = scene_document(CubeDemo().build_scene())
         self.assertEqual(json.dumps(first, sort_keys=True), json.dumps(second, sort_keys=True))
+
+    def test_editor_schema_examples_cover_every_action(self):
+        self.assertEqual(set(EDITOR_SCHEMA["examples"]), set(EDITOR_ACTIONS))
+        for action, example in EDITOR_SCHEMA["examples"].items():
+            self.assertEqual(example["action"], action)
+        json.dumps(EDITOR_SCHEMA, allow_nan=False)
 
     def test_schema_describes_export_fields(self):
         self.assertEqual(SCENE_SCHEMA["version"], 2)
@@ -944,6 +952,9 @@ class WebServerTest(unittest.TestCase):
         status, _, payload = self._json("/api")
         self.assertEqual(status, 200)
         self.assertIn("editor", payload["endpoints"])
+        self.assertIn(
+            "examples", payload["endpoints"]["editor"]["schema"]
+        )
 
     def test_step_button_documents_its_reset_semantics(self):
         status, _, body = self._request("/")
