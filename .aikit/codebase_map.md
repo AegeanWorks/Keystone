@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `130`
 - **Total Classes**: `204`
-- **Total Top-Level Functions**: `298`
+- **Total Top-Level Functions**: `301`
 - **Total Class Methods**: `1246`
-- **Total Source Lines**: `26293`
+- **Total Source Lines**: `26347`
 
 ---
 
@@ -1033,12 +1033,13 @@
 ### [`keystone/png.py`](keystone/png.py)
 > *Minimal dependency-free PNG writer for headless frame captures.*
 
-**Size**: `123` lines (`4767` bytes)
+**Size**: `132` lines (`4974` bytes)
 
 **Functions:**
 - `def _chunk(kind, payload)`
 - `def _paeth(a, b, c)`
 - `def read_png(path)` - *Read an 8-bit RGBA non-interlaced PNG and return top-down pixels.*
+- `def png_bytes(width, height, rgba, flip_vertical)` - *Encode RGBA bytes as an 8-bit PNG in memory.*
 - `def write_png(path, width, height, rgba, flip_vertical)` - *Write RGBA bytes (OpenGL order: bottom-up) as an 8-bit PNG.*
 
 ---
@@ -1466,7 +1467,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `682` lines (`24712` bytes)
+**Size**: `714` lines (`25910` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene-node edits.*
@@ -1486,6 +1487,8 @@
 - `def _transform_from_payload(payload, current)`
 - `def _type_name(value)`
 - `def component_schemas(component_types)` - *Return JSON-safe field hints for every game component type.*
+- `def _texture_preview(texture, max_size)`
+- `def _texture_metadata(texture)`
 - `def _asset_metadata(registry, kind, payload)`
 - `def asset_entries(registry)` - *Return the registry's JSON-safe asset inventory for the editor.*
 - `def _payload_id(registry, payload, kind)`
@@ -1529,7 +1532,7 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `76` lines (`3961` bytes)
+**Size**: `77` lines (`4041` bytes)
 
 ---
 
@@ -2951,7 +2954,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `1003` lines (`42755` bytes)
+**Size**: `1015` lines (`43172` bytes)
 
 **Classes:**
 - `class Health`

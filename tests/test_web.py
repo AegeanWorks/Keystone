@@ -181,7 +181,7 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 12)
+        self.assertEqual(editor["schema"], 13)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
         self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
@@ -333,6 +333,16 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("color", assets["material.cube.0"]["metadata"])
         self.assertEqual(assets["texture.floor-checker"]["metadata"]["width"], 64)
         self.assertEqual(assets["texture.floor-checker"]["metadata"]["height"], 64)
+        self.assertTrue(
+            assets["texture.floor-checker"]["metadata"]["preview"].startswith(
+                "data:image/png;base64,"
+            )
+        )
+        self.assertTrue(
+            assets["material.floor"]["metadata"]["texture"]["preview"].startswith(
+                "data:image/png;base64,"
+            )
+        )
 
         prefab = Prefab.from_node(
             session.game.scene.find_by_id("cube-0"), name="cube-asset"
@@ -842,6 +852,7 @@ class WebServerTest(unittest.TestCase):
             "material-asset",
             "assign-asset",
             "asset-info",
+            "asset-preview",
             "component-type",
             "component-fields",
             "component-hint",
@@ -872,6 +883,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("set_component", script)
         self.assertIn("renderComponentFields", script)
         self.assertIn("updateAssetInfo", script)
+        self.assertIn("assetPreview", script)
         self.assertIn("play_start", script)
         self.assertIn("playFrames", script)
         self.assertIn("set_node", script)

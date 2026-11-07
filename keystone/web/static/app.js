@@ -51,6 +51,7 @@ const elements = {
   materialAsset: document.getElementById("material-asset"),
   assignAsset: document.getElementById("assign-asset"),
   assetInfo: document.getElementById("asset-info"),
+  assetPreview: document.getElementById("asset-preview"),
   componentType: document.getElementById("component-type"),
   componentFields: document.getElementById("component-fields"),
   componentHint: document.getElementById("component-hint"),
@@ -288,6 +289,21 @@ function assetSummary(assetId) {
   return `${asset.id} · ${asset.kind}\n${JSON.stringify(asset.metadata || {}, null, 2)}`;
 }
 
+function selectedAssetPreview() {
+  const selected = [elements.meshAsset.value, elements.materialAsset.value].filter(Boolean);
+  const assets = (editorState && editorState.assets) || [];
+  for (const assetId of selected) {
+    const asset = assets.find((item) => item.id === assetId);
+    const metadata = (asset && asset.metadata) || {};
+    const preview =
+      metadata.preview || (metadata.texture && metadata.texture.preview) || null;
+    if (preview) {
+      return preview;
+    }
+  }
+  return null;
+}
+
 function updateAssetInfo() {
   const summaries = [elements.meshAsset.value, elements.materialAsset.value]
     .filter(Boolean)
@@ -296,6 +312,14 @@ function updateAssetInfo() {
   elements.assetInfo.textContent = summaries.length
     ? summaries.join("\n\n")
     : "No registry assets selected.";
+  const preview = selectedAssetPreview();
+  if (preview) {
+    elements.assetPreview.src = preview;
+    elements.assetPreview.hidden = false;
+  } else {
+    elements.assetPreview.removeAttribute("src");
+    elements.assetPreview.hidden = true;
+  }
 }
 
 function renderComponentTypes(editor) {

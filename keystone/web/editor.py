@@ -7,6 +7,7 @@ owns selection, history and prefab state.
 
 from __future__ import annotations
 
+import base64
 import copy
 import math
 from collections.abc import Callable, Mapping
@@ -20,6 +21,7 @@ from keystone.component_codec import (
 )
 from keystone.geometry import Material, MeshData
 from keystone.math3d import Quat, Vec3
+from keystone.png import png_bytes
 from keystone.prefab import Prefab
 from keystone.scene import Node, Scene, Transform
 from keystone.schema import EDITOR_ACTIONS, EDITOR_SCHEMA_VERSION
@@ -158,6 +160,30 @@ def component_schemas(
     return schemas
 
 
+def _texture_preview(texture: TextureData, max_size: int = 64) -> str:
+    scale = max(1, math.ceil(max(texture.width, texture.height) / max_size))
+    thumb_width = max(1, texture.width // scale)
+    thumb_height = max(1, texture.height // scale)
+    pixels = bytearray()
+    for y in range(thumb_height):
+        source_y = min(texture.height - 1, (y * texture.height) // thumb_height)
+        for x in range(thumb_width):
+            source_x = min(texture.width - 1, (x * texture.width) // thumb_width)
+            offset = (source_y * texture.width + source_x) * 4
+            pixels.extend(texture.rgba[offset : offset + 4])
+    encoded = png_bytes(thumb_width, thumb_height, bytes(pixels), flip_vertical=False)
+    return "data:image/png;base64," + base64.b64encode(encoded).decode("ascii")
+
+
+def _texture_metadata(texture: TextureData) -> dict:
+    return {
+        "name": texture.name,
+        "width": texture.width,
+        "height": texture.height,
+        "preview": _texture_preview(texture),
+    }
+
+
 def _asset_metadata(registry: object | None, kind: object, payload: object) -> dict:
     if kind == "mesh" and isinstance(payload, MeshData):
         if payload.positions:
@@ -176,6 +202,11 @@ def _asset_metadata(registry: object | None, kind: object, payload: object) -> d
             "bounds": {"min": minimum, "max": maximum},
         }
     if kind == "material" and isinstance(payload, Material):
+        texture = (
+            _texture_metadata(payload.texture)
+            if isinstance(payload.texture, TextureData)
+            else None
+        )
         return {
             "color": [payload.color.x, payload.color.y, payload.color.z],
             "specular": payload.specular,
@@ -183,10 +214,11 @@ def _asset_metadata(registry: object | None, kind: object, payload: object) -> d
             "metallic": payload.metallic,
             "roughness": payload.roughness,
             "emissive": [payload.emissive.x, payload.emissive.y, payload.emissive.z],
-            "has_texture": payload.texture is not None,
+            "has_texture": texture is not None,
+            "texture": texture,
         }
     if kind == "texture" and isinstance(payload, TextureData):
-        return {"name": payload.name, "width": payload.width, "height": payload.height}
+        return _texture_metadata(payload)
     if kind == "prefab" and isinstance(payload, Prefab):
         try:
             dependencies = list(payload.asset_ids(registry))

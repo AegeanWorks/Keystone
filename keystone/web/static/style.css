@@ -309,6 +309,14 @@ code {
   top: 46px;
 }
 
+.asset-preview {
+  max-width: 96px;
+  max-height: 96px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  image-rendering: pixelated;
+}
+
 #canvas {
   touch-action: none;
 }

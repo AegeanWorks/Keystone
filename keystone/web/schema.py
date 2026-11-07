@@ -50,6 +50,7 @@ EDITOR_SCHEMA = {
         "schema 10 adds dataclass field schemas for component_types",
         "schema 11 adds safe prefab/scene rename and delete actions",
         "schema 12 adds mesh bounds to asset metadata",
+        "schema 13 adds material/texture preview thumbnails to asset metadata",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

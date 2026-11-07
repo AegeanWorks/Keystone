@@ -229,6 +229,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - Editor schema 9 adds kind-specific asset metadata: mesh counts/flags, material factors, texture size and prefab node/dependency summaries; schema 12 adds mesh bounds.
 - Editor schema 10 adds dataclass field hints for `component_types`, while custom codecs report a manual-codec note.
 - The console renders dataclass component fields as typed inputs (int/float/string/bool/JSON) and keeps the JSON editor for custom codecs.
+- Editor schema 13 adds bounded PNG preview data URIs to texture metadata and to each material's texture summary; the console shows the selected material texture preview.
 - Editor schema 11 safely renames or deletes scene/prefab library entries and keeps cached prefabs in sync.
 - The console viewport uses an independent orbit camera (`lookAt`, pointer drag, wheel zoom, Reset view) so navigation does not mutate the game camera.
 - `--serve --scene NAME` opens a saved `.kscene` from the project/scene library before the first editor request and requires an explicit library.

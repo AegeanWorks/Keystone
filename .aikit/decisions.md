@@ -840,3 +840,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Selection required the hierarchy or inspector; the viewport was display-only, which is unlike Unity/Unreal-style editors.
 - **Decision**: Compute world-space AABBs for visible mesh nodes on scene load, cast a camera ray from the click position through the camera basis and FOV, pick the nearest AABB hit, and dispatch the existing `select` editor action (or clear selection on empty space). Drags beyond four pixels and shift-pan gestures do not select. No API or schema change.
 - **Consequences**: 714 tests green and both JS modules pass `node --check`; viewport clicks and hierarchy selection share one command path. Ray picking is AABB-level, so overlapping bounds may prefer the nearer box; triangle-accurate picking and thumbnails remain future work.
+
+### ADR-102: Add bounded texture previews to editor asset metadata
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Asset metadata exposed counts and factors but no visual preview, so choosing a texture or textured material required opening the scene document or external files.
+- **Decision**: Add an in-memory `png_bytes()` encoder, generate a nearest-neighbour thumbnail capped at 64px for each texture, encode it as a PNG data URI, expose it on texture metadata and on each material's `texture` summary, and show the selected material texture preview in the console. Bump the editor schema to 13.
+- **Consequences**: 714 tests green and `app.js` passes `node --check`; previews stay bounded in size and the PNG writer reuses the same encoder. Triangle-accurate picking and richer material swatches remain future work.

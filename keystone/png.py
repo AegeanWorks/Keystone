@@ -101,8 +101,13 @@ def read_png(path: str | Path) -> tuple[int, int, bytes]:
     return width, height, b"".join(rows)
 
 
-def write_png(path: str | Path, width: int, height: int, rgba: bytes, flip_vertical: bool = True) -> None:
-    """Write RGBA bytes (OpenGL order: bottom-up) as an 8-bit PNG."""
+def png_bytes(
+    width: int,
+    height: int,
+    rgba: bytes,
+    flip_vertical: bool = True,
+) -> bytes:
+    """Encode RGBA bytes as an 8-bit PNG in memory."""
     if width <= 0 or height <= 0:
         raise ValueError("PNG width and height must be positive")
     if len(rgba) != width * height * 4:
@@ -114,10 +119,14 @@ def write_png(path: str | Path, width: int, height: int, rgba: bytes, flip_verti
         rows.reverse()
     raw = b"".join(b"\x00" + row for row in rows)
     header = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
-    data = (
+    return (
         SIGNATURE
         + _chunk(b"IHDR", header)
         + _chunk(b"IDAT", zlib.compress(raw, 6))
         + _chunk(b"IEND", b"")
     )
-    write_bytes_atomic(path, data)
+
+
+def write_png(path: str | Path, width: int, height: int, rgba: bytes, flip_vertical: bool = True) -> None:
+    """Write RGBA bytes (OpenGL order: bottom-up) as an 8-bit PNG."""
+    write_bytes_atomic(path, png_bytes(width, height, rgba, flip_vertical))
