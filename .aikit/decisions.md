@@ -824,3 +824,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The engine could load glTF 2.0/GLB, and projects could import `.obj`, `.png` and `.kprefab`, but a glTF scene could not enter the editor asset pipeline. Unity/Unreal-style projects need one-step scene-model import.
 - **Decision**: Add `keystone.gltf_import` with `is_gltf_asset()` and `import_gltf_prefab()`: load the scene, register textures/materials/meshes as `gltf.<name>.texture.N`/`.material.N`/`.mesh.N` with replace-on-reimport, save the scene as `<prefabs>/<name>.kprefab`, and return the prefab. Project attachment skips glTF during normal asset import, creates `<project>/prefabs` when needed, and imports glTF/GLB files after regular assets so the game registry and editor library are ready. `load_project_game` and `--project` inherit the behavior.
 - **Consequences**: 714 tests green; glTF/GLB models become insertable prefabs with stable sub-asset ids, and re-import refreshes their payloads. External glTF buffer/image dependency tracking and thumbnail previews remain future work.
+
+### ADR-100: Scaffold a starter scene and prefab into new projects
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: New projects had the scene/prefab libraries and component hooks but no content, so `--serve --scene main` could not work until the user manually saved something.
+- **Decision**: After writing the generated game, load it through an isolated importlib spec, build its scene, and save `scenes/main.kscene` plus `prefabs/cube.kprefab` with the game's `AssetRegistry` and `component_types`. Document the `--serve --scene main` path in the generated README.
+- **Consequences**: 714 tests green; a fresh project opens with a working scene and reusable cube prefab. Sample art, richer starter scenes and thumbnail previews remain future work.

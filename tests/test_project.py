@@ -14,6 +14,7 @@ from keystone.headless import run_simulation
 from keystone.input import ActionState
 from keystone.png import write_png
 from keystone.prefab import Prefab
+from keystone.prefab_library import PrefabLibrary
 from keystone.project import (
     PROJECT_FILE,
     ProjectManifest,
@@ -89,8 +90,25 @@ class ProjectScaffoldTest(unittest.TestCase):
             self.assertTrue((root / "README.md").exists())
             self.assertTrue((root / "prefabs" / "README.md").exists())
             self.assertTrue((root / "scenes" / "README.md").exists())
+            self.assertTrue((root / "prefabs" / "cube.kprefab").exists())
+            self.assertTrue((root / "scenes" / "main.kscene").exists())
             source = (root / f"{name}.py").read_text(encoding="utf-8")
             self.assertIn("component_types", source)
+
+            game = load_project_game(context)
+            game.build_scene()
+            starter = SceneLibrary(
+                root / "scenes",
+                registry=game.assets,
+                component_types=game.component_types,
+            ).load("main")
+            self.assertIsNotNone(starter.find_by_id("cube"))
+            prefab = PrefabLibrary(
+                root / "prefabs",
+                registry=game.assets,
+                component_types=game.component_types,
+            ).load("cube")
+            self.assertEqual(prefab.name, "cube")
             self.assertEqual(load_project(root).manifest.name, name)
             game = load_project_game(context)
             result = run_simulation(game, frames=3)

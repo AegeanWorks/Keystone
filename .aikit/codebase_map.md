@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `130`
 - **Total Classes**: `204`
-- **Total Top-Level Functions**: `297`
+- **Total Top-Level Functions**: `298`
 - **Total Class Methods**: `1246`
-- **Total Source Lines**: `26239`
+- **Total Source Lines**: `26290`
 
 ---
 
@@ -1113,7 +1113,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `392` lines (`14778` bytes)
+**Size**: `425` lines (`16165` bytes)
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -1136,6 +1136,7 @@
 - `def load_project_game(context)` - *Import and validate a project's game after adding its directory to sys.path.*
 - `def _game_source(manifest)`
 - `def _project_readme(manifest)`
+- `def _write_starter_library(directory, module)`
 - `def create_project(directory, *, name, game, force)` - *Scaffold a runnable project directory and return its context.*
 
 ---
@@ -2541,7 +2542,7 @@
 ### [`tests/test_project.py`](tests/test_project.py)
 > *Tests for project manifests, scaffolding and the --project CLI path.*
 
-**Size**: `376` lines (`15395` bytes)
+**Size**: `394` lines (`16157` bytes)
 
 **Classes:**
 - `class ProjectManifestTest`
