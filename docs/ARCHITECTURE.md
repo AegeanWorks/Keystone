@@ -152,7 +152,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Camera | Implemented | perspective and view matrices |
 | Geometry | Implemented | indexed meshes, materials, vertex colors |
 | Assets | Implemented | indexed meshes, materials, RGBA textures, OBJ, PNG and `.kprefab`; asset registry with stable ids, digests, dependencies and hot reload |
-| State snapshots | Implemented | versioned scene save/load with camera, environment, asset references and bounded undo/redo history; duplicate ids, dangling parents and cycles rejected |
+| State snapshots | Implemented | versioned scene save/load with camera, environment, asset references, typed components and bounded undo/redo history; duplicate ids, dangling parents and cycles rejected |
 | Material graphs | Implemented | declarative node graphs evaluating to Material: color, float, checker, texture, mix, material and pbr nodes, cycle detection, JSON serialization |
 | glTF 2.0 | Implemented | dependency-free importer for meshes, materials, textures and scenes; GLB containers, external and embedded buffers, normalized accessors, PNG textures, TRS and matrix transforms; sparse accessors and non-triangle primitives rejected |
 | Renderer | Implemented | OpenGL 3.3, sky, lights, PBR (metallic/roughness/emissive), fog, textures, readback, draw/triangle stats, static batch planning and world-space merge |
@@ -215,6 +215,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - Particles sliding along a box face keep tangential motion; deep-interior spawns eject through the near face.
 - `TriggerTracker` reports sorted enter/exit tuples and an immutable active set; `raycast()` filters candidates and returns the nearest hit.
 - `Scene` assigns unique IDs, preserves them across reparenting and rejects duplicate explicit IDs.
+- Scene snapshot schema 2 persists typed components; loading custom components without `component_types` fails with an actionable message, and schema-1 snapshots still load.
 - `Scene.query()`/`find()` filter by name, tag, layer and component; `find_by_id()` resolves an ID.
 - `Prefab` captures a detached subtree, saves/loads schema-1 `.kprefab` files through registered mesh/material ids, instantiates deterministic IDs, preserves tags/layers/components and isolates component copies.
 - `/api/editor` schema 2 creates, deletes, duplicates and reparents nodes, links mesh/material ids through the game's asset registry, restores bounded undo/redo snapshots atomically, and can back prefab entries with a `PrefabLibrary` rooted in `<project>/prefabs`.

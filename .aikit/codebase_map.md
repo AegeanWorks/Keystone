@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `125`
-- **Total Classes**: `196`
+- **Total Python Modules**: `126`
+- **Total Classes**: `197`
 - **Total Top-Level Functions**: `279`
-- **Total Class Methods**: `1197`
-- **Total Source Lines**: `23987`
+- **Total Class Methods**: `1199`
+- **Total Source Lines**: `24075`
 
 ---
 
@@ -327,6 +327,18 @@
   - Method `.__init__(step, max_frame)`
   - Method `.reset(now)`
   - Method `.advance(now)`
+
+---
+
+### [`keystone/component_codec.py`](keystone/component_codec.py)
+> *Shared JSON codec for typed scene components.*
+
+**Size**: `93` lines (`3765` bytes)
+
+**Functions:**
+- `def json_safe(value, label)` - *Return the value after proving it can cross a JSON boundary.*
+- `def component_to_dict(component)` - *Encode one component as ``{'type': name, 'data': ...}``.*
+- `def component_from_dict(item, component_types)` - *Decode one component, requiring an explicit type map.*
 
 ---
 
@@ -1022,7 +1034,7 @@
 ### [`keystone/prefab.py`](keystone/prefab.py)
 > *Deterministic prefabs: capture, persist and instantiate reusable subtrees.*
 
-**Size**: `444` lines (`18317` bytes)
+**Size**: `375` lines (`15266` bytes)
 
 **Classes:**
 - `class Prefab` - *An immutable-name, detached template of one or more scene subtrees.*
@@ -1041,9 +1053,6 @@
 **Functions:**
 - `def _clone_template(node)`
 - `def _collect_ids(node)`
-- `def _json_safe(value, label)`
-- `def _component_to_dict(component)`
-- `def _component_from_dict(item, component_types)`
 - `def _asset_id(registry, payload, label, kind)`
 - `def _transform_to_dict(transform)`
 - `def _transform_from_dict(value)`
@@ -1211,7 +1220,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `373` lines (`16124` bytes)
+**Size**: `401` lines (`17245` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)`
@@ -1226,7 +1235,7 @@
 - `def _required_node_id(raw)`
 - `def _restore_asset(registry, asset_id, expected_kind, label)`
 - `def scene_to_dict(scene, registry)` - *Serialize a scene to a versioned, JSON-safe dictionary.*
-- `def scene_from_dict(data, registry)` - *Rebuild a scene from a versioned snapshot.*
+- `def scene_from_dict(data, registry, component_types)` - *Rebuild a scene from a versioned snapshot.*
 
 ---
 
@@ -2592,12 +2601,15 @@
 ### [`tests/test_scene_snapshot.py`](tests/test_scene_snapshot.py)
 > *Unit tests for versioned scene snapshots.*
 
-**Size**: `213` lines (`9248` bytes)
+**Size**: `249` lines (`10694` bytes)
 
 **Classes:**
+- `class Health`
 - `class SceneSnapshotTest`
   - Method `._scene()`
   - Method `.test_round_trip_preserves_structure_and_transforms()`
+  - Method `.test_round_trip_preserves_typed_components()`
+  - Method `.test_components_require_a_type_map_and_supported_codec()`
   - Method `.test_round_trip_preserves_camera_lens_and_environment()`
   - Method `.test_older_schema_one_documents_keep_engine_defaults()`
   - Method `.test_rejects_duplicate_node_ids()`

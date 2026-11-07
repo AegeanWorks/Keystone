@@ -600,3 +600,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: `keystone.json` already listed `assets`, but nothing loaded them. A Unity/Unreal-style project needs relative `.obj`, `.png` and `.kprefab` files to become stable registry ids before scenes and editor commands reference them, without duplicating import code in every game.
 - **Decision**: Add `project_asset_id`, `import_project_assets` and `attach_project_assets`. Manifest paths must be relative and stay inside the project; ids are deterministic `project:<relative-path>` strings, kinds come from the file suffix, and prefab entries receive the game's `component_types`. `load_project_game` and the `--project` CLI path attach assets to `game.assets` when the project declares any, with an actionable `Why:`/`Fix:` error on failure. The generated game owns one `AssetRegistry`, registers built-in meshes/materials with `replace=True`, and never replaces the registry during rebuilds.
 - **Consequences**: 683 tests green; projects can ship assets without hand-wiring registrations, unsafe or missing paths fail before rendering, and editor asset ids survive rebuilds. Scene files, component authoring and play-in-editor remain future work.
+
+### ADR-072: Persist typed components in scene snapshots
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: Scene snapshots preserved node identity, transforms, tags, layers, visibility, meshes and materials, but dropped typed components. Prefabs already had a component codec, and duplicating that logic would drift. A Unity/Unreal-style scene file must round-trip the same authored data the editor shows.
+- **Decision**: Extract the component codec into `keystone.component_codec` and use it from both prefabs and snapshots. Bump `SCENE_SNAPSHOT_VERSION` to 2 and write a sorted `components` list per node; `scene_from_dict(..., component_types=...)` reconstructs them, rejects duplicate types, unknown names and unsupported payloads, and still accepts schema-1 snapshots without components.
+- **Consequences**: 685 tests green; scene snapshots preserve dataclass, `to_dict`/`from_dict` and JSON-primitive components; loading a component-bearing scene without a type map fails explicitly. Editor scene files and component authoring remain future work.

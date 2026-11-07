@@ -2,7 +2,7 @@
 
 import json
 import unittest
-from dataclasses import replace
+from dataclasses import dataclass, replace
 
 from keystone.assets import AssetRegistry
 from keystone.geometry import Material
@@ -14,6 +14,11 @@ from keystone.scene_snapshot import (
     scene_from_dict,
     scene_to_dict,
 )
+
+
+@dataclass
+class Health:
+    value: int
 
 
 class SceneSnapshotTest(unittest.TestCase):
@@ -50,6 +55,37 @@ class SceneSnapshotTest(unittest.TestCase):
         self.assertEqual(restored.camera.pitch, -0.25)
         self.assertEqual(restored.background, Vec3(0.1, 0.2, 0.3))
         json.dumps(document)
+
+    def test_round_trip_preserves_typed_components(self):
+        scene = self._scene()
+        child = next(node for node in scene.traverse() if node.id == "child")
+        child.add_component(Health(4))
+        document = scene_to_dict(scene)
+        entry = next(node for node in document["nodes"] if node["id"] == "child")
+        self.assertEqual(entry["components"], [{"type": "Health", "data": {"value": 4}}])
+        json.dumps(document, allow_nan=False)
+        with self.assertRaises(ValueError):
+            scene_from_dict(document)
+        restored = scene_from_dict(document, component_types={"Health": Health})
+        restored_child = next(node for node in restored.traverse() if node.id == "child")
+        self.assertEqual(restored_child.require_component(Health), Health(4))
+
+    def test_components_require_a_type_map_and_supported_codec(self):
+        class Unsupported:
+            pass
+
+        node = Node("data", id="data")
+        node.add_component(Health(1))
+        scene = Scene()
+        scene.add(node)
+        document = scene_to_dict(scene)
+        with self.assertRaises(ValueError):
+            scene_from_dict(document)
+        with self.assertRaises(ValueError):
+            scene_from_dict(document, component_types={"Other": Health})
+        node.add_component(Unsupported())
+        with self.assertRaises(TypeError):
+            scene_to_dict(scene)
 
     def test_round_trip_preserves_camera_lens_and_environment(self):
         scene = self._scene()

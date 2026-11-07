@@ -189,6 +189,13 @@ print(loaded.describe())
 # already be registered. `register_file(..., component_types={...})` does both.
 # Prefabs are the fourth asset kind: their digests and dependencies update on refresh.
 
+# Scene snapshots keep typed components; pass component_types when present.
+from keystone.scene_snapshot import scene_from_dict, scene_to_dict
+
+snapshot = scene_to_dict(demo.scene, demo.assets)
+restored_scene = scene_from_dict(snapshot, demo.assets, {})
+print(restored_scene.find_by_id("cube-0").name)
+
 # Deterministic audio: synth, mix, audit, export.
 from keystone.audio import Mixer, audio_report, sine, write_wav
 

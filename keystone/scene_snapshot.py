@@ -7,6 +7,11 @@ from collections.abc import Mapping
 from typing import Any
 
 from keystone.camera import MAX_PITCH
+from keystone.component_codec import (
+    ComponentTypes,
+    component_from_dict,
+    component_to_dict,
+)
 from keystone.math3d import Quat, Vec3
 from keystone.scene import (
     BloomSettings,
@@ -22,7 +27,7 @@ from keystone.scene import (
     Transform,
 )
 
-SCENE_SNAPSHOT_VERSION = 1
+SCENE_SNAPSHOT_VERSION = 2
 
 
 def _vec3_to_list(value: Vec3) -> list[float]:
@@ -180,6 +185,13 @@ def scene_to_dict(scene: Scene, registry: Any = None) -> dict[str, Any]:
                 "transform": _transform_to_dict(node.transform),
                 "mesh": mesh_ids.get(id(node.mesh)) if node.mesh is not None else None,
                 "material": material_ids.get(id(node.material)) if node.material is not None else None,
+                "components": [
+                    component_to_dict(component)
+                    for _, component in sorted(
+                        node.components.items(),
+                        key=lambda item: (item[0].__module__, item[0].__qualname__),
+                    )
+                ],
             }
         )
     return {
@@ -215,12 +227,16 @@ def scene_to_dict(scene: Scene, registry: Any = None) -> dict[str, Any]:
     }
 
 
-def scene_from_dict(data: Mapping[str, Any], registry: Any = None) -> Scene:
+def scene_from_dict(
+    data: Mapping[str, Any],
+    registry: Any = None,
+    component_types: ComponentTypes | None = None,
+) -> Scene:
     """Rebuild a scene from a versioned snapshot."""
     if not isinstance(data, Mapping):
         raise TypeError("scene snapshot must be a mapping")
     version = data.get("schema", data.get("version", SCENE_SNAPSHOT_VERSION))
-    if isinstance(version, bool) or not isinstance(version, int) or version != SCENE_SNAPSHOT_VERSION:
+    if isinstance(version, bool) or not isinstance(version, int) or version not in (1, SCENE_SNAPSHOT_VERSION):
         raise ValueError(f"unsupported scene snapshot version {version}")
     if "nodes" not in data:
         raise ValueError("scene snapshot must contain a nodes list")
@@ -332,7 +348,19 @@ def scene_from_dict(data: Mapping[str, Any], registry: Any = None) -> Scene:
         layer = raw.get("layer", "default")
         if not isinstance(layer, str) or not layer:
             raise ValueError("scene snapshot node layer must be a non-empty string")
-        node = Node(name, id=node_id, layer=layer)
+        raw_components = raw.get("components", [])
+        if not isinstance(raw_components, (list, tuple)):
+            raise TypeError("scene snapshot node components must be a list")
+        components: dict[type, object] = {}
+        for item in raw_components:
+            component = component_from_dict(item, component_types)
+            if type(component) in components:
+                raise ValueError(
+                    f"scene snapshot node {node_id!r} has duplicate "
+                    f"{type(component).__name__} components"
+                )
+            components[type(component)] = component
+        node = Node(name, id=node_id, layer=layer, components=components)
         node.transform = _transform_from_dict(raw.get("transform", {}))
         visible = raw.get("visible", True)
         if not isinstance(visible, bool):
