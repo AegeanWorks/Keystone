@@ -4,31 +4,14 @@
     "task_id": "keystone-swarm-closure-v1",
     "last_phase": "check",
     "active_phase": 5,
-    "status": "in_progress",
+    "status": "completed",
     "updated_at": 1794068101.4893663,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
-    "continuations": []
+    "continuations": [],
+    "completed_at": 1794068119.7796175
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-slide-fix-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/2] Plan slide-teleport fix: gate interior clause on depth beyond skin",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793774968.287535,
-      "timestamp_str": "2026-11-04 09:49:28",
-      "agent": "kilo:fix",
-      "impact_assessment": {
-        "why": "resting or sliding particles teleport to the box min face instead of sliding",
-        "benefits": "correct tangential slide and grazing exit with zero change to crossing, rest and eject paths",
-        "risks": "contract: none, private sweep helper only; dependency: none; concurrency: none; state: none",
-        "mitigation": "failing-first slide/graze/eject tests plus full suite and unchanged demo frame hash"
-      },
-      "plan_digest": "00de08b7a4038f784e58541fe27c8e2b5438d4b8e09ea2b913928bfa7cd041de"
-    },
     {
       "task_id": "keystone-slide-fix-v1",
       "phase": "in_progress",
@@ -267,6 +250,16 @@
       "status": "in_progress",
       "timestamp": 1794068101.4893663,
       "timestamp_str": "2026-11-07 19:15:01",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-swarm-closure-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-swarm-closure-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794068119.7796197,
+      "timestamp_str": "2026-11-07 19:15:19",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]
