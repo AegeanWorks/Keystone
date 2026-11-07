@@ -832,3 +832,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: New projects had the scene/prefab libraries and component hooks but no content, so `--serve --scene main` could not work until the user manually saved something.
 - **Decision**: After writing the generated game, load it through an isolated importlib spec, build its scene, and save `scenes/main.kscene` plus `prefabs/cube.kprefab` with the game's `AssetRegistry` and `component_types`. Document the `--serve --scene main` path in the generated README.
 - **Consequences**: 714 tests green; a fresh project opens with a working scene and reusable cube prefab. Sample art, richer starter scenes and thumbnail previews remain future work.
+
+### ADR-101: Select scene nodes by clicking the viewport
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Selection required the hierarchy or inspector; the viewport was display-only, which is unlike Unity/Unreal-style editors.
+- **Decision**: Compute world-space AABBs for visible mesh nodes on scene load, cast a camera ray from the click position through the camera basis and FOV, pick the nearest AABB hit, and dispatch the existing `select` editor action (or clear selection on empty space). Drags beyond four pixels and shift-pan gestures do not select. No API or schema change.
+- **Consequences**: 714 tests green and both JS modules pass `node --check`; viewport clicks and hierarchy selection share one command path. Ray picking is AABB-level, so overlapping bounds may prefer the nearer box; triangle-accurate picking and thumbnails remain future work.

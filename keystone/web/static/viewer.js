@@ -200,6 +200,35 @@ function lookAt(eye, target, up = [0, 1, 0]) {
   ]);
 }
 
+function rayBox(origin, direction, min, max) {
+  let near = -Infinity;
+  let far = Infinity;
+  for (let axis = 0; axis < 3; axis += 1) {
+    const start = origin[axis];
+    const delta = direction[axis];
+    if (Math.abs(delta) < 1e-8) {
+      if (start < min[axis] || start > max[axis]) {
+        return null;
+      }
+      continue;
+    }
+    let first = (min[axis] - start) / delta;
+    let second = (max[axis] - start) / delta;
+    if (first > second) {
+      [first, second] = [second, first];
+    }
+    near = Math.max(near, first);
+    far = Math.min(far, second);
+    if (near > far) {
+      return null;
+    }
+  }
+  if (far < 0.0) {
+    return null;
+  }
+  return near >= 0.0 ? near : far;
+}
+
 function base64ToBytes(encoded) {
   const binary = atob(encoded);
   const bytes = new Uint8Array(binary.length);
@@ -237,13 +266,18 @@ export class SceneViewer {
     this.scene = null;
     this.selectedId = null;
     this.cameraState = null;
+    this.nodeBounds = new Map();
     this.dragging = false;
+    this.pointerStart = [0, 0];
+    this.pointerMoved = false;
     this.lastPointer = [0, 0];
     this.canvas.addEventListener("pointerdown", (event) => {
       if (event.button !== 0) {
         return;
       }
       this.dragging = true;
+      this.pointerStart = [event.clientX, event.clientY];
+      this.pointerMoved = false;
       this.lastPointer = [event.clientX, event.clientY];
       this.canvas.setPointerCapture(event.pointerId);
       event.preventDefault();
@@ -255,6 +289,14 @@ export class SceneViewer {
       const dx = event.clientX - this.lastPointer[0];
       const dy = event.clientY - this.lastPointer[1];
       this.lastPointer = [event.clientX, event.clientY];
+      if (
+        Math.hypot(
+          event.clientX - this.pointerStart[0],
+          event.clientY - this.pointerStart[1],
+        ) > 4
+      ) {
+        this.pointerMoved = true;
+      }
       if (event.shiftKey) {
         const scale = this.cameraState.distance * 0.0015;
         const { right, up } = this.cameraBasis();
@@ -273,9 +315,13 @@ export class SceneViewer {
       this.render();
     });
     this.canvas.addEventListener("pointerup", (event) => {
+      const wasClick = !this.pointerMoved && !event.shiftKey;
       this.dragging = false;
       if (this.canvas.hasPointerCapture(event.pointerId)) {
         this.canvas.releasePointerCapture(event.pointerId);
+      }
+      if (wasClick) {
+        this.selectAt(event.clientX, event.clientY);
       }
     });
     this.canvas.addEventListener("pointercancel", () => {
@@ -355,7 +401,7 @@ export class SceneViewer {
   cameraBasis() {
     const state = this.cameraState;
     if (!state) {
-      return { right: [1, 0, 0], up: [0, 1, 0] };
+      return { right: [1, 0, 0], up: [0, 1, 0], forward: [0, 0, -1] };
     }
     const cosPitch = Math.cos(state.pitch);
     const forward = [
@@ -365,7 +411,84 @@ export class SceneViewer {
     ];
     const right = normalize(cross(forward, [0, 1, 0]));
     const up = normalize(cross(right, forward));
-    return { right, up };
+    return { right, up, forward };
+  }
+
+  updateNodeBounds() {
+    this.nodeBounds.clear();
+    if (!this.scene) {
+      return;
+    }
+    const meshes = this.scene.meshes || {};
+    const identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+    for (const node of this.scene.nodes || []) {
+      if (!node.visible || !node.mesh) {
+        continue;
+      }
+      const mesh = meshes[node.mesh];
+      const positions = (mesh && mesh.positions) || [];
+      if (!positions.length) {
+        continue;
+      }
+      const world = node.world || identity;
+      let minX = Infinity;
+      let minY = Infinity;
+      let minZ = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      let maxZ = -Infinity;
+      for (let index = 0; index < positions.length; index += 3) {
+        const x = positions[index];
+        const y = positions[index + 1];
+        const z = positions[index + 2];
+        const wx = world[0] * x + world[4] * y + world[8] * z + world[12];
+        const wy = world[1] * x + world[5] * y + world[9] * z + world[13];
+        const wz = world[2] * x + world[6] * y + world[10] * z + world[14];
+        minX = Math.min(minX, wx);
+        minY = Math.min(minY, wy);
+        minZ = Math.min(minZ, wz);
+        maxX = Math.max(maxX, wx);
+        maxY = Math.max(maxY, wy);
+        maxZ = Math.max(maxZ, wz);
+      }
+      this.nodeBounds.set(node.id, {
+        min: [minX, minY, minZ],
+        max: [maxX, maxY, maxZ],
+      });
+    }
+  }
+
+  selectAt(clientX, clientY) {
+    if (!this.scene || !this.cameraState) {
+      return;
+    }
+    const rect = this.canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      return;
+    }
+    const x = ((clientX - rect.left) / rect.width) * 2.0 - 1.0;
+    const y = 1.0 - ((clientY - rect.top) / rect.height) * 2.0;
+    const tangent = Math.tan((this.scene.camera.fov_y * Math.PI) / 360.0);
+    const aspect = rect.width / rect.height;
+    const { right, up, forward } = this.cameraBasis();
+    const direction = normalize([
+      forward[0] + right[0] * x * aspect * tangent + up[0] * y * tangent,
+      forward[1] + right[1] * x * aspect * tangent + up[1] * y * tangent,
+      forward[2] + right[2] * x * aspect * tangent + up[2] * y * tangent,
+    ]);
+    const origin = this.cameraPosition();
+    let bestId = null;
+    let bestDistance = Infinity;
+    for (const [nodeId, bounds] of this.nodeBounds.entries()) {
+      const distance = rayBox(origin, direction, bounds.min, bounds.max);
+      if (distance !== null && distance < bestDistance) {
+        bestDistance = distance;
+        bestId = nodeId;
+      }
+    }
+    if (typeof this.onSelect === "function") {
+      this.onSelect(bestId);
+    }
   }
 
   cameraPosition() {
@@ -392,6 +515,7 @@ export class SceneViewer {
     this.clearScene();
     this.scene = scene;
     this.ensureCamera(scene);
+    this.updateNodeBounds();
     for (const [id, mesh] of Object.entries(scene.meshes || {})) {
       this.meshes.set(id, this.uploadMesh(mesh));
     }

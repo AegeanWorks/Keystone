@@ -74,6 +74,7 @@ let editorState = null;
 
 try {
   viewer = new SceneViewer(elements.canvas);
+  viewer.onSelect = (nodeId) => run(() => selectNode(nodeId));
 } catch (error) {
   elements.viewerStatus.textContent = `Viewer unavailable: ${error.message}`;
 }
