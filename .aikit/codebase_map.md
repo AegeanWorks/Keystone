@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `118`
-- **Total Classes**: `182`
-- **Total Top-Level Functions**: `237`
-- **Total Class Methods**: `1115`
-- **Total Source Lines**: `21355`
+- **Total Python Modules**: `120`
+- **Total Classes**: `185`
+- **Total Top-Level Functions**: `239`
+- **Total Class Methods**: `1127`
+- **Total Source Lines**: `21617`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `165` lines (`3565` bytes)
+**Size**: `167` lines (`3614` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -989,7 +989,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `105` lines (`4012` bytes)
+**Size**: `106` lines (`4041` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1015,6 +1015,26 @@
 - `def _paeth(a, b, c)`
 - `def read_png(path)` - *Read an 8-bit RGBA non-interlaced PNG and return top-down pixels.*
 - `def write_png(path, width, height, rgba, flip_vertical)` - *Write RGBA bytes (OpenGL order: bottom-up) as an 8-bit PNG.*
+
+---
+
+### [`keystone/prefab.py`](keystone/prefab.py)
+> *Deterministic prefabs: capture a scene subtree and instantiate reusable copies.*
+
+**Size**: `162` lines (`5998` bytes)
+
+**Classes:**
+- `class Prefab` - *An immutable-name, detached template of one or more scene subtrees.*
+  - Method `.__post_init__()`
+  - Method `.from_node(node, name)` - *Capture one detached subtree.*
+  - Method `.from_scene(scene, name)` - *Capture every child of a scene root as a multi-root prefab.*
+  - Property `.node_count`
+  - Method `.instantiate(scene, parent, instance)` - *Attach fresh copies to a scene, returning the new root nodes.*
+  - Method `.describe()` - *Return a JSON-safe structural summary for AI clients and tooling.*
+
+**Functions:**
+- `def _clone_template(node)`
+- `def _collect_ids(node)`
 
 ---
 
@@ -2203,7 +2223,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `109` lines (`4013` bytes)
+**Size**: `110` lines (`4073` bytes)
 
 **Classes:**
 - `class PluginTest`
@@ -2267,6 +2287,23 @@
   - Method `.test_compare_accepts_legacy_without_post()`
   - Method `.test_snapshot_round_trips_post_flag()`
   - Method `.test_scene_document_and_inspector_expose_post()`
+
+---
+
+### [`tests/test_prefab.py`](tests/test_prefab.py)
+> *Tests for deterministic prefab capture and instantiation.*
+
+**Size**: `96` lines (`3569` bytes)
+
+**Classes:**
+- `class Health`
+- `class PrefabTest`
+  - Method `._scene()`
+  - Method `.test_capture_and_instantiate_a_subtree()`
+  - Method `.test_instances_are_isolated_and_ids_are_unique()`
+  - Method `.test_auto_ids()`
+  - Method `.test_describe_is_json_safe()`
+  - Method `.test_validation()`
 
 ---
 

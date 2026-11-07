@@ -52,6 +52,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "input_contexts": True,
             "audio": True,
             "batching": True,
+            "prefabs": True,
             "static_merge": True,
             "instancing": True,
             "animation": True,

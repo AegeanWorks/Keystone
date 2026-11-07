@@ -81,7 +81,7 @@ A game may additionally expose `draw_ui(canvas, state)`. It is an optional prese
 
 ### Scene identity
 
-`Node` exposes `id`, `tags`, `layer` and `components`. `Scene` allocates deterministic per-scene IDs (`node-1`, `node-2`, ...) when a node is attached or first traversed, preserves explicit IDs, rejects duplicates, and keeps an ID across reparenting. `Scene.query()` and `Scene.find()` filter by name, tag, layer and component type; `Scene.find_by_id()` resolves an ID. Tags are strings, a node has one layer, and components are keyed by their class (one per type). Queries are linear scans; an index is a future optimization.
+`Node` exposes `id`, `tags`, `layer` and `components`. `Scene` allocates deterministic per-scene IDs (`node-1`, `node-2`, ...) when a node is attached or first traversed, preserves explicit IDs, rejects duplicates, and keeps an ID across reparenting. `Scene.query()` and `Scene.find()` filter by name, tag, layer and component type; `Scene.find_by_id()` resolves an ID. Tags are strings, a node has one layer, and components are keyed by their class (one per type). Queries are linear scans; an index is a future optimization. `Prefab.from_node()`/`from_scene()` capture detached templates; `Prefab.instantiate(scene)` clones them with `instance:original-id` or scene-allocated IDs, deep-copies components and returns JSON-safe `describe()` metadata.
 
 ### Loading
 
@@ -146,6 +146,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 |---|---|---|
 | Math | Implemented | Vec3, Mat4, Quat, transforms |
 | Scene | Implemented | hierarchy, visibility, lights, IDs, tags, layers and components |
+| Prefabs | Implemented | detached subtree capture, deterministic instance IDs, component copy isolation, JSON-safe describe |
 | Scene queries | Implemented | name/tag/layer/component filters and ID lookup |
 | Camera | Implemented | perspective and view matrices |
 | Geometry | Implemented | indexed meshes, materials, vertex colors |
@@ -213,6 +214,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - `TriggerTracker` reports sorted enter/exit tuples and an immutable active set; `raycast()` filters candidates and returns the nearest hit.
 - `Scene` assigns unique IDs, preserves them across reparenting and rejects duplicate explicit IDs.
 - `Scene.query()`/`find()` filter by name, tag, layer and component; `find_by_id()` resolves an ID.
+- `Prefab` captures a detached subtree, instantiates deterministic IDs, preserves tags/layers/components and isolates component copies.
 - Schema-4 reports include node ID, parent ID, tags, layer and component names; older reports still compare by name.
 - `TextureData.checker()` renders through a textured plane and material metadata appears in reports.
 - `python -m keystone --headless --frames 1 --out frame.png --report frame.json` writes both artifacts.

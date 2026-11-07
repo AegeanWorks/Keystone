@@ -254,6 +254,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 
 - **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth/culling, Blinn-Phong + PBR, shadows (1024 PCF), sRGB, post grade, bloom diffusion, point sprites; draw/tri/shadow/post/bloom/sprite stats feed the profiler.
 - **Scene graph**: nodes with stable IDs, tags, layers, typed components, local/world transforms, visibility, cycle-safe parenting, queries and cached GPU meshes.
+- **Prefabs**: capture a detached subtree and instantiate deterministic copies with prefixed or scene-allocated IDs.
 - **Assets**: immutable `MeshData` with optional UVs and vertex colors, cube/plane/cone/cylinder/sphere primitives, a streaming OBJ loader, and an immutable `TextureData` with PNG and procedural checker sources.
 - **Textured PBR materials**: `Material` keeps specular/shininess plus metallic, roughness and emissive; `Material.texture` samples RGBA with repeat wrapping and mipmaps; glTF PBR factors and emissive survive import; material graphs add `pbr`; one cached GPU texture per payload.
 - **Fixed-step runtime**: `FixedStepClock` releases whole simulation steps with a bounded catch-up budget; the headless path advances exactly one step per rendered frame for deterministic tests.
@@ -282,7 +283,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 python -m keystone --describe
 ```
 
-The JSON response contains the game name, `actions()` schema, current `snapshot()`, capabilities (`simulate`, `render`, `shadows`, `srgb`, `post`, `bloom`, `sprites`, `culling`, `skin`, `pbr`, `agents`, `profiler`, `input_bindings`, `input_contexts`, `audio`, `batching`, `static_merge`, `instancing`, `animation`, `animation_events`, `animation_blend`, `replay`, `asset_inventory`, `particles`, `inspector`, `playtest`, `human_ui`, `game_ui`, `web`) and versions.
+The response contains the game name, `actions()`, `snapshot()`, 30 capability keys (renderer, input, audio, batching, prefabs, animation, replay, assets, particles, inspector, playtest, UI and web), and schema versions.
 
 ### Verify determinism and visual regressions
 

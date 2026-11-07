@@ -57,6 +57,7 @@ from keystone.playtest import (
     validate_fairness,
 )
 from keystone.plugin import GameModule
+from keystone.prefab import Prefab
 from keystone.scene import (
     BloomSettings,
     ColorSettings,
@@ -106,6 +107,7 @@ __all__ = [
     "ParticleSystem",
     "PointLight",
     "PostSettings",
+    "Prefab",
     "Quat",
     "RandomPolicy",
     "Scene",

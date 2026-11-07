@@ -544,3 +544,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: A final broad M1 probe still reproduced three real validation gaps outside the original 26-row list: glTF accepted FLOAT indices, SCALAR POSITION and negative accessor counts; the asset registry accepted transitive dependency cycles; and assigning `PerspectiveCamera.pitch` directly above the clamp could make `look_at` fail.
 - **Decision**: Enforce glTF accessor type/component rules for POSITION and indices, reject negative accessor counts even without a bufferView, detect transitive asset dependency cycles at registration, and clamp pitch inside `PerspectiveCamera.forward()` while preserving the stored value.
 - **Consequences**: 647 tests green; 23/23 post-fix reproduction scripts pass; determinism remains `772cac5232a0947b8f6d1914a5cf0cde`; malformed imports and cycles now fail at the boundary, and direct camera pitch stays render-safe.
+
+### ADR-065: Add deterministic prefabs for reusable scene subtrees
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: Unity/Unreal-style authoring needs a reusable entity/template primitive. Keystone could save whole scenes but had no way to capture a subtree and instantiate isolated copies without rebuilding it by hand; AI clients also lacked a structural prefab description.
+- **Decision**: Add `keystone.prefab.Prefab` with `from_node()`, `from_scene()`, `instantiate(scene, parent=None, instance=None)`, `node_count` and JSON-safe `describe()`. Templates are detached; components are deep-copied per instance; mesh/material payloads stay shared; IDs become `instance:original-id` or scene-allocated when no prefix is given. Export `Prefab` from the public API and add `capabilities.prefabs` to `--describe`. `Prefab.instantiate(scene)` is the canonical call to avoid a `scene -> prefab -> scene` import cycle.
+- **Consequences**: 652 tests green; prefab instances are isolated and deterministic, duplicate instance IDs fail through the existing scene duplicate guard, and the five-operation game contract is unchanged. A scene-editor UI and prefab file format remain future tooling work.

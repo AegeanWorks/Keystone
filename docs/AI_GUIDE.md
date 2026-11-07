@@ -158,6 +158,15 @@ bindings.bind("dash", "left_shift")
 bindings.bind("confirm", "enter", context="menu")
 bindings.save_bindings("bindings.json")
 
+# Prefabs: capture a subtree, then instantiate isolated deterministic copies.
+from keystone import Prefab
+from keystone.scene import Scene
+
+prefab = Prefab.from_node(CubeDemo().build_scene().find_by_id("cube-0"), name="cube")
+scene = Scene()
+prefab.instantiate(scene, instance="a")
+print(prefab.describe())
+
 # Deterministic audio: synth, mix, audit, export.
 from keystone.audio import Mixer, audio_report, sine, write_wav
 

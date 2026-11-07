@@ -27,6 +27,7 @@ class PluginTest(unittest.TestCase):
         self.assertTrue(payload["capabilities"]["bloom"])
         self.assertTrue(payload["capabilities"]["sprites"])
         self.assertTrue(payload["capabilities"]["skin"])
+        self.assertTrue(payload["capabilities"]["prefabs"])
         self.assertEqual(payload["capabilities"]["report_schema"]["version"], 11)
         self.assertEqual(payload["capabilities"]["web"]["api_version"], 1)
         self.assertIn("/api/scene", payload["capabilities"]["web"]["endpoints"])
