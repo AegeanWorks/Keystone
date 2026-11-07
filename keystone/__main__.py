@@ -168,10 +168,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.scene is not None:
         if args.project is None and args.scene_dir is None:
             parser.error("--scene requires --project or --scene-dir")
-        if not (args.serve or args.simulate or args.headless or args.replay or args.playtest):
-            parser.error(
-                "--scene requires --serve, --simulate, --headless, --replay or --playtest"
-            )
+        if args.describe:
+            parser.error("--scene cannot be combined with --describe")
     if args.describe and (
         args.headless or args.simulate or args.verify_determinism or args.expect_hash
         or args.compare_baseline or args.diff_out or args.out or args.report or args.actions or args.trace
@@ -324,7 +322,7 @@ def main(argv: list[str] | None = None) -> int:
                     component_types=getattr(game_obj, "component_types", None),
                 ).load_into(args.scene, scene_obj)
 
-            if args.replay or args.playtest:
+            if args.replay or args.playtest or args.verify_determinism:
                 scene_loader = load_scene
             else:
                 prepared_scene = game.build_scene()
@@ -354,7 +352,12 @@ def main(argv: list[str] | None = None) -> int:
             from keystone.testing import verify_determinism
 
             actions = load_actions(args.actions) if args.actions else []
-            result = verify_determinism(make_game, actions, frames=args.frames or None)
+            result = verify_determinism(
+                make_game,
+                actions,
+                frames=args.frames or None,
+                scene_loader=scene_loader,
+            )
             if args.expect_hash:
                 result["expected_hash"] = args.expect_hash
                 result["ok"] = result["ok"] and result["hash"] == args.expect_hash

@@ -9,8 +9,8 @@
 - **Total Python Modules**: `128`
 - **Total Classes**: `202`
 - **Total Top-Level Functions**: `293`
-- **Total Class Methods**: `1240`
-- **Total Source Lines**: `25913`
+- **Total Class Methods**: `1242`
+- **Total Source Lines**: `25981`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `567` lines (`30494` bytes)
+**Size**: `570` lines (`30498` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -1309,12 +1309,12 @@
 ### [`keystone/testing.py`](keystone/testing.py)
 > *Deterministic scenario helpers for AI and CI tests.*
 
-**Size**: `52` lines (`1567` bytes)
+**Size**: `75` lines (`2287` bytes)
 
 **Functions:**
-- `def run_script(game, actions, frames, step, trace)`
-- `def verify_determinism(factory, actions, frames, step)` - *Run one scenario twice from a factory and compare final hashes.*
-- `def assert_deterministic(factory, actions, frames, step)`
+- `def run_script(game, actions, frames, step, trace, scene_loader)`
+- `def verify_determinism(factory, actions, frames, step, scene_loader)` - *Run one scenario twice from a factory and compare final hashes.*
+- `def assert_deterministic(factory, actions, frames, step, scene_loader)`
 
 ---
 
@@ -1699,7 +1699,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `527` lines (`21323` bytes)
+**Size**: `533` lines (`21677` bytes)
 
 **Classes:**
 - `class HudCube`
@@ -1719,6 +1719,7 @@
   - Method `.test_windowless_commands_reject_window_flags()`
   - Method `.test_web_flags_require_serve()`
   - Method `.test_scene_startup_requires_a_library()`
+  - Method `.test_scene_is_rejected_with_describe()`
   - Method `.test_bad_web_port_is_a_usage_error()`
   - Method `.test_headless_ui_capture_writes_a_report()`
   - Method `.test_start_paused_headless_report_describes_the_menu()`
@@ -2510,7 +2511,7 @@
 ### [`tests/test_project.py`](tests/test_project.py)
 > *Tests for project manifests, scaffolding and the --project CLI path.*
 
-**Size**: `358` lines (`14793` bytes)
+**Size**: `376` lines (`15395` bytes)
 
 **Classes:**
 - `class ProjectManifestTest`
@@ -2841,13 +2842,14 @@
 ### [`tests/test_testing.py`](tests/test_testing.py)
 > *Tests for deterministic AI/CI scenario helpers.*
 
-**Size**: `31` lines (`1174` bytes)
+**Size**: `49` lines (`1729` bytes)
 
 **Classes:**
 - `class TestingHelpersTest`
   - Method `.test_run_script_uses_action_count_by_default()`
   - Method `.test_verify_determinism_passes_for_the_sample()`
   - Method `.test_assert_deterministic_returns_evidence()`
+  - Method `.test_scene_loader_runs_for_each_determinism_pass()`
   - Method `.test_trace_mode_is_available()`
 
 ---

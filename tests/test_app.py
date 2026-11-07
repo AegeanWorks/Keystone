@@ -183,10 +183,16 @@ class EngineTest(unittest.TestCase):
         for argv in (
             ["--serve", "--scene", "level"],
             ["--simulate", "--scene", "level", "--frames", "1"],
+            ["--verify-determinism", "--scene", "level", "--frames", "1"],
         ):
             with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
                 main(argv)
             self.assertEqual(caught.exception.code, 2)
+
+    def test_scene_is_rejected_with_describe(self):
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+            main(["--describe", "--scene", "level", "--scene-dir", "scenes"])
+        self.assertEqual(caught.exception.code, 2)
 
     def test_bad_web_port_is_a_usage_error(self):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:

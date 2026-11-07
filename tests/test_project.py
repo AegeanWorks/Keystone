@@ -339,6 +339,24 @@ class ProjectScaffoldTest(unittest.TestCase):
                 )
             self.assertEqual(json.loads(out.getvalue())["frames"], 1)
 
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(
+                    main(
+                        [
+                            "--project",
+                            str(root),
+                            "--verify-determinism",
+                            "--scene",
+                            "level",
+                            "--frames",
+                            "2",
+                        ]
+                    ),
+                    0,
+                )
+            self.assertTrue(json.loads(out.getvalue())["ok"])
+
     def test_cli_new_is_standalone_and_missing_project_has_why_fix(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "project"

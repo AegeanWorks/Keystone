@@ -744,3 +744,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Replay and playtest create fresh game instances, so the simulate/headless prepared-scene path could not be reused. Their factories also skipped project asset attachment.
 - **Decision**: Add optional `scene_loader(game, scene)` hooks to `run_log`, `verify_log`, `run_bot` and `validate_fairness`, called after each fresh `build_scene()`. Extend `--scene` to `--replay` and `--playtest`, build the scene loader lazily, and use a shared `make_game()` factory that reattaches project assets for every run. Fairness probes now see the same authored layout.
 - **Consequences**: 708 tests green; transcripts and fairness verdicts run against saved scenes, and project assets are available to every fresh instance. Windowed scene loading and editor visual polish remain future work.
+
+### ADR-090: Complete scene loading across verify and windowed runs
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: After simulate, headless, replay and playtest support, `--scene` was still rejected for verify-determinism and windowed runs even though both already build a scene and can accept a prepared one.
+- **Decision**: Add optional `scene_loader` to `run_script`, `verify_determinism` and `assert_deterministic`, pass the CLI scene loader through both verify passes, and allow `--scene` on the windowed path where the prepared scene already reaches `Engine`. `--describe` remains the only incompatible command.
+- **Consequences**: 710 tests green; every runnable path accepts authored scenes except discovery, while windowed execution itself remains covered by the existing startup checks rather than a display-dependent test.

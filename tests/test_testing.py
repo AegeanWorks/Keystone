@@ -22,6 +22,24 @@ class TestingHelpersTest(unittest.TestCase):
         self.assertTrue(result["ok"])
         self.assertIn("hash", result)
 
+    def test_scene_loader_runs_for_each_determinism_pass(self):
+        calls = []
+
+        def loader(game, scene):
+            calls.append(scene)
+            scene.background = [0.2, 0.3, 0.4]
+
+        result = verify_determinism(
+            lambda: CubeDemo(),
+            [ActionState(forward=1.0)],
+            frames=2,
+            scene_loader=loader,
+        )
+        self.assertTrue(result["ok"])
+        self.assertEqual(len(calls), 2)
+        with self.assertRaises(TypeError):
+            run_script(CubeDemo(), [], scene_loader=object())
+
     def test_trace_mode_is_available(self):
         result = run_script(CubeDemo(), [], frames=2, trace=True)
         self.assertEqual(len(result["trace"]), 2)
