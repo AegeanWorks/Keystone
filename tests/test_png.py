@@ -99,6 +99,21 @@ class PngTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 read_png(path)
 
+    def test_reader_rejects_truncated_chunk_and_missing_iend(self):
+        from keystone.png import SIGNATURE, _chunk
+
+        header = struct.pack(">IIBBBBB", 2, 2, 8, 6, 0, 0, 0)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "bad.png"
+            truncated = bytearray(SIGNATURE + _chunk(b"IHDR", header) + _chunk(b"IDAT", b"x"))
+            truncated[-6:] = b"\xff\xff\xff\xff\xff\xff"
+            path.write_bytes(bytes(truncated))
+            with self.assertRaises(ValueError):
+                read_png(path)
+            path.write_bytes(SIGNATURE + _chunk(b"IHDR", header) + _chunk(b"IDAT", b"x"))
+            with self.assertRaises(ValueError):
+                read_png(path)
+
 
 if __name__ == "__main__":
     unittest.main()

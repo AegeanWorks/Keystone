@@ -14,7 +14,7 @@ from keystone.primitives import cube
 from keystone.samples import CubeDemo
 from keystone.scene import Node, Scene
 from keystone.web.scene import SCENE_SCHEMA, scene_document
-from keystone.web.server import create_server
+from keystone.web.server import GameSession, create_server
 
 
 @dataclass(frozen=True)
@@ -87,6 +87,26 @@ class SceneDocumentTest(unittest.TestCase):
         self.assertTrue(callable(web.scene_document))
         self.assertTrue(callable(web.create_server))
         self.assertTrue(callable(web.serve))
+
+    def test_falsy_settings_are_reported_disabled(self):
+        scene = CubeDemo().build_scene()
+        scene.shadow = False
+        scene.color = 0
+        scene.post = ""
+        scene.bloom = False
+        scene.sprite = 0
+        scene.culling = ""
+        document = scene_document(scene)
+        for key in ("shadows", "color", "post", "bloom", "sprites", "culling"):
+            self.assertFalse(document[key]["enabled"], key)
+
+    def test_empty_live_scene_is_not_rebuilt(self):
+        game = CubeDemo()
+        session = GameSession(game)
+        first = session.scene()
+        self.assertGreater(first["node_count"], 0)
+        game.scene.root.children.clear()
+        self.assertEqual(session.scene()["node_count"], 1)
 
 
 class WebServerTest(unittest.TestCase):
@@ -203,6 +223,53 @@ class WebServerTest(unittest.TestCase):
         )
         self.assertEqual(status, 400)
         self.assertFalse(payload["ok"])
+
+    def test_non_finite_action_is_400_without_poisoning_the_session(self):
+        status, _, payload = self._json(
+            "/api/simulate",
+            method="POST",
+            payload={"frames": 1, "actions": [{"forward": float("nan")}]},
+        )
+        self.assertEqual(status, 400)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(self._json("/api/scene")[0], 200)
+        self.assertEqual(self._json("/api/describe")[0], 200)
+
+    def test_oversized_step_and_json_number_are_client_errors(self):
+        status, _, payload = self._json(
+            "/api/simulate",
+            method="POST",
+            payload={"frames": 1, "step": 10**400},
+        )
+        self.assertEqual(status, 400)
+        self.assertFalse(payload["ok"])
+        raw = b'{"frames": ' + b"9" * 5000 + b"}"
+        request = urllib.request.Request(self.base + "/api/simulate", data=raw, method="POST")
+        request.add_header("Content-Type", "application/json")
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            urllib.request.urlopen(request, timeout=5)
+        self.assertEqual(caught.exception.code, 400)
+
+    def test_simulate_infers_frames_from_actions(self):
+        status, _, payload = self._json(
+            "/api/simulate",
+            method="POST",
+            payload={"actions": [{"forward": 1.0}, {"right": 1.0}, {"up": 1.0}]},
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["frames"], 3)
+
+    def test_head_and_method_errors(self):
+        status, headers, body = self._request("/api/health", method="HEAD")
+        self.assertEqual(status, 200)
+        self.assertEqual(body, b"")
+        status, headers, _payload = self._json("/api/health", method="PUT")
+        self.assertEqual(status, 405)
+        self.assertIn("GET", headers.get("Allow", ""))
+        status, _, _payload = self._json("/api/simulate", method="GET")
+        self.assertEqual(status, 405)
+        status, _, _payload = self._json("/api/health", method="POST")
+        self.assertEqual(status, 405)
 
 
 if __name__ == "__main__":

@@ -56,7 +56,7 @@ python -m keystone --headless --frames 1 --size 1280x720 \
   --out frame.png --report frame.json
 ```
 
-The schema-5 report contains:
+The schema-11 report contains:
 
 - image path, dimensions and PNG/RGBA SHA-256;
 - mean RGB/luminance, content pixels/ratio and bbox;
@@ -123,7 +123,7 @@ python -m keystone --serve --port 8899
 
 - `GET /api/health` returns `ok`, `game`, `api` and `scene_schema`;
 - `GET /api/describe` returns the same payload as `--describe`, with `capabilities.web`;
-- `GET /api/scene` returns scene document schema 1: camera, lights, atmosphere, node identity/tags/layers/components, world matrices, shared meshes and RGBA textures;
+- `GET /api/scene` returns scene document schema 2: camera, lights, atmosphere, node identity/tags/layers/components, world matrices, shared meshes and RGBA textures;
 - `POST /api/simulate` accepts `{"frames": 60, "actions": [...], "step": 0.0167, "trace": false}` and returns the same deterministic result as `--simulate`.
 
 All responses carry `Access-Control-Allow-Origin: *` so a local frontend or AI client can call the API directly. The server is loopback-only by default; do not expose it publicly. It does not need OpenGL. The bundled browser console drives the same endpoints and renders the scene document with WebGL2; that preview is approximate, while `--headless` remains the authoritative pixel render. `/api/scene` uses `self.scene` when the game exposes it (live state); otherwise it calls `build_scene()` for a fresh scene.

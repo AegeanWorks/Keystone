@@ -157,6 +157,24 @@ class MaterialGraphSerializationTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             graph.evaluate(textures={})
 
+    def test_duplicate_parameter_names_are_rejected(self):
+        with self.assertRaises(ValueError):
+            _node("color", "color", params=(("r", 1.0), ("r", 0.0)))
+
+    def test_validate_rejects_cycles(self):
+        graph = MaterialGraph(
+            nodes=(
+                _node("a", "mix", inputs=("b",), params=(("factor", 0.5),)),
+                _node("b", "mix", inputs=("a",), params=(("factor", 0.5),)),
+                _node("out", "material", inputs=("a",)),
+            ),
+            output="out",
+        )
+        with self.assertRaises(ValueError):
+            graph.validate()
+        with self.assertRaises(ValueError):
+            graph.to_dict()
+
 
 if __name__ == "__main__":
     unittest.main()

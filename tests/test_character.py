@@ -104,6 +104,46 @@ class CharacterControllerTest(unittest.TestCase):
         self.assertLess(body.position.y, start_y)
         self.assertFalse(body.on_ground)
 
+    def test_wall_slide_does_not_double_step_or_report_blocked_velocity(self):
+        controller = CharacterController(gravity=24.0)
+        floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+        wall = AABB(Vec3(0, 1.4, 0), Vec3(0.2, 0.9, 3))
+        body = CharacterBody(Vec3(-1.0, 0.5 + 0.9 + controller.skin, 0), Vec3(0.4, 0.9, 0.4))
+        for _ in range(60):
+            body = controller.step(body, Vec3(5.0, 0.0, 1.0), 1 / 60, [floor, wall])
+        self.assertAlmostEqual(body.position.z, 1.0, places=3)
+        self.assertAlmostEqual(body.velocity.x, 0.0, places=6)
+
+    def test_step_up_preserves_the_full_horizontal_delta_once(self):
+        controller = CharacterController(gravity=24.0)
+        floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))
+        low_step = AABB(Vec3(2.0, 0.65, 0), Vec3(0.5, 0.15, 1.0))
+        body = CharacterBody(Vec3(0.0, 0.5 + 0.9 + controller.skin, 0), Vec3(0.35, 0.9, 0.35))
+        start = body.position
+        for _ in range(60):
+            body = controller.step(body, Vec3(2.0, 0.0, 1.0), 1 / 60, [floor, low_step])
+        self.assertAlmostEqual(body.position.x - start.x, 2.0, places=3)
+        self.assertAlmostEqual(body.position.z - start.z, 1.0, places=3)
+
+    def test_overlapping_start_depenetrates_to_the_nearest_face(self):
+        controller = CharacterController(gravity=0.0)
+        wall = AABB(Vec3(0, 1.4, 0), Vec3(5.0, 0.9, 1.0))
+        body = CharacterBody(Vec3(4.5, 1.4, 0), Vec3(0.4, 0.9, 0.4))
+        moved = controller.step(body, Vec3(1.0, 0.0, 0.0), 1 / 60, [wall])
+        self.assertGreater(moved.position.x, 5.4)
+        self.assertLess(moved.position.x, 5.401)
+
+    def test_character_rejects_non_finite_inputs(self):
+        controller = CharacterController()
+        with self.assertRaises(ValueError):
+            controller.step(CharacterBody(Vec3()), Vec3(), float("nan"), [])
+        with self.assertRaises(ValueError):
+            controller.step(CharacterBody(Vec3()), Vec3(float("nan"), 0, 0), 1 / 60, [])
+        with self.assertRaises(ValueError):
+            CharacterBody(Vec3(float("nan"), 0, 0))
+        with self.assertRaises(ValueError):
+            CharacterController(gravity=float("nan"))
+
     def test_character_steps_are_deterministic(self):
         controller = CharacterController(gravity=24.0)
         floor = AABB(Vec3(0, 0, 0), Vec3(5, 0.5, 5))

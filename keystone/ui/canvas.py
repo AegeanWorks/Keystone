@@ -68,8 +68,8 @@ class Canvas:
 
     def text(self, x: float, y: float, text: str, color: Color, scale: int = 2) -> None:
         """Append bitmap text; lowercase is drawn as uppercase."""
-        if scale < 1:
-            raise ValueError("text scale must be at least 1")
+        if isinstance(scale, bool) or not isinstance(scale, int) or scale < 1:
+            raise ValueError("text scale must be a positive integer")
         value = str(text).upper()
         self.text_elements.append(TextElement(value, x, y, scale, color))
         cursor = x

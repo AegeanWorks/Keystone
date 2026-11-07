@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
@@ -27,6 +29,31 @@ DEFAULT_BINDINGS = {
     "quit": "escape",
 }
 
+_ACTION_KEYS = frozenset(
+    {"forward", "right", "up", "look_yaw", "look_pitch", "pressed", "held", "pointer", "mouse_clicked"}
+)
+
+
+def _finite_number(value: object, label: str) -> float:
+    """Return a finite real number, rejecting bools and string coercion."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise TypeError(f"{label} must be a real number")
+    try:
+        result = float(value)
+    except (OverflowError, ValueError) as exc:
+        raise ValueError(f"{label} must be finite") from exc
+    if not math.isfinite(result):
+        raise ValueError(f"{label} must be finite")
+    return result
+
+
+def _binding_pair(action: object, key: object) -> tuple[str, str]:
+    if not isinstance(action, str) or not action.strip():
+        raise ValueError("action name must be a non-blank string")
+    if not isinstance(key, str) or not key.strip():
+        raise ValueError("key name must be a non-blank string")
+    return action, key
+
 
 @dataclass(frozen=True, slots=True)
 class ActionState:
@@ -41,6 +68,28 @@ class ActionState:
     held: frozenset[str] = frozenset()
     pointer: tuple[float, float] = (0.0, 0.0)
     mouse_clicked: bool = False
+
+    def __post_init__(self) -> None:
+        for name in ("forward", "right", "up", "look_yaw", "look_pitch"):
+            object.__setattr__(self, name, _finite_number(getattr(self, name), name))
+        pointer = self.pointer
+        if isinstance(pointer, (str, bytes)) or not isinstance(pointer, (tuple, list)) or len(pointer) != 2:
+            raise TypeError("pointer must be a pair of numbers")
+        object.__setattr__(
+            self,
+            "pointer",
+            (_finite_number(pointer[0], "pointer x"), _finite_number(pointer[1], "pointer y")),
+        )
+        if not isinstance(self.mouse_clicked, bool):
+            raise TypeError("mouse_clicked must be a boolean")
+        for name in ("pressed", "held"):
+            value = getattr(self, name)
+            if isinstance(value, (str, bytes)) or not isinstance(value, (set, frozenset, list, tuple)):
+                raise TypeError(f"{name} must be a collection of action names")
+            for item in value:
+                if not isinstance(item, str):
+                    raise TypeError(f"{name} must be a collection of action names")
+            object.__setattr__(self, name, frozenset(value))
 
     def without_pressed(self) -> ActionState:
         return replace(self, pressed=frozenset(), mouse_clicked=False)
@@ -60,6 +109,11 @@ class ActionState:
 
     @classmethod
     def from_dict(cls, data: dict) -> ActionState:
+        if not isinstance(data, Mapping):
+            raise TypeError("action must be a mapping")
+        unknown = set(data) - _ACTION_KEYS
+        if unknown:
+            raise ValueError(f"action has unknown keys: {sorted(unknown)}")
         pressed = data.get("pressed", ())
         if isinstance(pressed, (str, bytes)) or not isinstance(pressed, (list, tuple, set, frozenset)):
             raise TypeError("pressed must be a list of action names")
@@ -78,20 +132,23 @@ class ActionState:
         pointer = tuple(pointer_raw)
         if len(pointer) != 2:
             raise ValueError("pointer must be a pair of numbers")
-        try:
-            pointer_values = (float(pointer[0]), float(pointer[1]))
-        except (TypeError, ValueError):
-            raise TypeError("pointer must be a pair of numbers")
+        pointer_values = (
+            _finite_number(pointer[0], "pointer x"),
+            _finite_number(pointer[1], "pointer y"),
+        )
+        mouse_clicked = data.get("mouse_clicked", False)
+        if not isinstance(mouse_clicked, bool):
+            raise TypeError("mouse_clicked must be a boolean")
         return cls(
-            forward=float(data.get("forward", 0.0)),
-            right=float(data.get("right", 0.0)),
-            up=float(data.get("up", 0.0)),
-            look_yaw=float(data.get("look_yaw", 0.0)),
-            look_pitch=float(data.get("look_pitch", 0.0)),
+            forward=_finite_number(data.get("forward", 0.0), "forward"),
+            right=_finite_number(data.get("right", 0.0), "right"),
+            up=_finite_number(data.get("up", 0.0), "up"),
+            look_yaw=_finite_number(data.get("look_yaw", 0.0), "look_yaw"),
+            look_pitch=_finite_number(data.get("look_pitch", 0.0), "look_pitch"),
             pressed=frozenset(pressed),
             held=frozenset(held),
             pointer=pointer_values,
-            mouse_clicked=bool(data.get("mouse_clicked", False)),
+            mouse_clicked=mouse_clicked,
         )
 
 
@@ -113,11 +170,16 @@ class InputMap:
         context: str = "gameplay",
     ) -> None:
         self.bindings = dict(DEFAULT_BINDINGS)
-        if bindings:
-            self.bindings.update(bindings)
-        self.look_speed = look_speed
-        self.mouse_sensitivity = mouse_sensitivity
+        if bindings is not None:
+            if not isinstance(bindings, Mapping):
+                raise TypeError("input bindings must be a mapping")
+            for action, key in bindings.items():
+                _binding_pair(action, key)
+                self.bindings[action] = key
+        self.look_speed = _finite_number(look_speed, "look_speed")
+        self.mouse_sensitivity = _finite_number(mouse_sensitivity, "mouse_sensitivity")
         self.mouse_enabled = True
+        self.look_enabled = True
         self._held: frozenset[str] = frozenset()
         self._last_pointer: tuple[float, float] | None = None
         self._mouse_held = False
@@ -126,14 +188,11 @@ class InputMap:
             for name, mapping in contexts.items():
                 if not isinstance(name, str) or not name.strip():
                     raise ValueError("context names must be non-blank strings")
-                if not isinstance(mapping, dict):
+                if not isinstance(mapping, Mapping):
                     raise TypeError("context bindings must be mappings")
                 merged = dict(self.bindings)
                 for action, key in mapping.items():
-                    if not isinstance(action, str) or not isinstance(key, str):
-                        raise TypeError("context bindings must map action names to key names")
-                    if not action.strip() or not key.strip():
-                        raise ValueError("context bindings must use non-blank action and key names")
+                    _binding_pair(action, key)
                     merged[action] = key
                 self.contexts[name] = merged
         if not isinstance(context, str) or not context.strip():
@@ -197,34 +256,55 @@ class InputMap:
 
     @classmethod
     def from_dict(cls, data: dict) -> InputMap:
-        if not isinstance(data, dict):
+        if not isinstance(data, Mapping):
             raise TypeError("input bindings document must be a mapping")
         schema = data.get("schema", 1)
-        if schema not in (1, 2):
+        if isinstance(schema, bool) or not isinstance(schema, int) or schema not in (1, 2):
             raise ValueError("unsupported input bindings schema")
         raw_bindings = data.get("bindings", {})
-        if not isinstance(raw_bindings, dict):
+        if not isinstance(raw_bindings, Mapping):
             raise TypeError("input bindings must hold a bindings mapping")
         merged = dict(DEFAULT_BINDINGS)
         for action, key in raw_bindings.items():
-            if not isinstance(action, str) or not isinstance(key, str):
-                raise TypeError("input bindings must map action names to key names")
-            if not action.strip() or not key.strip():
-                raise ValueError("input bindings must use non-blank action and key names")
+            _binding_pair(action, key)
             merged[action] = key
         raw_contexts = data.get("contexts", {})
-        if not isinstance(raw_contexts, dict):
+        if not isinstance(raw_contexts, Mapping):
             raise TypeError("input contexts must hold a mapping")
         context = data.get("context", "gameplay")
+        if not isinstance(context, str) or not context.strip():
+            raise ValueError("context must be a non-blank string")
         instance = cls(
-            bindings=merged,
-            look_speed=float(data.get("look_speed", 1.6)),
-            mouse_sensitivity=float(data.get("mouse_sensitivity", 0.0025)),
-            contexts={name: mapping for name, mapping in raw_contexts.items()} if raw_contexts else None,
-            context=context if raw_contexts or "context" in data else "gameplay",
+            bindings=None,
+            look_speed=_finite_number(data.get("look_speed", 1.6), "look_speed"),
+            mouse_sensitivity=_finite_number(data.get("mouse_sensitivity", 0.0025), "mouse_sensitivity"),
+            context="gameplay",
         )
-        if schema == 1 and not raw_contexts:
-            instance.contexts = {"gameplay": dict(instance.bindings)}
+        instance.bindings = dict(merged)
+        instance.contexts = {"gameplay": dict(merged)}
+        if schema == 1:
+            instance.context = "gameplay"
+            return instance
+        if raw_contexts:
+            contexts: dict[str, dict[str, str]] = {}
+            for name, mapping in raw_contexts.items():
+                if not isinstance(name, str) or not name.strip():
+                    raise ValueError("context names must be non-blank strings")
+                if not isinstance(mapping, Mapping):
+                    raise TypeError("context bindings must be mappings")
+                saved = dict(DEFAULT_BINDINGS)
+                for action, key in mapping.items():
+                    _binding_pair(action, key)
+                    saved[action] = key
+                contexts[name] = saved
+            if "gameplay" not in contexts:
+                contexts["gameplay"] = dict(merged)
+            instance.contexts = contexts
+            if context not in contexts:
+                contexts[context] = dict(merged)
+            instance.context = context
+            instance.bindings = dict(contexts[context])
+        else:
             instance.context = "gameplay"
         return instance
 
@@ -245,7 +325,20 @@ class InputMap:
         return cls.from_dict(payload)
 
     def set_mouse_enabled(self, enabled: bool) -> None:
+        if not isinstance(enabled, bool):
+            raise TypeError("mouse_enabled must be a boolean")
+        if enabled == self.mouse_enabled:
+            return
         self.mouse_enabled = enabled
+        self.look_enabled = enabled
+        self._last_pointer = None
+
+    def set_look_enabled(self, enabled: bool) -> None:
+        if not isinstance(enabled, bool):
+            raise TypeError("look_enabled must be a boolean")
+        if enabled == self.look_enabled:
+            return
+        self.look_enabled = enabled
         self._last_pointer = None
 
     def sample(self, context: GLContext, dt: float = 0.0) -> ActionState:
@@ -256,7 +349,7 @@ class InputMap:
         clicked = bool(mouse and self.mouse_enabled and not self._mouse_held)
         self._mouse_held = mouse
         x, y = context.cursor_position()
-        if self._last_pointer is None or not self.mouse_enabled:
+        if self._last_pointer is None or not self.look_enabled:
             dx = dy = 0.0
         else:
             dx, dy = x - self._last_pointer[0], y - self._last_pointer[1]
@@ -266,7 +359,7 @@ class InputMap:
         up = float("up" in held) - float("down" in held)
         yaw = (float("look_right" in held) - float("look_left" in held)) * self.look_speed * dt
         pitch = (float("look_up" in held) - float("look_down" in held)) * self.look_speed * dt
-        if self.mouse_enabled:
+        if self.look_enabled:
             yaw += dx * self.mouse_sensitivity
             pitch -= dy * self.mouse_sensitivity
         return ActionState(

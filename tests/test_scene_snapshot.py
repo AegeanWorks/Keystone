@@ -8,7 +8,7 @@ from keystone.assets import AssetRegistry
 from keystone.geometry import Material
 from keystone.math3d import Vec3
 from keystone.primitives import cube, plane
-from keystone.scene import DirectionalLight, Node, PointLight, Scene
+from keystone.scene import DirectionalLight, Node, PointLight, Scene, Transform
 from keystone.scene_snapshot import (
     SCENE_SNAPSHOT_VERSION,
     scene_from_dict,
@@ -130,7 +130,7 @@ class SceneSnapshotTest(unittest.TestCase):
 
     def test_rejects_non_mapping_camera_and_transform(self):
         with self.assertRaises(TypeError):
-            scene_from_dict({"schema": SCENE_SNAPSHOT_VERSION, "camera": []})
+            scene_from_dict({"schema": SCENE_SNAPSHOT_VERSION, "camera": [], "nodes": []})
         with self.assertRaises(TypeError):
             scene_from_dict(
                 {
@@ -161,6 +161,52 @@ class SceneSnapshotTest(unittest.TestCase):
         restored_cube = next(node for node in restored.traverse() if node.id == "cube")
         self.assertIs(restored_cube.mesh, mesh)
         self.assertIs(restored_cube.material, material)
+
+    def test_rejects_non_finite_transform_on_save(self):
+        with self.assertRaises(ValueError):
+            Transform(position=Vec3(float("nan"), 0.0, 0.0))
+        scene = Scene()
+        node = scene.add(Node("n", id="n"))
+        node.transform = None  # type: ignore[assignment]
+        with self.assertRaises(TypeError):
+            scene_to_dict(scene)
+
+    def test_rejects_zero_quaternion_on_load(self):
+        document = {"schema": 1, "nodes": [{"id": "n", "transform": {"rotation": [0, 0, 0, 0]}}]}
+        with self.assertRaises(ValueError):
+            scene_from_dict(document)
+
+    def test_preserves_root_transform_visibility_and_next_id(self):
+        scene = Scene()
+        scene.root.transform = Transform(position=Vec3(5, 0, 0))
+        scene.root.visible = False
+        scene.add(Node("removed"))
+        removed = next(node for node in scene.traverse() if node.name == "removed")
+        scene.root.remove_child(removed)
+        scene.add(Node("child", id="child"))
+        restored = scene_from_dict(scene_to_dict(scene))
+        restored_child = restored.find_by_id("child")
+        self.assertEqual(restored_child.world_matrix().transform_point(Vec3()), Vec3(5, 0, 0))
+        self.assertFalse(restored_child.world_visible())
+        self.assertEqual(restored.add(Node("next")).id, "node-2")
+
+    def test_clamps_camera_pitch_and_rejects_bad_framing(self):
+        restored = scene_from_dict({"schema": 1, "nodes": [], "camera": {"pitch": 3.0}})
+        self.assertLessEqual(abs(restored.camera.pitch), 1.5533430342759533 + 1e-12)
+        with self.assertRaises(ValueError):
+            scene_from_dict({"schema": 1, "nodes": [], "camera": {"near": 0.0}})
+        with self.assertRaises(ValueError):
+            scene_from_dict({"schema": 1, "nodes": [], "camera": {"fov_y": float("nan")}})
+
+    def test_strict_snapshot_scalars(self):
+        with self.assertRaises(TypeError):
+            scene_from_dict({"schema": 1, "nodes": [{"id": "n", "visible": "false"}]})
+        with self.assertRaises(ValueError):
+            scene_from_dict({"schema": True, "nodes": []})
+        with self.assertRaises(ValueError):
+            scene_from_dict({"schema": 1.0, "nodes": []})
+        with self.assertRaises(ValueError):
+            scene_from_dict({"schema": SCENE_SNAPSHOT_VERSION})
 
 
 if __name__ == "__main__":

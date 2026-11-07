@@ -2,7 +2,7 @@
 
 import unittest
 
-from keystone.geometry import Material
+from keystone.geometry import Material, MeshData
 from keystone.gpu.instancing import group_instances, plan_instanced
 from keystone.math3d import Vec3
 from keystone.primitives import cube
@@ -42,7 +42,29 @@ class PlanInstancedTest(unittest.TestCase):
         scene, _mesh, _material = make_scene(3, same_material=False)
         plan = plan_instanced(scene)
         self.assertEqual(plan["groups"], 3)
-        self.assertEqual(plan["instanced_calls"], 3)
+        self.assertEqual(plan["instanced_calls"], 0)
+        self.assertEqual(plan["saved_calls"], 0)
+        self.assertEqual(plan["instances"], 0)
+
+    def test_skinned_groups_are_not_instanced(self):
+        identity = (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0)
+        mesh = MeshData(
+            positions=((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)),
+            normals=((0.0, 0.0, 1.0),) * 3,
+            indices=(0, 1, 2),
+            joints=((0,),) * 3,
+            weights=((1.0,),) * 3,
+            skin_joints=("j0",),
+            skin_inverse_bind=(identity,),
+        )
+        scene = Scene()
+        scene.add(Node("j0", id="j0"))
+        material = Material()
+        for index in range(2):
+            scene.add(Node(f"rig-{index}", mesh=mesh, material=material))
+        plan = plan_instanced(scene)
+        self.assertEqual(plan["groups"], 1)
+        self.assertEqual(plan["instanced_calls"], 0)
         self.assertEqual(plan["saved_calls"], 0)
         self.assertEqual(plan["instances"], 0)
 

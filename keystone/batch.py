@@ -11,7 +11,7 @@ matrices and node transforms, keeping deformation bit-exact.
 
 from __future__ import annotations
 
-from keystone.geometry import MeshData
+from keystone.geometry import Material, MeshData
 from keystone.mesh_builder import MeshBuilder
 from keystone.scene import Scene
 
@@ -36,7 +36,7 @@ def plan_batches(scene: Scene) -> dict:
         if _skinned(mesh):
             material = node.material
             key = (
-                id(material) if material is not None else 0,
+                id(material) if isinstance(material, Material) else 0,
                 tuple(mesh.skin_joints),
                 tuple(tuple(matrix) for matrix in mesh.skin_inverse_bind),
                 tuple(node.world_matrix().flat()),
@@ -46,7 +46,7 @@ def plan_batches(scene: Scene) -> dict:
             skin_triangles += mesh.triangle_count()
             continue
         material = node.material
-        key = (id(mesh), id(material) if material is not None else 0)
+        key = (id(mesh), id(material) if isinstance(material, Material) else 0)
         entry = groups.get(key)
         if entry is None:
             entry = {"nodes": [], "triangles": 0, "mesh": mesh, "material": material}
@@ -83,9 +83,13 @@ def merge_batches(scene: Scene, exclude: set[str] | None = None) -> dict:
     matrix, which keeps the deformation bit-exact. Returns per-group merged
     meshes plus a summary reusing `plan_batches()` counts.
     """
+    if isinstance(exclude, str):
+        raise TypeError("exclude must be a set of node ids or names, not a string")
     excluded = set(exclude or ())
     groups: dict[int, dict] = {}
     skin_groups: dict[tuple[int, tuple[str, ...], tuple[tuple[float, ...], ...], tuple[float, ...]], dict] = {}
+    included_static = 0
+    included_skin = 0
     for node in scene.traverse():
         mesh = node.mesh
         if not isinstance(mesh, MeshData) or not node.world_visible():
@@ -93,9 +97,10 @@ def merge_batches(scene: Scene, exclude: set[str] | None = None) -> dict:
         if node.id in excluded or node.name in excluded:
             continue
         if _skinned(mesh):
+            included_skin += 1
             world = tuple(node.world_matrix().flat())
             key = (
-                id(node.material) if node.material is not None else 0,
+                id(node.material) if isinstance(node.material, Material) else 0,
                 tuple(mesh.skin_joints),
                 tuple(tuple(matrix) for matrix in mesh.skin_inverse_bind),
                 world,
@@ -107,7 +112,8 @@ def merge_batches(scene: Scene, exclude: set[str] | None = None) -> dict:
             entry["nodes"].append(node.id or node.name)
             entry["builder"].add_skinned_mesh(mesh)
             continue
-        key = id(node.material) if node.material is not None else 0
+        included_static += 1
+        key = id(node.material) if isinstance(node.material, Material) else 0
         entry = groups.get(key)
         if entry is None:
             entry = {"nodes": [], "material": node.material, "builder": MeshBuilder()}
@@ -135,14 +141,15 @@ def merge_batches(scene: Scene, exclude: set[str] | None = None) -> dict:
     merged.extend(skin_merged)
     merged.sort(key=lambda item: (-item["count"], item["nodes"][0] if item["nodes"] else ""))
     plan = plan_batches(scene)
+    static_merged_calls = len(merged) - len(skin_merged)
     return {
         "schema": 1,
         "groups": len(merged),
         "merged_calls": len(merged),
-        "saved_calls": max(0, plan["draw_calls"] - (len(merged) - len(skin_merged))),
+        "saved_calls": max(0, included_static - static_merged_calls),
         "triangles": sum(item["triangles"] for item in merged),
         "merged": merged,
         "plan": plan,
         "skin_merged_calls": len(skin_merged),
-        "skin_saved_calls": max(0, plan["skin_calls"] - len(skin_merged)),
+        "skin_saved_calls": max(0, included_skin - len(skin_merged)),
     }

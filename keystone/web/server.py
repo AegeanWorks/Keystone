@@ -8,6 +8,7 @@ import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from typing import ClassVar
 from urllib.parse import urlparse
 
 from keystone.headless import run_simulation
@@ -20,6 +21,12 @@ from keystone.web.schema import SCENE_SCHEMA, WEB_API_VERSION
 
 MAX_BODY = 1_000_000
 MAX_FRAMES = 1_000_000
+
+
+def _enabled(value: object) -> bool:
+    if value is None:
+        return False
+    return bool(getattr(value, "enabled", value))
 STATIC_ROOT = Path(__file__).with_name("static")
 STATIC_FILES = {
     "index.html": "text/html; charset=utf-8",
@@ -45,6 +52,7 @@ class GameSession:
     def __init__(self, game: GameModule) -> None:
         self.game = game
         self.lock = threading.Lock()
+        self._built = False
 
     @property
     def name(self) -> str:
@@ -59,7 +67,13 @@ class GameSession:
             raise WebProblem(400, "frames must be a non-negative integer", 'send {"frames": 1}')
         if frames > MAX_FRAMES:
             raise WebProblem(400, f"frames must be at most {MAX_FRAMES}", "send a smaller frame count")
-        if isinstance(step, bool) or not isinstance(step, (int, float)) or step <= 0.0 or not math.isfinite(step):
+        if isinstance(step, bool) or not isinstance(step, (int, float)):
+            raise WebProblem(400, "step must be a positive number", 'send {"frames": 1, "step": 0.0167}')
+        try:
+            step_value = float(step)
+        except (OverflowError, ValueError) as exc:
+            raise WebProblem(400, "step must be a positive number", 'send {"frames": 1, "step": 0.0167}') from exc
+        if step_value <= 0.0 or not math.isfinite(step_value):
             raise WebProblem(400, "step must be a positive number", 'send {"frames": 1, "step": 0.0167}')
         if not isinstance(trace, bool):
             raise WebProblem(400, "trace must be a boolean", 'send {"frames": 1, "trace": false}')
@@ -70,22 +84,28 @@ class GameSession:
         except (AttributeError, TypeError, ValueError) as exc:
             raise WebProblem(400, f"invalid action item: {exc}", "each action must be a JSON object") from exc
         with self.lock:
-            return run_simulation(self.game, frames, script, step=float(step), trace=bool(trace))
+            result = run_simulation(self.game, frames, script, step=step_value, trace=bool(trace))
+            self._built = True
+            return result
+
+    def _scene_locked(self) -> Scene:
+        scene = getattr(self.game, "scene", None)
+        if not isinstance(scene, Scene) or (not self._built and not scene.root.children):
+            scene = self.game.build_scene()
+            self._built = True
+        if not isinstance(scene, Scene):
+            raise TypeError("GameModule.build_scene() must return a Scene")
+        return scene
 
     def scene(self) -> dict:
         with self.lock:
-            scene = getattr(self.game, "scene", None)
-            if not isinstance(scene, Scene) or not scene.root.children:
-                scene = self.game.build_scene()
-            return scene_document(scene, game=self.name)
+            return scene_document(self._scene_locked(), game=self.name)
 
     def inspector(self) -> dict:
         from keystone.batch import merge_batches, plan_batches
 
         with self.lock:
-            scene = getattr(self.game, "scene", None)
-            if not isinstance(scene, Scene) or not scene.root.children:
-                scene = self.game.build_scene()
+            scene = self._scene_locked()
             document = scene_document(scene, game=self.name)
             try:
                 batches = plan_batches(scene)
@@ -185,15 +205,12 @@ class GameSession:
                 "batches": batches,
                 "merged": merged_summary,
                 "instancing": instancing_summary,
-                "shadows": {
-                    "enabled": bool(shadow is not None and getattr(shadow, "enabled", True)),
-                    "size": 1024,
-                },
-                "color": {"enabled": bool(color is not None and getattr(color, "enabled", True))},
-                "post": {"enabled": bool(post is not None and getattr(post, "enabled", True))},
-                "bloom": {"enabled": bool(bloom is not None and getattr(bloom, "enabled", True))},
-                "sprites": {"enabled": bool(sprite is not None and getattr(sprite, "enabled", True))},
-                "culling": {"enabled": bool(culling is not None and getattr(culling, "enabled", True))},
+                "shadows": {"enabled": _enabled(shadow), "size": 1024 if _enabled(shadow) else 0},
+                "color": {"enabled": _enabled(color)},
+                "post": {"enabled": _enabled(post)},
+                "bloom": {"enabled": _enabled(bloom)},
+                "sprites": {"enabled": _enabled(sprite)},
+                "culling": {"enabled": _enabled(culling)},
                 "audio": audio,
                 "animation": animation,
                 "particles": particles,
@@ -214,7 +231,7 @@ class KeystoneHTTPServer(ThreadingHTTPServer):
 
     def handle_error(self, request: object, client_address: tuple[str, int]) -> None:
         error = sys.exc_info()[1]
-        if isinstance(error, (ConnectionResetError, BrokenPipeError)):
+        if isinstance(error, (ConnectionError, BrokenPipeError, ConnectionAbortedError)):
             return
         super().handle_error(request, client_address)
 
@@ -228,8 +245,20 @@ class ConsoleHandler(BaseHTTPRequestHandler):
     def log_message(self, format: str, *args: object) -> None:
         return
 
+    _GET_PATHS: ClassVar[frozenset[str]] = frozenset(
+        {"/", "/index.html", "/app.js", "/viewer.js", "/style.css", "/api", "/api/health", "/api/describe", "/api/scene", "/api/inspector"}
+    )
+
     def do_OPTIONS(self) -> None:
         self._send(204, b"", None)
+
+    def do_HEAD(self) -> None:
+        path = urlparse(self.path).path
+        if path in self._GET_PATHS:
+            content_type = "application/json; charset=utf-8" if path.startswith("/api") else STATIC_FILES.get(path.lstrip("/"))
+            self._send(200, b"", content_type)
+        else:
+            self._send_problem(WebProblem(404, f"no route for {path}", "use /, /api, /api/health or /api/scene"))
 
     def do_GET(self) -> None:
         path = urlparse(self.path).path
@@ -248,6 +277,8 @@ class ConsoleHandler(BaseHTTPRequestHandler):
                 self._send_json(200, self.session.scene())
             elif path == "/api/inspector":
                 self._send_json(200, self.session.inspector())
+            elif path == "/api/simulate":
+                raise WebProblem(405, "method not allowed", "use POST /api/simulate")
             else:
                 raise WebProblem(404, f"no route for {path}", "use /, /api, /api/describe, /api/scene, /api/inspector or /api/simulate")
         except WebProblem as exc:
@@ -259,12 +290,15 @@ class ConsoleHandler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         try:
             if path != "/api/simulate":
-                raise WebProblem(404, f"no route for {path}", "POST /api/simulate")
+                status = 405 if path in self._GET_PATHS else 404
+                raise WebProblem(status, f"method not allowed for {path}" if status == 405 else f"no route for {path}", "POST /api/simulate")
             payload = self._read_json()
             if not isinstance(payload, dict):
                 raise WebProblem(400, "request body must be a JSON object", 'send {"frames": 1}')
-            frames = payload.get("frames", 1)
             actions = payload.get("actions", [])
+            frames = payload.get("frames")
+            if frames is None:
+                frames = len(actions) if isinstance(actions, list) and actions else 1
             step = payload.get("step", FIXED_STEP)
             trace = payload.get("trace", False)
             self._send_json(200, self.session.simulate(frames, actions, step, trace))
@@ -331,6 +365,8 @@ class ConsoleHandler(BaseHTTPRequestHandler):
             return json.loads(text)
         except json.JSONDecodeError as exc:
             raise WebProblem(400, f"invalid JSON: {exc.msg}", "send a valid JSON object") from exc
+        except (ValueError, RecursionError) as exc:
+            raise WebProblem(400, f"invalid JSON: {exc}", "send a smaller, valid JSON object") from exc
 
     def _send_file(self, name: str) -> None:
         content_type = STATIC_FILES.get(name)
@@ -343,26 +379,38 @@ class ConsoleHandler(BaseHTTPRequestHandler):
         self._send(200, body, content_type)
 
     def _send_problem(self, problem: WebProblem) -> None:
+        headers = {"Allow": "GET, POST, HEAD, OPTIONS"} if problem.status == 405 else None
         self._send_json(
             problem.status,
             {"ok": False, "error": problem.why, "fix": problem.fix},
+            extra_headers=headers,
         )
 
     def _method_not_allowed(self) -> None:
-        self._send_json(405, {"ok": False, "error": "method not allowed", "fix": "use GET, POST or OPTIONS"})
+        self._send_json(
+            405,
+            {"ok": False, "error": "method not allowed", "fix": "use GET, POST, HEAD or OPTIONS"},
+            extra_headers={"Allow": "GET, POST, HEAD, OPTIONS"},
+        )
 
-    def _send_json(self, status: int, payload: dict) -> None:
+    def _send_json(self, status: int, payload: dict, extra_headers: dict[str, str] | None = None) -> None:
         body = json.dumps(payload, sort_keys=True, ensure_ascii=True, allow_nan=False).encode("utf-8")
-        self._send(status, body, "application/json; charset=utf-8")
+        self._send(status, body, "application/json; charset=utf-8", extra_headers)
 
-    def _send(self, status: int, body: bytes, content_type: str | None) -> None:
+    def _send(
+        self,
+        status: int,
+        body: bytes,
+        content_type: str | None,
+        extra_headers: dict[str, str] | None = None,
+    ) -> None:
         self.send_response(status)
         if content_type is not None:
             self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, HEAD, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.send_header("Access-Control-Max-Age", "600")
         self.send_header("X-Content-Type-Options", "nosniff")
@@ -373,6 +421,12 @@ class ConsoleHandler(BaseHTTPRequestHandler):
             "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; "
             "img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
         )
+        if extra_headers:
+            for name, value in extra_headers.items():
+                self.send_header(name, value)
+        if status >= 400:
+            self.close_connection = True
+            self.send_header("Connection", "close")
         self.end_headers()
         if body:
             self.wfile.write(body)

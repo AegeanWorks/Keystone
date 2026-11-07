@@ -16,9 +16,13 @@ class Ray:
     t_max: float = math.inf
 
     def __post_init__(self) -> None:
+        if not isinstance(self.origin, Vec3) or not isinstance(self.direction, Vec3):
+            raise TypeError("ray origin and direction must be Vec3")
+        if not all(math.isfinite(component) for component in (*self.origin, *self.direction)):
+            raise ValueError("ray origin and direction must be finite")
         if self.direction.length_squared() < 1e-12:
             raise ValueError("ray direction must be non-zero")
-        if self.t_max < 0.0:
+        if math.isnan(self.t_max) or self.t_max < 0.0:
             raise ValueError("ray t_max must be non-negative")
 
 
@@ -28,6 +32,10 @@ class AABB:
     half_extents: Vec3
 
     def __post_init__(self) -> None:
+        if not isinstance(self.center, Vec3) or not isinstance(self.half_extents, Vec3):
+            raise TypeError("AABB center and half extents must be Vec3")
+        if not all(math.isfinite(component) for component in (*self.center, *self.half_extents)):
+            raise ValueError("AABB center and half extents must be finite")
         if self.half_extents.x < 0.0 or self.half_extents.y < 0.0 or self.half_extents.z < 0.0:
             raise ValueError("AABB half extents must be non-negative")
 
@@ -61,13 +69,20 @@ class Sphere:
     radius: float
 
     def __post_init__(self) -> None:
+        if not isinstance(self.center, Vec3):
+            raise TypeError("sphere center must be a Vec3")
+        if not all(math.isfinite(component) for component in self.center):
+            raise ValueError("sphere center must be finite")
+        if not isinstance(self.radius, (int, float)) or isinstance(self.radius, bool) or not math.isfinite(self.radius):
+            raise ValueError("sphere radius must be finite")
         if self.radius < 0.0:
             raise ValueError("sphere radius must be non-negative")
 
 
 def ray_aabb(ray: Ray, box: AABB) -> float | None:
-    """Return the nearest positive hit distance, or None."""
-    direction = ray.direction
+    """Return the nearest positive world-space hit distance, or None."""
+    length = ray.direction.length()
+    direction = ray.direction / length
     tmin, tmax = -math.inf, math.inf
     # Slab test without allocating per axis.
     for origin, direction_component, center, half in (
@@ -88,9 +103,9 @@ def ray_aabb(ray: Ray, box: AABB) -> float | None:
         tmax = min(tmax, t2)
         if tmin > tmax:
             return None
-    if tmax < 0.0 or tmin > ray.t_max:
+    if tmax < 0.0 or tmin * length > ray.t_max:
         return None
-    return max(tmin, 0.0)
+    return max(tmin, 0.0) * length
 
 
 def raycast(
@@ -100,27 +115,36 @@ def raycast(
 ) -> RayHit | None:
     """Return the nearest AABB hit, optionally filtered by key and box."""
     best: RayHit | None = None
+    best_tie = ""
     for key, box in colliders:
         if predicate is not None and not predicate(key, box):
             continue
         distance = ray_aabb(ray, box)
-        if distance is not None and (best is None or distance < best.distance):
+        if distance is None:
+            continue
+        tie = str(key)
+        if best is None or (distance, tie) < (best.distance, best_tie):
             best = RayHit(key, box, distance)
+            best_tie = tie
     return best
 
 
 def ray_sphere(ray: Ray, sphere: Sphere) -> float | None:
     offset = ray.origin - sphere.center
-    a = ray.direction.dot(ray.direction)
-    b = 2.0 * offset.dot(ray.direction)
+    if offset.dot(offset) <= sphere.radius * sphere.radius:
+        return 0.0
+    length = ray.direction.length()
+    direction = ray.direction / length
+    b = 2.0 * offset.dot(direction)
     c = offset.dot(offset) - sphere.radius * sphere.radius
-    discriminant = b * b - 4.0 * a * c
+    discriminant = b * b - 4.0 * c
     if discriminant < 0.0:
         return None
     root = math.sqrt(discriminant)
-    for t in ((-b - root) / (2.0 * a), (-b + root) / (2.0 * a)):
-        if 0.0 <= t <= ray.t_max:
-            return t
+    for t in ((-b - root) / 2.0, (-b + root) / 2.0):
+        distance = t * length
+        if 0.0 <= distance <= ray.t_max:
+            return distance
     return None
 
 

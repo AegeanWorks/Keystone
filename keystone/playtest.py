@@ -14,6 +14,7 @@ an ``unknown`` fairness verdict, never a false ``fair``.
 
 from __future__ import annotations
 
+import copy
 import math as _math
 import random as _random
 import time as _time
@@ -130,6 +131,8 @@ def run_bot(
         raise TypeError("factory must be callable")
     if frames < 0:
         raise ValueError("frames cannot be negative")
+    if isinstance(seed, bool) or not isinstance(seed, int):
+        raise TypeError("seed must be an integer")
     if not _math.isfinite(step) or step <= 0.0:
         raise ValueError("step must be positive")
     if not _math.isfinite(max_wall_seconds) or max_wall_seconds <= 0.0:
@@ -191,7 +194,7 @@ def run_bot(
                 final_of_frame = snapshot()
                 if not isinstance(final_of_frame, Mapping):
                     raise TypeError("game snapshot() must return a mapping")
-                snapshots.append(dict(final_of_frame))
+                snapshots.append(copy.deepcopy(dict(final_of_frame)))
             if outcome in TERMINAL_OUTCOMES:
                 break
         try:
@@ -538,6 +541,8 @@ def validate_fairness(
 
     def _absorb(transcript: Mapping[str, Any], label: str) -> None:
         nonlocal budget_exhausted
+        if transcript.get("outcome") == "win":
+            witnessed.append((label, int(transcript.get("steps_used", 0))))
         for action in transcript.get("actions", []):
             seen.add(stable_hash(action))
             if len(seen) >= max_states:
@@ -553,8 +558,6 @@ def validate_fairness(
                         return
         else:
             seen.add(stable_hash(transcript.get("final")))
-        if transcript.get("outcome") == "win":
-            witnessed.append((label, int(transcript.get("steps_used", 0))))
 
     reference = list(reference_actions) if reference_actions is not None else None
     if reference is not None:

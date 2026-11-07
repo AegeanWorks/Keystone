@@ -115,6 +115,52 @@ class AudioTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             Mixer().play(sine(440.0, 0.02), bus="sfx_typo")
 
+    def test_non_finite_audio_values_are_rejected(self):
+        for bad in (float("nan"), float("inf"), float("-inf")):
+            with self.assertRaises(ValueError):
+                sine(bad, 0.01)
+            with self.assertRaises(ValueError):
+                square(bad, 0.01)
+            with self.assertRaises(ValueError):
+                AudioClip(samples=(bad,))
+            with self.assertRaises(ValueError):
+                AudioClip(samples=(0.1,)).with_gain(bad)
+            with self.assertRaises(ValueError):
+                Mixer(sample_rate=bad)
+            with self.assertRaises(ValueError):
+                Mixer().play(AudioClip(samples=(0.1,)), gain=bad)
+            with self.assertRaises(ValueError):
+                Mixer().play(AudioClip(samples=(0.1,)), pitch=bad)
+
+    def test_audio_clip_normalizes_samples_and_rate(self):
+        clip = AudioClip(samples=[0.1, -0.2], sample_rate=8000)
+        self.assertIsInstance(clip.samples, tuple)
+        with self.assertRaises((TypeError, ValueError)):
+            AudioClip(samples=(0.1,), sample_rate=22050.5)  # type: ignore[arg-type]
+        with self.assertRaises((TypeError, ValueError)):
+            AudioClip(samples=(0.1,), sample_rate=True)  # type: ignore[arg-type]
+        with self.assertRaises((TypeError, ValueError)):
+            AudioClip.from_dict({"samples": [0.1], "sample_rate": 22050.9})
+
+    def test_mix_clips_rejects_none(self):
+        with self.assertRaises(TypeError):
+            mix_clips(None)  # type: ignore[arg-type]
+
+    def test_read_wav_rejects_truncated_payload(self):
+        import struct
+        import wave
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "truncated.wav"
+            with wave.open(str(path), "wb") as handle:
+                handle.setnchannels(1)
+                handle.setsampwidth(2)
+                handle.setframerate(22050)
+                handle.writeframes(struct.pack("<4h", 0, 1000, -1000, 500))
+            path.write_bytes(path.read_bytes()[:-3])
+            with self.assertRaises(ValueError):
+                read_wav(path)
+
 
 if __name__ == "__main__":
     unittest.main()

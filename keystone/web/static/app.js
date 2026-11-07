@@ -61,10 +61,13 @@ async function api(path, options = {}) {
 }
 
 function triangleCount(scene) {
-  return Object.values(scene.meshes || {}).reduce(
-    (total, mesh) => total + Math.floor((mesh.indices || []).length / 3),
-    0,
-  );
+  return (scene.nodes || []).reduce((total, node) => {
+    if (!node.visible || !node.mesh) {
+      return total;
+    }
+    const mesh = (scene.meshes || {})[node.mesh];
+    return total + Math.floor(((mesh && mesh.indices) || []).length / 3);
+  }, 0);
 }
 
 function showScene(scene) {

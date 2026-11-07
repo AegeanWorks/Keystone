@@ -122,6 +122,71 @@ class InputMapTest(unittest.TestCase):
         with self.assertRaises((TypeError, ValueError)):
             ActionState.from_dict({"pointer": "ab"})
 
+    def test_action_state_rejects_non_finite_and_coerced_values(self):
+        for payload in (
+            {"forward": float("nan")},
+            {"right": float("inf")},
+            {"look_yaw": float("-inf")},
+            {"pointer": [float("nan"), 0.0]},
+            {"forward": True},
+            {"forward": "1.0"},
+            {"mouse_clicked": "false"},
+            {"mouse_clicked": 1},
+            {"unknown": 1.0},
+        ):
+            with self.assertRaises((TypeError, ValueError), msg=repr(payload)):
+                ActionState.from_dict(payload)
+        with self.assertRaises((TypeError, ValueError)):
+            ActionState(forward=float("nan"))
+        with self.assertRaises((TypeError, ValueError)):
+            ActionState(pointer=(0.0, float("inf")))
+        with self.assertRaises(TypeError):
+            ActionState(mouse_clicked="false")  # type: ignore[arg-type]
+
+    def test_context_round_trip_preserves_isolation(self):
+        mapping = InputMap(contexts={"menu": {}})
+        mapping.bind("dash", "j")
+        mapping.bind("spell", "r", context="menu")
+        document = mapping.to_dict()
+        restored = InputMap.from_dict(document)
+        self.assertEqual(restored.to_dict(), document)
+        restored.set_context("menu")
+        self.assertNotIn("dash", restored.bindings)
+        self.assertEqual(restored.bindings["spell"], "r")
+        restored.set_context("gameplay")
+        self.assertEqual(restored.bindings["dash"], "j")
+        self.assertNotIn("spell", restored.bindings)
+
+    def test_constructor_validates_bindings_and_tuning(self):
+        for bad in ({"": "w"}, {"forward": ""}, {"forward": 5}, {1: "w"}):
+            with self.assertRaises((TypeError, ValueError), msg=repr(bad)):
+                InputMap(bad)  # type: ignore[arg-type]
+        for kwargs in (
+            {"look_speed": "fast"},
+            {"look_speed": float("nan")},
+            {"look_speed": float("inf")},
+            {"mouse_sensitivity": "fast"},
+            {"mouse_sensitivity": float("nan")},
+        ):
+            with self.assertRaises((TypeError, ValueError), msg=repr(kwargs)):
+                InputMap(**kwargs)  # type: ignore[arg-type]
+
+    def test_mouse_setter_is_a_noop_when_unchanged(self):
+        context = FakeContext()
+        mapping = InputMap()
+        mapping.sample(context)
+        context.pointer = (10.0, 0.0)
+        mapping.set_mouse_enabled(True)
+        self.assertGreater(mapping.sample(context).look_yaw, 0.0)
+        mapping.set_look_enabled(False)
+        context.pointer = (20.0, 0.0)
+        self.assertEqual(mapping.sample(context).look_yaw, 0.0)
+        mapping.set_look_enabled(True)
+        context.pointer = (30.0, 0.0)
+        self.assertEqual(mapping.sample(context).look_yaw, 0.0)  # cursor warp guard
+        context.pointer = (40.0, 0.0)
+        self.assertGreater(mapping.sample(context).look_yaw, 0.0)
+
     def test_bind_rejects_blank_context(self):
         with self.assertRaises(ValueError):
             InputMap().bind("dash", "x", context="")

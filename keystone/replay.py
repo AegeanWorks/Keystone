@@ -15,7 +15,11 @@ FIXED_STEP = 1.0 / 60.0
 
 
 def stable_hash(payload: object) -> str:
-    text = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
+    """Hash a JSON-safe payload deterministically; reject process-local values."""
+    try:
+        text = json.dumps(payload, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    except (TypeError, ValueError) as exc:
+        raise type(exc)(f"stable_hash requires JSON-safe finite values: {exc}") from exc
     return hashlib.blake2b(text.encode("utf-8"), digest_size=16).hexdigest()
 
 
@@ -24,6 +28,19 @@ class CommandLog:
     seed: int
     step: float = FIXED_STEP
     frames: list[dict] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if isinstance(self.seed, bool) or not isinstance(self.seed, int):
+            raise TypeError("command-log seed must be an integer")
+        if isinstance(self.step, bool) or not isinstance(self.step, (int, float)):
+            raise TypeError("command-log step must be a real number")
+        self.step = float(self.step)
+        if not math.isfinite(self.step) or self.step <= 0.0:
+            raise ValueError("command-log step must be a positive finite number")
+        if not isinstance(self.frames, list):
+            raise TypeError("command-log frames must be a list")
+        if any(not isinstance(frame, dict) for frame in self.frames):
+            raise TypeError("command-log frames must be mappings")
 
     def record(self, actions: ActionState) -> None:
         self.frames.append(actions.to_dict())

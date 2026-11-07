@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import TypeVar
@@ -12,6 +13,14 @@ from keystone.math3d import Mat4, Quat, Vec3
 T = TypeVar("T")
 
 
+def _finite_vec3(value: object, label: str) -> Vec3:
+    if not isinstance(value, Vec3):
+        raise TypeError(f"{label} must be a Vec3")
+    if not all(math.isfinite(component) for component in (value.x, value.y, value.z)):
+        raise ValueError(f"{label} must contain finite components")
+    return value
+
+
 @dataclass(frozen=True, slots=True)
 class Transform:
     """Translation, rotation and non-uniform scale composed as T * R * S."""
@@ -19,6 +28,16 @@ class Transform:
     position: Vec3 = Vec3(0.0, 0.0, 0.0)
     rotation: Quat = Quat()
     scale: Vec3 = Vec3(1.0, 1.0, 1.0)
+
+    def __post_init__(self) -> None:
+        _finite_vec3(self.position, "transform position")
+        _finite_vec3(self.scale, "transform scale")
+        if not isinstance(self.rotation, Quat):
+            raise TypeError("transform rotation must be a Quat")
+        if not all(math.isfinite(component) for component in (self.rotation.w, self.rotation.x, self.rotation.y, self.rotation.z)):
+            raise ValueError("transform rotation must contain finite components")
+        if self.rotation.w ** 2 + self.rotation.x ** 2 + self.rotation.y ** 2 + self.rotation.z ** 2 < 1e-12:
+            raise ValueError("transform rotation must be a non-zero quaternion")
 
     def matrix(self) -> Mat4:
         return (
@@ -45,6 +64,21 @@ class Node:
     components: dict[type, object] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        if not isinstance(self.name, str):
+            raise TypeError("node name must be a string")
+        if not isinstance(self.transform, Transform):
+            raise TypeError("node transform must be a Transform")
+        if not isinstance(self.visible, bool):
+            raise TypeError("node visible must be a boolean")
+        if self.parent is not None and not isinstance(self.parent, Node):
+            raise TypeError("node parent must be a Node or None")
+        if isinstance(self.children, (str, bytes)) or not isinstance(self.children, (list, tuple)):
+            raise TypeError("node children must be a list of Node instances")
+        children = list(self.children)
+        for child in children:
+            if not isinstance(child, Node):
+                raise TypeError("node children must be a list of Node instances")
+        self.children = children
         if not isinstance(self.id, str):
             raise TypeError("node id must be a string")
         if self.id and not self.id.strip():
@@ -63,6 +97,22 @@ class Node:
                 raise TypeError("component keys must be types")
             if not isinstance(component_value, component_type):
                 raise TypeError("component value must match its key type")
+        if self.parent is not None:
+            if self.parent is self:
+                raise ValueError("a node cannot be its own parent")
+            ancestor = self.parent
+            while ancestor is not None:
+                if ancestor is self:
+                    raise ValueError("node parent chain would create a cycle")
+                ancestor = ancestor.parent
+            if self not in self.parent.children:
+                self.parent.children.append(self)
+        for child in self.children:
+            if child is self:
+                raise ValueError("a node cannot be its own child")
+            if child.parent is not None and child.parent is not self:
+                raise ValueError("child node already has a different parent")
+            child.parent = self
 
     def add_tag(self, tag: str) -> None:
         if not isinstance(tag, str) or not tag:
@@ -137,16 +187,30 @@ class Node:
         return False
 
     def world_matrix(self) -> Mat4:
-        local = self.transform.matrix()
-        return self.parent.world_matrix() * local if self.parent else local
+        chain: list[Node] = []
+        node: Node | None = self
+        while node is not None:
+            chain.append(node)
+            node = node.parent
+        matrix = Mat4.identity()
+        for item in reversed(chain):
+            matrix = matrix * item.transform.matrix()
+        return matrix
 
     def world_visible(self) -> bool:
-        return self.visible and (self.parent is None or self.parent.world_visible())
+        node: Node | None = self
+        while node is not None:
+            if not node.visible:
+                return False
+            node = node.parent
+        return True
 
     def traverse(self) -> Iterator[Node]:
-        yield self
-        for child in self.children:
-            yield from child.traverse()
+        stack = [self]
+        while stack:
+            node = stack.pop()
+            yield node
+            stack.extend(reversed(list(node.children)))
 
 
 @dataclass(frozen=True, slots=True)
@@ -158,6 +222,14 @@ class DirectionalLight:
     intensity: float = 1.0
 
     def __post_init__(self) -> None:
+        _finite_vec3(self.direction, "directional light direction")
+        _finite_vec3(self.color, "directional light color")
+        if not isinstance(self.intensity, (int, float)) or isinstance(self.intensity, bool):
+            raise TypeError("directional light intensity must be a number")
+        if not math.isfinite(self.intensity):
+            raise ValueError("directional light intensity must be finite")
+        if self.intensity < 0.0:
+            raise ValueError("directional light intensity must be non-negative")
         if self.direction.length_squared() < 1e-12:
             raise ValueError("directional light needs a non-zero direction")
 
@@ -178,6 +250,14 @@ class PointLight:
     radius: float = 10.0
 
     def __post_init__(self) -> None:
+        _finite_vec3(self.position, "point light position")
+        _finite_vec3(self.color, "point light color")
+        if not isinstance(self.radius, (int, float)) or isinstance(self.radius, bool):
+            raise TypeError("point light radius must be a number")
+        if not isinstance(self.intensity, (int, float)) or isinstance(self.intensity, bool):
+            raise TypeError("point light intensity must be a number")
+        if not math.isfinite(self.radius) or not math.isfinite(self.intensity):
+            raise ValueError("point light radius and intensity must be finite")
         if self.radius <= 0.0:
             raise ValueError("point light radius must be positive")
         if self.intensity < 0.0:
@@ -312,6 +392,12 @@ class Scene:
             if node.id:
                 used.add(node.id)
         return used
+
+    def restore_next_id(self, value: int) -> None:
+        """Advance the deterministic ID counter after loading a snapshot."""
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise ValueError("next id must be a positive integer")
+        self._next_id = max(self._next_id, value)
 
     def _prepare(self, node: Node) -> None:
         used = self._used_ids(exclude=node)

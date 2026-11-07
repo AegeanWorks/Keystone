@@ -152,7 +152,7 @@ events = TriggerTracker().update(body.box(), [TriggerVolume("door", AABB(Vec3(0,
 hit = raycast(Ray(Vec3(), Vec3(0, 0, 1)), [("wall", wall)])
 ```
 
-`SpatialGrid` keeps a uniform grid of AABB proxies with exact overlaps in insertion order; `cell_size` trades speed, not correctness. `CharacterController` moves an AABB body with wish velocity, gravity, wall/floor response, stair step-up, slope-limited climb and platform carry; capsules and solvers excluded. `TriggerTracker` reports sorted `entered`/`exited`/`active` names; `raycast()` returns the nearest hit with an optional filter.
+`SpatialGrid` keeps a uniform grid of AABB proxies with exact overlaps in insertion order; `cell_size` trades speed, not correctness. `CharacterController` moves an AABB body with wish velocity, gravity, wall/floor response, stair step-up, slope-limited climb and platform carry; capsules and solvers excluded. `TriggerTracker` reports sorted `entered`/`exited` tuples and an immutable `active` set; `raycast()` returns the nearest hit with an optional filter.
 
 ### Optional game UI
 
@@ -282,7 +282,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 python -m keystone --describe
 ```
 
-The JSON response contains the game name, `actions()` schema, current `snapshot()`, capabilities (`simulate`, `render`, `pbr`, `agents`, `profiler`, `input_bindings`, `input_contexts`, `audio`, `batching`, `static_merge`, `animation`, `animation_events`, `animation_blend`, `replay`, `asset_inventory`, `particles`, `inspector`, `human_ui`, `game_ui`, `web`) and the versioned report and scene schemas. It is the first call an AI client should make.
+The JSON response contains the game name, `actions()` schema, current `snapshot()`, capabilities (`simulate`, `render`, `shadows`, `srgb`, `post`, `bloom`, `sprites`, `culling`, `skin`, `pbr`, `agents`, `profiler`, `input_bindings`, `input_contexts`, `audio`, `batching`, `static_merge`, `instancing`, `animation`, `animation_events`, `animation_blend`, `replay`, `asset_inventory`, `particles`, `inspector`, `playtest`, `human_ui`, `game_ui`, `web`) and versions.
 
 ### Verify determinism and visual regressions
 

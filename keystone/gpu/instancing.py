@@ -95,13 +95,17 @@ def plan_instanced(scene: Scene) -> dict:
                 "matrices": [list(model.flat()) for model in group["models"]],
             }
         )
-    instanced = sum(len(group["nodes"]) for group in groups if len(group["nodes"]) >= 2)
+    instanced_groups = [
+        group for group in groups
+        if len(group["nodes"]) >= 2 and not bool(getattr(group["mesh"], "skinned", False))
+    ]
+    instanced = sum(len(group["nodes"]) for group in instanced_groups)
     return {
         "schema": 1,
         "groups": len(groups),
         "draw_calls": nodes_total,
-        "instanced_calls": len(groups),
-        "saved_calls": max(0, nodes_total - len(groups)),
+        "instanced_calls": len(instanced_groups),
+        "saved_calls": sum(len(group["nodes"]) - 1 for group in instanced_groups),
         "instances": instanced,
         "triangles": sum(group["triangles"] for group in groups),
         "batches": batches,

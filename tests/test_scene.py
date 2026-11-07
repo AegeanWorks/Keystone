@@ -267,6 +267,58 @@ class SceneTest(unittest.TestCase):
         light = DirectionalLight(direction=Vec3(0, -2, 0))
         self.assertAlmostEqual(light.unit_direction().y, -1.0)
 
+    def test_node_validates_public_construction(self):
+        with self.assertRaises(TypeError):
+            Node(5)  # type: ignore[arg-type]
+        with self.assertRaises(TypeError):
+            Node("n", transform=None)  # type: ignore[arg-type]
+        with self.assertRaises(TypeError):
+            Node("n", visible="false")  # type: ignore[arg-type]
+
+    def test_node_parent_and_children_are_reciprocal(self):
+        parent = Node("p")
+        child = Node("c", parent=parent)
+        self.assertEqual(parent.children, [child])
+        self.assertIs(child.parent, parent)
+        parent2 = Node("p2", children=[Node("c2")])
+        self.assertIs(parent2.children[0].parent, parent2)
+
+    def test_transform_rejects_non_finite_and_zero_rotation(self):
+        with self.assertRaises(ValueError):
+            Transform(position=Vec3(float("nan"), 0.0, 0.0))
+        with self.assertRaises(ValueError):
+            Transform(rotation=Quat(0.0, 0.0, 0.0, 0.0))
+
+    def test_traverse_is_iterative_and_tolerates_removal(self):
+        scene = Scene()
+        scene.add(Node("a", id="a"))
+        scene.add(Node("b", id="b"))
+        scene.add(Node("c", id="c"))
+        seen = []
+        for node in scene.traverse():
+            seen.append(node.name)
+            if node.name == "a":
+                node.parent.remove_child(node)
+        self.assertEqual(seen, ["", "a", "b", "c"])
+
+        root = Node("root")
+        current = root
+        for index in range(2000):
+            child = Node(f"n{index}")
+            current.add_child(child)
+            current = child
+        self.assertEqual(sum(1 for _ in root.traverse()), 2001)
+
+    def test_lights_reject_non_finite_and_negative_values(self):
+        with self.assertRaises(ValueError):
+            DirectionalLight(direction=Vec3(float("nan"), 0.0, 0.0))
+        with self.assertRaises(ValueError):
+            DirectionalLight(intensity=-1.0)
+        with self.assertRaises(ValueError):
+            PointLight(radius=float("nan"))
+        with self.assertRaises(ValueError):
+            PointLight(intensity=float("inf"))
+
 
 if __name__ == "__main__":
     unittest.main()

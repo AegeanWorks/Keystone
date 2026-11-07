@@ -77,8 +77,8 @@ class HumanOverlay:
             y = button_y + index * (button_height + gap)
             hovered = (
                 state.pointer is not None
-                and left + pad <= state.pointer[0] <= left + pad + button_width
-                and y <= state.pointer[1] <= y + button_height
+                and left + pad <= state.pointer[0] < left + pad + button_width
+                and y <= state.pointer[1] < y + button_height
             )
             button(canvas, left + pad, y, button_width, button_height, item.label, scale, index == self.menu.index, hovered)
             canvas.add_button(

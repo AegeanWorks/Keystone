@@ -348,6 +348,65 @@ class ResponseTest(unittest.TestCase):
         self.assertAlmostEqual(pushed.position.y, 0.5)
         self.assertEqual(pushed.velocity.y, 0.0)
 
+    def test_deep_interior_motion_ejects_through_nearest_face(self):
+        from keystone.physics import AABB
+
+        system = self._still_system()
+        system.burst("still", 1)
+        box = AABB(Vec3(0, 0, 0), Vec3(5, 5, 5))
+        system.particles[0] = Particle(Vec3(4.4, 0, 0), Vec3(10, 0, 0), 0.0, 10.0, 1.0, 0, "still")
+        system.step(0.1, [box])
+        pushed = system.particles[0]
+        self.assertGreater(pushed.position.x, 5.0)
+        self.assertLess(pushed.position.x, 5.001)
+
+    def test_particle_fields_reject_non_finite_values(self):
+        with self.assertRaises(ValueError):
+            Particle(lifetime=float("nan"))
+        with self.assertRaises(ValueError):
+            Particle(age=float("inf"))
+        with self.assertRaises(ValueError):
+            Particle(position=Vec3(float("nan"), 0.0, 0.0))
+        with self.assertRaises(ValueError):
+            Emitter(rate=float("nan"))
+        with self.assertRaises(ValueError):
+            Emitter(lifetime=float("inf"))
+        with self.assertRaises(ValueError):
+            Emitter(gravity=Vec3(float("nan"), 0.0, 0.0))
+        with self.assertRaises(ValueError):
+            ParticleSystem(max_particles=2.5)  # type: ignore[arg-type]
+        with self.assertRaises(ValueError):
+            ParticleSystem(time=float("nan"))
+
+    def test_emitter_from_dict_rejects_malformed_payloads(self):
+        for payload in (
+            {"direction": [1.0, 2.0]},
+            {"direction": None},
+            {"direction": "123"},
+            {"name": None},
+            {"seed": 3.7},
+            {"rate": "10"},
+            {"gravity": [0.0, float("nan"), 0.0]},
+        ):
+            with self.assertRaises((TypeError, ValueError), msg=repr(payload)):
+                Emitter.from_dict(payload)
+
+    def test_spawn_rejects_non_vec3_origin_and_system_rejects_bad_emitters(self):
+        emitter = Emitter()
+        with self.assertRaises(TypeError):
+            emitter.spawn(0, (0.0, 1.0, 2.0))  # type: ignore[arg-type]
+        with self.assertRaises((TypeError, ValueError)):
+            ParticleSystem(emitters={"bad": object()})  # type: ignore[dict-item]
+        with self.assertRaises(ValueError):
+            ParticleSystem(emitters={"other": Emitter(name="e")})
+
+    def test_step_rejects_time_overflow(self):
+        system = ParticleSystem()
+        system.add(Emitter(name="e"))
+        system.step(1e308)
+        with self.assertRaises(ValueError):
+            system.step(1e308)
+
 
 class SlideTest(unittest.TestCase):
     def test_sliding_along_face_preserves_tangential_motion(self):

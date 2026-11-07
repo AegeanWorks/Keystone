@@ -42,10 +42,10 @@ def load_skins(
                 buffer_views,
                 buffers,
             )
-            if matrices_raw is None or len(matrices_raw) != len(joints):
-                raise ValueError(f"glTF skin {skin_index} inverse bind count does not match joint count")
+            if matrices_raw is None or len(matrices_raw) < len(joints):
+                raise ValueError(f"glTF skin {skin_index} inverse bind count is smaller than the joint count")
             parsed: list[tuple[float, ...]] = []
-            for matrix in matrices_raw:
+            for matrix in matrices_raw[: len(joints)]:
                 if not isinstance(matrix, (tuple, list)) or len(matrix) != 16:
                     raise ValueError(f"glTF skin {skin_index} inverse bind matrices must be MAT4")
                 values = tuple(float(value) for value in matrix)

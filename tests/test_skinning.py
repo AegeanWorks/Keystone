@@ -28,6 +28,18 @@ def _quad_mesh(**overrides):
 
 
 class SkinValidationTest(unittest.TestCase):
+    def test_skinned_normals_use_inverse_transpose(self):
+        bone = Mat4.scale(2.0, 1.0, 1.0)
+        _, normal = skin_point(
+            Vec3(0.0, 0.0, 0.0),
+            Vec3(1.0, 1.0, 0.0),
+            (0,),
+            (1.0,),
+            (bone,),
+        )
+        tangent = bone.transform_direction(Vec3(1.0, -1.0, 0.0)).normalized()
+        self.assertAlmostEqual(normal.dot(tangent), 0.0, places=6)
+
     def test_unskinned_meshes_stay_legacy(self):
         mesh = MeshData(
             positions=((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)),

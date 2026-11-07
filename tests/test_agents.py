@@ -20,6 +20,8 @@ class AgentsTest(unittest.TestCase):
             parse_actions([{"unknown_axis": 1.0}])
         with self.assertRaises(ValueError):
             parse_actions([])
+        with self.assertRaises(ValueError):
+            parse_actions([{"forward": float("nan")}])
 
     def test_observe_is_deterministic_and_auditable(self):
         first = observe(CubeDemo(), frames=4, actions=[ActionState(forward=1.0)])
@@ -45,6 +47,47 @@ class AgentsTest(unittest.TestCase):
         self.assertTrue(trail.verify())
         trail.entries[0]["payload"] = {"frames": 999}
         self.assertFalse(trail.verify())
+
+    def test_audit_trail_loads_and_detects_truncation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "audit.json"
+            AuditTrail(path).record("simulate", {"frames": 4})
+            second = AuditTrail(path)
+            second.record("render", {"nodes": 6})
+            self.assertEqual(len(second.entries), 2)
+            self.assertTrue(second.verify())
+            del second.entries[-1]
+            self.assertFalse(second.verify())
+
+    def test_observe_builds_scene_before_snapshot(self):
+        from keystone.scene import Scene
+
+        class BuildFirst:
+            name = "build-first"
+
+            def __init__(self):
+                self.scene = None
+
+            def build_scene(self):
+                self.scene = Scene()
+                return self.scene
+
+            def update(self, dt, actions):
+                return None
+
+            def snapshot(self):
+                if self.scene is None:
+                    raise RuntimeError("snapshot before build")
+                return {"time": 0.0}
+
+            def actions(self):
+                return {}
+
+            def status(self):
+                return "build-first"
+
+        observation = observe(BuildFirst(), frames=1)
+        self.assertEqual(observation["game"], "build-first")
 
     def test_input_bindings_round_trip(self):
         bindings = InputMap()

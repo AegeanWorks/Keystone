@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping
 from typing import Any
 
+from keystone.camera import MAX_PITCH
 from keystone.math3d import Quat, Vec3
 from keystone.scene import (
     BloomSettings,
@@ -17,6 +19,7 @@ from keystone.scene import (
     Scene,
     ShadowSettings,
     SpriteSettings,
+    Transform,
 )
 
 SCENE_SNAPSHOT_VERSION = 1
@@ -31,7 +34,10 @@ def _vec3_from_value(value: Any, label: str, default: Vec3) -> Vec3:
         return default
     if not (isinstance(value, (list, tuple)) and len(value) == 3):
         raise ValueError(f"{label} must have three values")
-    return Vec3(float(value[0]), float(value[1]), float(value[2]))
+    vector = Vec3(float(value[0]), float(value[1]), float(value[2]))
+    if not all(math.isfinite(component) for component in (vector.x, vector.y, vector.z)):
+        raise ValueError(f"{label} must contain finite values")
+    return vector
 
 
 def _light_to_dict(light: DirectionalLight) -> dict[str, Any]:
@@ -69,6 +75,9 @@ def _point_light_from_dict(data: Mapping[str, Any]) -> PointLight:
 
 
 def _transform_to_dict(transform: Any) -> dict[str, Any]:
+    if not isinstance(transform, Transform):
+        raise TypeError("node transform must be a Transform")
+    Transform(transform.position, transform.rotation, transform.scale)
     rotation = transform.rotation
     return {
         "position": [transform.position.x, transform.position.y, transform.position.z],
@@ -175,6 +184,11 @@ def scene_to_dict(scene: Scene, registry: Any = None) -> dict[str, Any]:
         )
     return {
         "schema": SCENE_SNAPSHOT_VERSION,
+        "root": {
+            "transform": _transform_to_dict(scene.root.transform),
+            "visible": scene.root.visible,
+        },
+        "next_id": scene._next_id,
         "camera": {
             "position": _vec3_to_list(scene.camera.position),
             "yaw": scene.camera.yaw,
@@ -206,9 +220,21 @@ def scene_from_dict(data: Mapping[str, Any], registry: Any = None) -> Scene:
     if not isinstance(data, Mapping):
         raise TypeError("scene snapshot must be a mapping")
     version = data.get("schema", data.get("version", SCENE_SNAPSHOT_VERSION))
-    if version != SCENE_SNAPSHOT_VERSION:
+    if isinstance(version, bool) or not isinstance(version, int) or version != SCENE_SNAPSHOT_VERSION:
         raise ValueError(f"unsupported scene snapshot version {version}")
+    if "nodes" not in data:
+        raise ValueError("scene snapshot must contain a nodes list")
     scene = Scene()
+    root = data.get("root", {})
+    if root is not None:
+        if not isinstance(root, Mapping):
+            raise TypeError("scene snapshot root must be a mapping")
+        if "transform" in root:
+            scene.root.transform = _transform_from_dict(root["transform"])
+        if "visible" in root:
+            if not isinstance(root["visible"], bool):
+                raise TypeError("scene snapshot root visible must be a boolean")
+            scene.root.visible = root["visible"]
     camera = data.get("camera", {})
     if camera is not None and not isinstance(camera, Mapping):
         raise TypeError("scene snapshot camera must be a mapping")
@@ -221,6 +247,13 @@ def scene_from_dict(data: Mapping[str, Any], registry: Any = None) -> Scene:
         scene.camera.fov_y = float(camera.get("fov_y", scene.camera.fov_y))
         scene.camera.near = float(camera.get("near", scene.camera.near))
         scene.camera.far = float(camera.get("far", scene.camera.far))
+        if not all(
+            math.isfinite(value)
+            for value in (scene.camera.yaw, scene.camera.pitch, scene.camera.fov_y, scene.camera.near, scene.camera.far)
+        ):
+            raise ValueError("scene snapshot camera values must be finite")
+        scene.camera.pitch = max(-MAX_PITCH, min(MAX_PITCH, scene.camera.pitch))
+        scene.camera.projection_matrix(1.0)
     environment = data.get("environment", {})
     if environment is not None and not isinstance(environment, Mapping):
         raise TypeError("scene snapshot environment must be a mapping")
@@ -233,6 +266,8 @@ def scene_from_dict(data: Mapping[str, Any], registry: Any = None) -> Scene:
         )
         scene.sky = _vec3_from_value(environment.get("sky"), "environment sky", scene.sky)
         scene.fog_density = float(environment.get("fog_density", scene.fog_density))
+        if not math.isfinite(scene.fog_density) or scene.fog_density < 0.0:
+            raise ValueError("environment fog_density must be finite and non-negative")
         light = environment.get("light")
         if light is not None:
             if not isinstance(light, Mapping):
@@ -276,6 +311,9 @@ def scene_from_dict(data: Mapping[str, Any], registry: Any = None) -> Scene:
     raw_nodes = data.get("nodes", [])
     if not isinstance(raw_nodes, (list, tuple)):
         raise TypeError("scene snapshot nodes must be a list")
+    next_id = data.get("next_id")
+    if next_id is not None and (isinstance(next_id, bool) or not isinstance(next_id, int) or next_id < 1):
+        raise ValueError("scene snapshot next_id must be a positive integer")
     seen_ids: set[str] = set()
     for raw in raw_nodes:
         if not isinstance(raw, Mapping):
@@ -296,7 +334,10 @@ def scene_from_dict(data: Mapping[str, Any], registry: Any = None) -> Scene:
             raise ValueError("scene snapshot node layer must be a non-empty string")
         node = Node(name, id=node_id, layer=layer)
         node.transform = _transform_from_dict(raw.get("transform", {}))
-        node.visible = bool(raw.get("visible", True))
+        visible = raw.get("visible", True)
+        if not isinstance(visible, bool):
+            raise TypeError("scene snapshot node visible must be a boolean")
+        node.visible = visible
         tags = raw.get("tags", [])
         if not isinstance(tags, (list, tuple)):
             raise TypeError("scene snapshot node tags must be a list")
@@ -327,4 +368,6 @@ def scene_from_dict(data: Mapping[str, Any], registry: Any = None) -> Scene:
                 f"scene snapshot node {node_id!r} references unknown parent {parent_id!r}"
             )
         by_id[parent_id].add_child(node)
+    if next_id is not None:
+        scene.restore_next_id(next_id)
     return scene

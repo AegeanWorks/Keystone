@@ -25,6 +25,23 @@ POINT_SKIN = 1e-9
 REST_SPEED = 0.05
 
 
+def _finite(value: object, label: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise TypeError(f"{label} must be a real number")
+    result = float(value)
+    if not math.isfinite(result):
+        raise ValueError(f"{label} must be finite")
+    return result
+
+
+def _vec3_value(value: object, label: str) -> Vec3:
+    if not isinstance(value, Vec3):
+        raise TypeError(f"{label} must be a Vec3")
+    if not all(math.isfinite(component) for component in (value.x, value.y, value.z)):
+        raise ValueError(f"{label} must contain finite components")
+    return value
+
+
 def _move_point_flat(
     px: float, py: float, pz: float, axis: int, amount: float, flat: list[tuple[float, float, float, float, float, float]]
 ) -> tuple[float, bool]:
@@ -67,12 +84,24 @@ def _move_point_flat(
             low = cz - hz
             high = cz + hz
             deep = cx - hx < px < cx + hx and cy - hy < py < cy + hy
-        if amount > 0.0:
-            if (end >= low - POINT_SKIN and start <= low + POINT_SKIN) or (deep and low < start < high):
+        if deep and low < start < high:
+            low_distance = start - low
+            high_distance = high - start
+            if low_distance < high_distance:
+                end = low - POINT_SKIN
+            elif high_distance < low_distance:
+                end = high + POINT_SKIN
+            elif amount > 0.0:
+                end = low - POINT_SKIN
+            else:
+                end = high + POINT_SKIN
+            hit = True
+        elif amount > 0.0:
+            if end >= low - POINT_SKIN and start <= low + POINT_SKIN:
                 end = min(end, low - POINT_SKIN)
                 hit = True
         else:
-            if (end <= high + POINT_SKIN and start >= high - POINT_SKIN) or (deep and low < start < high):
+            if end <= high + POINT_SKIN and start >= high - POINT_SKIN:
                 end = max(end, high + POINT_SKIN)
                 hit = True
     return end, hit
@@ -91,12 +120,16 @@ class Particle:
     emitter: str = ""
 
     def __post_init__(self) -> None:
-        if not isinstance(self.position, Vec3) or not isinstance(self.velocity, Vec3):
-            raise TypeError("particle position and velocity must be Vec3")
-        if self.age < 0.0 or self.lifetime <= 0.0:
-            raise ValueError("particle age must be non-negative and lifetime positive")
-        if self.size <= 0.0:
+        _vec3_value(self.position, "particle position")
+        _vec3_value(self.velocity, "particle velocity")
+        if _finite(self.age, "particle age") < 0.0:
+            raise ValueError("particle age must be non-negative")
+        if _finite(self.lifetime, "particle lifetime") <= 0.0:
+            raise ValueError("particle lifetime must be positive")
+        if _finite(self.size, "particle size") <= 0.0:
             raise ValueError("particle size must be positive")
+        if isinstance(self.seed, bool) or not isinstance(self.seed, int):
+            raise TypeError("particle seed must be an integer")
 
     def alive(self) -> bool:
         return self.age < self.lifetime
@@ -120,19 +153,37 @@ class Emitter:
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name.strip():
             raise ValueError("emitter name must be a non-blank string")
-        if self.rate < 0.0 or self.lifetime <= 0.0 or self.speed < 0.0:
-            raise ValueError("emitter rate/lifetime/speed must be non-negative with positive lifetime")
-        if self.spread < 0.0 or self.drag < 0.0 or self.size <= 0.0:
-            raise ValueError("emitter spread/drag must be non-negative with positive size")
-        if not isinstance(self.direction, Vec3) or not isinstance(self.gravity, Vec3):
-            raise TypeError("emitter direction and gravity must be Vec3")
+        if _finite(self.rate, "emitter rate") < 0.0:
+            raise ValueError("emitter rate must be non-negative")
+        if _finite(self.lifetime, "emitter lifetime") <= 0.0:
+            raise ValueError("emitter lifetime must be positive")
+        if _finite(self.speed, "emitter speed") < 0.0:
+            raise ValueError("emitter speed must be non-negative")
+        if _finite(self.spread, "emitter spread") < 0.0:
+            raise ValueError("emitter spread must be non-negative")
+        if _finite(self.drag, "emitter drag") < 0.0:
+            raise ValueError("emitter drag must be non-negative")
+        if _finite(self.size, "emitter size") <= 0.0:
+            raise ValueError("emitter size must be positive")
+        _vec3_value(self.direction, "emitter direction")
+        _vec3_value(self.gravity, "emitter gravity")
+        if isinstance(self.seed, bool) or not isinstance(self.seed, int):
+            raise TypeError("emitter seed must be an integer")
 
     def spawn(self, index: int, origin: Vec3 | None = None) -> Particle:
         """Spawn one particle deterministically from the emitter seed and index."""
+        if isinstance(index, bool) or not isinstance(index, int):
+            raise TypeError("particle index must be an integer")
         if index < 0:
             raise ValueError("particle index must be non-negative")
+        if origin is None:
+            base = Vec3()
+        elif isinstance(origin, Vec3):
+            _vec3_value(origin, "particle origin")
+            base = origin
+        else:
+            raise TypeError("particle origin must be a Vec3 or None")
         rng = random.Random((self.seed * 2654435761 + index * 40503) & 0xFFFFFFFF)
-        base = origin if isinstance(origin, Vec3) else Vec3()
         direction = Vec3(
             self.direction.x + rng.uniform(-self.spread, self.spread),
             self.direction.y + rng.uniform(-self.spread, self.spread),
@@ -168,21 +219,36 @@ class Emitter:
     def from_dict(cls, data: dict) -> Emitter:
         if not isinstance(data, dict):
             raise TypeError("emitter document must be a mapping")
-        if data.get("schema", 1) != 1:
+        schema = data.get("schema", 1)
+        if isinstance(schema, bool) or not isinstance(schema, int) or schema != 1:
             raise ValueError("unsupported emitter schema")
-        direction = data.get("direction", [0.0, 1.0, 0.0])
-        gravity = data.get("gravity", [0.0, -2.0, 0.0])
+
+        def number(key: str, default: float) -> float:
+            return _finite(data.get(key, default), f"emitter {key}")
+
+        def vector(key: str, default: tuple[float, float, float]) -> Vec3:
+            raw = data.get(key, list(default))
+            if not isinstance(raw, (list, tuple)) or len(raw) != 3:
+                raise ValueError(f"emitter {key} must have three values")
+            return Vec3(*(_finite(component, f"emitter {key}") for component in raw))
+
+        name = data.get("name", "emitter")
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("emitter name must be a non-blank string")
+        seed = data.get("seed", 7)
+        if isinstance(seed, bool) or not isinstance(seed, int):
+            raise TypeError("emitter seed must be an integer")
         return cls(
-            name=str(data.get("name", "emitter")),
-            rate=float(data.get("rate", 10.0)),
-            lifetime=float(data.get("lifetime", 1.0)),
-            speed=float(data.get("speed", 2.0)),
-            spread=float(data.get("spread", 0.5)),
-            direction=Vec3(float(direction[0]), float(direction[1]), float(direction[2])),
-            gravity=Vec3(float(gravity[0]), float(gravity[1]), float(gravity[2])),
-            drag=float(data.get("drag", 0.0)),
-            size=float(data.get("size", 1.0)),
-            seed=int(data.get("seed", 7)),
+            name=name,
+            rate=number("rate", 10.0),
+            lifetime=number("lifetime", 1.0),
+            speed=number("speed", 2.0),
+            spread=number("spread", 0.5),
+            direction=vector("direction", (0.0, 1.0, 0.0)),
+            gravity=vector("gravity", (0.0, -2.0, 0.0)),
+            drag=number("drag", 0.0),
+            size=number("size", 1.0),
+            seed=seed,
         )
 
 
@@ -197,9 +263,16 @@ class ParticleSystem:
     _emitted: int = 0
 
     def __post_init__(self) -> None:
-        if self.max_particles <= 0:
-            raise ValueError("max_particles must be positive")
+        if isinstance(self.max_particles, bool) or not isinstance(self.max_particles, int) or self.max_particles <= 0:
+            raise ValueError("max_particles must be a positive integer")
+        if not math.isfinite(self.time):
+            raise ValueError("particle system time must be finite")
         self.emitters = dict(self.emitters)
+        for name, emitter in self.emitters.items():
+            if not isinstance(emitter, Emitter):
+                raise TypeError("system emitters must be Emitter instances")
+            if name != emitter.name:
+                raise ValueError("emitter table keys must match emitter names")
 
     def add(self, emitter: Emitter) -> None:
         if not isinstance(emitter, Emitter):
@@ -208,6 +281,8 @@ class ParticleSystem:
 
     def burst(self, emitter_name: str, count: int, origin: Vec3 | None = None) -> int:
         """Emit count particles immediately; returns the number actually added."""
+        if isinstance(count, bool) or not isinstance(count, int):
+            raise TypeError("burst count must be an integer")
         if count < 0:
             raise ValueError("burst count must be non-negative")
         emitter = self.emitters.get(emitter_name)
@@ -243,6 +318,8 @@ class ParticleSystem:
             raise ValueError("restitution must be within [0, 1]")
         if not 0.0 <= friction <= 1.0:
             raise ValueError("friction must be within [0, 1]")
+        if not math.isfinite(self.time + dt):
+            raise ValueError("particle system time overflowed")
         boxes = list(colliders)
         for box in boxes:
             if not isinstance(box, AABB):

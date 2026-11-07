@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 from keystone.clock import FixedStepClock
@@ -64,6 +65,10 @@ class Engine:
         self._visible = visible
         self._closed = False
         self._captured = visible
+        self._pending_pressed: frozenset[str] = frozenset()
+        self._pending_clicked = False
+        self._pending_yaw = 0.0
+        self._pending_pitch = 0.0
         if visible:
             self.context.set_cursor_captured(True)
         else:
@@ -78,7 +83,7 @@ class Engine:
     def _set_capture(self, captured: bool) -> None:
         self._captured = captured
         self.context.set_cursor_captured(captured)
-        self.input.set_mouse_enabled(captured)
+        self.input.set_look_enabled(captured)
 
     def _handle_system_actions(self, actions: ActionState) -> None:
         if "quit" in actions.pressed:
@@ -219,9 +224,36 @@ class Engine:
             self._handle_system_actions(actions)
             if self.context.should_close():
                 break
-            if not self.paused:
+            if self.paused:
+                self._pending_pressed = frozenset()
+                self._pending_clicked = False
+                self._pending_yaw = 0.0
+                self._pending_pitch = 0.0
+            else:
+                self._pending_pressed = self._pending_pressed | actions.pressed
+                self._pending_clicked = self._pending_clicked or actions.mouse_clicked
+                self._pending_yaw += actions.look_yaw
+                self._pending_pitch += actions.look_pitch
                 for index, dt in enumerate(steps):
-                    self.game.update(dt, actions if index == 0 else actions.without_pressed())
+                    if index == 0:
+                        step_actions = replace(
+                            actions,
+                            pressed=self._pending_pressed,
+                            mouse_clicked=self._pending_clicked,
+                            look_yaw=self._pending_yaw,
+                            look_pitch=self._pending_pitch,
+                        )
+                        self._pending_pressed = frozenset()
+                        self._pending_clicked = False
+                        self._pending_yaw = 0.0
+                        self._pending_pitch = 0.0
+                    else:
+                        step_actions = replace(
+                            actions.without_pressed(),
+                            look_yaw=0.0,
+                            look_pitch=0.0,
+                        )
+                    self.game.update(dt, step_actions)
                 self._elapsed += sum(steps)
             self.renderer.render(self.scene, self._game_particles())
             self._draw_ui()
@@ -279,7 +311,19 @@ class Engine:
         if self._closed:
             return
         self._closed = True
+        first_error: Exception | None = None
         if self.ui_renderer is not None:
-            self.ui_renderer.release()
-        self.renderer.release()
-        self.context.close()
+            try:
+                self.ui_renderer.release()
+            except Exception as exc:  # noqa: BLE001 - cleanup must still close the context
+                first_error = first_error or exc
+        try:
+            self.renderer.release()
+        except Exception as exc:  # noqa: BLE001 - cleanup must still close the context
+            first_error = first_error or exc
+        try:
+            self.context.close()
+        except Exception as exc:  # noqa: BLE001 - surface the first cleanup failure
+            first_error = first_error or exc
+        if first_error is not None:
+            raise first_error

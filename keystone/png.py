@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import os
 import struct
 import zlib
 from pathlib import Path
+
+from keystone.serialization import write_bytes_atomic
 
 SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
@@ -34,8 +35,11 @@ def read_png(path: str | Path) -> tuple[int, int, bytes]:
     width = height = 0
     compressed = bytearray()
     compressed_idat = False
+    saw_iend = False
     while offset + 12 <= len(data):
         length = struct.unpack(">I", data[offset : offset + 4])[0]
+        if length > len(data) - offset - 12:
+            raise ValueError("PNG chunk exceeds the file length")
         kind = data[offset + 4 : offset + 8]
         payload = data[offset + 8 : offset + 8 + length]
         stored_crc = struct.unpack(">I", data[offset + 8 + length : offset + 12 + length])[0]
@@ -53,7 +57,10 @@ def read_png(path: str | Path) -> tuple[int, int, bytes]:
             compressed.extend(payload)
             compressed_idat = True
         elif kind == b"IEND":
+            saw_iend = True
             break
+    if not saw_iend:
+        raise ValueError("PNG has no IEND chunk")
     if width <= 0 or height <= 0 or not compressed_idat:
         raise ValueError("PNG has no valid IHDR/IDAT")
     try:
@@ -113,16 +120,4 @@ def write_png(path: str | Path, width: int, height: int, rgba: bytes, flip_verti
         + _chunk(b"IDAT", zlib.compress(raw, 6))
         + _chunk(b"IEND", b"")
     )
-    target = Path(path)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    temporary = target.with_name(target.name + ".tmp")
-    try:
-        # hygiene: allow binary PNG payload; text encoding does not apply to bytes
-        with temporary.open("wb") as handle:
-            handle.write(data)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, target)
-    finally:
-        if temporary.exists():
-            temporary.unlink()
+    write_bytes_atomic(path, data)

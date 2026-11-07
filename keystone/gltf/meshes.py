@@ -126,7 +126,8 @@ def load_meshes(
             if uvs_raw is not None:
                 for value in uvs_raw:
                     if isinstance(value, (tuple, list)) and len(value) >= 2:
-                        uvs.append((float(value[0]), float(value[1])))
+                        # glTF V=0 is the image top; OpenGL textures are uploaded bottom-up.
+                        uvs.append((float(value[0]), 1.0 - float(value[1])))
                     else:
                         uvs.append((0.0, 0.0))
             if uvs and len(uvs) != len(positions):

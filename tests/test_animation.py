@@ -212,5 +212,54 @@ class ClipDurationTest(unittest.TestCase):
             Track(times=(0.0, 0.0), values=(Vec3(0, 0, 0), Vec3(9, 0, 0)))
 
 
+class AnimationValidationTest(unittest.TestCase):
+    def test_exact_loop_wrap_fires_end_event(self):
+        clip = AnimationClip(name="fx", events=((0.0, "start"), (1.0, "end")))
+        controller = AnimationController()
+        controller.add(clip)
+        controller.play("fx")
+        _, fired = controller.advance_with_events(1.0)
+        self.assertIn("start", fired)
+        self.assertIn("end", fired)
+
+    def test_channel_value_type_must_match_channel(self):
+        rotation = Quat(1.0, 0.0, 0.0, 0.0)
+        track = Track(times=(0.0, 1.0), values=(rotation, rotation))
+        with self.assertRaises(TypeError):
+            AnimationClip(name="bad", position_tracks=(("n", track),))
+        with self.assertRaises(TypeError):
+            AnimationClip(name="bad", rotation_tracks=(("n", _vec_track([(0.0, Vec3()), (1.0, Vec3())])),))
+
+    def test_blank_or_non_string_node_ids_are_rejected(self):
+        track = _vec_track([(0.0, Vec3()), (1.0, Vec3())])
+        for node_id in ("", "   ", 5):
+            with self.assertRaises((TypeError, ValueError)):
+                AnimationClip(name="bad", position_tracks=((node_id, track),))
+
+    def test_non_finite_time_and_dt_are_rejected(self):
+        track = _vec_track([(0.0, Vec3()), (1.0, Vec3())])
+        clip = AnimationClip(name="c", position_tracks=(("n", track),))
+        controller = AnimationController()
+        controller.add(clip)
+        controller.play("c")
+        for dt in (float("nan"), float("inf")):
+            with self.assertRaises(ValueError):
+                controller.advance_with_events(dt)
+        with self.assertRaises(ValueError):
+            controller.crossfade("c", float("inf"))
+        with self.assertRaises(ValueError):
+            AnimationController(speed=float("nan")).add(clip)
+        with self.assertRaises(ValueError):
+            blend_poses({"n": Transform()}, {"n": Transform()}, float("nan"))
+        with self.assertRaises(ValueError):
+            track.sample(float("nan"))
+
+    def test_malformed_track_vectors_raise_value_error(self):
+        with self.assertRaises(ValueError):
+            Track.from_dict({"keys": [{"t": 0.0, "v": [1.0, 2.0]}]})
+        with self.assertRaises(ValueError):
+            AnimationClip.from_dict({"schema": 1, "events": [{"t": 0.0}]})
+
+
 if __name__ == "__main__":
     unittest.main()

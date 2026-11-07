@@ -1,67 +1,16 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-delta-bind-v1",
-    "last_phase": "implementation",
+    "task_id": "keystone-swarm-audit-v1",
+    "last_phase": "check",
     "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1793796566.94702,
-    "owner": "kilo:delta",
-    "started_by": "kilo:delta",
-    "continuations": [],
-    "completed_at": 1793796590.9566493
+    "status": "in_progress",
+    "updated_at": 1794065792.4575436,
+    "owner": "opencode:deepseek-v4.1-flash",
+    "started_by": "opencode:deepseek-v4.1-flash",
+    "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-sprites-v1",
-      "phase": "in_progress",
-      "phase_num": 3,
-      "description": "[2/4] Sprite implementation: GL-free math plus renderer, scene, report, web, sample, HUD, tests",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793742791.7042336,
-      "timestamp_str": "2026-11-04 00:53:11",
-      "agent": "kilo:sprites"
-    },
-    {
-      "task_id": "keystone-sprites-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[3/4] Delivery ready: v0.42.0 GPU point sprites, 372+14 tests green, ruff clean, 6/6 gates; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793745036.0482557,
-      "timestamp_str": "2026-11-04 01:30:36",
-      "agent": "kilo:sprites",
-      "handoff": {
-        "state": "v0.42.0 sprites implemented uncommitted",
-        "next": "Stage 4 check (cold-start demo, serve console, re-run gates)",
-        "failed": "none",
-        "open": "no push without instruction",
-        "evidence": "pytest green, ruff clean, aikit 6/6, sim hash 772cac5232a0947b8f6d1914a5cf0cde, headless fx 64/64 vs 0"
-      }
-    },
-    {
-      "task_id": "keystone-sprites-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[4/4] Stage 4 check passed: pytest green, determinism ok, aikit 6/6, headless fx 64/64 vs 0, HUD SPRITE line, serve health/describe/scene/inspector ok; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793745446.066002,
-      "timestamp_str": "2026-11-04 01:37:26",
-      "agent": "kilo:sprites"
-    },
-    {
-      "task_id": "keystone-sprites-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-sprites-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1793745453.388543,
-      "timestamp_str": "2026-11-04 01:37:33",
-      "agent": "kilo:sprites"
-    },
     {
       "task_id": "keystone-particle-response-v1",
       "phase": "in_progress",
@@ -275,6 +224,57 @@
       "timestamp": 1793796590.9566507,
       "timestamp_str": "2026-11-04 15:49:50",
       "agent": "kilo:delta"
+    },
+    {
+      "task_id": "keystone-swarm-audit-v1",
+      "phase": "planning",
+      "phase_num": 2,
+      "description": "[1/6] Stage 1-2 plan: 12-module swarm map, exact file ownership, shared contracts and gates verified",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794060606.8494956,
+      "timestamp_str": "2026-11-07 17:10:06",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "Full-tree Keystone audit requested; every module needs a read-only analysis agent, verified findings, and minimal evidence-backed fixes without changing the frozen game contract.",
+        "benefits": "Complete coverage with one owner per file; reproducible defects only; parallel analysis; deterministic and headless gates preserved.",
+        "risks": "contract: five-op GameModule and report/scene schemas must stay frozen unless explicitly versioned; dependency: only stdlib plus pinned numpy/PyOpenGL/glfw/pytest; concurrency: 12 read-only agents, single writer in main session; state: 120-frame hash 772cac5232a0947b8f6d1914a5cf0cde may change only for verified behavior fixes and explicit re-pin.",
+        "mitigation": "File-level ownership map, identical evidence bar, sample reproduction, fabricated-batch rejection, full pytest/determinism/headless/aikit gates after every fix, ADR for persisted or contract changes."
+      },
+      "plan_digest": "d88374f38e97ed688b90bd39dc866d647fcf9f530c6b1d179a6d23b681d82dfe"
+    },
+    {
+      "task_id": "keystone-swarm-audit-v1",
+      "phase": "analysis",
+      "phase_num": 3,
+      "description": "[2/6] 12-module swarm triage: 423 evidence rows, all batches sampled, no fabrication invalidation, 20 root-cause fix groups selected",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794065791.5350447,
+      "timestamp_str": "2026-11-07 18:36:31",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-swarm-audit-v1",
+      "phase": "implementation",
+      "phase_num": 4,
+      "description": "[3/6] Implementation: strict validation, runtime cadence, persistence, animation/skin, particles/audio, collision/character, AI/playtest, batching, HUD, web, renderer/glTF; 72 new tests (547 -> 619), determinism pin unchanged",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794065791.9842129,
+      "timestamp_str": "2026-11-07 18:36:31",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-swarm-audit-v1",
+      "phase": "check",
+      "phase_num": 5,
+      "description": "[4/6] Stage 4 check passed: pytest 619 green, determinism 772cac5232a0947b8f6d1914a5cf0cde, headless/UI/paused reports schema 11, serve health/describe/scene/inspector/simulate, aikit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794065792.4575436,
+      "timestamp_str": "2026-11-07 18:36:32",
+      "agent": "opencode:deepseek-v4.1-flash"
     }
   ]
 }

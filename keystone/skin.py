@@ -41,10 +41,12 @@ def bone_matrices(scene: Scene, mesh: MeshData) -> tuple[Mat4, ...]:
 
 
 def _rotate_normal(bone: Mat4, normal: Vec3) -> Vec3:
+    """Transform a normal by transpose(inverse(upper 3x3)) of the bone."""
+    inverse = bone.inverse()
     return Vec3(
-        bone.m[0] * normal.x + bone.m[4] * normal.y + bone.m[8] * normal.z,
-        bone.m[1] * normal.x + bone.m[5] * normal.y + bone.m[9] * normal.z,
-        bone.m[2] * normal.x + bone.m[6] * normal.y + bone.m[10] * normal.z,
+        inverse.m[0] * normal.x + inverse.m[1] * normal.y + inverse.m[2] * normal.z,
+        inverse.m[4] * normal.x + inverse.m[5] * normal.y + inverse.m[6] * normal.z,
+        inverse.m[8] * normal.x + inverse.m[9] * normal.y + inverse.m[10] * normal.z,
     )
 
 

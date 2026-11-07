@@ -5,7 +5,7 @@ import threading
 import unittest
 import urllib.request
 
-from keystone.batch import plan_batches
+from keystone.batch import merge_batches, plan_batches
 from keystone.geometry import Material
 from keystone.math3d import Vec3
 from keystone.primitives import cube
@@ -32,6 +32,26 @@ class BatchTest(unittest.TestCase):
         self.assertGreaterEqual(plan["draw_calls"], 5)
         self.assertLessEqual(plan["batched_calls"], plan["draw_calls"])
         self.assertEqual(plan["triangles"], sum(item["triangles"] for item in plan["batches"]))
+
+    def test_merge_savings_respect_exclude(self):
+        scene = Scene()
+        mesh = cube(1.0)
+        material = Material()
+        for index in range(3):
+            scene.add(Node(f"box-{index}", id=f"box-{index}", mesh=mesh, material=material))
+        self.assertEqual(merge_batches(scene, exclude={"box-0"})["saved_calls"], 1)
+        self.assertEqual(merge_batches(scene, exclude={"box-0", "box-1", "box-2"})["saved_calls"], 0)
+        self.assertEqual(merge_batches(scene)["saved_calls"], 2)
+        with self.assertRaises(TypeError):
+            merge_batches(scene, exclude="box-0")  # type: ignore[arg-type]
+
+    def test_non_material_payloads_use_the_renderer_default(self):
+        scene = Scene()
+        mesh = cube(1.0)
+        scene.add(Node("a", id="a", mesh=mesh, material="red"))
+        scene.add(Node("b", id="b", mesh=mesh, material="blue"))
+        self.assertEqual(plan_batches(scene)["groups"], 1)
+        self.assertEqual(merge_batches(scene)["merged_calls"], 1)
 
 
 class InspectorEndpointTest(unittest.TestCase):

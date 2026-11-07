@@ -85,6 +85,23 @@ class TranscriptTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             run_bot(FairMaze, object())
 
+    def test_run_bot_rejects_non_integer_seed(self):
+        for seed in (1.5, True, "7"):
+            with self.assertRaises(TypeError):
+                run_bot(CubeDemo, RandomPolicy(), frames=2, seed=seed)  # type: ignore[arg-type]
+
+    def test_fairness_budget_does_not_hide_a_witnessed_win(self):
+        reference = optimal_actions(open_config())
+        for max_states in (8, 10, 16):
+            verdict = validate_fairness(
+                FairMaze,
+                reference_actions=reference,
+                frames=40,
+                seeds=(0,),
+                max_states=max_states,
+            )
+            self.assertEqual(verdict["verdict"], "fair", max_states)
+
     def test_run_bot_restores_global_random_state(self):
         import random
 

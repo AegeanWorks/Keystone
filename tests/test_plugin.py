@@ -65,12 +65,44 @@ class PluginTest(unittest.TestCase):
         self.assertIn("TextureData", keystone.__all__)
         self.assertIs(keystone.TextureData, __import__("keystone.texture", fromlist=["TextureData"]).TextureData)
 
+    def test_loader_rejects_missing_or_non_string_name(self):
+        for spec in ("tests.test_plugin:NoNameGame", "tests.test_plugin:BadNameGame"):
+            with self.assertRaises(ValueError) as caught:
+                load_game(spec)
+            self.assertIn("name", str(caught.exception))
+
+    def test_describe_lists_health_and_index_endpoints(self):
+        endpoints = describe_game(CubeDemo())["capabilities"]["web"]["endpoints"]
+        self.assertIn("/api", endpoints)
+        self.assertIn("/api/health", endpoints)
+
 
 class IncompleteGame:
     name = "incomplete"
 
     def build_scene(self):
         return None
+
+
+class NoNameGame:
+    def build_scene(self):
+        return None
+
+    def update(self, dt, actions):
+        return None
+
+    def snapshot(self):
+        return {}
+
+    def actions(self):
+        return {}
+
+    def status(self):
+        return "no-name"
+
+
+class BadNameGame(NoNameGame):
+    name = object()
 
 
 if __name__ == "__main__":

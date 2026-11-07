@@ -8,6 +8,8 @@ append-only audit trail with stable hashes.
 
 from __future__ import annotations
 
+import math
+import random
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -16,7 +18,7 @@ from keystone.headless import run_simulation
 from keystone.input import ActionState
 from keystone.plugin import GameModule, describe_game
 from keystone.replay import stable_hash
-from keystone.serialization import write_json_atomic
+from keystone.serialization import read_json, write_json_atomic
 
 
 def parse_actions(payload: object) -> list[ActionState]:
@@ -47,6 +49,8 @@ def parse_actions(payload: object) -> list[ActionState]:
                     value = float(clamped[axis])
                 except (TypeError, ValueError) as exc:
                     raise ValueError(f"action {index} axis {axis!r} must be numeric") from exc
+                if not math.isfinite(value):
+                    raise ValueError(f"action {index} axis {axis!r} must be finite")
                 clamped[axis] = max(-1.0, min(1.0, value))
         result.append(ActionState.from_dict(clamped))
     if not result:
@@ -63,8 +67,17 @@ def observe(game: GameModule, frames: int = 60, actions: list[ActionState] | Non
     """
     if frames <= 0:
         raise ValueError("frames must be positive")
-    description = describe_game(game)
-    simulation = run_simulation(game, frames=frames, actions=actions or [], step=step)
+    build = getattr(game, "build_scene", None)
+    if not callable(build):
+        raise TypeError("game must expose build_scene()")
+    state = random.getstate()
+    try:
+        random.seed(0)
+        build()
+        description = describe_game(game)
+        simulation = run_simulation(game, frames=frames, actions=actions or [], step=step)
+    finally:
+        random.setstate(state)
     hashed = {"game": description.get("game"), "actions": simulation["actions"], "final": simulation["final"]}
     return {
         "schema": 1,
@@ -120,19 +133,39 @@ class AuditTrail:
 
     path: str | Path | None = None
     entries: list[dict[str, Any]] = field(default_factory=list)
+    _persisted_length: int = field(default=0, init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        if self.path is not None:
+            path = Path(self.path)
+            if path.exists():
+                document = read_json(path)
+                if not isinstance(document, dict) or document.get("schema") != 1:
+                    raise ValueError("audit trail must use schema 1")
+                entries = document.get("entries")
+                if not isinstance(entries, list) or any(not isinstance(entry, dict) for entry in entries):
+                    raise ValueError("audit trail entries must be a list of mappings")
+                self.entries = list(entries)
+        self._persisted_length = len(self.entries)
 
     def record(self, kind: str, payload: dict[str, Any]) -> dict[str, Any]:
         if not kind or not kind.strip():
             raise ValueError("audit kind must be a non-blank string")
+        if not isinstance(payload, dict):
+            raise TypeError("audit payload must be a mapping")
         previous = self.entries[-1]["hash"] if self.entries else "genesis"
         entry = {"index": len(self.entries), "kind": kind, "payload": payload, "previous": previous}
         entry["hash"] = stable_hash({"previous": previous, "kind": kind, "payload": payload})
-        self.entries.append(entry)
+        entries = [*self.entries, entry]
         if self.path is not None:
-            write_json_atomic(self.path, {"schema": 1, "entries": self.entries}, backup=False)
+            write_json_atomic(self.path, {"schema": 1, "entries": entries}, backup=False)
+        self.entries = entries
+        self._persisted_length = len(entries)
         return entry
 
     def verify(self) -> bool:
+        if len(self.entries) < self._persisted_length:
+            return False
         previous = "genesis"
         for index, entry in enumerate(self.entries):
             if entry.get("index") != index or entry.get("previous") != previous:

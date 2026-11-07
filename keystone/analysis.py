@@ -15,6 +15,12 @@ from keystone.texture import TextureData
 
 GRID = 8
 
+
+def _enabled(value: object) -> bool:
+    if value is None:
+        return False
+    return bool(getattr(value, "enabled", value))
+
 REPORT_SCHEMA = {
     "version": 11,
     "fields": {
@@ -225,20 +231,12 @@ def analyze_frame(
         image["png_sha256"] = hashlib.sha256(Path(image_path).read_bytes()).hexdigest()
     camera = scene.camera
     shadow = getattr(scene, "shadow", None)
-    shadows = {
-        "enabled": bool(getattr(shadow, "enabled", True)),
-        "size": 1024 if bool(getattr(shadow, "enabled", True)) else 0,
-    }
-    color_setting = getattr(scene, "color", None)
-    color = {"enabled": bool(getattr(color_setting, "enabled", True))}
-    post_setting = getattr(scene, "post", None)
-    post = {"enabled": bool(getattr(post_setting, "enabled", True))}
-    bloom_setting = getattr(scene, "bloom", None)
-    bloom = {"enabled": bool(getattr(bloom_setting, "enabled", True))}
-    sprite_setting = getattr(scene, "sprite", None)
-    sprites = {"enabled": bool(getattr(sprite_setting, "enabled", True))}
-    culling_setting = getattr(scene, "culling", None)
-    culling = {"enabled": bool(getattr(culling_setting, "enabled", True))}
+    shadows = {"enabled": _enabled(shadow), "size": 1024 if _enabled(shadow) else 0}
+    color = {"enabled": _enabled(getattr(scene, "color", None))}
+    post = {"enabled": _enabled(getattr(scene, "post", None))}
+    bloom = {"enabled": _enabled(getattr(scene, "bloom", None))}
+    sprites = {"enabled": _enabled(getattr(scene, "sprite", None))}
+    culling = {"enabled": _enabled(getattr(scene, "culling", None))}
     if fx is None:
         fx = {"alive": 0, "drawn": 0, "enabled": sprites["enabled"]}
     else:
@@ -393,8 +391,10 @@ def compare_reports(before: dict, after: dict) -> dict:
             old.get("tags"),
             old.get("layer"),
             old.get("components"),
+            old.get("world"),
             old.get("screen"),
             old.get("bbox"),
+            old.get("triangles"),
             old.get("material"),
         ) != (
             new.get("id"),
@@ -405,8 +405,10 @@ def compare_reports(before: dict, after: dict) -> dict:
             new.get("tags"),
             new.get("layer"),
             new.get("components"),
+            new.get("world"),
             new.get("screen"),
             new.get("bbox"),
+            new.get("triangles"),
             new.get("material"),
         ):
             changed.append(name)
@@ -527,7 +529,7 @@ def diff_images(before: str | Path, after: str | Path, output: str | Path, thres
         offset = pixel * 4
         delta = max(
             abs(first[offset + channel] - second[offset + channel])
-            for channel in range(3)
+            for channel in range(4)
         )
         total_delta += delta
         max_delta = max(max_delta, delta)

@@ -55,6 +55,9 @@ class MaterialGraphNode:
             if not (isinstance(item, (tuple, list)) and len(item) == 2):
                 raise TypeError("material graph parameters must be (name, value) pairs")
             cleaned.append((str(item[0]), item[1]))
+        names = [name for name, _ in cleaned]
+        if len(names) != len(set(names)):
+            raise ValueError("material graph parameter names must be unique")
         object.__setattr__(self, "params", tuple(sorted(cleaned, key=lambda pair: pair[0])))
         object.__setattr__(self, "inputs", tuple(str(value) for value in self.inputs))
 
@@ -114,6 +117,21 @@ class MaterialGraph:
                 raise ValueError(f"mix node {node.id!r} needs at least two inputs")
             if node.kind == "texture" and node.param("asset") is None and node.param("name") is None:
                 raise ValueError(f"texture node {node.id!r} needs an asset or name parameter")
+        state: dict[str, int] = {}
+
+        def visit(node_id: str) -> None:
+            mark = state.get(node_id, 0)
+            if mark == 1:
+                raise ValueError("material graph contains a cycle")
+            if mark == 2:
+                return
+            state[node_id] = 1
+            for input_id in index[node_id].inputs:
+                visit(input_id)
+            state[node_id] = 2
+
+        for node in self.nodes:
+            visit(node.id)
         if not self.output or self.output not in index:
             raise ValueError("material graph output must name an existing node")
         if index[self.output].kind not in ("material", "pbr"):

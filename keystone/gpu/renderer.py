@@ -242,7 +242,7 @@ void main() {
         float weight = a_weights[i];
         if (weight > 0.0) {
             skinned += weight * (u_bones[joint] * vec4(a_position, 1.0));
-            skinned_normal += weight * (mat3(u_bones[joint]) * a_normal);
+            skinned_normal += weight * (transpose(inverse(mat3(u_bones[joint]))) * a_normal);
         }
     }
     if (skinned.w < 0.5) {
@@ -452,8 +452,15 @@ void main() {
 
 
 def normal_matrix(model: Mat4) -> tuple[float, ...]:
-    """Return transpose(inverse(upper 3x3)) in column-major order."""
-    inverse = model.inverse()
+    """Return transpose(inverse(upper 3x3)) in column-major order.
+
+    Singular models cannot be normal-transformed; identity keeps the render
+    loop alive instead of aborting on an animation-driven zero scale.
+    """
+    try:
+        inverse = model.inverse()
+    except ValueError:
+        return (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)
     return (
         inverse[0], inverse[4], inverse[8],
         inverse[1], inverse[5], inverse[9],
@@ -865,31 +872,33 @@ class Renderer:
         shadow_calls = 0
         assert self._shadow is not None
         self._shadow.bind_for_write()
-        GL.glEnable(GL.GL_DEPTH_TEST)
-        GL.glDepthFunc(GL.GL_LESS)
-        GL.glCullFace(GL.GL_FRONT)
-        self._depth_program.use()
-        self._depth_program.set_mat4("u_light_vp", light_vp)
-        for group in group_instances(scene):
-            mesh = group["mesh"]
-            if not isinstance(mesh, MeshData):
-                raise TypeError("Node.mesh must be MeshData")
-            skinned = bool(getattr(mesh, "skinned", False))
-            for model in group["models"]:
-                if skinned:
-                    self._skin_depth_program.use()
-                    self._skin_depth_program.set_mat4("u_light_vp", light_vp)
-                    self._skin_depth_program.set_mat4("u_model", model)
-                    self._upload_bones(self._skin_depth_program, scene, mesh)
-                    self._gpu_skinned_mesh(mesh).draw()
-                else:
-                    self._depth_program.use()
-                    self._depth_program.set_mat4("u_model", model)
-                    self._gpu_mesh(mesh).draw()
-                shadow_calls += 1
-        GL.glCullFace(GL.GL_BACK)
-        self._shadow.unbind_after_write(self.width, self.height)
-        return shadow_calls
+        try:
+            GL.glEnable(GL.GL_DEPTH_TEST)
+            GL.glDepthFunc(GL.GL_LESS)
+            GL.glCullFace(GL.GL_FRONT)
+            self._depth_program.use()
+            self._depth_program.set_mat4("u_light_vp", light_vp)
+            for group in group_instances(scene):
+                mesh = group["mesh"]
+                if not isinstance(mesh, MeshData):
+                    raise TypeError("Node.mesh must be MeshData")
+                skinned = bool(getattr(mesh, "skinned", False))
+                for model in group["models"]:
+                    if skinned:
+                        self._skin_depth_program.use()
+                        self._skin_depth_program.set_mat4("u_light_vp", light_vp)
+                        self._skin_depth_program.set_mat4("u_model", model)
+                        self._upload_bones(self._skin_depth_program, scene, mesh)
+                        self._gpu_skinned_mesh(mesh).draw()
+                    else:
+                        self._depth_program.use()
+                        self._depth_program.set_mat4("u_model", model)
+                        self._gpu_mesh(mesh).draw()
+                    shadow_calls += 1
+            return shadow_calls
+        finally:
+            GL.glCullFace(GL.GL_BACK)
+            self._shadow.unbind_after_write(self.width, self.height)
 
     def _draw_quad(self) -> None:
         GL.glBindVertexArray(self._sky_vao)

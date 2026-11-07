@@ -15,9 +15,20 @@ from dataclasses import dataclass, field
 from io import BytesIO
 from pathlib import Path
 
+from keystone.serialization import write_bytes_atomic
+
 SAMPLE_RATE = 22050
 
 __all__ = ["SAMPLE_RATE", "AudioClip", "Mixer", "audio_report", "mix_clips", "noise", "read_wav", "sine", "square", "write_wav"]
+
+
+def _finite(value: object, label: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise TypeError(f"{label} must be a real number")
+    result = float(value)
+    if not math.isfinite(result):
+        raise ValueError(f"{label} must be finite")
+    return result
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,16 +42,23 @@ class AudioClip:
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name.strip():
             raise ValueError("clip name must be a non-blank string")
-        if self.sample_rate <= 0:
-            raise ValueError("sample rate must be positive")
+        if isinstance(self.sample_rate, bool) or not isinstance(self.sample_rate, int) or self.sample_rate <= 0:
+            raise ValueError("sample rate must be a positive integer")
+        if isinstance(self.samples, (str, bytes)) or not isinstance(self.samples, (tuple, list)):
+            raise TypeError("samples must be a sequence of numbers")
+        cleaned: list[float] = []
         for sample in self.samples:
-            if not -1.0 <= float(sample) <= 1.0:
+            value = _finite(sample, "audio sample")
+            if not -1.0 <= value <= 1.0:
                 raise ValueError("samples must be within [-1, 1]")
+            cleaned.append(value)
+        object.__setattr__(self, "samples", tuple(cleaned))
 
     def duration(self) -> float:
         return len(self.samples) / float(self.sample_rate) if self.samples else 0.0
 
     def with_gain(self, gain: float) -> AudioClip:
+        gain = _finite(gain, "gain")
         if gain < 0.0:
             raise ValueError("gain must be non-negative")
         return AudioClip(
@@ -56,17 +74,26 @@ class AudioClip:
     def from_dict(cls, data: dict) -> AudioClip:
         if not isinstance(data, dict):
             raise TypeError("audio clip document must be a mapping")
-        if data.get("schema", 1) != 1:
+        schema = data.get("schema", 1)
+        if isinstance(schema, bool) or not isinstance(schema, int) or schema != 1:
             raise ValueError("unsupported audio clip schema")
         raw = data.get("samples", [])
         if not isinstance(raw, (list, tuple)):
             raise TypeError("audio clip samples must be a list")
-        return cls(samples=tuple(float(value) for value in raw),
-                   sample_rate=int(data.get("sample_rate", SAMPLE_RATE)),
-                   name=str(data.get("name", "clip")))
+        sample_rate = data.get("sample_rate", SAMPLE_RATE)
+        if isinstance(sample_rate, bool) or not isinstance(sample_rate, int):
+            raise TypeError("audio clip sample rate must be an integer")
+        name = data.get("name", "clip")
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("audio clip name must be a non-blank string")
+        return cls(samples=tuple(_finite(value, "audio sample") for value in raw),
+                   sample_rate=sample_rate,
+                   name=name)
 
 
 def sine(frequency: float, duration: float, sample_rate: int = SAMPLE_RATE, name: str = "sine") -> AudioClip:
+    frequency = _finite(frequency, "frequency")
+    duration = _finite(duration, "duration")
     if frequency <= 0.0 or duration <= 0.0 or sample_rate <= 0:
         raise ValueError("frequency, duration and sample rate must be positive")
     count = int(duration * sample_rate)
@@ -78,6 +105,8 @@ def sine(frequency: float, duration: float, sample_rate: int = SAMPLE_RATE, name
 
 
 def square(frequency: float, duration: float, sample_rate: int = SAMPLE_RATE, name: str = "square") -> AudioClip:
+    frequency = _finite(frequency, "frequency")
+    duration = _finite(duration, "duration")
     if frequency <= 0.0 or duration <= 0.0 or sample_rate <= 0:
         raise ValueError("frequency, duration and sample rate must be positive")
     count = int(duration * sample_rate)
@@ -90,6 +119,7 @@ def square(frequency: float, duration: float, sample_rate: int = SAMPLE_RATE, na
 
 
 def noise(duration: float, seed: int = 7, sample_rate: int = SAMPLE_RATE, name: str = "noise") -> AudioClip:
+    duration = _finite(duration, "duration")
     if duration <= 0.0 or sample_rate <= 0:
         raise ValueError("duration and sample rate must be positive")
     if isinstance(seed, bool) or not isinstance(seed, int):
@@ -102,22 +132,27 @@ def noise(duration: float, seed: int = 7, sample_rate: int = SAMPLE_RATE, name: 
 
 def mix_clips(clips: list[tuple[AudioClip, float, float]]) -> AudioClip:
     """Mix (clip, gain, pitch) voices deterministically; pitch resamples by index scaling."""
-    if not clips:
+    if clips is None:
+        raise TypeError("clips must be a list of (clip, gain, pitch) voices")
+    voices = list(clips)
+    if not voices:
         return AudioClip((), SAMPLE_RATE, "silence")
-    rate = clips[0][0].sample_rate
-    for clip, _, _ in clips:
+    rate = voices[0][0].sample_rate
+    for clip, gain, pitch in voices:
+        if not isinstance(clip, AudioClip):
+            raise TypeError("mix voices must hold AudioClip instances")
         if clip.sample_rate != rate:
             raise ValueError("all mixed clips must share one sample rate")
-    lengths: list[int] = []
-    for clip, _, pitch in clips:
-        if pitch <= 0.0:
+        if _finite(gain, "gain") < 0.0:
+            raise ValueError("gain must be non-negative")
+        if _finite(pitch, "pitch") <= 0.0:
             raise ValueError("pitch must be positive")
+    lengths: list[int] = []
+    for clip, _, pitch in voices:
         lengths.append(int(len(clip.samples) / pitch))
     total = max(lengths)
     mixed = [0.0] * total
-    for clip, gain, pitch in clips:
-        if gain < 0.0:
-            raise ValueError("gain must be non-negative")
+    for clip, gain, pitch in voices:
         for index in range(int(len(clip.samples) / pitch)):
             source = clip.samples[int(index * pitch)]
             mixed[index] += source * gain
@@ -134,25 +169,34 @@ class Mixer:
     _voices: list[tuple[AudioClip, str, float, float]] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        if self.sample_rate <= 0:
-            raise ValueError("sample rate must be positive")
+        if isinstance(self.sample_rate, bool) or not isinstance(self.sample_rate, int) or self.sample_rate <= 0:
+            raise ValueError("sample rate must be a positive integer")
         self.buses = dict(self.buses)
         for bus, gain in self.buses.items():
-            if not bus.strip() or gain < 0.0:
+            if not isinstance(bus, str) or not bus.strip():
+                raise ValueError("bus gains must be named and non-negative")
+            if _finite(gain, "bus gain") < 0.0:
                 raise ValueError("bus gains must be named and non-negative")
 
     def set_bus(self, bus: str, gain: float) -> None:
-        if not bus.strip() or gain < 0.0:
+        if not isinstance(bus, str) or not bus.strip():
+            raise ValueError("bus gain must be named and non-negative")
+        gain = _finite(gain, "bus gain")
+        if gain < 0.0:
             raise ValueError("bus gain must be named and non-negative")
         self.buses[bus] = gain
 
     def play(self, clip: AudioClip, bus: str = "sfx", gain: float = 1.0, pitch: float = 1.0) -> None:
+        if not isinstance(clip, AudioClip):
+            raise TypeError("voice clip must be an AudioClip")
         if clip.sample_rate != self.sample_rate:
             raise ValueError("clip sample rate must match the mixer")
         if not isinstance(bus, str) or not bus.strip():
             raise ValueError("bus name must be a non-blank string")
         if bus not in self.buses:
             raise ValueError(f"unknown bus '{bus}'")
+        gain = _finite(gain, "voice gain")
+        pitch = _finite(pitch, "voice pitch")
         if gain < 0.0 or pitch <= 0.0:
             raise ValueError("voice gain must be non-negative and pitch positive")
         self._voices.append((clip, bus, gain, pitch))
@@ -188,21 +232,7 @@ def _wav_write(clip: AudioClip) -> bytes:
 
 
 def write_wav(path: str | Path, clip: AudioClip) -> None:
-    import os
-
-    target = Path(path)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    temporary = target.with_name(target.name + ".tmp")
-    try:
-        # hygiene: allow binary-mode WAV write needs no text encoding
-        with temporary.open("wb") as handle:
-            handle.write(_wav_write(clip))
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, target)
-    finally:
-        if temporary.exists():
-            temporary.unlink()
+    write_bytes_atomic(path, _wav_write(clip))
 
 
 def read_wav(path: str | Path) -> AudioClip:
@@ -211,9 +241,12 @@ def read_wav(path: str | Path) -> AudioClip:
             if handle.getnchannels() != 1 or handle.getsampwidth() != 2:
                 raise ValueError("only mono 16-bit WAV files are supported")
             rate = handle.getframerate()
+            expected = handle.getnframes() * 2
             frames = handle.readframes(handle.getnframes())
-    except (OSError, wave.Error) as exc:
+    except (OSError, EOFError, wave.Error) as exc:
         raise ValueError(f"could not read WAV from {path}: {exc}") from exc
+    if len(frames) != expected or len(frames) % 2:
+        raise ValueError(f"could not read WAV from {path}: truncated sample data")
     count = len(frames) // 2
     samples = struct.unpack(f"<{count}h", frames) if count else ()
     return AudioClip(samples=tuple(value / 32768.0 if value < 0 else value / 32767.0 for value in samples),
@@ -221,6 +254,14 @@ def read_wav(path: str | Path) -> AudioClip:
 
 
 def audio_report(clip: AudioClip, voices: int = 0, buses: dict | None = None) -> dict:
+    if not isinstance(clip, AudioClip):
+        raise TypeError("audio report needs an AudioClip")
+    if isinstance(voices, bool) or not isinstance(voices, int) or voices < 0:
+        raise ValueError("voices must be a non-negative integer")
+    if buses is not None:
+        if not isinstance(buses, dict):
+            raise TypeError("buses must be a mapping")
+        buses = {name: _finite(gain, "bus gain") for name, gain in buses.items()}
     samples = clip.samples
     peak = max((abs(sample) for sample in samples), default=0.0)
     rms = (sum(sample * sample for sample in samples) / max(1, len(samples))) ** 0.5

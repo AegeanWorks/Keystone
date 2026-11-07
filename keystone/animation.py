@@ -50,6 +50,8 @@ class Track:
         return self.times[-1] if self.times else 0.0
 
     def sample(self, time: float) -> Vec3 | Quat:
+        if not math.isfinite(time):
+            raise ValueError("sample time must be finite")
         time = max(0.0, time)
         if time <= self.times[0]:
             return self.values[0]  # type: ignore[return-value]
@@ -96,15 +98,31 @@ class Track:
         for key in raw_keys:
             if not isinstance(key, dict):
                 raise TypeError("track key must be a mapping")
-            times.append(float(key["t"]))
+            if "t" not in key:
+                raise ValueError("track key must hold 't'")
+            try:
+                time = float(key["t"])
+            except (TypeError, ValueError) as exc:
+                raise ValueError("track key time must be numeric") from exc
+            if not math.isfinite(time):
+                raise ValueError("track key time must be finite")
             if "v" in key:
                 raw = key["v"]
+                if not isinstance(raw, (list, tuple)) or len(raw) != 3:
+                    raise ValueError("track key 'v' must have three values")
+                if not all(isinstance(component, (int, float)) and not isinstance(component, bool) for component in raw):
+                    raise ValueError("track key 'v' must be numeric")
                 values.append(Vec3(float(raw[0]), float(raw[1]), float(raw[2])))
             elif "q" in key:
                 raw = key["q"]
+                if not isinstance(raw, (list, tuple)) or len(raw) != 4:
+                    raise ValueError("track key 'q' must have four values")
+                if not all(isinstance(component, (int, float)) and not isinstance(component, bool) for component in raw):
+                    raise ValueError("track key 'q' must be numeric")
                 values.append(Quat(float(raw[3]), float(raw[0]), float(raw[1]), float(raw[2])))
             else:
                 raise ValueError("track key must hold 'v' or 'q'")
+            times.append(time)
         return cls(times=tuple(times), values=tuple(values), interpolation=interpolation)
 
 
@@ -123,20 +141,32 @@ class AnimationClip:
             raise ValueError("clip name must be a non-blank string")
         cleaned: list[tuple[float, str]] = []
         for time, label in self.events:
-            if float(time) < 0.0:
-                raise ValueError("event times must be non-negative")
+            try:
+                event_time = float(time)
+            except (TypeError, ValueError) as exc:
+                raise ValueError("event times must be numeric") from exc
+            if not math.isfinite(event_time) or event_time < 0.0:
+                raise ValueError("event times must be finite and non-negative")
             if not isinstance(label, str) or not label.strip():
                 raise ValueError("event names must be non-blank strings")
-            cleaned.append((float(time), label))
+            cleaned.append((event_time, label))
         object.__setattr__(self, "events", tuple(sorted(cleaned, key=lambda item: (item[0], item[1]))))
-        for label, tracks in (("position", self.position_tracks), ("rotation", self.rotation_tracks), ("scale", self.scale_tracks)):
+        for label, tracks, expected in (
+            ("position", self.position_tracks, Vec3),
+            ("rotation", self.rotation_tracks, Quat),
+            ("scale", self.scale_tracks, Vec3),
+        ):
             seen: set[str] = set()
             for node_id, track in tracks:
+                if not isinstance(node_id, str) or not node_id.strip():
+                    raise ValueError("clip node ids must be non-blank strings")
                 if node_id in seen:
                     raise ValueError(f"clip has duplicate {label} track for {node_id!r}")
                 seen.add(node_id)
                 if not isinstance(track, Track):
                     raise TypeError("clip tracks must be Track instances")
+                if not all(isinstance(value, expected) for value in track.values):
+                    raise TypeError(f"{label} tracks must hold {expected.__name__} values")
 
     def duration(self) -> float:
         has_tracks = bool(self.position_tracks or self.rotation_tracks or self.scale_tracks)
@@ -157,6 +187,8 @@ class AnimationClip:
         return sorted(ids)
 
     def sample(self, time: float) -> dict[str, Transform]:
+        if not math.isfinite(time):
+            raise ValueError("sample time must be finite")
         time = max(0.0, time)
         positions = {node_id: track.sample(time) for node_id, track in self.position_tracks}
         rotations = {node_id: track.sample(time) for node_id, track in self.rotation_tracks}
@@ -207,8 +239,8 @@ class AnimationClip:
             raise TypeError("clip events must be a list")
         events: list[tuple[float, str]] = []
         for item in raw_events:
-            if not isinstance(item, dict):
-                raise TypeError("clip event must be a mapping")
+            if not isinstance(item, dict) or "t" not in item or "name" not in item:
+                raise ValueError("clip event must be a mapping with 't' and 'name'")
             events.append((float(item["t"]), str(item["name"])))
         return cls(
             name=str(data.get("name", "clip")),
@@ -235,6 +267,12 @@ class AnimationController:
     _blend_elapsed: float = 0.0
     _fresh_start: bool = field(default=True, repr=False)
 
+    def __post_init__(self) -> None:
+        if isinstance(self.speed, bool) or not isinstance(self.speed, (int, float)) or not math.isfinite(self.speed):
+            raise ValueError("animation speed must be finite")
+        if not isinstance(self.loop, bool):
+            raise TypeError("animation loop must be a boolean")
+
     def add(self, clip: AnimationClip) -> None:
         if not isinstance(clip, AnimationClip):
             raise TypeError("controller clips must be AnimationClip instances")
@@ -257,6 +295,8 @@ class AnimationController:
         """Blend from the current sampled pose into another clip over duration."""
         if name not in self.clips:
             raise KeyError(f"unknown animation clip {name!r}")
+        if isinstance(duration, bool) or not isinstance(duration, (int, float)) or not math.isfinite(duration):
+            raise ValueError("crossfade duration must be finite")
         if duration < 0.0:
             raise ValueError("crossfade duration must be non-negative")
         if not self.current or self.current not in self.clips or duration == 0.0:
@@ -291,6 +331,8 @@ class AnimationController:
         return pose
 
     def advance_with_events(self, dt: float) -> tuple[dict[str, Transform], list[str]]:
+        if isinstance(dt, bool) or not isinstance(dt, (int, float)) or not math.isfinite(dt):
+            raise ValueError("dt must be finite")
         if dt < 0.0:
             raise ValueError("dt must be non-negative")
         if not self.current or self.current not in self.clips:
@@ -298,14 +340,18 @@ class AnimationController:
         clip = self.clips[self.current]
         duration = clip.duration()
         previous = self._moment()
-        first_step = self._fresh_start and dt * self.speed > 0.0
-        self.time += dt * self.speed
-        if dt * self.speed > 0.0:
+        distance = dt * self.speed
+        first_step = self._fresh_start and distance > 0.0
+        self.time += distance
+        if distance > 0.0:
             self._fresh_start = False
         moment = self._moment()
-        wrapped = duration > 0.0 and self.loop and moment < previous and dt > 0.0
-        if wrapped:
+        if duration > 0.0 and self.loop and distance > 0.0 and previous + distance >= duration:
             fired = clip.events_in_range(previous, duration) + clip.events_in_range(-1.0, moment)
+        elif duration > 0.0 and self.loop and distance < 0.0 and previous + distance < 0.0:
+            fired = clip.events_in_range(moment, duration) + clip.events_in_range(-1.0, previous)
+        elif distance < 0.0:
+            fired = clip.events_in_range(moment, previous)
         elif first_step:
             fired = clip.events_in_range(-1.0, moment)
         else:
@@ -323,6 +369,8 @@ class AnimationController:
 
 def blend_poses(first: dict[str, Transform], second: dict[str, Transform], factor: float) -> dict[str, Transform]:
     """Blend two sampled poses; factor 0 returns first, 1 returns second."""
+    if isinstance(factor, bool) or not isinstance(factor, (int, float)) or not math.isfinite(factor):
+        raise ValueError("blend factor must be finite")
     factor = max(0.0, min(1.0, factor))
     pose: dict[str, Transform] = {}
     for node_id in sorted(set(first) | set(second)):
@@ -338,18 +386,24 @@ def blend_poses(first: dict[str, Transform], second: dict[str, Transform], facto
 
 def apply_pose(scene: Scene, pose: dict[str, Transform]) -> list[str]:
     """Write sampled Transforms onto nodes by id or name; return updated ids."""
+    if not isinstance(pose, dict):
+        raise TypeError("pose must be a mapping of node ids to Transforms")
     index: dict[str, Node] = {}
     for node in scene.traverse():
         if node.id:
             index[node.id] = node
         index.setdefault(node.name, node)
-    updated: list[str] = []
+    updated: set[str] = set()
     for key, transform in pose.items():
+        if not isinstance(key, str) or not key.strip():
+            raise ValueError("pose keys must be non-blank strings")
+        if not isinstance(transform, Transform):
+            raise TypeError("pose values must be Transform instances")
         node = index.get(key)
         if node is None:
             continue
         node.transform = transform
-        updated.append(node.id or node.name)
+        updated.add(node.id or node.name)
     return sorted(updated)
 
 

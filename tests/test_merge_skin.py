@@ -91,7 +91,7 @@ class SkinMergeTest(unittest.TestCase):
     def test_exclude_applies_to_skin_groups(self):
         merged = merge_batches(_rig_scene(), exclude={"rig-a"})
         self.assertEqual(merged["skin_merged_calls"], 1)
-        self.assertEqual(merged["skin_saved_calls"], 1)
+        self.assertEqual(merged["skin_saved_calls"], 0)
         self.assertEqual(merged["merged"][0]["count"], 1)
 
     def test_builder_rejects_mismatched_skin(self):

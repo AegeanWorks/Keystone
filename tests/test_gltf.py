@@ -234,6 +234,31 @@ class GltfImportTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             load_gltf(document)
 
+    def test_uv_origin_is_converted_from_gltf_top_left(self):
+        positions = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+        uvs = [0.0, 0.0, 1.0, 0.0, 0.0, 1.0]
+        position_bytes = struct.pack("<" + "f" * len(positions), *positions)
+        uv_bytes = struct.pack("<" + "f" * len(uvs), *uvs)
+        buffer_data = position_bytes + uv_bytes
+        document = {
+            "asset": {"version": "2.0"},
+            "scene": 0,
+            "scenes": [{"nodes": [0]}],
+            "nodes": [{"mesh": 0}],
+            "meshes": [{"primitives": [{"attributes": {"POSITION": 0, "TEXCOORD_0": 1}}]}],
+            "accessors": [
+                {"bufferView": 0, "componentType": 5126, "count": 3, "type": "VEC3"},
+                {"bufferView": 1, "componentType": 5126, "count": 3, "type": "VEC2"},
+            ],
+            "bufferViews": [
+                {"buffer": 0, "byteOffset": 0, "byteLength": len(position_bytes)},
+                {"buffer": 0, "byteOffset": len(position_bytes), "byteLength": len(uv_bytes)},
+            ],
+            "buffers": [{"uri": _data_uri(buffer_data), "byteLength": len(buffer_data)}],
+        }
+        imported = load_gltf(document)
+        self.assertEqual(imported.meshes[0].uvs, ((0.0, 1.0), (1.0, 1.0), (0.0, 0.0)))
+
 
 if __name__ == "__main__":
     unittest.main()

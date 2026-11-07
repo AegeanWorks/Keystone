@@ -14,6 +14,26 @@ class ReplayTest(unittest.TestCase):
         self.assertEqual(stable_hash({"a": 1, "b": 2}), stable_hash({"b": 2, "a": 1}))
         self.assertNotEqual(stable_hash({"a": 1}), stable_hash({"a": 2}))
 
+    def test_hash_rejects_non_json_and_non_finite_values(self):
+        with self.assertRaises(TypeError):
+            stable_hash({"set": {"alpha", "beta"}})
+        with self.assertRaises(TypeError):
+            stable_hash({"object": object()})
+        with self.assertRaises(ValueError):
+            stable_hash({"nan": float("nan")})
+        with self.assertRaises(ValueError):
+            stable_hash({"inf": float("inf")})
+
+    def test_command_log_constructor_validates_fields(self):
+        for seed in (1.5, True, "7"):
+            with self.assertRaises((TypeError, ValueError)):
+                CommandLog(seed=seed)  # type: ignore[arg-type]
+        for step in (0.0, float("nan"), float("inf")):
+            with self.assertRaises(ValueError):
+                CommandLog(seed=1, step=step)
+        with self.assertRaises(TypeError):
+            CommandLog(seed=1, frames={"bad": 1})  # type: ignore[arg-type]
+
     def test_command_log_round_trip(self):
         log = CommandLog(seed=7)
         log.record(ActionState(forward=1.0, pressed=frozenset({"jump"})))

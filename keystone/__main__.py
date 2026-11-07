@@ -75,7 +75,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--script", type=Path, default=None, help="JSON action list for the scripted --playtest policy")
     parser.add_argument("--transcript-out", type=Path, default=None, help="write the bot transcript JSON for --playtest")
     parser.add_argument("--trace", action="store_true", help="include per-frame snapshots in simulation output")
-    parser.add_argument("--frames", type=_frames, default=0, help="frame count (default: 1 headless, or until close)")
+    parser.add_argument(
+        "--frames",
+        type=_frames,
+        default=0,
+        help="frame count (default: 1 for --headless, action count for --simulate, 120 for --playtest, unlimited for windowed)",
+    )
     parser.add_argument("--size", type=_size, default=(960, 540), metavar="WxH", help="framebuffer size, e.g. 1280x720")
     parser.add_argument("--ui", action="store_true", help="draw the human HUD/help overlay (default: windowed only)")
     parser.add_argument("--no-ui", action="store_true", help="disable the human overlay")
@@ -117,6 +122,7 @@ def main(argv: list[str] | None = None) -> int:
         or args.srgb or args.no_srgb or args.post or args.no_post or args.bloom or args.no_bloom or args.sprites or args.no_sprites or args.culling or args.no_culling or args.start_paused
         or args.replay or args.playtest
         or args.script or args.transcript_out or args.policy != "random" or args.seed != 0
+        or args.frames or args.size != (960, 540)
     ):
         parser.error("--describe is a standalone discovery command")
     if args.headless and args.simulate:
@@ -167,7 +173,10 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--srgb/--no-srgb apply to rendered runs, not discovery or simulation commands")
     if args.start_paused and (args.simulate or args.verify_determinism):
         parser.error("--start-paused applies to rendered runs, not simulation commands")
-    if args.verify_determinism and (args.headless or args.simulate or args.report or args.compare_baseline or args.replay):
+    if args.verify_determinism and (
+        args.headless or args.simulate or args.report or args.compare_baseline
+        or args.replay or args.size != (960, 540)
+    ):
         parser.error("--verify-determinism is a standalone no-GL command")
     if args.expect_hash and not (args.simulate or args.verify_determinism or args.replay or args.playtest):
         parser.error("--expect-hash requires --simulate, --verify-determinism, --replay or --playtest")
@@ -239,7 +248,11 @@ def main(argv: list[str] | None = None) -> int:
             try:
                 log = CommandLog.load(args.replay)
             except (OSError, ValueError, TypeError, KeyError) as exc:
-                parser.error(f"could not read replay log {args.replay}: {exc}")
+                raise ValueError(
+                    f"could not read replay log {args.replay}.\n"
+                    f"Why: {exc}\n"
+                    "Fix: pass a valid CommandLog JSON file written by --simulate --out."
+                ) from exc
             result = run_log(lambda: load_game(args.game), log, trace=args.trace)
             if args.expect_hash:
                 result["expected_hash"] = args.expect_hash
@@ -380,7 +393,7 @@ def main(argv: list[str] | None = None) -> int:
             suffix = f" -> {args.out}" if args.out else ""
             report = f" report={args.report}" if args.report else ""
             print(
-                f"Rendered {rendered} frame(s) at {args.size[0]}x{args.size[1]} "
+                f"Rendered {rendered} frame(s) at {engine.renderer.width}x{engine.renderer.height} "
                 f"game={getattr(game, 'name', args.game)}{suffix}{report}"
             )
         return 0

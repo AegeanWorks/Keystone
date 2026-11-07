@@ -12,11 +12,11 @@ from keystone.analysis import (
     diff_images,
     write_report,
 )
-from keystone.geometry import Material
+from keystone.geometry import Material, MeshData
 from keystone.math3d import Vec3
 from keystone.png import write_png
 from keystone.samples import CubeDemo
-from keystone.scene import Node, Scene
+from keystone.scene import Node, Scene, Transform
 
 
 @dataclass(frozen=True)
@@ -260,6 +260,50 @@ class AnalysisTest(unittest.TestCase):
         pixels = bytes((255, 255, 255, 255)) * (10 * 10)
         report = analyze_frame(scene, pixels, 10, 10)
         self.assertEqual(report["stats"]["grid_luma"][1][1], 255.0)
+
+    def test_compare_detects_world_and_triangle_changes(self):
+        mesh = MeshData(
+            positions=((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (1.0, 1.0, 0.0)),
+            normals=((0.0, 0.0, 1.0),) * 4,
+            indices=(0, 1, 2),
+        )
+        first = Scene()
+        first.add(Node("n", id="n", transform=Transform(position=Vec3(0.0, 0.0, 0.0)), mesh=mesh))
+        second = Scene()
+        second.add(Node("n", id="n", transform=Transform(position=Vec3(1.0, 0.0, 0.0)), mesh=mesh))
+        two_triangles = MeshData(
+            positions=mesh.positions,
+            normals=mesh.normals,
+            indices=(0, 1, 2, 0, 2, 3),
+        )
+        second.find_by_id("n").mesh = two_triangles
+        pixels = bytes((0, 0, 0, 255)) * (8 * 8)
+        diff = compare_reports(
+            analyze_frame(first, pixels, 8, 8),
+            analyze_frame(second, pixels, 8, 8),
+        )
+        self.assertEqual(diff["changed_nodes"], ["n"])
+
+    def test_falsy_settings_report_disabled(self):
+        scene = CubeDemo().build_scene()
+        scene.shadow = None
+        scene.color = False
+        scene.post = 0
+        scene.bloom = ""
+        scene.sprite = None
+        scene.culling = False
+        report = analyze_frame(scene, bytes((0, 0, 0, 255)) * 4, 2, 2)
+        for key in ("shadows", "color", "post", "bloom", "sprites", "culling"):
+            self.assertFalse(report["scene"][key]["enabled"], key)
+
+    def test_pixel_diff_detects_alpha_only_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            before = Path(directory) / "before.png"
+            after = Path(directory) / "after.png"
+            write_png(before, 1, 1, bytes((10, 20, 30, 0)))
+            write_png(after, 1, 1, bytes((10, 20, 30, 255)))
+            result = diff_images(before, after, Path(directory) / "diff.png", threshold=0)
+            self.assertEqual(result["changed_pixels"], 1)
 
 
 if __name__ == "__main__":

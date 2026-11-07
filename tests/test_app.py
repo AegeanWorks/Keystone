@@ -6,6 +6,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from typing import ClassVar
 
 from keystone.__main__ import main
 from keystone.app import Engine
@@ -306,6 +307,198 @@ class EngineTest(unittest.TestCase):
             self.assertIsNone(payload["ui"])
             self.assertEqual(payload["image"]["path"], Path(image).as_posix())
             self.assertGreater(payload["stats"]["mean_luma"], 0.0)
+
+
+class CleanupAndCliTest(unittest.TestCase):
+    def test_close_closes_context_when_release_raises(self):
+        class BadRelease:
+            def release(self):
+                raise RuntimeError("release failed")
+
+        class FakeContext:
+            def __init__(self):
+                self.closed = False
+
+            def close(self):
+                self.closed = True
+
+        engine = object.__new__(Engine)
+        object.__setattr__(engine, "_closed", False)
+        engine.ui_renderer = BadRelease()
+        engine.renderer = BadRelease()
+        engine.context = FakeContext()
+        with self.assertRaises(RuntimeError):
+            engine.close()
+        self.assertTrue(engine.context.closed)
+        self.assertTrue(engine._closed)
+
+    def test_standalone_commands_reject_irrelevant_flags(self):
+        for argv in (
+            ["--describe", "--frames", "5"],
+            ["--describe", "--size", "320x180"],
+            ["--verify-determinism", "--size", "320x180"],
+        ):
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+                main(argv)
+            self.assertEqual(caught.exception.code, 2, argv)
+
+
+class _CadenceContext:
+    def __init__(self, times, keys=(), pointer_step=0.0, press_from=0):
+        self._times = iter(times)
+        self._keys = set(keys)
+        self._x = 0.0
+        self._y = 0.0
+        self._pointer_step = pointer_step
+        self._frame = -1
+        self._press_from = press_from
+        self.mouse = False
+        self.pointer = (0.0, 0.0)
+        self.captured = None
+
+    def should_close(self):
+        return False
+
+    def poll_events(self):
+        self._frame += 1
+
+    def framebuffer_size(self):
+        return (64, 64)
+
+    def time(self):
+        return next(self._times)
+
+    def key_down(self, name):
+        return name in self._keys and self._frame >= self._press_from
+
+    def mouse_down(self, button="left"):
+        return self.mouse
+
+    def cursor_position(self):
+        x = self._x
+        self._x += self._pointer_step
+        return (x, self._y)
+
+    def swap_buffers(self):
+        return None
+
+    def set_title(self, title):
+        return None
+
+    def set_cursor_captured(self, captured):
+        self.captured = captured
+
+    def request_close(self):
+        return None
+
+
+class _CadenceRenderer:
+    width = 64
+    height = 64
+    last_stats: ClassVar[dict[str, int]] = {"draw_calls": 0, "triangles": 0}
+
+    def render(self, scene, particles=None):
+        return dict(self.last_stats)
+
+
+class _CadenceRecorder:
+    name = "cadence"
+
+    def __init__(self):
+        self.updates = []
+
+    def build_scene(self):
+        from keystone.scene import Scene
+
+        return Scene()
+
+    def update(self, dt, actions):
+        self.updates.append((actions.pressed, actions.look_yaw))
+
+    def snapshot(self):
+        return {"time": 0.0}
+
+    def actions(self):
+        return {"axes": ["forward"]}
+
+    def status(self):
+        return "cadence"
+
+
+class InputCadenceTest(unittest.TestCase):
+    def _engine(self, times, keys=(), pointer_step=0.0, press_from=0):
+        from keystone.clock import FixedStepClock
+        from keystone.input import InputMap
+
+        engine = object.__new__(Engine)
+        engine.game = _CadenceRecorder()
+        engine.context = _CadenceContext(times, keys, pointer_step, press_from)
+        engine.renderer = _CadenceRenderer()
+        engine.ui_renderer = None
+        engine.overlay = None
+        engine.scene = engine.game.build_scene()
+        engine.input = InputMap()
+        engine.clock = FixedStepClock()
+        engine.paused = False
+        object.__setattr__(engine, "_frames", 0)
+        object.__setattr__(engine, "_elapsed", 0.0)
+        object.__setattr__(engine, "_fps", 0.0)
+        object.__setattr__(engine, "_pointer", (0.0, 0.0))
+        object.__setattr__(engine, "_visible", True)
+        object.__setattr__(engine, "_closed", False)
+        object.__setattr__(engine, "_captured", True)
+        object.__setattr__(engine, "_pending_pressed", frozenset())
+        object.__setattr__(engine, "_pending_clicked", False)
+        object.__setattr__(engine, "_pending_yaw", 0.0)
+        object.__setattr__(engine, "_pending_pitch", 0.0)
+        return engine
+
+    def test_look_delta_is_frame_rate_independent(self):
+        for fps in (30, 60, 144):
+            times = [index / fps for index in range(fps + 1)]
+            engine = self._engine(times, pointer_step=10.0)
+            engine.run(max_frames=fps)
+            applied = sum(look for _, look in engine.game.updates)
+            expected = len(engine.game.updates) * (fps / 60.0) * 10.0 * engine.input.mouse_sensitivity
+            self.assertAlmostEqual(
+                applied, expected, delta=10.0 * engine.input.mouse_sensitivity, msg=f"{fps} Hz"
+            )
+
+    def test_pressed_edge_survives_zero_step_frames(self):
+        fps = 144
+        times = [index / fps for index in range(fps + 1)]
+        engine = self._engine(times, keys={"w"}, press_from=1)
+        engine.run(max_frames=fps)
+        pressed = sum(1 for actions, _ in engine.game.updates if "forward" in actions)
+        self.assertEqual(pressed, 1)
+
+    def test_pause_menu_mouse_click_resumes(self):
+        from keystone.ui.overlay import HudState, HumanOverlay
+
+        engine = self._engine([0.0, 0.0], keys=())
+        engine.overlay = HumanOverlay()
+        engine.paused = True
+        engine._set_capture(False)
+        engine.overlay.build(
+            HudState(
+                game="g",
+                status="r",
+                fps=60.0,
+                frame=0,
+                elapsed=0.0,
+                width=320,
+                height=240,
+                paused=True,
+            )
+        )
+        left, top, width, height, _action = engine.overlay.hits[0]
+        engine.context.mouse = True
+        engine.context._x = left + width / 2
+        engine.context._y = top + height / 2
+        actions = engine.input.sample(engine.context, 0.0)
+        self.assertTrue(actions.mouse_clicked)
+        engine._handle_system_actions(actions)
+        self.assertFalse(engine.paused)
 
 
 if __name__ == "__main__":

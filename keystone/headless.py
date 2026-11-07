@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import math
 from collections.abc import Iterable
@@ -10,6 +11,7 @@ from pathlib import Path
 from keystone.input import ActionState
 from keystone.plugin import GameModule
 from keystone.replay import FIXED_STEP, stable_hash
+from keystone.scene import Scene
 
 
 def load_actions(path: str | Path) -> list[ActionState]:
@@ -27,8 +29,8 @@ def load_actions(path: str | Path) -> list[ActionState]:
     for index, item in enumerate(payload):
         try:
             actions.append(ActionState.from_dict(item))
-        except AttributeError as exc:
-            raise TypeError(f"actions[{index}] must be a mapping") from exc
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise type(exc)(f"actions[{index}]: {exc}") from exc
     return actions
 
 
@@ -44,17 +46,22 @@ def run_simulation(
         raise ValueError("frames cannot be negative")
     if step <= 0.0 or not math.isfinite(step):
         raise ValueError("step must be positive and finite")
-    game.build_scene()
+    built = game.build_scene()
+    if not isinstance(built, Scene):
+        raise TypeError("GameModule.build_scene() must return a Scene")
     script = list(actions or [])
     snapshots: list[dict] = []
     used: list[dict] = []
     for index in range(frames):
-        action = script[min(index, len(script) - 1)] if script else ActionState()
+        if script:
+            action = script[index] if index < len(script) else script[-1].without_pressed()
+        else:
+            action = ActionState()
         used.append(action.to_dict())
         game.update(step, action)
         if trace:
-            snapshots.append(game.snapshot())
-    final = game.snapshot()
+            snapshots.append(copy.deepcopy(game.snapshot()))
+    final = copy.deepcopy(game.snapshot())
     report = {
         "ok": True,
         "game": getattr(game, "name", "game"),

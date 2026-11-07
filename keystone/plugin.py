@@ -27,9 +27,12 @@ def describe_game(game: GameModule) -> dict[str, object]:
     """Return a machine-readable capability/action/snapshot description."""
     from keystone.analysis import REPORT_SCHEMA
 
+    name = getattr(game, "name", None)
+    if not isinstance(name, str) or not name.strip():
+        raise TypeError("GameModule.name must be a non-blank string")
     return {
         "schema": 1,
-        "game": getattr(game, "name", "game"),
+        "game": name,
         "actions": game.actions(),
         "snapshot": game.snapshot(),
         "capabilities": {
@@ -65,7 +68,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "web": {
                 "api_version": WEB_API_VERSION,
                 "scene_schema": SCENE_SCHEMA_VERSION,
-                "endpoints": ["/api/describe", "/api/scene", "/api/inspector", "/api/simulate"],
+                "endpoints": ["/api", "/api/health", "/api/describe", "/api/scene", "/api/inspector", "/api/simulate"],
                 "notes": ["replay a CommandLog with --replay <log.json>, or translate log.frames into the actions array of POST /api/simulate"],
             },
         },
@@ -93,6 +96,9 @@ def load_game(spec: str) -> GameModule:
         game = factory()
     except TypeError as exc:
         raise TypeError(f"game '{spec}' factory failed: {exc}") from exc
+    name = getattr(game, "name", None)
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError(f"game '{spec}' must expose a non-blank string name")
     for method in ("build_scene", "update", "snapshot", "actions", "status"):
         if not callable(getattr(game, method, None)):
             raise TypeError(f"game '{spec}' does not implement {method}()")

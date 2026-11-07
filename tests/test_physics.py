@@ -28,6 +28,18 @@ class PhysicsTest(unittest.TestCase):
         self.assertIsNone(ray_aabb(ray, AABB(Vec3(0, 0, 5), Vec3(1, 1, 1))))
         self.assertIsNone(ray_sphere(ray, Sphere(Vec3(0, 0, 5), 1.0)))
 
+    def test_ray_from_inside_sphere_returns_zero_like_aabb(self):
+        ray = Ray(Vec3(0, 0, 0), Vec3(0, 0, 1))
+        sphere = Sphere(Vec3(0, 0, 0), 1.0)
+        self.assertEqual(ray_sphere(ray, sphere), 0.0)
+        self.assertEqual(ray_sphere(Ray(Vec3(0, 0, 0), Vec3(0, 0, 1), t_max=0.0), sphere), 0.0)
+
+    def test_raycast_breaks_equal_distance_ties_by_key(self):
+        ray = Ray(Vec3(0, 0, 0), Vec3(0, 0, 1))
+        box = AABB(Vec3(0, 0, 5), Vec3(1, 1, 1))
+        hit = raycast(ray, {("gamma", box), ("alpha", box), ("beta", box)})
+        self.assertEqual(hit.key, "alpha")
+
     def test_ray_validation(self):
         with self.assertRaises(ValueError):
             Ray(Vec3(), Vec3())

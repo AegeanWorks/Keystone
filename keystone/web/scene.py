@@ -10,6 +10,12 @@ from keystone.texture import TextureData
 from keystone.web.schema import SCENE_SCHEMA
 
 
+def _enabled(value: object) -> bool:
+    if value is None:
+        return False
+    return bool(getattr(value, "enabled", value))
+
+
 def _floats(values: tuple[tuple[float, ...], ...]) -> list[float]:
     return [component for value in values for component in value]
 
@@ -105,12 +111,12 @@ def scene_document(scene: Scene, game: str = "game") -> dict:
         "node_count": len(nodes),
         "mesh_count": len(meshes),
         "texture_count": len(textures),
-        "shadows": {"enabled": bool(shadow is not None and getattr(shadow, "enabled", True)), "size": 1024},
-        "color": {"enabled": bool(color is not None and getattr(color, "enabled", True))},
-        "post": {"enabled": bool(post is not None and getattr(post, "enabled", True))},
-        "bloom": {"enabled": bool(bloom is not None and getattr(bloom, "enabled", True))},
-        "sprites": {"enabled": bool(sprite is not None and getattr(sprite, "enabled", True))},
-        "culling": {"enabled": bool(culling is not None and getattr(culling, "enabled", True))},
+        "shadows": {"enabled": _enabled(shadow), "size": 1024 if _enabled(shadow) else 0},
+        "color": {"enabled": _enabled(color)},
+        "post": {"enabled": _enabled(post)},
+        "bloom": {"enabled": _enabled(bloom)},
+        "sprites": {"enabled": _enabled(sprite)},
+        "culling": {"enabled": _enabled(culling)},
         "camera": {
             "position": list(camera.position),
             "yaw": camera.yaw,

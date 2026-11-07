@@ -24,8 +24,10 @@ class SpatialGrid:
     """
 
     def __init__(self, cell_size: float = 2.0) -> None:
-        if cell_size <= 0.0:
-            raise ValueError("cell_size must be positive")
+        if isinstance(cell_size, bool) or not isinstance(cell_size, (int, float)):
+            raise TypeError("cell_size must be a real number")
+        if not math.isfinite(cell_size) or cell_size <= 0.0:
+            raise ValueError("cell_size must be positive and finite")
         self.cell_size = float(cell_size)
         self._boxes: dict[Hashable, AABB] = {}
         self._order: dict[Hashable, int] = {}

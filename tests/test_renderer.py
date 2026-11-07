@@ -35,6 +35,21 @@ class RendererIntegrationTest(unittest.TestCase):
         self.renderer = Renderer(64, 48)
         self.addCleanup(self.renderer.release)
 
+    def test_zero_scale_node_does_not_abort_the_render(self):
+        from keystone.scene import Transform
+
+        scene = build_scene()
+        scene.add(
+            Node(
+                "collapsed",
+                transform=Transform(scale=Vec3(0.0, 0.0, 0.0)),
+                mesh=cube(1.0),
+                material=Material(color=Vec3(1.0, 0.0, 0.0)),
+            )
+        )
+        stats = self.renderer.render(scene)
+        self.assertGreater(stats["draw_calls"], 0)
+
     def test_render_fills_the_center_with_a_lit_surface(self):
         self.renderer.render(build_scene())
         pixels = self.renderer.read_pixels()

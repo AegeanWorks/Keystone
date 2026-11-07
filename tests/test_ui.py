@@ -162,3 +162,19 @@ class OverlayTest(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             PauseMenu().move(0.5)  # type: ignore[arg-type]
+
+    def test_hover_right_edge_is_exclusive(self):
+        overlay = HumanOverlay()
+        overlay.build(state(paused=True))
+        left, top, width, height, _action = overlay.hits[0]
+        canvas = overlay.build(state(paused=True, pointer=(left + width, top + height / 2)))
+        from keystone.ui.report import describe_canvas
+
+        report = describe_canvas(canvas, paused=True, visible=True)
+        self.assertFalse(report["buttons"][0]["hovered"])
+
+    def test_canvas_text_scale_requires_a_positive_integer(self):
+        canvas = Canvas(20, 20)
+        for scale in (0, -1, 1.5, True):
+            with self.assertRaises((TypeError, ValueError)):
+                canvas.text(0, 0, "A", (1.0, 1.0, 1.0, 1.0), scale=scale)  # type: ignore[arg-type]

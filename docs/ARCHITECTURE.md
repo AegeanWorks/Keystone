@@ -1,6 +1,6 @@
 # Keystone Architecture
 
-**Status:** implemented in v0.42.0 - core-only engine with scene identity, PBR materials, physics systems, human UI with profiler, deterministic animation with blending/events and skinning, particles with collision and GPU point sprites, audio, batch planning and merging, replay runner, seeded bot playtester with transcript diffing and fairness validation, a local web console with inspector, asset inventory and particle state, an asset registry with hot reload, material graphs, glTF 2.0 import, versioned scene snapshots with undo/redo, AI observation/action adapters, a post color-grade, bloom diffusion and character locomotion
+**Status:** implemented in v0.45.0 - core-only engine with scene identity, PBR materials, physics systems, human UI with profiler, deterministic animation with blending/events and skinning, particles with collision and GPU point sprites, audio, batch planning and merging, replay runner, seeded bot playtester with transcript diffing and fairness validation, a local web console with inspector, asset inventory and particle state, an asset registry with hot reload, material graphs, glTF 2.0 import, versioned scene snapshots with undo/redo, AI observation/action adapters, a post color-grade, bloom diffusion and character locomotion
 **Boundary:** `keystone/` is game-agnostic; games are external modules.
 
 ## 1. What Keystone Is
@@ -115,7 +115,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 - `headless.run_simulation(game, frames, actions, step, trace)` calls `build_scene()` and then `update()` in fixed steps without importing the renderer or creating a GL context.
 - `load_actions()` accepts a JSON list or an object with `actions`; every item is an `ActionState`.
 - `analysis.analyze_frame(scene, pixels, width, height, image_path, ui=None, fx=None)` returns schema-11 JSON: image hashes, pixel statistics, content bbox, dominant colors, an 8×8 luminance grid, camera data, projected node bounds with scene identity/tags/layers/components, PBR material/texture metadata, sprite toggle, culling toggle plus per-frame FX counts and optional UI labels/buttons. `Engine.capture(image, report)` writes both artifacts.
-- `analysis.compare_reports(before, after)` returns image/report equality, luminance/content-ratio deltas, bbox changes, added/removed/changed nodes (including identity, tag, layer, component and PBR material changes), and added/removed/moved UI labels and buttons. It accepts schema-1/2/3/4 reports as baselines and keys nodes by ID when both reports are schema 4 or newer.
+- `analysis.compare_reports(before, after)` returns image/report equality, luminance/content-ratio deltas, bbox changes, added/removed/changed nodes (including identity, tag, layer, component and PBR material changes), and added/removed/moved UI labels and buttons. It accepts schema-1 through schema-11 reports as baselines and keys nodes by ID when both reports are schema 4 or newer.
 - `keystone.agents.observe()` fuses `describe_game()` and `run_simulation()` into one hash-stable observation; `parse_actions()` validates LLM JSON into `ActionState`; `summarize_report()` compresses a frame report for model context; `AuditTrail` keeps a hash-chained log.
 - `InputMap.save_bindings()/load_bindings()` persist rebindable keys as JSON; the profiler HUD shows draw calls and triangles from `Renderer.last_stats`.
 - `analysis.diff_images(before, after, output)` reads PNGs, writes a visual diff and returns changed-pixel count/ratio, bbox and mean/max delta; `png.read_png()` is the dependency-free reader.
@@ -210,7 +210,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - `CharacterController` rests on a floor, stops at walls, leaves the ground on a jump, steps onto low stairs and rides caller-supplied platform velocity with swept pushout.
 - Particles bounce with restitution, lose tangential velocity to friction, settle below rest speed and optionally die on contact, all deterministically.
 - Particles sliding along a box face keep tangential motion; deep-interior spawns eject through the near face.
-- `TriggerTracker` reports sorted enter, stay and exit sets; `raycast()` filters candidates and returns the nearest hit.
+- `TriggerTracker` reports sorted enter/exit tuples and an immutable active set; `raycast()` filters candidates and returns the nearest hit.
 - `Scene` assigns unique IDs, preserves them across reparenting and rejects duplicate explicit IDs.
 - `Scene.query()`/`find()` filter by name, tag, layer and component; `find_by_id()` resolves an ID.
 - Schema-4 reports include node ID, parent ID, tags, layer and component names; older reports still compare by name.
