@@ -9,8 +9,8 @@
 - **Total Python Modules**: `128`
 - **Total Classes**: `202`
 - **Total Top-Level Functions**: `291`
-- **Total Class Methods**: `1226`
-- **Total Source Lines**: `25340`
+- **Total Class Methods**: `1228`
+- **Total Source Lines**: `25405`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `516` lines (`28440` bytes)
+**Size**: `521` lines (`28846` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -1517,13 +1517,13 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `881` lines (`38180` bytes)
+**Size**: `904` lines (`38963` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
   - Method `.__init__(status, why, fix)`
 - `class GameSession` - *One in-memory game guarded by a lock for concurrent HTTP requests.*
-  - Method `.__init__(game, prefab_dir, scene_dir)`
+  - Method `.__init__(game, prefab_dir, scene_dir, initial_scene)`
   - Property `.name`
   - Method `.describe()`
   - Method `.simulate(frames, actions, step, trace)`
@@ -1563,8 +1563,8 @@
 
 **Functions:**
 - `def _enabled(value)`
-- `def create_server(game, host, port, prefab_dir, scene_dir)` - *Create a bound server; port 0 asks the OS for a free port.*
-- `def serve(game, host, port, prefab_dir, scene_dir)` - *Run the local console until interrupted.*
+- `def create_server(game, host, port, prefab_dir, scene_dir, initial_scene)` - *Create a bound server; port 0 asks the OS for a free port.*
+- `def serve(game, host, port, prefab_dir, scene_dir, initial_scene)` - *Run the local console until interrupted.*
 
 ---
 
@@ -1693,7 +1693,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `517` lines (`20909` bytes)
+**Size**: `523` lines (`21195` bytes)
 
 **Classes:**
 - `class HudCube`
@@ -1712,6 +1712,7 @@
   - Method `.test_serve_is_a_standalone_web_command()`
   - Method `.test_windowless_commands_reject_window_flags()`
   - Method `.test_web_flags_require_serve()`
+  - Method `.test_scene_startup_requires_a_library()`
   - Method `.test_bad_web_port_is_a_usage_error()`
   - Method `.test_headless_ui_capture_writes_a_report()`
   - Method `.test_start_paused_headless_report_describes_the_menu()`
@@ -2904,7 +2905,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `875` lines (`36974` bytes)
+**Size**: `906` lines (`38354` bytes)
 
 **Classes:**
 - `class Health`
@@ -2934,6 +2935,7 @@
   - Method `.test_editor_asset_inventory_and_assignment()`
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`
+  - Method `.test_editor_initial_scene_loads_at_startup()`
   - Method `.test_editor_scene_library_persists_and_restores()`
   - Method `.test_editor_batch_authoring_is_atomic()`
   - Method `.test_editor_node_property_editing()`

@@ -672,3 +672,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The editor could list asset ids and kinds, but an AI client could not tell a useful mesh from an empty one, compare material factors, check texture size or see a prefab's contents without loading raw payloads.
 - **Decision**: Bump the editor schema to 9 and enrich `asset_entries()` with metadata: mesh vertices/triangles/UV/color/skin-joint flags, material color/specular/shininess/metallic/roughness/emissive/texture flag, texture name/size, and prefab node count plus resolved asset dependencies. Keep the registry's id/kind/sha256/source/dependencies fields unchanged.
 - **Consequences**: 698 tests green; AI clients can choose assets from summaries and catch empty or mismatched assets before assignment. Scene startup and asset previews remain future work.
+
+### ADR-081: Open a saved scene when the editor starts
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: `.kscene` files survived restarts, but every console start rebuilt the game scene and required a manual load. A Unity/Unreal-style project should open its scene directly.
+- **Decision**: Add `--scene NAME` for `--serve` with `--project` or `--scene-dir`, pass `initial_scene` through `serve`/`create_server`/`GameSession`, and eagerly build the game scene and `load_into` the named entry before the first request. Missing libraries or entries fail at startup with explicit errors.
+- **Consequences**: 700 tests green; the editor opens on the authored scene with empty history/selection, and invalid scene names fail before serving. Non-serve scene loading and asset previews remain future work.

@@ -173,10 +173,16 @@ class EngineTest(unittest.TestCase):
             ["--host", "0.0.0.0"],
             ["--prefab-dir", "prefabs"],
             ["--scene-dir", "scenes"],
+            ["--scene", "level"],
         ):
             with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
                 main(argv)
             self.assertEqual(caught.exception.code, 2)
+
+    def test_scene_startup_requires_a_library(self):
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+            main(["--serve", "--scene", "level"])
+        self.assertEqual(caught.exception.code, 2)
 
     def test_bad_web_port_is_a_usage_error(self):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:

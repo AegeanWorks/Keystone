@@ -441,6 +441,37 @@ class WebServerTest(unittest.TestCase):
             entries = {entry["name"]: entry for entry in third.editor()["prefabs"]}
             self.assertIsNotNone(entries["broken"]["error"])
 
+    def test_editor_initial_scene_loads_at_startup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            scene_dir = Path(directory) / "scenes"
+            first = GameSession(CubeDemo(), scene_dir=scene_dir)
+            editor = first.editor()
+            cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+            first.editor_action(
+                {
+                    "action": "transform",
+                    "id": cube["id"],
+                    "position": [4.0, 5.0, 6.0],
+                }
+            )
+            first.editor_action({"action": "save_scene", "name": "level"})
+
+            second = GameSession(
+                CubeDemo(), scene_dir=scene_dir, initial_scene="level"
+            )
+            editor = second.editor()
+            restored = next(
+                node for node in editor["nodes"] if node["id"] == cube["id"]
+            )
+            self.assertEqual(restored["transform"]["position"], [4.0, 5.0, 6.0])
+            self.assertIsNone(editor["selection"])
+            self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
+
+            with self.assertRaises(KeyError):
+                GameSession(CubeDemo(), scene_dir=scene_dir, initial_scene="missing")
+            with self.assertRaises(ValueError):
+                GameSession(CubeDemo(), initial_scene="level")
+
     def test_editor_scene_library_persists_and_restores(self):
         with tempfile.TemporaryDirectory() as directory:
             scene_dir = Path(directory) / "scenes"

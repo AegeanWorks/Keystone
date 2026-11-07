@@ -94,6 +94,7 @@ class GameSession:
         game: GameModule,
         prefab_dir: str | Path | None = None,
         scene_dir: str | Path | None = None,
+        initial_scene: str | None = None,
     ) -> None:
         self.game = game
         self.lock = threading.RLock()
@@ -121,6 +122,12 @@ class GameSession:
                 registry=self._registry_locked(),
                 component_types=component_types,
             )
+        self.initial_scene = initial_scene
+        self._initial_scene_loaded = False
+        if initial_scene is not None:
+            if self.scene_library is None:
+                raise ValueError("a scene library is required to open a saved scene")
+            self._scene_locked()
 
     @property
     def name(self) -> str:
@@ -170,6 +177,9 @@ class GameSession:
             self.prefab_library.registry = registry
         if self.scene_library is not None:
             self.scene_library.registry = registry
+        if self.initial_scene is not None and not self._initial_scene_loaded:
+            self.scene_library.load_into(self.initial_scene, scene)
+            self._initial_scene_loaded = True
         return scene
 
     def scene(self) -> dict:
@@ -839,12 +849,19 @@ def create_server(
     port: int = 0,
     prefab_dir: str | Path | None = None,
     scene_dir: str | Path | None = None,
+    initial_scene: str | None = None,
 ) -> KeystoneHTTPServer:
     """Create a bound server; port 0 asks the OS for a free port."""
     if not isinstance(port, int) or isinstance(port, bool) or not 0 <= port <= 65535:
         raise ValueError("port must be between 0 and 65535")
     return KeystoneHTTPServer(
-        (host, port), GameSession(game, prefab_dir=prefab_dir, scene_dir=scene_dir)
+        (host, port),
+        GameSession(
+            game,
+            prefab_dir=prefab_dir,
+            scene_dir=scene_dir,
+            initial_scene=initial_scene,
+        ),
     )
 
 
@@ -854,11 +871,17 @@ def serve(
     port: int = 8000,
     prefab_dir: str | Path | None = None,
     scene_dir: str | Path | None = None,
+    initial_scene: str | None = None,
 ) -> int:
     """Run the local console until interrupted."""
     try:
         server = create_server(
-            game, host=host, port=port, prefab_dir=prefab_dir, scene_dir=scene_dir
+            game,
+            host=host,
+            port=port,
+            prefab_dir=prefab_dir,
+            scene_dir=scene_dir,
+            initial_scene=initial_scene,
         )
     except OSError as exc:
         raise ValueError(
