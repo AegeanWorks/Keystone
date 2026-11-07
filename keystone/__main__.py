@@ -267,6 +267,19 @@ def main(argv: list[str] | None = None) -> int:
     engine = None
     try:
         game = load_game(args.game)
+        if project_context is not None:
+            from keystone.project import attach_project_assets
+
+            try:
+                attach_project_assets(game, project_context)
+            except (OSError, KeyError, TypeError, ValueError) as exc:
+                print("Keystone could not import project assets.", file=sys.stderr)
+                print(f"Why: {exc}", file=sys.stderr)
+                print(
+                    "Fix: list existing .obj/.png/.kprefab paths in keystone.json assets.",
+                    file=sys.stderr,
+                )
+                return 1
         if args.serve:
             from keystone.web import serve
 

@@ -9,9 +9,12 @@ from __future__ import annotations
 
 import re
 import sys
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
+from keystone.asset_io import kind_from_suffix
+from keystone.assets import AssetRecord, AssetRegistry
 from keystone.plugin import GameModule, load_game
 from keystone.serialization import read_json, write_json_atomic
 
@@ -24,9 +27,12 @@ __all__ = [
     "PROJECT_SCHEMA_VERSION",
     "ProjectContext",
     "ProjectManifest",
+    "attach_project_assets",
     "create_project",
+    "import_project_assets",
     "load_project",
     "load_project_game",
+    "project_asset_id",
     "save_project",
 ]
 
@@ -141,12 +147,78 @@ def save_project(path: str | Path, manifest: ProjectManifest) -> Path:
     return target
 
 
+def _relative_asset_path(value: str | Path) -> Path:
+    if not isinstance(value, (str, Path)):
+        raise TypeError("project asset path must be a string or Path")
+    relative = Path(value)
+    if relative.is_absolute():
+        raise ValueError(f"project asset path must be relative: {value}")
+    parts = tuple(part for part in relative.parts if part not in ("", "."))
+    if not parts or any(part == ".." for part in parts):
+        raise ValueError(f"project asset path must stay inside the project: {value}")
+    return Path(*parts)
+
+
+def project_asset_id(value: str | Path) -> str:
+    """Return the deterministic registry id for one manifest asset path."""
+    return "project:" + _relative_asset_path(value).as_posix()
+
+
+def import_project_assets(
+    context: ProjectContext,
+    registry: AssetRegistry,
+    component_types: Mapping[str, type] | None = None,
+) -> tuple[AssetRecord, ...]:
+    """Load every manifest asset into an existing registry."""
+    if not isinstance(context, ProjectContext):
+        raise TypeError("project context must be a ProjectContext")
+    if not isinstance(registry, AssetRegistry):
+        raise TypeError("project assets need an AssetRegistry")
+    records: list[AssetRecord] = []
+    root = context.directory.resolve()
+    for value in context.manifest.assets:
+        relative = _relative_asset_path(value)
+        target = (root / relative).resolve()
+        try:
+            target.relative_to(root)
+        except ValueError as exc:
+            raise ValueError(f"project asset escapes the project directory: {value}") from exc
+        kind = kind_from_suffix(target)
+        record = registry.register_file(
+            project_asset_id(relative),
+            target,
+            kind=kind,
+            component_types=component_types if kind == "prefab" else None,
+        )
+        records.append(record)
+    return tuple(records)
+
+
+def attach_project_assets(
+    game: GameModule,
+    context: ProjectContext,
+    component_types: Mapping[str, type] | None = None,
+) -> tuple[AssetRecord, ...]:
+    """Import manifest assets into game.assets when the project declares any."""
+    if not context.manifest.assets:
+        return ()
+    registry = getattr(game, "assets", None)
+    if not isinstance(registry, AssetRegistry):
+        raise TypeError("project declares assets but game.assets is not an AssetRegistry")
+    selected = component_types
+    if selected is None:
+        selected = getattr(game, "component_types", None)
+    return import_project_assets(context, registry, selected)
+
+
 def load_project_game(context: ProjectContext) -> GameModule:
     """Import and validate a project's game after adding its directory to sys.path."""
     directory = str(context.directory)
     if directory not in sys.path:
         sys.path.insert(0, directory)
-    return load_game(context.manifest.game)
+    game = load_game(context.manifest.game)
+    attach_project_assets(game, context)
+    return game
 
 
 def _game_source(manifest: ProjectManifest) -> str:
@@ -154,7 +226,7 @@ def _game_source(manifest: ProjectManifest) -> str:
 
 from __future__ import annotations
 
-from keystone import Node, Quat, Scene, Transform, Vec3
+from keystone import AssetRegistry, Node, Quat, Scene, Transform, Vec3
 from keystone.geometry import Material
 from keystone.primitives import cube, plane
 
@@ -164,6 +236,7 @@ class Game:
 
     def __init__(self) -> None:
         self.scene: Scene | None = None
+        self.assets = AssetRegistry()
         self.time = 0.0
         self._cube: Node | None = None
 
@@ -171,8 +244,16 @@ class Game:
         self.scene = Scene()
         self.scene.camera.position = Vec3(0.0, 2.5, 7.0)
         self.scene.camera.look_at(Vec3(0.0, 0.8, 0.0))
-        self.scene.add(Node("floor", id="floor", mesh=plane(20.0), material=Material(color=Vec3(0.18, 0.2, 0.24))))
-        self._cube = self.scene.add(Node("cube", id="cube", mesh=cube(1.5), material=Material(color=Vec3(0.9, 0.45, 0.2))))
+        floor_mesh = plane(20.0)
+        cube_mesh = cube(1.5)
+        floor_material = Material(color=Vec3(0.18, 0.2, 0.24))
+        cube_material = Material(color=Vec3(0.9, 0.45, 0.2))
+        self.assets.register("mesh.plane", floor_mesh, replace=True)
+        self.assets.register("mesh.cube", cube_mesh, replace=True)
+        self.assets.register("material.floor", floor_material, replace=True)
+        self.assets.register("material.cube", cube_material, replace=True)
+        self.scene.add(Node("floor", id="floor", mesh=floor_mesh, material=floor_material))
+        self._cube = self.scene.add(Node("cube", id="cube", mesh=cube_mesh, material=cube_material))
         return self.scene
 
     def update(self, dt: float, actions: object) -> None:
@@ -214,6 +295,12 @@ python -m keystone --project . --serve
 - `keystone.json` — versioned project manifest.
 - `{_module_name(manifest.name)}.py` — the generated five-operation game module.
 - `prefabs/` — optional editor prefab library, created on the first save.
+
+## Assets
+
+Add relative `.obj`, `.png` or `.kprefab` paths to `assets` in `keystone.json`.
+`--project` imports them as `project:<relative-path>` when the game exposes
+`self.assets = AssetRegistry()`.
 """
 
 

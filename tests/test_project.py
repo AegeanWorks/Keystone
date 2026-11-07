@@ -9,15 +9,27 @@ import uuid
 from pathlib import Path
 
 from keystone.__main__ import main
+from keystone.assets import AssetRegistry
 from keystone.headless import run_simulation
+from keystone.png import write_png
 from keystone.project import (
     PROJECT_FILE,
     ProjectManifest,
     create_project,
+    import_project_assets,
     load_project,
     load_project_game,
+    project_asset_id,
     save_project,
 )
+
+OBJ_TEXT = """v 0 0 0
+v 1 0 0
+v 0 1 0
+vn 0 0 1
+f 1//1 2//1 3//1
+"""
+PIXELS = bytes((10, 20, 30, 255, 40, 50, 60, 255, 70, 80, 90, 255, 100, 110, 120, 255))
 
 
 class ProjectManifestTest(unittest.TestCase):
@@ -76,6 +88,98 @@ class ProjectScaffoldTest(unittest.TestCase):
             self.assertEqual(result["frames"], 3)
             self.assertIn("hash", result)
             self.assertEqual(result["final"]["name"], name)
+
+    def _project_with_assets(self, root, name):
+        context = create_project(root, name=name)
+        assets = root / "assets"
+        assets.mkdir()
+        (assets / "cube.obj").write_text(OBJ_TEXT, encoding="utf-8")
+        write_png(assets / "grid.png", 2, 2, PIXELS)
+        manifest = ProjectManifest(
+            name=name,
+            game=context.manifest.game,
+            assets=("assets/cube.obj", "assets/grid.png"),
+        )
+        save_project(root, manifest)
+        return load_project(root)
+
+    def test_project_assets_import_with_stable_ids(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            context = self._project_with_assets(root, self._name())
+            registry = AssetRegistry()
+            records = import_project_assets(context, registry)
+            self.assertEqual(
+                [record.id for record in records],
+                ["project:assets/cube.obj", "project:assets/grid.png"],
+            )
+            self.assertEqual([record.kind for record in records], ["mesh", "texture"])
+            self.assertEqual(project_asset_id("assets/grid.png"), "project:assets/grid.png")
+            self.assertEqual(
+                registry.require("project:assets/cube.obj").source,
+                (root / "assets" / "cube.obj").resolve(),
+            )
+
+    def test_project_game_imports_manifest_assets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            context = self._project_with_assets(root, self._name())
+            game = load_project_game(context)
+            self.assertEqual(
+                game.assets.ids(),
+                ("project:assets/cube.obj", "project:assets/grid.png"),
+            )
+            result = run_simulation(game, frames=1)
+            self.assertEqual(result["frames"], 1)
+            self.assertIn("project:assets/cube.obj", game.assets.ids())
+
+    def test_project_assets_reject_unsafe_missing_and_unknown(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            context = create_project(root, name=self._name())
+            for bad in ("../outside.obj", "/absolute.obj"):
+                manifest = ProjectManifest(
+                    name=context.manifest.name,
+                    game=context.manifest.game,
+                    assets=(bad,),
+                )
+                save_project(root, manifest)
+                with self.assertRaises(ValueError):
+                    import_project_assets(load_project(root), AssetRegistry())
+            (root / "assets").mkdir(exist_ok=True)
+            (root / "assets" / "data.bin").write_bytes(b"x")
+            for value, error in (
+                ("assets/missing.obj", FileNotFoundError),
+                ("assets/data.bin", ValueError),
+            ):
+                manifest = ProjectManifest(
+                    name=context.manifest.name,
+                    game=context.manifest.game,
+                    assets=(value,),
+                )
+                save_project(root, manifest)
+                with self.assertRaises(error):
+                    import_project_assets(load_project(root), AssetRegistry())
+            with self.assertRaises(ValueError):
+                project_asset_id("../outside.obj")
+
+    def test_cli_project_asset_failure_is_actionable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            context = create_project(root, name=self._name())
+            manifest = ProjectManifest(
+                name=context.manifest.name,
+                game=context.manifest.game,
+                assets=("assets/missing.obj",),
+            )
+            save_project(root, manifest)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                self.assertEqual(main(["--project", str(root), "--describe"]), 1)
+            text = err.getvalue()
+            self.assertIn("could not import project assets", text)
+            self.assertIn("Why:", text)
+            self.assertIn("Fix:", text)
 
     def test_non_empty_directory_requires_force(self):
         with tempfile.TemporaryDirectory() as directory:

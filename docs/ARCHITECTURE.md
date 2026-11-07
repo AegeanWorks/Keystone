@@ -147,7 +147,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Math | Implemented | Vec3, Mat4, Quat, transforms |
 | Scene | Implemented | hierarchy, visibility, lights, IDs, tags, layers and components |
 | Prefabs | Implemented | detached subtree capture, versioned `.kprefab` save/load, file-backed libraries, deterministic instance IDs, component copy isolation, JSON-safe describe |
-| Projects | Implemented | versioned `keystone.json` manifest, `--new` scaffold, `--project` loader and generated five-op game |
+| Projects | Implemented | versioned `keystone.json` manifest, `--new` scaffold, `--project` loader, relative asset import as `project:<path>` and generated five-op game |
 | Scene queries | Implemented | name/tag/layer/component filters and ID lookup |
 | Camera | Implemented | perspective and view matrices |
 | Geometry | Implemented | indexed meshes, materials, vertex colors |
@@ -221,6 +221,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - The editor reloads persisted prefabs after a restart, reports corrupt library entries as per-entry errors, and inserts them with deterministic instance ids.
 - `--project . --serve` uses `<project>/prefabs/*.kprefab`; `--prefab-dir DIR` overrides the library, and library entries report load errors instead of breaking the editor.
 - `python -m keystone --new <dir>` scaffolds a project whose `--project <dir> --describe` and `--simulate` paths pass the five-operation contract.
+- A project manifest may list relative `.obj`, `.png` and `.kprefab` assets; `--project` imports them as `project:<path>` and rejects absolute, escaping, missing or unsupported paths.
 - Schema-4 reports include node ID, parent ID, tags, layer and component names; older reports still compare by name.
 - `TextureData.checker()` renders through a textured plane and material metadata appears in reports.
 - `python -m keystone --headless --frames 1 --out frame.png --report frame.json` writes both artifacts.

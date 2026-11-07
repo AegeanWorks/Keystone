@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `125`
 - **Total Classes**: `196`
-- **Total Top-Level Functions**: `275`
-- **Total Class Methods**: `1192`
-- **Total Source Lines**: `23783`
+- **Total Top-Level Functions**: `279`
+- **Total Class Methods**: `1197`
+- **Total Source Lines**: `23987`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `491` lines (`27367` bytes)
+**Size**: `504` lines (`27952` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -1090,7 +1090,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `249` lines (`8927` bytes)
+**Size**: `336` lines (`12436` bytes)
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -1105,6 +1105,10 @@
 - `def _manifest_path(path)`
 - `def load_project(path)` - *Load ``keystone.json`` from a project directory or manifest file.*
 - `def save_project(path, manifest)` - *Write a manifest atomically; accepts a directory or a JSON path.*
+- `def _relative_asset_path(value)`
+- `def project_asset_id(value)` - *Return the deterministic registry id for one manifest asset path.*
+- `def import_project_assets(context, registry, component_types)` - *Load every manifest asset into an existing registry.*
+- `def attach_project_assets(game, context, component_types)` - *Import manifest assets into game.assets when the project declares any.*
 - `def load_project_game(context)` - *Import and validate a project's game after adding its directory to sys.path.*
 - `def _game_source(manifest)`
 - `def _project_readme(manifest)`
@@ -2449,7 +2453,7 @@
 ### [`tests/test_project.py`](tests/test_project.py)
 > *Tests for project manifests, scaffolding and the --project CLI path.*
 
-**Size**: `130` lines (`5333` bytes)
+**Size**: `234` lines (`9785` bytes)
 
 **Classes:**
 - `class ProjectManifestTest`
@@ -2459,6 +2463,11 @@
 - `class ProjectScaffoldTest`
   - Method `._name()`
   - Method `.test_create_project_loads_and_simulates()`
+  - Method `._project_with_assets(root, name)`
+  - Method `.test_project_assets_import_with_stable_ids()`
+  - Method `.test_project_game_imports_manifest_assets()`
+  - Method `.test_project_assets_reject_unsafe_missing_and_unknown()`
+  - Method `.test_cli_project_asset_failure_is_actionable()`
   - Method `.test_non_empty_directory_requires_force()`
   - Method `.test_cli_new_and_project()`
   - Method `.test_cli_new_is_standalone_and_missing_project_has_why_fix()`
