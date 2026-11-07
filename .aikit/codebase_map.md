@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `128`
 - **Total Classes**: `202`
-- **Total Top-Level Functions**: `291`
+- **Total Top-Level Functions**: `293`
 - **Total Class Methods**: `1228`
-- **Total Source Lines**: `25422`
+- **Total Source Lines**: `25484`
 
 ---
 
@@ -1270,7 +1270,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `30` lines (`578` bytes)
+**Size**: `30` lines (`579` bytes)
 
 ---
 
@@ -1449,7 +1449,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `628` lines (`22583` bytes)
+**Size**: `674` lines (`24387` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene-node edits.*
@@ -1467,6 +1467,8 @@
 - `def _node_id(value)`
 - `def _node_tags(value)`
 - `def _transform_from_payload(payload, current)`
+- `def _type_name(value)`
+- `def component_schemas(component_types)` - *Return JSON-safe field hints for every game component type.*
 - `def _asset_metadata(registry, kind, payload)`
 - `def asset_entries(registry)` - *Return the registry's JSON-safe asset inventory for the editor.*
 - `def _payload_id(registry, payload, kind)`
@@ -1477,7 +1479,7 @@
 - `def _restore_nodes(scene, snapshot)`
 - `def _component_documents(node)`
 - `def node_document(node, selected_id, registry)`
-- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, play_state)`
+- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, component_schema_documents, play_state)`
 - `def find_node(scene, node_id)`
 - `def create_node(scene, payload, parent, registry)` - *Create, validate and attach one node from an editor payload.*
 - `def delete_node(scene, node)` - *Detach one node subtree and return its former parent.*
@@ -1510,14 +1512,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `67` lines (`3495` bytes)
+**Size**: `70` lines (`3673` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `904` lines (`38963` bytes)
+**Size**: `906` lines (`39066` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2388,7 +2390,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `114` lines (`4387` bytes)
+**Size**: `114` lines (`4388` bytes)
 
 **Classes:**
 - `class PluginTest`
@@ -2905,7 +2907,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `906` lines (`38354` bytes)
+**Size**: `917` lines (`38708` bytes)
 
 **Classes:**
 - `class Health`

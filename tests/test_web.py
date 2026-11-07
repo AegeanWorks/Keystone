@@ -181,7 +181,7 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 9)
+        self.assertEqual(editor["schema"], 10)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
         self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
@@ -677,6 +677,17 @@ class WebServerTest(unittest.TestCase):
             session = GameSession(ComponentDemo(), scene_dir=scene_dir)
             editor = session.editor()
             self.assertEqual(editor["component_types"], ["Health"])
+            self.assertEqual(
+                editor["component_schemas"]["Health"]["fields"],
+                [
+                    {
+                        "name": "value",
+                        "type": "int",
+                        "required": True,
+                        "default": None,
+                    }
+                ],
+            )
             cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
             result = session.editor_action(
                 {

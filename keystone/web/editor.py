@@ -10,6 +10,7 @@ from __future__ import annotations
 import copy
 import math
 from collections.abc import Callable, Mapping
+from dataclasses import MISSING, fields, is_dataclass
 from typing import TypeVar
 
 from keystone.component_codec import (
@@ -29,6 +30,7 @@ __all__ = [
     "EditorHistory",
     "asset_entries",
     "assign_assets",
+    "component_schemas",
     "create_node",
     "delete_node",
     "duplicate_node",
@@ -114,6 +116,46 @@ def _transform_from_payload(payload: Mapping[str, object], current: Transform | 
     else:
         rotation = base.rotation
     return Transform(position=position, rotation=rotation, scale=scale)
+
+
+def _type_name(value: object) -> str:
+    return value.__name__ if isinstance(value, type) else str(value)
+
+
+def component_schemas(
+    component_types: ComponentTypes | None,
+) -> dict[str, dict[str, object]]:
+    """Return JSON-safe field hints for every game component type."""
+    if not component_types:
+        return {}
+    schemas: dict[str, dict[str, object]] = {}
+    for name in sorted(component_types):
+        component_type = component_types[name]
+        if not is_dataclass(component_type):
+            schemas[name] = {"fields": [], "note": "custom to_dict/from_dict codec"}
+            continue
+        fields_list: list[dict[str, object]] = []
+        for item in fields(component_type):
+            required = item.default is MISSING and item.default_factory is MISSING
+            default: object = None
+            if item.default is not MISSING:
+                default = (
+                    item.default
+                    if isinstance(item.default, (str, int, float, bool, type(None)))
+                    else repr(item.default)
+                )
+            elif item.default_factory is not MISSING:
+                default = "<factory>"
+            fields_list.append(
+                {
+                    "name": item.name,
+                    "type": _type_name(item.type),
+                    "required": required,
+                    "default": default if not required else None,
+                }
+            )
+        schemas[name] = {"fields": fields_list}
+    return schemas
 
 
 def _asset_metadata(registry: object | None, kind: object, payload: object) -> dict:
@@ -372,6 +414,7 @@ def editor_document(
     registry: object | None = None,
     assets: list[dict[str, object]] | None = None,
     component_types: list[str] | None = None,
+    component_schema_documents: dict[str, dict[str, object]] | None = None,
     play_state: dict[str, object] | None = None,
 ) -> dict:
     nodes = [node_document(node, selected_id, registry) for node in scene.traverse()]
@@ -393,6 +436,9 @@ def editor_document(
         "scenes": scene_entries if scene_entries is not None else [],
         "assets": assets if assets is not None else asset_entries(registry),
         "component_types": component_types if component_types is not None else [],
+        "component_schemas": (
+            component_schema_documents if component_schema_documents is not None else {}
+        ),
         "play": (
             play_state
             if play_state is not None

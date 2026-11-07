@@ -27,6 +27,8 @@ EDITOR_SCHEMA = {
         "play": ["active", "frames", "step"],
         "asset": ["id", "kind", "sha256", "source", "dependencies", "metadata"],
         "component_types": ["name"],
+        "component_schema": ["fields"],
+        "component_field": ["name", "type", "required", "default"],
         "reparent_node": ["id", "parent"],
         "history": ["undo", "redo", "limit"],
         "scene": ["name", "node_count", "source", "error"],
@@ -41,6 +43,7 @@ EDITOR_SCHEMA = {
         "schema 7 adds set_node property editing for name, visibility, tags and layer",
         "schema 8 adds atomic multi-action batches with one undo entry",
         "schema 9 adds mesh/material/texture/prefab metadata to the asset inventory",
+        "schema 10 adds dataclass field schemas for component_types",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

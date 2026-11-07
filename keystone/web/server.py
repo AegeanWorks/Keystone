@@ -28,6 +28,7 @@ from keystone.web.editor import (
     EditorHistory,
     asset_entries,
     assign_assets,
+    component_schemas,
     create_node,
     delete_node,
     duplicate_node,
@@ -271,6 +272,7 @@ class GameSession:
             registry=registry,
             assets=asset_entries(registry),
             component_types=sorted(self.component_types or {}),
+            component_schema_documents=component_schemas(self.component_types),
             play_state={
                 "active": self.playing,
                 "frames": self.play_frames,

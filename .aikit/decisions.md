@@ -688,3 +688,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: New projects had `keystone.json` and a game module, but no prefab/scene directories or component hook, so the editor workflow required manual setup and `--scene` had no default library.
 - **Decision**: Make `create_project()` create `prefabs/` and `scenes/` with short README files, initialize `self.assets = AssetRegistry()` and `self.component_types = {}` in the generated game, and document the save/serve/`--scene` loop in the generated README.
 - **Consequences**: 700 tests green; a new project can open the console, save prefabs/scenes and reload them without extra setup, while existing projects remain compatible. Editor camera polish and non-serve scene loading remain future work.
+
+### ADR-083: Expose dataclass field schemas for component authoring
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: AI clients could list component type names but not the fields needed for `set_component`, so payloads were guesswork. Dataclasses already carry enough metadata to describe their fields safely.
+- **Decision**: Bump the editor schema to 10 and add `component_schemas`: dataclass types expose field name, type name, required flag and JSON-safe default; non-dataclass types expose an empty field list with a manual-codec note. No runtime component data is exposed beyond the existing serialized `component_data`.
+- **Consequences**: 700 tests green; an AI can construct valid dataclass component payloads from `/api/editor` and still fall back to the `to_dict`/`from_dict` contract for custom types. Editor camera polish and non-serve scene loading remain future work.
