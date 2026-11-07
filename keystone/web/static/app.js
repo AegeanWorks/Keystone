@@ -27,12 +27,14 @@ const elements = {
   editorUndo: document.getElementById("editor-undo"),
   editorRedo: document.getElementById("editor-redo"),
   sceneName: document.getElementById("scene-name"),
+  sceneNames: document.getElementById("scene-names"),
   sceneNewName: document.getElementById("scene-new-name"),
   sceneSave: document.getElementById("scene-save"),
   sceneLoad: document.getElementById("scene-load"),
   sceneRename: document.getElementById("scene-rename"),
   sceneDelete: document.getElementById("scene-delete"),
   prefabName: document.getElementById("prefab-name"),
+  prefabNames: document.getElementById("prefab-names"),
   prefabNewName: document.getElementById("prefab-new-name"),
   prefabInstance: document.getElementById("prefab-instance"),
   prefabSave: document.getElementById("prefab-save"),
@@ -224,6 +226,23 @@ function renderHierarchy(editor) {
   renderParentOptions(editor, byId);
 }
 
+function fillDatalist(list, entries) {
+  list.replaceChildren();
+  for (const entry of entries) {
+    const option = document.createElement("option");
+    option.value = entry.name;
+    option.label = entry.error
+      ? `${entry.name} (error)`
+      : `${entry.name} · ${entry.node_count ?? "?"} nodes`;
+    list.append(option);
+  }
+}
+
+function renderLibraryOptions(editor) {
+  fillDatalist(elements.sceneNames, editor.scenes || []);
+  fillDatalist(elements.prefabNames, editor.prefabs || []);
+}
+
 function fillAssetSelect(select, kind, assets) {
   const previous = select.value;
   select.replaceChildren();
@@ -297,6 +316,7 @@ function fillTransform(selection) {
 function showEditor(editor) {
   editorState = editor;
   renderHierarchy(editor);
+  renderLibraryOptions(editor);
   renderAssets(editor);
   renderComponentTypes(editor);
   fillNodeProperties(editor.selection);

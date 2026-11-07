@@ -72,9 +72,10 @@
           <button id="editor-redo" type="button">Redo</button>
         </div>
         <div class="field-grid">
-          <label>Scene name <input id="scene-name" type="text" value="scene"></label>
+          <label>Scene name <input id="scene-name" type="text" value="scene" list="scene-names"></label>
           <label>New scene name <input id="scene-new-name" type="text" placeholder="renamed-scene"></label>
         </div>
+        <datalist id="scene-names"></datalist>
         <div class="buttons">
           <button id="scene-save" type="button">Save scene</button>
           <button id="scene-load" type="button">Load scene</button>
@@ -82,9 +83,10 @@
           <button id="scene-delete" type="button">Delete scene</button>
         </div>
         <div class="field-grid">
-          <label>Prefab name <input id="prefab-name" type="text" value="hero"></label>
+          <label>Prefab name <input id="prefab-name" type="text" value="hero" list="prefab-names"></label>
           <label>New prefab name <input id="prefab-new-name" type="text" placeholder="renamed-prefab"></label>
         </div>
+        <datalist id="prefab-names"></datalist>
         <div class="buttons">
           <button id="prefab-save" type="button">Save prefab</button>
           <button id="prefab-insert" type="button">Insert prefab</button>

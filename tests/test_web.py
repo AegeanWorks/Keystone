@@ -822,11 +822,13 @@ class WebServerTest(unittest.TestCase):
             "editor-undo",
             "editor-redo",
             "scene-name",
+            "scene-names",
             "scene-new-name",
             "scene-save",
             "scene-load",
             "scene-rename",
             "scene-delete",
+            "prefab-names",
             "prefab-new-name",
             "prefab-rename",
             "prefab-delete",
@@ -852,6 +854,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("save_scene", script)
         self.assertIn("rename_scene", script)
         self.assertIn("assign_asset", script)
+        self.assertIn("fillDatalist", script)
         self.assertIn("set_component", script)
         self.assertIn("play_start", script)
         self.assertIn("set_node", script)

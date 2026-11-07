@@ -720,3 +720,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The WebGL viewport always used the game camera, so inspecting an authored scene from another angle required changing gameplay state. A Unity/Unreal-style editor needs viewport navigation independent of the scene.
 - **Decision**: Add a `lookAt` matrix and spherical editor camera state to `viewer.js`: left-drag orbits, the wheel zooms within bounds, and Reset view re-frames from the scene camera. The editor camera survives scene refreshes, while the game camera remains untouched. Add a viewport Reset view button and a `touch-action: none` canvas rule.
 - **Consequences**: 703 tests green and both JS modules pass `node --check`; navigation is independent of gameplay state, with no pan/fly or gizmo controls yet. Non-serve scene loading remains future work.
+
+### ADR-087: Suggest saved scene and prefab names in the console
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: The console listed saved scenes/prefabs in editor state but its text inputs required remembering exact names, which made load/rename/delete error-prone.
+- **Decision**: Add `<datalist>` suggestions populated from `editor.scenes` and `editor.prefabs`; labels show node counts or a load-error marker. No API or schema change.
+- **Consequences**: 703 tests green and both JS modules pass `node --check`; the console exposes the same library names the AI API already returns. Non-serve scene loading remains future work.
