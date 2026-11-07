@@ -19,6 +19,7 @@ from keystone.prefab import Prefab
 from keystone.prefab_library import PrefabLibrary
 from keystone.replay import FIXED_STEP
 from keystone.scene import Node, Scene
+from keystone.scene_library import SceneLibrary
 from keystone.web.editor import (
     EDITOR_ACTIONS,
     EditorHistory,
@@ -65,19 +66,32 @@ class WebProblem(Exception):
 class GameSession:
     """One in-memory game guarded by a lock for concurrent HTTP requests."""
 
-    def __init__(self, game: GameModule, prefab_dir: str | Path | None = None) -> None:
+    def __init__(
+        self,
+        game: GameModule,
+        prefab_dir: str | Path | None = None,
+        scene_dir: str | Path | None = None,
+    ) -> None:
         self.game = game
         self.lock = threading.Lock()
         self._built = False
         self.selected_id: str | None = None
         self.prefabs: dict[str, Prefab] = {}
         self.history = EditorHistory()
+        component_types = getattr(game, "component_types", None)
         self.prefab_library: PrefabLibrary | None = None
         if prefab_dir is not None:
             self.prefab_library = PrefabLibrary(
                 prefab_dir,
                 registry=self._registry_locked(),
-                component_types=getattr(game, "component_types", None),
+                component_types=component_types,
+            )
+        self.scene_library: SceneLibrary | None = None
+        if scene_dir is not None:
+            self.scene_library = SceneLibrary(
+                scene_dir,
+                registry=self._registry_locked(),
+                component_types=component_types,
             )
 
     @property
@@ -121,8 +135,11 @@ class GameSession:
             self._built = True
         if not isinstance(scene, Scene):
             raise TypeError("GameModule.build_scene() must return a Scene")
+        registry = self._registry_locked()
         if self.prefab_library is not None:
-            self.prefab_library.registry = self._registry_locked()
+            self.prefab_library.registry = registry
+        if self.scene_library is not None:
+            self.scene_library.registry = registry
         return scene
 
     def scene(self) -> dict:
@@ -167,19 +184,30 @@ class GameSession:
     def _editor_locked(self, scene: Scene) -> dict:
         if self.selected_id is not None and scene.find_by_id(self.selected_id) is None:
             self.selected_id = None
+        scene_entries = (
+            self.scene_library.describe() if self.scene_library is not None else None
+        )
         document = editor_document(
             scene,
             self.selected_id,
             self.prefabs,
             self.history,
             prefab_entries=self._prefab_entries_locked(),
+            scene_entries=scene_entries,
         )
         document["game"] = self.name
-        document["workspace"] = (
-            {"prefab_dir": self.prefab_library.directory.as_posix()}
-            if self.prefab_library is not None
-            else None
-        )
+        document["workspace"] = {
+            "prefab_dir": (
+                self.prefab_library.directory.as_posix()
+                if self.prefab_library is not None
+                else None
+            ),
+            "scene_dir": (
+                self.scene_library.directory.as_posix()
+                if self.scene_library is not None
+                else None
+            ),
+        }
         return document
 
     def editor(self) -> dict:
@@ -243,6 +271,17 @@ class GameSession:
                     parent = self._parent_locked(scene, payload.get("parent"))
                     self.history.apply(scene, lambda: reparent_node(scene, node, parent))
                     self.selected_id = node.id
+                elif action == "save_scene":
+                    if self.scene_library is None:
+                        raise ValueError("no scene library is configured")
+                    name = payload.get("name") or "scene"
+                    self.scene_library.save(name, scene)
+                elif action == "load_scene":
+                    if self.scene_library is None:
+                        raise ValueError("no scene library is configured")
+                    self.scene_library.load_into(payload.get("name"), scene)
+                    self.history.clear()
+                    self.selected_id = None
                 elif action == "save_prefab":
                     node_id = payload.get("id") or self.selected_id
                     if node_id is None:
@@ -641,11 +680,14 @@ def create_server(
     host: str = "127.0.0.1",
     port: int = 0,
     prefab_dir: str | Path | None = None,
+    scene_dir: str | Path | None = None,
 ) -> KeystoneHTTPServer:
     """Create a bound server; port 0 asks the OS for a free port."""
     if not isinstance(port, int) or isinstance(port, bool) or not 0 <= port <= 65535:
         raise ValueError("port must be between 0 and 65535")
-    return KeystoneHTTPServer((host, port), GameSession(game, prefab_dir=prefab_dir))
+    return KeystoneHTTPServer(
+        (host, port), GameSession(game, prefab_dir=prefab_dir, scene_dir=scene_dir)
+    )
 
 
 def serve(
@@ -653,10 +695,13 @@ def serve(
     host: str = "127.0.0.1",
     port: int = 8000,
     prefab_dir: str | Path | None = None,
+    scene_dir: str | Path | None = None,
 ) -> int:
     """Run the local console until interrupted."""
     try:
-        server = create_server(game, host=host, port=port, prefab_dir=prefab_dir)
+        server = create_server(
+            game, host=host, port=port, prefab_dir=prefab_dir, scene_dir=scene_dir
+        )
     except OSError as exc:
         raise ValueError(
             f"web console could not bind {host}:{port}.\n"

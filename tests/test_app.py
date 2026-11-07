@@ -172,6 +172,7 @@ class EngineTest(unittest.TestCase):
             ["--port", "9000"],
             ["--host", "0.0.0.0"],
             ["--prefab-dir", "prefabs"],
+            ["--scene-dir", "scenes"],
         ):
             with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
                 main(argv)

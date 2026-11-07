@@ -11,9 +11,33 @@ import json
 from collections.abc import Mapping
 from dataclasses import asdict, is_dataclass
 
-__all__ = ["ComponentTypes", "component_from_dict", "component_to_dict", "json_safe"]
+__all__ = [
+    "ComponentTypes",
+    "component_from_dict",
+    "component_to_dict",
+    "json_safe",
+    "validate_component_types",
+]
 
 ComponentTypes = Mapping[str, type]
+
+
+def validate_component_types(
+    component_types: Mapping[str, type] | None,
+) -> dict[str, type] | None:
+    """Copy and validate a component name-to-type map."""
+    if component_types is None:
+        return None
+    if not isinstance(component_types, Mapping):
+        raise TypeError("component_types must be a mapping of names to types")
+    cleaned: dict[str, type] = {}
+    for name, component_type in component_types.items():
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("component type names must be non-blank strings")
+        if not isinstance(component_type, type):
+            raise TypeError("component_types values must be types")
+        cleaned[name] = component_type
+    return cleaned
 
 
 def json_safe(value: object, label: str) -> object:

@@ -608,3 +608,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Scene snapshots preserved node identity, transforms, tags, layers, visibility, meshes and materials, but dropped typed components. Prefabs already had a component codec, and duplicating that logic would drift. A Unity/Unreal-style scene file must round-trip the same authored data the editor shows.
 - **Decision**: Extract the component codec into `keystone.component_codec` and use it from both prefabs and snapshots. Bump `SCENE_SNAPSHOT_VERSION` to 2 and write a sorted `components` list per node; `scene_from_dict(..., component_types=...)` reconstructs them, rejects duplicate types, unknown names and unsupported payloads, and still accepts schema-1 snapshots without components.
 - **Consequences**: 685 tests green; scene snapshots preserve dataclass, `to_dict`/`from_dict` and JSON-primitive components; loading a component-bearing scene without a type map fails explicitly. Editor scene files and component authoring remain future work.
+
+### ADR-073: Add file-backed scene save/load to the editor
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: Component-aware snapshots made scene files possible, but the editor still could not persist authored scenes. A Unity/Unreal-style workflow needs named `.kscene` files that survive restarts, restore in place and report broken entries without taking down the editor.
+- **Decision**: Add `keystone.scene_library` with `SceneLibrary`/`SceneEntry`: portable name validation, atomic `.kscene` save, strict registry asset-reference validation, component-aware load and `load_into()` backed by `restore_scene()`. Bump the editor schema to 3, add `save_scene`/`load_scene`, expose saved scenes plus `workspace.scene_dir`, and add console controls. `--project .` defaults the library to `<project>/scenes`; `--scene-dir DIR` overrides it. Loading a scene clears selection and undo history while preserving the game-owned `Scene` object.
+- **Consequences**: 691 tests green; authored scenes survive console restarts, missing/wrong-kind assets and corrupt entries fail explicitly, and restore keeps `self.scene` identity. Asset browser assignment, component authoring and play-in-editor remain future work.

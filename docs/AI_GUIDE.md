@@ -134,9 +134,9 @@ python -m keystone --serve --port 8899
 - `GET /api/health` returns `ok`, `game`, `api` and `scene_schema`;
 - `GET /api/describe` returns the same payload as `--describe`, with `capabilities.web`;
 - `GET /api/scene` returns scene document schema 2: camera, lights, atmosphere, node identity/tags/layers/components, world matrices, shared meshes and RGBA textures;
-- `GET /api/editor` returns hierarchy, selection, local transforms, saved prefabs, undo/redo depths and the active prefab library;
-- `--project .` serves a file-backed `<project>/prefabs/*.kprefab` library; `--prefab-dir DIR` overrides it, and entries report `source` plus any load `error`;
-- `POST /api/editor` accepts `select`, `transform`, `create_node`, `delete_node`, `duplicate_node`, `reparent_node`, `save_prefab`, `insert_prefab`, `undo` and `redo`; create accepts `name`, `parent`, transform arrays, `tags`, `layer`, `visible` and optional registry asset ids `mesh`/`material`;
+- `GET /api/editor` returns hierarchy, selection, local transforms, saved scenes/prefabs, undo/redo depths and the active library directories;
+- `--project .` serves file-backed `<project>/prefabs/*.kprefab` and `<project>/scenes/*.kscene` libraries; `--prefab-dir DIR` and `--scene-dir DIR` override them, and entries report `source` plus any load `error`;
+- `POST /api/editor` accepts `select`, `transform`, `create_node`, `delete_node`, `duplicate_node`, `reparent_node`, `save_prefab`, `insert_prefab`, `save_scene`, `load_scene`, `undo` and `redo`; create accepts `name`, `parent`, transform arrays, `tags`, `layer`, `visible` and optional registry asset ids `mesh`/`material`;
 - `POST /api/simulate` accepts `{"frames": 60, "actions": [...], "step": 0.0167, "trace": false}` and returns the same deterministic result as `--simulate`.
 
 All responses carry `Access-Control-Allow-Origin: *` so a local frontend or AI client can call the API directly. The server is loopback-only by default; do not expose it publicly. It does not need OpenGL. The bundled browser console drives the same endpoints and renders the scene document with WebGL2; that preview is approximate, while `--headless` remains the authoritative pixel render. `/api/scene` uses `self.scene` when the game exposes it (live state); otherwise it calls `build_scene()` for a fresh scene.

@@ -295,6 +295,7 @@ python -m keystone --project . --serve
 - `keystone.json` — versioned project manifest.
 - `{_module_name(manifest.name)}.py` — the generated five-operation game module.
 - `prefabs/` — optional editor prefab library, created on the first save.
+- `scenes/` — optional editor scene library, created on the first save.
 
 ## Assets
 

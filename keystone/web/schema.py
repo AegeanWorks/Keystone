@@ -20,10 +20,12 @@ EDITOR_SCHEMA = {
         "create_node": ["id", "name", "parent", "position", "rotation", "scale", "tags", "layer", "visible", "mesh", "material"],
         "reparent_node": ["id", "parent"],
         "history": ["undo", "redo", "limit"],
+        "scene": ["name", "node_count", "source", "error"],
     },
     "notes": [
         "rotation is [x, y, z, w]; transforms are local; world is column-major",
         "schema 2 adds create/delete/duplicate/reparent, undo/redo and registry-linked mesh/material ids",
+        "schema 3 adds save_scene/load_scene with typed-component scene files",
         "mesh and material are asset ids; create_node needs the game to expose an AssetRegistry as assets",
     ],
 }

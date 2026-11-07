@@ -175,7 +175,7 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 2)
+        self.assertEqual(editor["schema"], 3)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
         self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
@@ -343,7 +343,10 @@ class WebServerTest(unittest.TestCase):
             saved = first.editor_action({"action": "save_prefab", "name": "cube-template"})
             path = prefab_dir / "cube-template.kprefab"
             self.assertTrue(path.is_file())
-            self.assertEqual(saved["workspace"], {"prefab_dir": prefab_dir.as_posix()})
+            self.assertEqual(
+                saved["workspace"],
+                {"prefab_dir": prefab_dir.as_posix(), "scene_dir": None},
+            )
             self.assertEqual(saved["prefabs"][0]["source"], path.as_posix())
             self.assertIsNone(saved["prefabs"][0]["error"])
 
@@ -361,6 +364,45 @@ class WebServerTest(unittest.TestCase):
             entries = {entry["name"]: entry for entry in third.editor()["prefabs"]}
             self.assertIsNotNone(entries["broken"]["error"])
 
+    def test_editor_scene_library_persists_and_restores(self):
+        with tempfile.TemporaryDirectory() as directory:
+            scene_dir = Path(directory) / "scenes"
+            session = GameSession(CubeDemo(), scene_dir=scene_dir)
+            editor = session.editor()
+            cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+            session.editor_action({"action": "select", "id": cube["id"]})
+            session.editor_action(
+                {
+                    "action": "transform",
+                    "id": cube["id"],
+                    "position": [1.0, 2.0, 3.0],
+                }
+            )
+            saved = session.editor_action({"action": "save_scene", "name": "level"})
+            path = scene_dir / "level.kscene"
+            self.assertTrue(path.is_file())
+            self.assertEqual(saved["workspace"]["scene_dir"], scene_dir.as_posix())
+            self.assertEqual(saved["scenes"][0]["name"], "level")
+            self.assertEqual(saved["scenes"][0]["node_count"], 5)
+
+            session.editor_action(
+                {
+                    "action": "transform",
+                    "id": cube["id"],
+                    "position": [9.0, 9.0, 9.0],
+                }
+            )
+            loaded = session.editor_action({"action": "load_scene", "name": "level"})
+            self.assertIsNone(loaded["selection"])
+            self.assertEqual(loaded["history"], {"undo": 0, "redo": 0, "limit": 50})
+            restored = next(node for node in loaded["nodes"] if node["id"] == cube["id"])
+            self.assertEqual(restored["transform"]["position"], [1.0, 2.0, 3.0])
+
+            (scene_dir / "broken.kscene").write_text("{}", encoding="utf-8")
+            broken = GameSession(CubeDemo(), scene_dir=scene_dir)
+            entries = {entry["name"]: entry for entry in broken.editor()["scenes"]}
+            self.assertIsNotNone(entries["broken"]["error"])
+
     def test_editor_static_controls_and_index(self):
         status, _, body = self._request("/")
         text = body.decode("utf-8")
@@ -374,6 +416,9 @@ class WebServerTest(unittest.TestCase):
             "node-reparent",
             "editor-undo",
             "editor-redo",
+            "scene-name",
+            "scene-save",
+            "scene-load",
             "prefab-save",
             "prefab-insert",
             "transform-apply",
@@ -385,6 +430,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("/api/editor", script)
         self.assertIn("create_node", script)
         self.assertIn("duplicate_node", script)
+        self.assertIn("save_scene", script)
         status, _, payload = self._json("/api")
         self.assertEqual(status, 200)
         self.assertIn("editor", payload["endpoints"])

@@ -18,6 +18,9 @@ const elements = {
   nodeReparent: document.getElementById("node-reparent"),
   editorUndo: document.getElementById("editor-undo"),
   editorRedo: document.getElementById("editor-redo"),
+  sceneName: document.getElementById("scene-name"),
+  sceneSave: document.getElementById("scene-save"),
+  sceneLoad: document.getElementById("scene-load"),
   prefabName: document.getElementById("prefab-name"),
   prefabInstance: document.getElementById("prefab-instance"),
   prefabSave: document.getElementById("prefab-save"),
@@ -63,6 +66,7 @@ function setBusy(value) {
   for (const button of [
     elements.step, elements.run, elements.simulate, elements.refresh,
     elements.nodeCreate, elements.nodeDuplicate, elements.nodeDelete, elements.nodeReparent,
+    elements.sceneSave, elements.sceneLoad,
     elements.prefabSave, elements.prefabInsert, elements.transformApply, elements.editorRefresh,
   ]) {
     button.disabled = value;
@@ -141,6 +145,7 @@ function editorSummary(editor) {
       ? { id: editor.selection.id, name: editor.selection.name, transform: editor.selection.transform }
       : null,
     prefabs: editor.prefabs,
+    scenes: editor.scenes,
     actions: editor.actions,
     history: editor.history,
   };
@@ -284,6 +289,20 @@ async function insertPrefab() {
   }
   const instance = elements.prefabInstance.value.trim() || null;
   await editorAction({ action: "insert_prefab", name, instance }, "inserting prefab");
+  await refreshScene(false);
+}
+
+async function saveScene() {
+  const name = elements.sceneName.value.trim() || "scene";
+  await editorAction({ action: "save_scene", name }, "saving scene");
+}
+
+async function loadScene() {
+  const name = elements.sceneName.value.trim();
+  if (!name) {
+    throw new Error("Enter the name of a saved scene.");
+  }
+  await editorAction({ action: "load_scene", name }, "loading scene");
   await refreshScene(false);
 }
 
@@ -439,6 +458,8 @@ elements.nodeDelete.addEventListener("click", () => run(deleteNode));
 elements.nodeReparent.addEventListener("click", () => run(reparentNode));
 elements.editorUndo.addEventListener("click", () => run(undoEditor));
 elements.editorRedo.addEventListener("click", () => run(redoEditor));
+elements.sceneSave.addEventListener("click", () => run(saveScene));
+elements.sceneLoad.addEventListener("click", () => run(loadScene));
 elements.prefabSave.addEventListener("click", () => run(savePrefab));
 elements.prefabInsert.addEventListener("click", () => run(insertPrefab));
 

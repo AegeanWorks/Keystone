@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `126`
-- **Total Classes**: `197`
-- **Total Top-Level Functions**: `279`
-- **Total Class Methods**: `1199`
-- **Total Source Lines**: `24075`
+- **Total Python Modules**: `128`
+- **Total Classes**: `201`
+- **Total Top-Level Functions**: `283`
+- **Total Class Methods**: `1217`
+- **Total Source Lines**: `24563`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `504` lines (`27952` bytes)
+**Size**: `516` lines (`28440` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -333,9 +333,10 @@
 ### [`keystone/component_codec.py`](keystone/component_codec.py)
 > *Shared JSON codec for typed scene components.*
 
-**Size**: `93` lines (`3765` bytes)
+**Size**: `117` lines (`4566` bytes)
 
 **Functions:**
+- `def validate_component_types(component_types)` - *Copy and validate a component name-to-type map.*
 - `def json_safe(value, label)` - *Return the value after proving it can cross a JSON boundary.*
 - `def component_to_dict(component)` - *Encode one component as ``{'type': name, 'data': ...}``.*
 - `def component_from_dict(item, component_types)` - *Decode one component, requiring an explicit type map.*
@@ -1062,7 +1063,7 @@
 ### [`keystone/prefab_library.py`](keystone/prefab_library.py)
 > *File-backed prefab libraries for editors, tools and AI clients.*
 
-**Size**: `135` lines (`5252` bytes)
+**Size**: `130` lines (`4801` bytes)
 
 **Classes:**
 - `class PrefabEntry` - *One library file and its loaded summary, or why it could not load.*
@@ -1077,7 +1078,7 @@
   - Method `.describe()` - *Return JSON-safe summaries for every library file.*
 
 **Functions:**
-- `def _validate_name(name)`
+- `def validate_library_name(name)` - *Validate a portable library name that cannot escape its directory.*
 
 ---
 
@@ -1099,7 +1100,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `336` lines (`12436` bytes)
+**Size**: `337` lines (`12510` bytes)
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -1217,10 +1218,36 @@
 
 ---
 
+### [`keystone/scene_library.py`](keystone/scene_library.py)
+> *File-backed scene libraries for editors, tools and AI clients.*
+
+**Size**: `177` lines (`6929` bytes)
+
+**Classes:**
+- `class SceneEntry` - *One library file and its loaded summary, or why it could not load.*
+  - Method `.describe()` - *Return a JSON-safe entry for editor and AI documents.*
+- `class SceneLibrary` - *Discover, save, load and restore ``.kscene`` files in one directory.*
+  - Method `.__init__(directory, registry, component_types)`
+  - Method `.path_for(name)` - *Return the safe file path for one library name.*
+  - Method `.save(name, scene)` - *Write one scene snapshot atomically.*
+  - Method `.document(name)` - *Read one scene document without rebuilding it.*
+  - Method `._require_assets(name, data)`
+  - Method `.load(name)` - *Load one scene or raise KeyError when the entry is absent.*
+  - Method `.load_into(name, scene)` - *Replace one existing Scene in place from a library entry.*
+  - Method `.entry(name)` - *Load one entry's summary, capturing load failures as ``error``.*
+  - Method `.entries()` - *Return every ``.kscene`` file in stable name order.*
+  - Method `.describe()` - *Return JSON-safe summaries for every library file.*
+
+**Functions:**
+- `def _node_count(scene)`
+- `def _asset_refs(data)`
+
+---
+
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `401` lines (`17245` bytes)
+**Size**: `440` lines (`18693` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)`
@@ -1236,13 +1263,14 @@
 - `def _restore_asset(registry, asset_id, expected_kind, label)`
 - `def scene_to_dict(scene, registry)` - *Serialize a scene to a versioned, JSON-safe dictionary.*
 - `def scene_from_dict(data, registry, component_types)` - *Rebuild a scene from a versioned snapshot.*
+- `def restore_scene(target, data, registry, component_types)` - *Replace one Scene's contents in place from a snapshot.*
 
 ---
 
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `20` lines (`396` bytes)
+**Size**: `22` lines (`432` bytes)
 
 ---
 
@@ -1421,7 +1449,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `401` lines (`13958` bytes)
+**Size**: `403` lines (`14086` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene-node edits.*
@@ -1445,7 +1473,7 @@
 - `def _node_from_snapshot(data)`
 - `def _restore_nodes(scene, snapshot)`
 - `def node_document(node, selected_id)`
-- `def editor_document(scene, selected_id, prefabs, history, prefab_entries)`
+- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries)`
 - `def find_node(scene, node_id)`
 - `def create_node(scene, payload, parent, registry)` - *Create, validate and attach one node from an editor payload.*
 - `def delete_node(scene, node)` - *Detach one node subtree and return its former parent.*
@@ -1474,20 +1502,20 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `50` lines (`2347` bytes)
+**Size**: `52` lines (`2487` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `678` lines (`29679` bytes)
+**Size**: `723` lines (`31398` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
   - Method `.__init__(status, why, fix)`
 - `class GameSession` - *One in-memory game guarded by a lock for concurrent HTTP requests.*
-  - Method `.__init__(game, prefab_dir)`
+  - Method `.__init__(game, prefab_dir, scene_dir)`
   - Property `.name`
   - Method `.describe()`
   - Method `.simulate(frames, actions, step, trace)`
@@ -1525,8 +1553,8 @@
 
 **Functions:**
 - `def _enabled(value)`
-- `def create_server(game, host, port, prefab_dir)` - *Create a bound server; port 0 asks the OS for a free port.*
-- `def serve(game, host, port, prefab_dir)` - *Run the local console until interrupted.*
+- `def create_server(game, host, port, prefab_dir, scene_dir)` - *Create a bound server; port 0 asks the OS for a free port.*
+- `def serve(game, host, port, prefab_dir, scene_dir)` - *Run the local console until interrupted.*
 
 ---
 
@@ -1655,7 +1683,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `516` lines (`20870` bytes)
+**Size**: `517` lines (`20909` bytes)
 
 **Classes:**
 - `class HudCube`
@@ -2598,6 +2626,23 @@
 
 ---
 
+### [`tests/test_scene_library.py`](tests/test_scene_library.py)
+> *Tests for file-backed scene libraries.*
+
+**Size**: `142` lines (`5943` bytes)
+
+**Classes:**
+- `class Health`
+- `class SceneLibraryTest`
+  - Method `._fixture(directory)`
+  - Method `.test_save_load_and_describe()`
+  - Method `.test_load_into_preserves_the_scene_object()`
+  - Method `.test_describe_reports_corrupt_and_invalid_entries()`
+  - Method `.test_names_and_missing_entries()`
+  - Method `.test_load_requires_assets_and_component_types()`
+
+---
+
 ### [`tests/test_scene_snapshot.py`](tests/test_scene_snapshot.py)
 > *Unit tests for versioned scene snapshots.*
 
@@ -2848,7 +2893,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `500` lines (`21407` bytes)
+**Size**: `546` lines (`23536` bytes)
 
 **Classes:**
 - `class Health`
@@ -2875,6 +2920,7 @@
   - Method `.test_editor_node_authoring_and_undo_redo()`
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`
+  - Method `.test_editor_scene_library_persists_and_restores()`
   - Method `.test_editor_static_controls_and_index()`
   - Method `.test_step_button_documents_its_reset_semantics()`
   - Method `.test_options_preflight_and_static_assets()`

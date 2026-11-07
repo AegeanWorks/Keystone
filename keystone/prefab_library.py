@@ -13,20 +13,27 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
+from keystone.component_codec import validate_component_types
 from keystone.prefab import Prefab
 
-__all__ = ["PREFAB_SUFFIX", "PrefabEntry", "PrefabLibrary"]
+__all__ = [
+    "PREFAB_SUFFIX",
+    "PrefabEntry",
+    "PrefabLibrary",
+    "validate_library_name",
+]
 
 PREFAB_SUFFIX = ".kprefab"
 _NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*\Z")
 
 
-def _validate_name(name: object) -> str:
+def validate_library_name(name: object) -> str:
+    """Validate a portable library name that cannot escape its directory."""
     if not isinstance(name, str) or not name.strip():
-        raise ValueError("prefab library name must be a non-blank string")
+        raise ValueError("library name must be a non-blank string")
     if name != name.strip() or not _NAME.fullmatch(name):
         raise ValueError(
-            "prefab library name may contain letters, digits, '.', '_' and '-' only"
+            "library name may contain letters, digits, '.', '_' and '-' only"
         )
     return name
 
@@ -61,29 +68,17 @@ class PrefabLibrary:
     ) -> None:
         self.directory = Path(directory)
         self.registry = registry
-        if component_types is not None:
-            if not isinstance(component_types, Mapping):
-                raise TypeError("component_types must be a mapping of names to types")
-            cleaned: dict[str, type] = {}
-            for name, component_type in component_types.items():
-                if not isinstance(name, str) or not name.strip():
-                    raise ValueError("component type names must be non-blank strings")
-                if not isinstance(component_type, type):
-                    raise TypeError("component_types values must be types")
-                cleaned[name] = component_type
-            self.component_types = cleaned
-        else:
-            self.component_types = None
+        self.component_types = validate_component_types(component_types)
 
     def path_for(self, name: str) -> Path:
         """Return the safe file path for one library name."""
-        return self.directory / f"{_validate_name(name)}{PREFAB_SUFFIX}"
+        return self.directory / f"{validate_library_name(name)}{PREFAB_SUFFIX}"
 
     def save(self, name: str, prefab: Prefab) -> PrefabEntry:
         """Write one prefab atomically; its internal name must match the entry."""
         if not isinstance(prefab, Prefab):
             raise TypeError("prefab library payload must be a Prefab")
-        selected = _validate_name(name)
+        selected = validate_library_name(name)
         if prefab.name != selected:
             raise ValueError(
                 f"prefab name {prefab.name!r} does not match library name {selected!r}"
@@ -123,7 +118,7 @@ class PrefabLibrary:
                 continue
             name = path.stem
             try:
-                _validate_name(name)
+                validate_library_name(name)
             except ValueError as exc:
                 entries.append(PrefabEntry(name, path, error=str(exc)))
                 continue

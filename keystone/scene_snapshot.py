@@ -399,3 +399,42 @@ def scene_from_dict(
     if next_id is not None:
         scene.restore_next_id(next_id)
     return scene
+
+
+def restore_scene(
+    target: Scene,
+    data: Mapping[str, Any],
+    registry: Any = None,
+    component_types: ComponentTypes | None = None,
+) -> Scene:
+    """Replace one Scene's contents in place from a snapshot."""
+    if not isinstance(target, Scene):
+        raise TypeError("scene restore target must be a Scene")
+    source = scene_from_dict(data, registry, component_types)
+    target.camera.position = source.camera.position
+    target.camera.yaw = source.camera.yaw
+    target.camera.pitch = source.camera.pitch
+    target.camera.fov_y = source.camera.fov_y
+    target.camera.near = source.camera.near
+    target.camera.far = source.camera.far
+    target.light = source.light
+    target.point_light = source.point_light
+    target.shadow = source.shadow
+    target.color = source.color
+    target.post = source.post
+    target.bloom = source.bloom
+    target.sprite = source.sprite
+    target.culling = source.culling
+    target.ambient = source.ambient
+    target.background = source.background
+    target.sky = source.sky
+    target.fog_density = source.fog_density
+    target.root.transform = source.root.transform
+    target.root.visible = source.root.visible
+    for child in list(target.root.children):
+        target.root.remove_child(child)
+    for child in list(source.root.children):
+        source.root.remove_child(child)
+        target.root.add_child(child)
+    target.restore_next_id(source._next_id)
+    return target
