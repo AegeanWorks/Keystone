@@ -580,14 +580,15 @@ class GameSession:
                         scene,
                         lambda: revert_prefab_instance(scene, node, self.prefabs),
                     )
-                    self.selected_id = root.id
+                    if root:
+                        self.selected_id = root[0].id
                 elif action == "apply_prefab":
                     node = find_node(scene, payload.get("id") or self.selected_id)
                     link = node.prefab_link
                     if link is None:
                         raise ValueError("node is not a prefab instance")
                     previous = self.prefabs.get(link.name)
-                    prefab = apply_prefab_instance(node, self.prefabs)
+                    prefab = apply_prefab_instance(scene, node, self.prefabs)
                     if self.prefab_library is not None:
                         try:
                             self.prefab_library.save(link.name, prefab)

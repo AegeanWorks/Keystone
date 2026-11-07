@@ -572,7 +572,7 @@ function showEditor(editor) {
     : "Stopped";
   elements.editorState.textContent =
     `${editor.nodes.length} nodes · ${editor.prefabs.length} prefabs · ` +
-    `${(editor.prefab_instances || []).length} instances · ` +
+    `${editor.prefab_instance_count ?? (editor.prefab_instances || []).length} instances · ` +
     `undo ${history.undo} / redo ${history.redo} · ` +
     `selected ${editor.selection ? editor.selection.id : "none"}`;
   if (!busy) {

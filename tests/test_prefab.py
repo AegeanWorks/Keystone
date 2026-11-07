@@ -100,6 +100,18 @@ class PrefabTest(unittest.TestCase):
         root = prefab.instantiate(target, instance="copy")[0]
         self.assertIsNone(root.prefab_link)
 
+    def test_capture_several_roots_and_strip_instance_prefixes(self):
+        left = Node("left", id="p1:left", prefab_link=PrefabLink("pair", "p1"))
+        right = Node("right", id="p1:right", prefab_link=PrefabLink("pair", "p1"))
+        prefab = Prefab.from_nodes([left, right], name="pair")
+        self.assertEqual([root.id for root in prefab.roots], ["left", "right"])
+        self.assertEqual([root.prefab_link for root in prefab.roots], [None, None])
+        target = Scene()
+        roots = prefab.instantiate(target, instance="p2")
+        self.assertEqual([root.id for root in roots], ["p2:left", "p2:right"])
+        with self.assertRaises(ValueError):
+            Prefab.from_nodes([], name="pair")
+
     def test_describe_is_json_safe(self):
         prefab = Prefab.from_scene(self._scene(), name="level")
         payload = prefab.describe()

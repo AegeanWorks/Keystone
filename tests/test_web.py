@@ -16,7 +16,7 @@ from keystone.math3d import Vec3
 from keystone.prefab import Prefab
 from keystone.primitives import cube
 from keystone.samples import CubeDemo
-from keystone.scene import Node, Scene
+from keystone.scene import Node, Scene, Transform
 from keystone.schema import EDITOR_ACTIONS, EDITOR_SCHEMA_VERSION
 from keystone.web.scene import SCENE_SCHEMA, scene_document
 from keystone.web.schema import EDITOR_SCHEMA
@@ -482,6 +482,88 @@ class WebServerTest(unittest.TestCase):
         self.assertAlmostEqual(second["selection"]["transform"]["position"][0], 5.0)
         with self.assertRaises(WebProblem) as caught:
             session.editor_action({"action": "apply_prefab", "id": cube["id"]})
+        self.assertEqual(caught.exception.status, 400)
+
+    def test_editor_multi_root_prefab_instance_group(self):
+        session = GameSession(CubeDemo())
+        session.prefabs["pair"] = Prefab(
+            "pair",
+            (
+                Node(
+                    "left",
+                    id="left",
+                    transform=Transform(position=Vec3(-1.0, 0.0, 0.0)),
+                ),
+                Node(
+                    "right",
+                    id="right",
+                    transform=Transform(position=Vec3(1.0, 0.0, 0.0)),
+                ),
+            ),
+        )
+        inserted = session.editor_action(
+            {"action": "insert_prefab", "name": "pair", "instance": "pair-1"}
+        )
+        linked = [
+            node for node in inserted["nodes"] if node["prefab_link"] is not None
+        ]
+        self.assertEqual(
+            [node["id"] for node in linked], ["pair-1:left", "pair-1:right"]
+        )
+        self.assertEqual(
+            inserted["prefab_instances"],
+            [
+                {"id": "pair-1:left", "name": "pair", "instance": "pair-1"},
+                {"id": "pair-1:right", "name": "pair", "instance": "pair-1"},
+            ],
+        )
+        self.assertEqual(inserted["prefab_instance_count"], 1)
+        session.editor_action(
+            {
+                "action": "transform",
+                "id": "pair-1:left",
+                "position": [-5.0, 0.0, 0.0],
+            }
+        )
+        session.editor_action(
+            {
+                "action": "transform",
+                "id": "pair-1:right",
+                "position": [5.0, 0.0, 0.0],
+            }
+        )
+        reverted = session.editor_action(
+            {"action": "revert_prefab", "id": "pair-1:right"}
+        )
+        self.assertEqual(reverted["selection"]["id"], "pair-1:left")
+        positions = {
+            node["id"]: node["transform"]["position"]
+            for node in reverted["nodes"]
+        }
+        self.assertEqual(positions["pair-1:left"], [-1.0, 0.0, 0.0])
+        self.assertEqual(positions["pair-1:right"], [1.0, 0.0, 0.0])
+        undone = session.editor_action({"action": "undo"})
+        positions = {
+            node["id"]: node["transform"]["position"]
+            for node in undone["nodes"]
+        }
+        self.assertEqual(positions["pair-1:left"], [-5.0, 0.0, 0.0])
+        self.assertEqual(positions["pair-1:right"], [5.0, 0.0, 0.0])
+        applied = session.editor_action(
+            {"action": "apply_prefab", "id": "pair-1:left"}
+        )
+        self.assertEqual(applied["prefabs"][0]["node_count"], 2)
+        roots = session.prefabs["pair"].roots
+        self.assertEqual([root.id for root in roots], ["left", "right"])
+        self.assertEqual([root.transform.position.x for root in roots], [-5.0, 5.0])
+        cube = next(node for node in applied["nodes"] if node["name"] == "cube-0")
+        session.editor_action(
+            {"action": "reparent_node", "id": "pair-1:right", "parent": cube["id"]}
+        )
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action(
+                {"action": "revert_prefab", "id": "pair-1:left"}
+            )
         self.assertEqual(caught.exception.status, 400)
 
     def test_editor_batch_can_revert_prefab_instance(self):

@@ -26,21 +26,24 @@ from keystone.serialization import read_json, write_json_atomic
 __all__ = ["PREFAB_SCHEMA_VERSION", "Prefab"]
 
 
-def _clone_template(node: Node) -> Node:
+def _clone_template(node: Node, strip_prefix: str | None = None) -> Node:
+    node_id = node.id
+    if strip_prefix is not None and node_id:
+        node_id = node_id.removeprefix(f"{strip_prefix}:")
     clone = Node(
         node.name,
         transform=node.transform,
         mesh=node.mesh,
         material=node.material,
         visible=node.visible,
-        id=node.id,
+        id=node_id,
         tags=set(node.tags),
         layer=node.layer,
         components=copy.deepcopy(node.components),
         prefab_link=None,
     )
     for child in node.children:
-        clone.add_child(_clone_template(child))
+        clone.add_child(_clone_template(child, strip_prefix))
     return clone
 
 
@@ -126,7 +129,31 @@ class Prefab:
             raise TypeError("prefab source must be a Node")
         if name is not None and (not isinstance(name, str) or not name.strip()):
             raise ValueError("prefab name must be a non-blank string")
-        return cls(name if name is not None else (node.name or "prefab"), (_clone_template(node),))
+        prefix = node.prefab_link.instance if node.prefab_link is not None else None
+        return cls(
+            name if name is not None else (node.name or "prefab"),
+            (_clone_template(node, prefix),),
+        )
+
+    @classmethod
+    def from_nodes(
+        cls,
+        nodes: list[Node] | tuple[Node, ...],
+        name: str | None = None,
+    ) -> Prefab:
+        """Capture several subtrees as a deterministic multi-root prefab."""
+        if not isinstance(nodes, (list, tuple)) or not nodes:
+            raise ValueError("prefab needs at least one source node")
+        roots: list[Node] = []
+        for node in nodes:
+            if not isinstance(node, Node):
+                raise TypeError("prefab sources must be Node instances")
+            prefix = node.prefab_link.instance if node.prefab_link is not None else None
+            roots.append(_clone_template(node, prefix))
+        if name is not None and (not isinstance(name, str) or not name.strip()):
+            raise ValueError("prefab name must be a non-blank string")
+        selected = name if name is not None else (roots[0].name or "prefab")
+        return cls(selected, tuple(roots))
 
     @classmethod
     def from_scene(cls, scene: Scene, name: str = "prefab") -> Prefab:
@@ -135,7 +162,13 @@ class Prefab:
             raise TypeError("prefab source must be a Scene")
         if not isinstance(name, str) or not name.strip():
             raise ValueError("prefab name must be a non-blank string")
-        roots = tuple(_clone_template(child) for child in scene.root.children)
+        roots = tuple(
+            _clone_template(
+                child,
+                child.prefab_link.instance if child.prefab_link is not None else None,
+            )
+            for child in scene.root.children
+        )
         return cls(name, roots)
 
     @property

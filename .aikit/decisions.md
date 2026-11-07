@@ -968,3 +968,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: `diff_scene` compared transforms, visibility, assets and components, but ignored editor-only prefab links, so AI clients could not see instance link changes.
 - **Decision**: Add `prefab_link` to `NODE_FIELDS` and bump `SCENE_DIFF_SCHEMA_VERSION` to 2. Before/after values are link dictionaries or null.
 - **Consequences**: 733 tests green; saved-scene comparisons now report link changes alongside other node fields. Nested and multi-root instance tracking remains future work.
+
+### ADR-118: Support multi-root prefab instances as groups
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Only single-root prefabs received instance links, so multi-root prefab assets could be inserted but not reverted or applied as a unit.
+- **Decision**: Link every inserted root with the same `PrefabLink`. Add `Prefab.from_nodes()` for multi-root capture and strip the source instance prefix from template IDs. Group helpers require all linked roots to share one parent and read their order from that parent. Revert removes the whole group, instantiates the prefab, and reinserts the new roots at the group's earliest sibling index. Apply captures the whole group as a multi-root prefab. Bump the editor schema to 21.
+- **Consequences**: 735 tests green; multi-root insert, revert, apply and undo are covered, `prefab_instance_count` counts groups, and split groups fail with a clear 400 instead of silently replacing one root. Nested prefabs and per-property override tracking remain future work.

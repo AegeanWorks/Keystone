@@ -812,6 +812,13 @@ def editor_document(
         for node in scene.traverse()
         if node.prefab_link is not None
     ]
+    prefab_instance_count = len(
+        {
+            (node.prefab_link.name, node.prefab_link.instance)
+            for node in scene.traverse()
+            if node.prefab_link is not None
+        }
+    )
     return {
         "schema": EDITOR_SCHEMA_VERSION,
         "game": None,
@@ -819,6 +826,7 @@ def editor_document(
         "selection": selection,
         "nodes": nodes,
         "prefab_instances": prefab_instances,
+        "prefab_instance_count": prefab_instance_count,
         "scene_settings": scene_settings_document(scene),
         "prefabs": (
             prefab_entries
@@ -1068,6 +1076,18 @@ def _next_instance_prefix(scene: Scene, name: str) -> str:
     return candidate
 
 
+def _prefab_instance_roots(scene: Scene, link: PrefabLink) -> list[Node]:
+    roots = [node for node in scene.traverse() if node.prefab_link == link]
+    if not roots:
+        raise KeyError(f"no prefab instance {link.instance!r} in the scene")
+    parent = roots[0].parent
+    if parent is None:
+        raise ValueError("prefab instance root is detached")
+    if any(node.parent is not parent for node in roots):
+        raise ValueError("prefab instance roots must share a parent")
+    return [node for node in parent.children if node in roots]
+
+
 def insert_prefab(
     scene: Scene,
     prefabs: dict[str, Prefab],
@@ -1082,8 +1102,9 @@ def insert_prefab(
     prefab = prefabs[name]
     prefix = instance if instance is not None else _next_instance_prefix(scene, name)
     roots = prefab.instantiate(scene, parent=parent, instance=prefix)
-    if len(prefab.roots) == 1:
-        roots[0].prefab_link = PrefabLink(name, prefix)
+    link = PrefabLink(name, prefix)
+    for root in roots:
+        root.prefab_link = link
     # Materialize IDs for instances attached below a non-root parent.
     list(scene.traverse())
     return roots
@@ -1093,36 +1114,43 @@ def revert_prefab_instance(
     scene: Scene,
     node: Node,
     prefabs: dict[str, Prefab],
-) -> Node:
-    """Replace one linked instance with a fresh copy of its prefab template."""
+) -> list[Node]:
+    """Replace the linked instance group with a fresh prefab template."""
     link = node.prefab_link
     if link is None:
         raise ValueError("node is not a prefab instance")
     prefab = prefabs.get(link.name)
     if prefab is None:
         raise KeyError(f"no saved prefab {link.name!r}")
-    if len(prefab.roots) != 1:
-        raise ValueError("multi-root prefabs cannot be reverted")
-    parent = node.parent
+    roots = _prefab_instance_roots(scene, link)
+    parent = roots[0].parent
     if parent is None:
         raise ValueError("prefab instance root is detached")
-    index = parent.children.index(node)
-    parent.remove_child(node)
-    root = prefab.instantiate(scene, parent=parent, instance=link.instance)[0]
-    root.prefab_link = link
-    parent.children.remove(root)
-    parent.children.insert(index, root)
-    root.parent = parent
+    index = min(parent.children.index(root) for root in roots)
+    for root in roots:
+        parent.remove_child(root)
+    created = prefab.instantiate(scene, parent=parent, instance=link.instance)
+    for root in created:
+        root.prefab_link = link
+    for offset, root in enumerate(created):
+        parent.children.remove(root)
+        parent.children.insert(index + offset, root)
+        root.parent = parent
     list(scene.traverse())
-    return root
+    return created
 
 
-def apply_prefab_instance(node: Node, prefabs: dict[str, Prefab]) -> Prefab:
-    """Capture one linked instance as the new prefab definition."""
+def apply_prefab_instance(
+    scene: Scene,
+    node: Node,
+    prefabs: dict[str, Prefab],
+) -> Prefab:
+    """Capture the linked instance group as the new prefab definition."""
     link = node.prefab_link
     if link is None:
         raise ValueError("node is not a prefab instance")
-    prefab = Prefab.from_node(node, name=link.name)
+    roots = _prefab_instance_roots(scene, link)
+    prefab = Prefab.from_nodes(roots, name=link.name)
     prefabs[link.name] = prefab
     return prefab
 

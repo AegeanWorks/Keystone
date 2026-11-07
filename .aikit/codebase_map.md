@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `133`
 - **Total Classes**: `206`
-- **Total Top-Level Functions**: `322`
-- **Total Class Methods**: `1274`
-- **Total Source Lines**: `28001`
+- **Total Top-Level Functions**: `323`
+- **Total Class Methods**: `1277`
+- **Total Source Lines**: `28158`
 
 ---
 
@@ -1061,12 +1061,13 @@
 ### [`keystone/prefab.py`](keystone/prefab.py)
 > *Deterministic prefabs: capture, persist and instantiate reusable subtrees.*
 
-**Size**: `377` lines (`15326` bytes)
+**Size**: `410` lines (`16726` bytes)
 
 **Classes:**
 - `class Prefab` - *An immutable-name, detached template of one or more scene subtrees.*
   - Method `.__post_init__()`
   - Method `.from_node(node, name)` - *Capture one detached subtree.*
+  - Method `.from_nodes(nodes, name)` - *Capture several subtrees as a deterministic multi-root prefab.*
   - Method `.from_scene(scene, name)` - *Capture every child of a scene root as a multi-root prefab.*
   - Property `.node_count`
   - Method `.asset_ids(registry)` - *Return the mesh/material asset ids referenced by this prefab.*
@@ -1078,7 +1079,7 @@
   - Method `.describe()` - *Return a JSON-safe structural summary for AI clients and tooling.*
 
 **Functions:**
-- `def _clone_template(node)`
+- `def _clone_template(node, strip_prefix)`
 - `def _collect_ids(node)`
 - `def _asset_id(registry, payload, label, kind)`
 - `def _transform_to_dict(transform)`
@@ -1504,7 +1505,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `1138` lines (`42017` bytes)
+**Size**: `1166` lines (`43021` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene and environment edits.*
@@ -1557,9 +1558,10 @@
 - `def assign_assets(node, payload, registry)` - *Assign or clear a node's mesh/material through registry asset ids.*
 - `def save_prefab(scene, node, name, prefabs)`
 - `def _next_instance_prefix(scene, name)`
+- `def _prefab_instance_roots(scene, link)`
 - `def insert_prefab(scene, prefabs, name, parent, instance)`
-- `def revert_prefab_instance(scene, node, prefabs)` - *Replace one linked instance with a fresh copy of its prefab template.*
-- `def apply_prefab_instance(node, prefabs)` - *Capture one linked instance as the new prefab definition.*
+- `def revert_prefab_instance(scene, node, prefabs)` - *Replace the linked instance group with a fresh prefab template.*
+- `def apply_prefab_instance(scene, node, prefabs)` - *Capture the linked instance group as the new prefab definition.*
 - `def rename_prefab_links(scene, old, new)` - *Point every instance link at a renamed prefab; return the updates made.*
 
 ---
@@ -1581,14 +1583,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `186` lines (`8631` bytes)
+**Size**: `187` lines (`8778` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1024` lines (`45117` bytes)
+**Size**: `1025` lines (`45160` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2551,7 +2553,7 @@
 ### [`tests/test_prefab.py`](tests/test_prefab.py)
 > *Tests for deterministic prefab capture, persistence and instantiation.*
 
-**Size**: `218` lines (`9423` bytes)
+**Size**: `230` lines (`10137` bytes)
 
 **Classes:**
 - `class Health`
@@ -2565,6 +2567,7 @@
   - Method `.test_instances_are_isolated_and_ids_are_unique()`
   - Method `.test_auto_ids()`
   - Method `.test_capture_and_instantiate_strip_instance_links()`
+  - Method `.test_capture_several_roots_and_strip_instance_prefixes()`
   - Method `.test_describe_is_json_safe()`
   - Method `.test_validation()`
   - Method `._registered_scene()`
@@ -3025,7 +3028,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `1356` lines (`58689` bytes)
+**Size**: `1438` lines (`61893` bytes)
 
 **Classes:**
 - `class Health`
@@ -3056,6 +3059,7 @@
   - Method `.test_editor_asset_inventory_and_assignment()`
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_prefab_instance_revert_and_apply()`
+  - Method `.test_editor_multi_root_prefab_instance_group()`
   - Method `.test_editor_batch_can_revert_prefab_instance()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_library_rename_and_delete()`

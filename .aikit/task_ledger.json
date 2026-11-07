@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-scene-diff-prefab-links-v1",
+    "task_id": "keystone-multi-root-prefabs-v1",
     "last_phase": "verification",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794093882.0107248,
+    "updated_at": 1794094665.570868,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794093882.3778
+    "completed_at": 1794094666.1223733
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-prefab-instances-v1",
-      "phase": "verification",
-      "phase_num": 4,
-      "description": "[2/4] Prefab instances implemented: link on insertion, revert/apply actions, scene snapshot schema 3, editor schema 18, console controls; 731 tests green, node --check clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless schema 11, describe schema 1, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794092079.359914,
-      "timestamp_str": "2026-11-08 01:54:39",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-prefab-instances-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-prefab-instances-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794092079.786465,
-      "timestamp_str": "2026-11-08 01:54:39",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-rotate-scale-gizmo-v1",
-      "phase": "planning",
-      "phase_num": 2,
-      "description": "[1/3] Plan local-axis rotate and scale gizmos with previews, snapping and one transform action per drag",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794092154.1575227,
-      "timestamp_str": "2026-11-08 01:55:54",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "The viewport only translates; Unity/Unreal-style authoring needs rotate and scale handles for direct manipulation.",
-        "benefits": "W/E/R transform modes, local-axis rotation and scale previews, Ctrl/Cmd snapping (15 degrees / 0.1 scale), and one validated transform action plus one undo entry per drag.",
-        "risks": "contract: no REST or schema change; dependency: none; concurrency: the existing gizmo drag state must arbitrate with camera orbit; state: preview world matrices must restore on cancel.",
-        "mitigation": "Extend the existing gizmo drag lifecycle, derive local quaternion/scale in app.js, add static tests and node --check, then run the full gate cycle."
-      },
-      "plan_digest": "e1f32cdd458ac981c7256f903de1e30a4408f5a299b35de806a0ef3ac93bad83"
-    },
     {
       "task_id": "keystone-rotate-scale-gizmo-v1",
       "phase": "verification",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794093882.3778033,
       "timestamp_str": "2026-11-08 02:24:42",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-multi-root-prefabs-v1",
+      "phase": "planning",
+      "phase_num": 2,
+      "description": "[1/3] Plan multi-root prefab instance groups: link every inserted root, revert/apply whole groups, preserve sibling order",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794093953.06233,
+      "timestamp_str": "2026-11-08 02:25:53",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "Only single-root prefabs get instance links, so multi-root prefabs cannot be reverted or applied as a unit.",
+        "benefits": "Every inserted root carries the prefab link, group revert restores the whole template in place, group apply captures all roots into a multi-root prefab, and each operation stays one undo entry.",
+        "risks": "contract: no REST or schema change; dependency: none; concurrency: existing editor lock; state: group roots must share a parent, sibling order must be preserved, and manual duplicates must not reuse a link.",
+        "mitigation": "Add a group helper that validates one parent, order roots by the parent's child list, clear links on manual node duplicates, and add insert/revert/apply/undo regressions."
+      },
+      "plan_digest": "d8fd51ea4176cebd44072e6bbd687830da4762b1ad6b63919745430b4b7e3c5e"
+    },
+    {
+      "task_id": "keystone-multi-root-prefabs-v1",
+      "phase": "verification",
+      "phase_num": 4,
+      "description": "[2/3] Multi-root prefab groups implemented: every root linked, group revert/apply, instance-prefix stripping, distinct group count, split-group 400; 735 tests green, node --check clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 21, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794094665.570868,
+      "timestamp_str": "2026-11-08 02:37:45",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-multi-root-prefabs-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-multi-root-prefabs-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794094666.1223764,
+      "timestamp_str": "2026-11-08 02:37:46",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]
