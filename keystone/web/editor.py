@@ -807,12 +807,18 @@ def editor_document(
 ) -> dict:
     nodes = [node_document(node, selected_id, registry) for node in scene.traverse()]
     selection = next((node for node in nodes if node["id"] == selected_id), None)
+    prefab_instances = [
+        {"id": node.id, **node.prefab_link.to_dict()}
+        for node in scene.traverse()
+        if node.prefab_link is not None
+    ]
     return {
         "schema": EDITOR_SCHEMA_VERSION,
         "game": None,
         "roots": [node.id for node in scene.root.children],
         "selection": selection,
         "nodes": nodes,
+        "prefab_instances": prefab_instances,
         "scene_settings": scene_settings_document(scene),
         "prefabs": (
             prefab_entries

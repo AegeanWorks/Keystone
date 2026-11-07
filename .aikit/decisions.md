@@ -944,3 +944,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Translate handles were always world-axis, which makes placement awkward for rotated parents; Unity/Unreal editors switch between global and local handles.
 - **Decision**: Add a `gizmoSpace` state to the viewer and a Space button plus X shortcut in the console. World mode keeps the fixed X/Y/Z arrows; local mode derives the arrow basis from the selected node's world matrix. Rotate and scale remain local-axis. Toggling cancels any active drag and re-renders. No REST or schema change.
 - **Consequences**: 731 tests green and both JS modules pass `node --check`; translate now supports both spaces while each drag remains one action and one undo entry. World-space rotation, multi-selection and numeric gizmo readouts remain future work.
+
+### ADR-115: Expose a prefab-instance inventory in the editor document
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Prefab instances carry editor-only links, but AI clients and the console had to scan every node to find them.
+- **Decision**: Add a deterministic `prefab_instances` list (`id`, `name`, `instance`) to `editor_document`, derived from nodes with a `prefab_link`. Document it in schema 19 and the AI guide. No new action or persistence.
+- **Consequences**: 731 tests green; linked roots are discoverable in one read, while the existing per-node `prefab_link` remains the source of truth. Nested and multi-root instances remain future work.

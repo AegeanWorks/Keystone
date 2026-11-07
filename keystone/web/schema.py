@@ -105,6 +105,7 @@ EDITOR_SCHEMA = {
     "examples": EDITOR_EXAMPLES,
     "fields": {
         "node": ["id", "name", "parent_id", "children", "visible", "selected", "tags", "layer", "components", "component_data", "mesh", "material", "prefab_link", "transform", "world"],
+        "prefab_instance": ["id", "name", "instance"],
         "transform": ["position", "rotation", "scale"],
         "set_node": ["id", "name", "visible", "tags", "layer"],
         "set_scene": ["camera", "environment"],
@@ -157,6 +158,7 @@ EDITOR_SCHEMA = {
         "schema 16 adds diff_scene structural comparisons against saved scenes",
         "schema 17 adds recoverable library trash and restore actions",
         "schema 18 adds prefab instance links with revert/apply actions",
+        "schema 19 adds a prefab_instances inventory of linked roots to the editor document",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

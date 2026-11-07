@@ -447,6 +447,10 @@ class WebServerTest(unittest.TestCase):
             inserted["selection"]["prefab_link"],
             {"name": "cube-template", "instance": "copy"},
         )
+        self.assertEqual(
+            inserted["prefab_instances"],
+            [{"id": instance_id, "name": "cube-template", "instance": "copy"}],
+        )
         session.editor_action(
             {"action": "transform", "id": instance_id, "position": [5.0, 0.0, 0.0]}
         )
