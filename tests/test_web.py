@@ -17,7 +17,7 @@ from keystone.prefab import Prefab
 from keystone.primitives import cube
 from keystone.samples import CubeDemo
 from keystone.scene import Node, Scene
-from keystone.schema import EDITOR_ACTIONS
+from keystone.schema import EDITOR_ACTIONS, EDITOR_SCHEMA_VERSION
 from keystone.web.scene import SCENE_SCHEMA, scene_document
 from keystone.web.schema import EDITOR_SCHEMA
 from keystone.web.server import GameSession, WebProblem, create_server
@@ -189,7 +189,7 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 17)
+        self.assertEqual(editor["schema"], EDITOR_SCHEMA_VERSION)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
         self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
@@ -431,6 +431,54 @@ class WebServerTest(unittest.TestCase):
         self.assertEqual(editor["selection"]["id"], "copy:" + cube["id"])
         _, _, scene = self._json("/api/scene")
         self.assertIn("copy:" + cube["id"], {node["id"] for node in scene["nodes"]})
+
+    def test_editor_prefab_instance_revert_and_apply(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        original = cube["transform"]["position"]
+        session.editor_action({"action": "select", "id": cube["id"]})
+        session.editor_action({"action": "save_prefab", "name": "cube-template"})
+        inserted = session.editor_action(
+            {"action": "insert_prefab", "name": "cube-template", "instance": "copy"}
+        )
+        instance_id = inserted["selection"]["id"]
+        self.assertEqual(
+            inserted["selection"]["prefab_link"],
+            {"name": "cube-template", "instance": "copy"},
+        )
+        session.editor_action(
+            {"action": "transform", "id": instance_id, "position": [5.0, 0.0, 0.0]}
+        )
+        reverted = session.editor_action(
+            {"action": "revert_prefab", "id": instance_id}
+        )
+        self.assertEqual(reverted["selection"]["id"], instance_id)
+        self.assertEqual(reverted["selection"]["transform"]["position"], original)
+        self.assertEqual(
+            reverted["selection"]["prefab_link"],
+            {"name": "cube-template", "instance": "copy"},
+        )
+        undone = session.editor_action({"action": "undo"})
+        self.assertEqual(
+            undone["selection"]["transform"]["position"], [5.0, 0.0, 0.0]
+        )
+        applied = session.editor_action({"action": "apply_prefab", "id": instance_id})
+        self.assertEqual(applied["selection"]["prefab_link"]["name"], "cube-template")
+        self.assertAlmostEqual(
+            session.prefabs["cube-template"].roots[0].transform.position.x, 5.0
+        )
+        second = session.editor_action(
+            {"action": "insert_prefab", "name": "cube-template"}
+        )
+        self.assertEqual(
+            second["selection"]["prefab_link"],
+            {"name": "cube-template", "instance": "cube-template"},
+        )
+        self.assertAlmostEqual(second["selection"]["transform"]["position"][0], 5.0)
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action({"action": "apply_prefab", "id": cube["id"]})
+        self.assertEqual(caught.exception.status, 400)
 
     def test_editor_prefab_library_persists_and_reloads(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1051,6 +1099,9 @@ class WebServerTest(unittest.TestCase):
             "prefab-duplicate",
             "prefab-delete",
             "prefab-restore",
+            "prefab-revert",
+            "prefab-apply",
+            "prefab-link",
             "mesh-asset",
             "material-asset",
             "assign-asset",
@@ -1102,6 +1153,10 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("applyGizmoTransform", script)
         self.assertIn("worldDeltaToLocal", script)
         self.assertIn("setEditable", script)
+        self.assertIn("revert_prefab", script)
+        self.assertIn("apply_prefab", script)
+        self.assertIn("revertPrefabInstance", script)
+        self.assertIn("applyPrefabInstance", script)
         status, _, body = self._request("/viewer.js")
         self.assertEqual(status, 200)
         viewer_script = body.decode("utf-8")

@@ -8,7 +8,14 @@ from keystone.assets import AssetRegistry
 from keystone.geometry import Material
 from keystone.math3d import Vec3
 from keystone.primitives import cube, plane
-from keystone.scene import DirectionalLight, Node, PointLight, Scene, Transform
+from keystone.scene import (
+    DirectionalLight,
+    Node,
+    PointLight,
+    PrefabLink,
+    Scene,
+    Transform,
+)
 from keystone.scene_snapshot import (
     SCENE_SNAPSHOT_VERSION,
     scene_from_dict,
@@ -55,6 +62,29 @@ class SceneSnapshotTest(unittest.TestCase):
         self.assertEqual(restored.camera.pitch, -0.25)
         self.assertEqual(restored.background, Vec3(0.1, 0.2, 0.3))
         json.dumps(document)
+
+    def test_prefab_links_round_trip_and_older_snapshots_default_to_none(self):
+        scene = Scene()
+        scene.add(
+            Node(
+                "hero",
+                id="hero",
+                prefab_link=PrefabLink("hero-template", "copy"),
+            )
+        )
+        document = scene_to_dict(scene)
+        self.assertEqual(
+            document["nodes"][0]["prefab_link"],
+            {"name": "hero-template", "instance": "copy"},
+        )
+        restored = scene_from_dict(document)
+        self.assertEqual(
+            restored.find_by_id("hero").prefab_link,
+            PrefabLink("hero-template", "copy"),
+        )
+        document["schema"] = 2
+        document["nodes"][0].pop("prefab_link")
+        self.assertIsNone(scene_from_dict(document).find_by_id("hero").prefab_link)
 
     def test_round_trip_preserves_typed_components(self):
         scene = self._scene()

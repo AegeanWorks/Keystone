@@ -37,6 +37,7 @@ def _clone_template(node: Node) -> Node:
         tags=set(node.tags),
         layer=node.layer,
         components=copy.deepcopy(node.components),
+        prefab_link=None,
     )
     for child in node.children:
         clone.add_child(_clone_template(child))
@@ -340,6 +341,7 @@ class Prefab:
                 tags=set(node.tags),
                 layer=node.layer,
                 components=copy.deepcopy(node.components),
+                prefab_link=None,
             )
             for child in node.children:
                 clone.add_child(clone_for_instance(child))

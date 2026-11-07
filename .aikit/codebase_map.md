@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `133`
-- **Total Classes**: `205`
-- **Total Top-Level Functions**: `318`
-- **Total Class Methods**: `1266`
-- **Total Source Lines**: `27646`
+- **Total Classes**: `206`
+- **Total Top-Level Functions**: `322`
+- **Total Class Methods**: `1272`
+- **Total Source Lines**: `27907`
 
 ---
 
@@ -1061,7 +1061,7 @@
 ### [`keystone/prefab.py`](keystone/prefab.py)
 > *Deterministic prefabs: capture, persist and instantiate reusable subtrees.*
 
-**Size**: `375` lines (`15266` bytes)
+**Size**: `377` lines (`15326` bytes)
 
 **Classes:**
 - `class Prefab` - *An immutable-name, detached template of one or more scene subtrees.*
@@ -1202,12 +1202,16 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `419` lines (`15911` bytes)
+**Size**: `452` lines (`17366` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
   - Method `.__post_init__()`
   - Method `.matrix()`
+- `class PrefabLink` - *Editor-facing link from a scene node to the prefab instance it came from.*
+  - Method `.__post_init__()`
+  - Method `.to_dict()` - *Return the JSON-safe link document.*
+  - Method `.from_dict(data)` - *Validate one link document.*
 - `class Node` - *A named transform node with identity, tags, components and children.*
   - Method `.__post_init__()`
   - Method `.add_tag(tag)`
@@ -1298,7 +1302,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `440` lines (`18693` bytes)
+**Size**: `450` lines (`19038` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)`
@@ -1321,7 +1325,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `40` lines (`786` bytes)
+**Size**: `42` lines (`827` bytes)
 
 ---
 
@@ -1500,7 +1504,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `1059` lines (`39382` bytes)
+**Size**: `1132` lines (`41809` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene and environment edits.*
@@ -1552,7 +1556,11 @@
 - `def remove_component(node, type_name, component_types)` - *Remove one named component from a node.*
 - `def assign_assets(node, payload, registry)` - *Assign or clear a node's mesh/material through registry asset ids.*
 - `def save_prefab(scene, node, name, prefabs)`
+- `def _next_instance_prefix(scene, name)`
 - `def insert_prefab(scene, prefabs, name, parent, instance)`
+- `def revert_prefab_instance(scene, node, prefabs)` - *Replace one linked instance with a fresh copy of its prefab template.*
+- `def apply_prefab_instance(node, prefabs)` - *Capture one linked instance as the new prefab definition.*
+- `def rename_prefab_links(scene, old, new)` - *Point every instance link at a renamed prefab; return the updates made.*
 
 ---
 
@@ -1573,14 +1581,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `178` lines (`8118` bytes)
+**Size**: `183` lines (`8412` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `985` lines (`43150` bytes)
+**Size**: `1023` lines (`45092` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2473,7 +2481,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `114` lines (`4388` bytes)
+**Size**: `117` lines (`4479` bytes)
 
 **Classes:**
 - `class PluginTest`
@@ -2543,7 +2551,7 @@
 ### [`tests/test_prefab.py`](tests/test_prefab.py)
 > *Tests for deterministic prefab capture, persistence and instantiation.*
 
-**Size**: `208` lines (`8970` bytes)
+**Size**: `218` lines (`9423` bytes)
 
 **Classes:**
 - `class Health`
@@ -2556,6 +2564,7 @@
   - Method `.test_capture_and_instantiate_a_subtree()`
   - Method `.test_instances_are_isolated_and_ids_are_unique()`
   - Method `.test_auto_ids()`
+  - Method `.test_capture_and_instantiate_strip_instance_links()`
   - Method `.test_describe_is_json_safe()`
   - Method `.test_validation()`
   - Method `._registered_scene()`
@@ -2766,13 +2775,14 @@
 ### [`tests/test_scene_snapshot.py`](tests/test_scene_snapshot.py)
 > *Unit tests for versioned scene snapshots.*
 
-**Size**: `249` lines (`10694` bytes)
+**Size**: `279` lines (`11547` bytes)
 
 **Classes:**
 - `class Health`
 - `class SceneSnapshotTest`
   - Method `._scene()`
   - Method `.test_round_trip_preserves_structure_and_transforms()`
+  - Method `.test_prefab_links_round_trip_and_older_snapshots_default_to_none()`
   - Method `.test_round_trip_preserves_typed_components()`
   - Method `.test_components_require_a_type_map_and_supported_codec()`
   - Method `.test_round_trip_preserves_camera_lens_and_environment()`
@@ -3014,7 +3024,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `1239` lines (`53341` bytes)
+**Size**: `1294` lines (`55956` bytes)
 
 **Classes:**
 - `class Health`
@@ -3044,6 +3054,7 @@
   - Method `.test_editor_asset_metadata()`
   - Method `.test_editor_asset_inventory_and_assignment()`
   - Method `.test_editor_prefab_capture_and_insert()`
+  - Method `.test_editor_prefab_instance_revert_and_apply()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_library_rename_and_delete()`
   - Method `.test_editor_library_trash_and_restore()`

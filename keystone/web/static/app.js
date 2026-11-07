@@ -48,6 +48,9 @@ const elements = {
   prefabInstance: document.getElementById("prefab-instance"),
   prefabSave: document.getElementById("prefab-save"),
   prefabInsert: document.getElementById("prefab-insert"),
+  prefabRevert: document.getElementById("prefab-revert"),
+  prefabApply: document.getElementById("prefab-apply"),
+  prefabLink: document.getElementById("prefab-link"),
   prefabRename: document.getElementById("prefab-rename"),
   prefabDuplicate: document.getElementById("prefab-duplicate"),
   prefabDelete: document.getElementById("prefab-delete"),
@@ -115,6 +118,7 @@ function setBusy(value) {
     elements.sceneSettingsApply, elements.assignAsset, elements.playStart,
     elements.playStep, elements.playStop, elements.componentSet, elements.componentRemove,
     elements.prefabSave, elements.prefabInsert, elements.prefabRename,
+    elements.prefabRevert, elements.prefabApply,
     elements.prefabDuplicate, elements.prefabDelete, elements.prefabRestore,
     elements.transformApply, elements.editorRefresh,
   ]) {
@@ -191,7 +195,12 @@ function editorSummary(editor) {
     roots: editor.roots,
     node_count: editor.nodes.length,
     selection: editor.selection
-      ? { id: editor.selection.id, name: editor.selection.name, transform: editor.selection.transform }
+      ? {
+          id: editor.selection.id,
+          name: editor.selection.name,
+          transform: editor.selection.transform,
+          prefab_link: editor.selection.prefab_link,
+        }
       : null,
     prefabs: editor.prefabs,
     scenes: editor.scenes,
@@ -530,6 +539,10 @@ function showEditor(editor) {
   renderComponentTypes(editor);
   fillNodeProperties(editor.selection);
   fillTransform(editor.selection);
+  const link = editor.selection && editor.selection.prefab_link;
+  elements.prefabLink.textContent = link
+    ? `Prefab instance ${link.name} (${link.instance})`
+    : "No prefab instance selected";
   fillAssets(editor.selection);
   updateAssetInfo();
   fillComponentData(editor.selection);
@@ -727,6 +740,27 @@ async function insertPrefab() {
   const instance = elements.prefabInstance.value.trim() || null;
   await editorAction({ action: "insert_prefab", name, instance }, "inserting prefab");
   await refreshScene(false);
+}
+
+async function revertPrefabInstance() {
+  if (!editorState || !editorState.selection) {
+    throw new Error("Select a prefab instance first.");
+  }
+  await editorAction(
+    { action: "revert_prefab", id: editorState.selection.id },
+    "reverting prefab instance",
+  );
+  await refreshScene(false);
+}
+
+async function applyPrefabInstance() {
+  if (!editorState || !editorState.selection) {
+    throw new Error("Select a prefab instance first.");
+  }
+  await editorAction(
+    { action: "apply_prefab", id: editorState.selection.id },
+    "applying prefab instance",
+  );
 }
 
 async function playStart() {
@@ -1193,5 +1227,7 @@ elements.prefabDuplicate.addEventListener("click", () => run(duplicatePrefab));
 elements.prefabDelete.addEventListener("click", () => run(deletePrefab));
 elements.prefabRestore.addEventListener("click", () => run(restorePrefab));
 elements.prefabInsert.addEventListener("click", () => run(insertPrefab));
+elements.prefabRevert.addEventListener("click", () => run(revertPrefabInstance));
+elements.prefabApply.addEventListener("click", () => run(applyPrefabInstance));
 
 init();

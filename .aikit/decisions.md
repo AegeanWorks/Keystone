@@ -920,3 +920,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Nodes could be selected and nudged, but direct viewport translation still required typing coordinates; Unity/Unreal-style authoring expects draggable axis handles.
 - **Decision**: Draw an unlit X/Y/Z arrow gizmo at the selection's world position with camera-distance scaling. Hit-test the projected axis segments, begin an axis drag on pointer-down, and preview a world-space delta on the selected node and its descendants. Ctrl/Cmd snaps to 0.25 units. On release restore the preview and send one validated `transform` action whose local position is derived through the parent world inverse. Hide the gizmo in play mode. No REST or schema change.
 - **Consequences**: 728 tests green, both JS modules pass `node --check`, and one drag equals one undo entry. The gizmo is translate-only and world-axis aligned; rotation/scale gizmos and local-space axes remain future work.
+
+### ADR-112: Link prefab instances and add revert/apply actions
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Prefab insertion produced detached copies. Later prefab edits could not reach existing instances, and there was no way to discard instance overrides or push them back into the prefab.
+- **Decision**: Add `PrefabLink(name, instance)` as editor-only node metadata. Inserting a single-root prefab always allocates a deterministic instance prefix and stamps the root link; multi-root prefabs stay unlinked. Expose `prefab_link` in the editor document, persist it in scene snapshot schema 3 (schemas 1-2 load without links), keep it through undo/redo, and add `revert_prefab` (replace the linked instance with a fresh template copy, preserving sibling order and one undo entry) and `apply_prefab` (capture the instance back into the prefab cache and `.kprefab` library with rollback on save failure). Prefab capture and instantiation strip links, so nested instances remain unsupported. Renaming a prefab updates existing links. Bump the editor schema to 18.
+- **Consequences**: 731 tests green; prefab workflows are link-aware and reversible, and snapshots carry the metadata without changing the engine scene document. Multi-root instances, nested prefabs, per-property override tracking and automatic propagation of prefab edits to existing instances remain future work.

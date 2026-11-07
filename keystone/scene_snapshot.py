@@ -21,13 +21,14 @@ from keystone.scene import (
     Node,
     PointLight,
     PostSettings,
+    PrefabLink,
     Scene,
     ShadowSettings,
     SpriteSettings,
     Transform,
 )
 
-SCENE_SNAPSHOT_VERSION = 2
+SCENE_SNAPSHOT_VERSION = 3
 
 
 def _vec3_to_list(value: Vec3) -> list[float]:
@@ -185,6 +186,7 @@ def scene_to_dict(scene: Scene, registry: Any = None) -> dict[str, Any]:
                 "transform": _transform_to_dict(node.transform),
                 "mesh": mesh_ids.get(id(node.mesh)) if node.mesh is not None else None,
                 "material": material_ids.get(id(node.material)) if node.material is not None else None,
+                "prefab_link": node.prefab_link.to_dict() if node.prefab_link is not None else None,
                 "components": [
                     component_to_dict(component)
                     for _, component in sorted(
@@ -236,7 +238,7 @@ def scene_from_dict(
     if not isinstance(data, Mapping):
         raise TypeError("scene snapshot must be a mapping")
     version = data.get("schema", data.get("version", SCENE_SNAPSHOT_VERSION))
-    if isinstance(version, bool) or not isinstance(version, int) or version not in (1, SCENE_SNAPSHOT_VERSION):
+    if isinstance(version, bool) or not isinstance(version, int) or version not in (1, 2, SCENE_SNAPSHOT_VERSION):
         raise ValueError(f"unsupported scene snapshot version {version}")
     if "nodes" not in data:
         raise ValueError("scene snapshot must contain a nodes list")
@@ -360,7 +362,15 @@ def scene_from_dict(
                     f"{type(component).__name__} components"
                 )
             components[type(component)] = component
-        node = Node(name, id=node_id, layer=layer, components=components)
+        raw_link = raw.get("prefab_link")
+        prefab_link = PrefabLink.from_dict(raw_link) if raw_link is not None else None
+        node = Node(
+            name,
+            id=node_id,
+            layer=layer,
+            components=components,
+            prefab_link=prefab_link,
+        )
         node.transform = _transform_from_dict(raw.get("transform", {}))
         visible = raw.get("visible", True)
         if not isinstance(visible, bool):

@@ -32,6 +32,7 @@ from keystone.scene import (
     Node,
     PointLight,
     PostSettings,
+    PrefabLink,
     Scene,
     ShadowSettings,
     SpriteSettings,
@@ -603,6 +604,7 @@ def _node_snapshot(node: Node) -> dict[str, object]:
         "tags": set(node.tags),
         "layer": node.layer,
         "components": copy.deepcopy(node.components),
+        "prefab_link": node.prefab_link,
         "children": [_node_snapshot(child) for child in node.children],
     }
 
@@ -626,6 +628,7 @@ def _node_from_snapshot(data: Mapping[str, object]) -> Node:
         tags=set(data["tags"]),
         layer=data["layer"],
         components=copy.deepcopy(data["components"]),
+        prefab_link=data.get("prefab_link"),
     )
     for child in children:
         node.add_child(_node_from_snapshot(child))
@@ -775,6 +778,9 @@ def node_document(
         "component_data": _component_documents(node),
         "mesh": _payload_id(registry, node.mesh, "mesh"),
         "material": _payload_id(registry, node.material, "material"),
+        "prefab_link": (
+            node.prefab_link.to_dict() if node.prefab_link is not None else None
+        ),
         "transform": {
             "position": [transform.position.x, transform.position.y, transform.position.z],
             "rotation": [rotation.x, rotation.y, rotation.z, rotation.w],
@@ -1042,6 +1048,20 @@ def save_prefab(scene: Scene, node: Node, name: str, prefabs: dict[str, Prefab])
     return prefab
 
 
+def _next_instance_prefix(scene: Scene, name: str) -> str:
+    used = {
+        node.prefab_link.instance
+        for node in scene.traverse()
+        if node.prefab_link is not None
+    }
+    candidate = name
+    counter = 2
+    while candidate in used:
+        candidate = f"{name}-{counter}"
+        counter += 1
+    return candidate
+
+
 def insert_prefab(
     scene: Scene,
     prefabs: dict[str, Prefab],
@@ -1053,7 +1073,60 @@ def insert_prefab(
         raise ValueError("prefab name must be a non-blank string")
     if name not in prefabs:
         raise KeyError(f"no saved prefab {name!r}")
-    roots = prefabs[name].instantiate(scene, parent=parent, instance=instance)
+    prefab = prefabs[name]
+    prefix = instance if instance is not None else _next_instance_prefix(scene, name)
+    roots = prefab.instantiate(scene, parent=parent, instance=prefix)
+    if len(prefab.roots) == 1:
+        roots[0].prefab_link = PrefabLink(name, prefix)
     # Materialize IDs for instances attached below a non-root parent.
     list(scene.traverse())
     return roots
+
+
+def revert_prefab_instance(
+    scene: Scene,
+    node: Node,
+    prefabs: dict[str, Prefab],
+) -> Node:
+    """Replace one linked instance with a fresh copy of its prefab template."""
+    link = node.prefab_link
+    if link is None:
+        raise ValueError("node is not a prefab instance")
+    prefab = prefabs.get(link.name)
+    if prefab is None:
+        raise KeyError(f"no saved prefab {link.name!r}")
+    if len(prefab.roots) != 1:
+        raise ValueError("multi-root prefabs cannot be reverted")
+    parent = node.parent
+    if parent is None:
+        raise ValueError("prefab instance root is detached")
+    index = parent.children.index(node)
+    parent.remove_child(node)
+    root = prefab.instantiate(scene, parent=parent, instance=link.instance)[0]
+    root.prefab_link = link
+    parent.children.remove(root)
+    parent.children.insert(index, root)
+    root.parent = parent
+    list(scene.traverse())
+    return root
+
+
+def apply_prefab_instance(node: Node, prefabs: dict[str, Prefab]) -> Prefab:
+    """Capture one linked instance as the new prefab definition."""
+    link = node.prefab_link
+    if link is None:
+        raise ValueError("node is not a prefab instance")
+    prefab = Prefab.from_node(node, name=link.name)
+    prefabs[link.name] = prefab
+    return prefab
+
+
+def rename_prefab_links(scene: Scene, old: str, new: str) -> int:
+    """Point every instance link at a renamed prefab; return the updates made."""
+    updated = 0
+    for node in scene.traverse():
+        link = node.prefab_link
+        if link is not None and link.name == old:
+            node.prefab_link = PrefabLink(new, link.instance)
+            updated += 1
+    return updated

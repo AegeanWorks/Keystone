@@ -27,6 +27,7 @@ from keystone.scene_snapshot import restore_scene, scene_to_dict
 from keystone.web.editor import (
     EDITOR_ACTIONS,
     EditorHistory,
+    apply_prefab_instance,
     asset_entries,
     assign_assets,
     component_schemas,
@@ -37,7 +38,9 @@ from keystone.web.editor import (
     find_node,
     insert_prefab,
     remove_component,
+    rename_prefab_links,
     reparent_node,
+    revert_prefab_instance,
     save_prefab,
     set_component,
     set_node_properties,
@@ -527,6 +530,7 @@ class GameSession:
                     self.prefabs.pop(old, None)
                     self.prefabs.pop(entry.name, None)
                     self.prefabs[entry.name] = self.prefab_library.load(entry.name)
+                    rename_prefab_links(scene, old, entry.name)
                 elif action == "duplicate_prefab":
                     if self.prefab_library is None:
                         raise ValueError("no prefab library is configured")
@@ -559,6 +563,40 @@ class GameSession:
                     )
                     if roots:
                         self.selected_id = roots[0].id
+                elif action == "revert_prefab":
+                    node = find_node(scene, payload.get("id") or self.selected_id)
+                    link = node.prefab_link
+                    if link is None:
+                        raise ValueError("node is not a prefab instance")
+                    if self.prefab_library is not None:
+                        try:
+                            self.prefabs[link.name] = self.prefab_library.load(link.name)
+                        except KeyError:
+                            self._ensure_prefab_locked(link.name)
+                    else:
+                        self._ensure_prefab_locked(link.name)
+                    root = self._apply_history(
+                        scene,
+                        lambda: revert_prefab_instance(scene, node, self.prefabs),
+                    )
+                    self.selected_id = root.id
+                elif action == "apply_prefab":
+                    node = find_node(scene, payload.get("id") or self.selected_id)
+                    link = node.prefab_link
+                    if link is None:
+                        raise ValueError("node is not a prefab instance")
+                    previous = self.prefabs.get(link.name)
+                    prefab = apply_prefab_instance(node, self.prefabs)
+                    if self.prefab_library is not None:
+                        try:
+                            self.prefab_library.save(link.name, prefab)
+                        except Exception:
+                            if previous is None:
+                                self.prefabs.pop(link.name, None)
+                            else:
+                                self.prefabs[link.name] = previous
+                            raise
+                    self.selected_id = node.id
                 elif action == "undo":
                     self.history.undo(scene)
                     self.last_diff = None

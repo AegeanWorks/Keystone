@@ -4,6 +4,7 @@ import unittest
 
 from keystone.plugin import GameModule, describe_game, load_game
 from keystone.samples import CubeDemo
+from keystone.schema import EDITOR_SCHEMA_VERSION
 
 
 class PluginTest(unittest.TestCase):
@@ -31,7 +32,9 @@ class PluginTest(unittest.TestCase):
         self.assertEqual(payload["capabilities"]["report_schema"]["version"], 11)
         self.assertEqual(payload["capabilities"]["web"]["api_version"], 1)
         self.assertIn("/api/scene", payload["capabilities"]["web"]["endpoints"])
-        self.assertEqual(payload["capabilities"]["editor"]["schema"], 17)
+        self.assertEqual(
+            payload["capabilities"]["editor"]["schema"], EDITOR_SCHEMA_VERSION
+        )
         self.assertIn("create_node", payload["capabilities"]["editor"]["actions"])
         self.assertIn("undo", payload["capabilities"]["editor"]["actions"])
         self.assertIn("/api/editor", payload["capabilities"]["web"]["endpoints"])

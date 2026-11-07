@@ -11,7 +11,7 @@ from keystone.geometry import Material
 from keystone.math3d import Vec3
 from keystone.prefab import PREFAB_SCHEMA_VERSION, Prefab
 from keystone.primitives import cube
-from keystone.scene import Node, Scene, Transform
+from keystone.scene import Node, PrefabLink, Scene, Transform
 
 
 @dataclass
@@ -89,6 +89,16 @@ class PrefabTest(unittest.TestCase):
         roots = prefab.instantiate(scene)
         self.assertEqual(len(roots), 1)
         self.assertTrue(roots[0].id.startswith("node-"))
+
+    def test_capture_and_instantiate_strip_instance_links(self):
+        scene = self._scene()
+        hero = scene.find_by_id("hero")
+        hero.prefab_link = PrefabLink("hero-template", "p1")
+        prefab = Prefab.from_node(hero, name="hero-copy")
+        self.assertIsNone(prefab.roots[0].prefab_link)
+        target = Scene()
+        root = prefab.instantiate(target, instance="copy")[0]
+        self.assertIsNone(root.prefab_link)
 
     def test_describe_is_json_safe(self):
         prefab = Prefab.from_scene(self._scene(), name="level")

@@ -74,6 +74,8 @@ EDITOR_EXAMPLES = {
         "parent": "root",
         "instance": "copy",
     },
+    "revert_prefab": {"action": "revert_prefab", "id": "copy:cube-0"},
+    "apply_prefab": {"action": "apply_prefab", "id": "copy:cube-0"},
     "rename_prefab": {"action": "rename_prefab", "name": "cube", "new_name": "cube-alt"},
     "duplicate_prefab": {
         "action": "duplicate_prefab",
@@ -102,7 +104,7 @@ EDITOR_SCHEMA = {
     "actions": list(EDITOR_ACTIONS),
     "examples": EDITOR_EXAMPLES,
     "fields": {
-        "node": ["id", "name", "parent_id", "children", "visible", "selected", "tags", "layer", "components", "component_data", "mesh", "material", "transform", "world"],
+        "node": ["id", "name", "parent_id", "children", "visible", "selected", "tags", "layer", "components", "component_data", "mesh", "material", "prefab_link", "transform", "world"],
         "transform": ["position", "rotation", "scale"],
         "set_node": ["id", "name", "visible", "tags", "layer"],
         "set_scene": ["camera", "environment"],
@@ -113,6 +115,8 @@ EDITOR_SCHEMA = {
         "duplicate_prefab": ["name", "new_name"],
         "delete_prefab": ["name"],
         "restore_prefab": ["trash"],
+        "revert_prefab": ["id"],
+        "apply_prefab": ["id"],
         "diff_scene": ["name"],
         "rename_scene": ["name", "new_name"],
         "duplicate_scene": ["name", "new_name"],
@@ -152,6 +156,7 @@ EDITOR_SCHEMA = {
         "schema 15 adds set_scene camera/environment authoring with full-scene undo",
         "schema 16 adds diff_scene structural comparisons against saved scenes",
         "schema 17 adds recoverable library trash and restore actions",
+        "schema 18 adds prefab instance links with revert/apply actions",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

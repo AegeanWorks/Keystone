@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
 from typing import TypeVar
 
@@ -47,6 +47,36 @@ class Transform:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class PrefabLink:
+    """Editor-facing link from a scene node to the prefab instance it came from."""
+
+    name: str
+    instance: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.name, str) or not self.name.strip():
+            raise ValueError("prefab link name must be a non-blank string")
+        if not isinstance(self.instance, str) or not self.instance.strip():
+            raise ValueError("prefab link instance must be a non-blank string")
+        if ":" in self.instance:
+            raise ValueError("prefab link instance must not contain ':'")
+
+    def to_dict(self) -> dict[str, str]:
+        """Return the JSON-safe link document."""
+        return {"name": self.name, "instance": self.instance}
+
+    @classmethod
+    def from_dict(cls, data: object) -> PrefabLink:
+        """Validate one link document."""
+        if not isinstance(data, Mapping):
+            raise TypeError("prefab link must be a mapping")
+        unknown = sorted(set(data) - {"name", "instance"})
+        if unknown:
+            raise ValueError(f"prefab link has unknown fields: {', '.join(unknown)}")
+        return cls(data.get("name"), data.get("instance"))  # type: ignore[arg-type]
+
+
 @dataclass(eq=False)
 class Node:
     """A named transform node with identity, tags, components and children."""
@@ -62,6 +92,7 @@ class Node:
     tags: set[str] = field(default_factory=set)
     layer: str = "default"
     components: dict[type, object] = field(default_factory=dict)
+    prefab_link: PrefabLink | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str):
@@ -97,6 +128,8 @@ class Node:
                 raise TypeError("component keys must be types")
             if not isinstance(component_value, component_type):
                 raise TypeError("component value must match its key type")
+        if self.prefab_link is not None and not isinstance(self.prefab_link, PrefabLink):
+            raise TypeError("node prefab_link must be a PrefabLink or None")
         if self.parent is not None:
             if self.parent is self:
                 raise ValueError("a node cannot be its own parent")
