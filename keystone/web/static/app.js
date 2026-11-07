@@ -20,6 +20,10 @@ const elements = {
   nodeDuplicate: document.getElementById("node-duplicate"),
   nodeDelete: document.getElementById("node-delete"),
   nodeReparent: document.getElementById("node-reparent"),
+  nodeVisible: document.getElementById("node-visible"),
+  nodeTags: document.getElementById("node-tags"),
+  nodeLayer: document.getElementById("node-layer"),
+  nodeProperties: document.getElementById("node-properties"),
   editorUndo: document.getElementById("editor-undo"),
   editorRedo: document.getElementById("editor-redo"),
   sceneName: document.getElementById("scene-name"),
@@ -77,6 +81,7 @@ function setBusy(value) {
   for (const button of [
     elements.step, elements.run, elements.simulate, elements.refresh,
     elements.nodeCreate, elements.nodeDuplicate, elements.nodeDelete, elements.nodeReparent,
+    elements.nodeProperties,
     elements.sceneSave, elements.sceneLoad, elements.assignAsset,
     elements.playStart, elements.playStep, elements.playStop,
     elements.componentSet, elements.componentRemove,
@@ -262,6 +267,13 @@ function fillComponentData(selection) {
     selected && !selected.error ? JSON.stringify(selected.data, null, 2) : "{}";
 }
 
+function fillNodeProperties(selection) {
+  elements.nodeName.value = selection ? selection.name : "node";
+  elements.nodeVisible.checked = selection ? selection.visible : true;
+  elements.nodeTags.value = selection ? selection.tags.join(", ") : "";
+  elements.nodeLayer.value = selection ? selection.layer : "default";
+}
+
 function fillTransform(selection) {
   if (!selection) {
     elements.position.value = "0, 0, 0";
@@ -279,6 +291,7 @@ function showEditor(editor) {
   renderHierarchy(editor);
   renderAssets(editor);
   renderComponentTypes(editor);
+  fillNodeProperties(editor.selection);
   fillTransform(editor.selection);
   fillAssets(editor.selection);
   fillComponentData(editor.selection);
@@ -378,6 +391,33 @@ async function playStep() {
 
 async function playStop() {
   await editorAction({ action: "play_stop" }, "stopping play");
+  await refreshScene(false);
+}
+
+async function applyNodeProperties() {
+  if (!editorState || !editorState.selection) {
+    throw new Error("Select a node before editing its properties.");
+  }
+  const name = elements.nodeName.value.trim();
+  if (!name) {
+    throw new Error("Node name must be non-blank.");
+  }
+  const tags = elements.nodeTags.value
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+  const layer = elements.nodeLayer.value.trim() || "default";
+  await editorAction(
+    {
+      action: "set_node",
+      id: editorState.selection.id,
+      name,
+      visible: elements.nodeVisible.checked,
+      tags,
+      layer,
+    },
+    "applying node properties",
+  );
   await refreshScene(false);
 }
 
@@ -601,6 +641,7 @@ elements.nodeCreate.addEventListener("click", () => run(createNode));
 elements.nodeDuplicate.addEventListener("click", () => run(duplicateNode));
 elements.nodeDelete.addEventListener("click", () => run(deleteNode));
 elements.nodeReparent.addEventListener("click", () => run(reparentNode));
+elements.nodeProperties.addEventListener("click", () => run(applyNodeProperties));
 elements.editorUndo.addEventListener("click", () => run(undoEditor));
 elements.editorRedo.addEventListener("click", () => run(redoEditor));
 elements.sceneSave.addEventListener("click", () => run(saveScene));

@@ -37,6 +37,7 @@ __all__ = [
     "reparent_node",
     "save_prefab",
     "set_component",
+    "set_node_properties",
     "transform_from_payload",
 ]
 
@@ -444,6 +445,43 @@ def transform_from_payload(node: Node, payload: dict) -> Transform:
     if not isinstance(payload, Mapping):
         raise TypeError("transform payload must be a mapping")
     return _transform_from_payload(payload, node.transform)
+
+
+def set_node_properties(node: Node, payload: Mapping[str, object]) -> Node:
+    """Update a node's name, visibility, tags or layer atomically."""
+    if not isinstance(node, Node):
+        raise TypeError("set_node target must be a Node")
+    if not isinstance(payload, Mapping):
+        raise TypeError("set_node payload must be a mapping")
+    fields = [name for name in ("name", "visible", "tags", "layer") if name in payload]
+    if not fields:
+        raise ValueError("set_node needs name, visible, tags or layer")
+    name = node.name
+    visible = node.visible
+    tags = set(node.tags)
+    layer = node.layer
+    if "name" in payload:
+        value = payload.get("name")
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError("node name must be a non-blank string")
+        name = value
+    if "visible" in payload:
+        value = payload.get("visible")
+        if not isinstance(value, bool):
+            raise TypeError("node visible must be a boolean")
+        visible = value
+    if "tags" in payload:
+        tags = _node_tags(payload.get("tags"))
+    if "layer" in payload:
+        value = payload.get("layer")
+        if not isinstance(value, str) or not value:
+            raise ValueError("node layer must be a non-empty string")
+        layer = value
+    node.name = name
+    node.visible = visible
+    node.tags = tags
+    node.layer = layer
+    return node
 
 
 def set_component(

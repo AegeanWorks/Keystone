@@ -17,6 +17,7 @@ EDITOR_SCHEMA = {
     "fields": {
         "node": ["id", "name", "parent_id", "children", "visible", "selected", "tags", "layer", "components", "component_data", "mesh", "material", "transform", "world"],
         "transform": ["position", "rotation", "scale"],
+        "set_node": ["id", "name", "visible", "tags", "layer"],
         "create_node": ["id", "name", "parent", "position", "rotation", "scale", "tags", "layer", "visible", "mesh", "material"],
         "assign_asset": ["id", "mesh", "material"],
         "set_component": ["id", "type", "data"],
@@ -36,6 +37,7 @@ EDITOR_SCHEMA = {
         "schema 4 adds asset inventory and assign_asset for existing nodes",
         "schema 5 adds component_types plus set_component/remove_component authoring",
         "schema 6 adds play_start/play_step/play_stop and restores the authored scene on stop",
+        "schema 7 adds set_node property editing for name, visibility, tags and layer",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

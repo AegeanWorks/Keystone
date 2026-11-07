@@ -180,7 +180,7 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 6)
+        self.assertEqual(editor["schema"], 7)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
         self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
@@ -458,6 +458,46 @@ class WebServerTest(unittest.TestCase):
             entries = {entry["name"]: entry for entry in broken.editor()["scenes"]}
             self.assertIsNotNone(entries["broken"]["error"])
 
+    def test_editor_node_property_editing(self):
+        _, _, editor = self._json("/api/editor")
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        status, _, editor = self._json(
+            "/api/editor",
+            method="POST",
+            payload={
+                "action": "set_node",
+                "id": cube["id"],
+                "name": "hero-cube",
+                "visible": False,
+                "tags": ["hero", "prop"],
+                "layer": "actors",
+            },
+        )
+        self.assertEqual(status, 200)
+        selection = editor["selection"]
+        self.assertEqual(selection["name"], "hero-cube")
+        self.assertFalse(selection["visible"])
+        self.assertEqual(selection["tags"], ["hero", "prop"])
+        self.assertEqual(selection["layer"], "actors")
+
+        _, _, editor = self._json(
+            "/api/editor", method="POST", payload={"action": "undo"}
+        )
+        self.assertEqual(editor["selection"]["name"], "cube-0")
+        self.assertTrue(editor["selection"]["visible"])
+        self.assertEqual(editor["selection"]["tags"], [])
+        self.assertEqual(editor["selection"]["layer"], "default")
+
+        for payload in (
+            {"action": "set_node", "id": cube["id"], "name": ""},
+            {"action": "set_node", "id": cube["id"], "visible": "yes"},
+            {"action": "set_node", "id": cube["id"], "tags": "hero"},
+            {"action": "set_node", "id": cube["id"], "layer": ""},
+            {"action": "set_node", "id": cube["id"]},
+        ):
+            status, _, _ = self._json("/api/editor", method="POST", payload=payload)
+            self.assertEqual(status, 400)
+
     def test_editor_play_mode_restores_authored_scene(self):
         session = GameSession(CubeDemo())
         editor = session.editor()
@@ -583,6 +623,10 @@ class WebServerTest(unittest.TestCase):
             "node-duplicate",
             "node-delete",
             "node-reparent",
+            "node-visible",
+            "node-tags",
+            "node-layer",
+            "node-properties",
             "editor-undo",
             "editor-redo",
             "scene-name",
@@ -610,6 +654,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("assign_asset", script)
         self.assertIn("set_component", script)
         self.assertIn("play_start", script)
+        self.assertIn("set_node", script)
         status, _, payload = self._json("/api")
         self.assertEqual(status, 200)
         self.assertIn("editor", payload["endpoints"])

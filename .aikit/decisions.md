@@ -640,3 +640,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: `/api/simulate` rebuilds the game scene, so running the game from the editor discarded authored changes. A Unity/Unreal-style workflow needs a play mode that advances the live scene and restores the authored state on stop.
 - **Decision**: Bump the editor schema to 6 and add `play_start`, `play_step` and `play_stop`. Start snapshots the component-aware scene with `scene_to_dict`; step calls `game.update(FIXED_STEP, ActionState)` for a bounded frame count with optional action payloads; stop restores through `restore_scene`, clears history/selection and reports `play.active`/`play.frames`. Editing actions and `/api/simulate` are blocked while playing. The console adds Play/Step/Stop controls.
 - **Consequences**: 694 tests green; authored scene graph state is restored after play, while game-owned counters (time, particles) are not rewound; play mode is a scene preview, not a full state rewind. Full game-state snapshots and inspector property editing remain future work.
+
+### ADR-077: Add inspector property editing for existing nodes
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: The editor could create nodes with names, tags, layers and visibility, but could not change those properties afterwards. A Unity/Unreal-style inspector needs rename, hide/show, tagging and layer reassignment without delete-and-recreate.
+- **Decision**: Bump the editor schema to 7 and add `set_node` with optional `name`, `visible`, `tags` and `layer` fields. Validate every supplied value before mutating, update atomically through `EditorHistory`, reject blank names/layers, non-boolean visibility and non-list tags, and add inspector fields plus an apply button to the console.
+- **Consequences**: 695 tests green; node metadata edits undo cleanly and remain compatible with scene files, prefabs and queries. Transactional batch authoring and asset previews remain future work.

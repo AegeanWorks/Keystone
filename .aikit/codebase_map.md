@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `128`
 - **Total Classes**: `202`
-- **Total Top-Level Functions**: `289`
-- **Total Class Methods**: `1220`
-- **Total Source Lines**: `24988`
+- **Total Top-Level Functions**: `290`
+- **Total Class Methods**: `1221`
+- **Total Source Lines**: `25081`
 
 ---
 
@@ -1270,7 +1270,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `28` lines (`549` bytes)
+**Size**: `29` lines (`565` bytes)
 
 ---
 
@@ -1449,7 +1449,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `534` lines (`18895` bytes)
+**Size**: `572` lines (`20337` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene-node edits.*
@@ -1483,6 +1483,7 @@
 - `def duplicate_node(scene, node, name)` - *Clone one node subtree as a sibling with fresh scene-allocated ids.*
 - `def reparent_node(scene, node, parent)` - *Move one node subtree below a new parent, or the scene root.*
 - `def transform_from_payload(node, payload)`
+- `def set_node_properties(node, payload)` - *Update a node's name, visibility, tags or layer atomically.*
 - `def set_component(node, type_name, data, component_types)` - *Decode and add/replace one component on a node.*
 - `def remove_component(node, type_name, component_types)` - *Remove one named component from a node.*
 - `def assign_assets(node, payload, registry)` - *Assign or clear a node's mesh/material through registry asset ids.*
@@ -1508,14 +1509,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `62` lines (`3142` bytes)
+**Size**: `64` lines (`3294` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `822` lines (`36014` bytes)
+**Size**: `829` lines (`36328` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2899,7 +2900,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `725` lines (`30861` bytes)
+**Size**: `770` lines (`32706` bytes)
 
 **Classes:**
 - `class Health`
@@ -2929,6 +2930,7 @@
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_scene_library_persists_and_restores()`
+  - Method `.test_editor_node_property_editing()`
   - Method `.test_editor_play_mode_restores_authored_scene()`
   - Method `.test_editor_component_authoring_and_scene_round_trip()`
   - Method `.test_editor_static_controls_and_index()`
