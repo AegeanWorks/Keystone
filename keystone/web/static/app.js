@@ -261,6 +261,9 @@ function renderHierarchy(editor) {
         node.layer,
         ...(node.tags || []),
         ...(node.components || []),
+        ...(node.prefab_link
+          ? [node.prefab_link.name, node.prefab_link.instance]
+          : []),
       ]
         .join(" ")
         .toLowerCase();
@@ -270,8 +273,11 @@ function renderHierarchy(editor) {
     }
     const option = document.createElement("option");
     option.value = node.id;
+    const badge = node.prefab_link
+      ? ` [prefab:${node.prefab_link.name}/${node.prefab_link.instance}]`
+      : "";
     option.textContent =
-      `${"  ".repeat(nodeDepth(node, byId))}${node.name || "(root)"} · ${node.id}`;
+      `${"  ".repeat(nodeDepth(node, byId))}${node.name || "(root)"} · ${node.id}${badge}`;
     elements.hierarchy.append(option);
   }
   const values = Array.from(elements.hierarchy.options).map((option) => option.value);
@@ -566,6 +572,7 @@ function showEditor(editor) {
     : "Stopped";
   elements.editorState.textContent =
     `${editor.nodes.length} nodes · ${editor.prefabs.length} prefabs · ` +
+    `${(editor.prefab_instances || []).length} instances · ` +
     `undo ${history.undo} / redo ${history.redo} · ` +
     `selected ${editor.selection ? editor.selection.id : "none"}`;
   if (!busy) {

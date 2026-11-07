@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-batch-prefab-revert-v1",
+    "task_id": "keystone-hierarchy-prefab-badges-v1",
     "last_phase": "verification",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794093528.0609856,
+    "updated_at": 1794093711.5677092,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794093528.444138
+    "completed_at": 1794093711.9620128
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-swarm-closure-v1",
-      "phase": "check",
-      "phase_num": 5,
-      "description": "[3/3] Closure check: pytest 644 green, 22/22 repros pass, determinism 772cac, headless schema 11, describe accurate, aikit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794068101.4893663,
-      "timestamp_str": "2026-11-07 19:15:01",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-swarm-closure-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-swarm-closure-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794068119.7796197,
-      "timestamp_str": "2026-11-07 19:15:19",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-viewport-gizmo-v1",
-      "phase": "planning",
-      "phase_num": 2,
-      "description": "[1/3] Plan viewport translate gizmo with axis handles, drag preview and one transform action on release",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794090027.6387365,
-      "timestamp_str": "2026-11-08 01:20:27",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "The editor can select nodes but cannot manipulate them directly in the viewport, unlike Unity/Unreal; users must type coordinates or nudge with keys.",
-        "benefits": "Axis-constrained translation by dragging X/Y/Z handles, world-space drag preview, and exactly one validated transform action per completed drag so undo stays clean.",
-        "risks": "contract: no REST or schema change; dependency: none, pure WebGL/JS; concurrency: gizmo drag must pre-empt camera orbit on the same pointer; state: preview mutates world matrices and must restore on cancel.",
-        "mitigation": "Keep gizmo drag state separate from camera drag, derive the final local position through the parent world inverse, restore previewed matrices on cancel, add static tests and run node --check plus the full gate cycle."
-      },
-      "plan_digest": "e3118c0d6766e75112ab220aa864d91da5cc2085f37cc351286e12f9102c88c2"
-    },
     {
       "task_id": "keystone-viewport-gizmo-v1",
       "phase": "verification",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794093528.4441404,
       "timestamp_str": "2026-11-08 02:18:48",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-hierarchy-prefab-badges-v1",
+      "phase": "planning",
+      "phase_num": 2,
+      "description": "[1/1] Add prefab-instance badges and an instance count to the console hierarchy",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794093559.8381162,
+      "timestamp_str": "2026-11-08 02:19:19",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "Linked prefab roots are visible in the inspector but indistinguishable in the hierarchy list, unlike Unity/Unreal prefab markers.",
+        "benefits": "Hierarchy rows show prefab name and instance prefix, filters match them, and the status line reports the instance count.",
+        "risks": "contract: no API or schema change; dependency: none; concurrency: none; state: display-only.",
+        "mitigation": "Derive badges from prefab_link, add static assertions, run node --check and the full gate cycle."
+      },
+      "plan_digest": "91cd6c80b5742f5ebcd5f2439add1144886934ae2a14ef5f2e74c9b99f40fbd9"
+    },
+    {
+      "task_id": "keystone-hierarchy-prefab-badges-v1",
+      "phase": "verification",
+      "phase_num": 4,
+      "description": "[1/1] Hierarchy prefab badges and instance count implemented; 732 tests green, node --check clean, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794093711.5677092,
+      "timestamp_str": "2026-11-08 02:21:51",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-hierarchy-prefab-badges-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-hierarchy-prefab-badges-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794093711.962015,
+      "timestamp_str": "2026-11-08 02:21:51",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]
