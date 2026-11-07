@@ -555,6 +555,26 @@ async function selectNode(nodeId) {
   await editorAction({ action: "select", id: nodeId }, "selecting node");
 }
 
+async function nudgeSelection(delta) {
+  if (!editorState || !editorState.selection) {
+    return;
+  }
+  const current = editorState.selection.transform.position;
+  await editorAction(
+    {
+      action: "transform",
+      id: editorState.selection.id,
+      position: [
+        current[0] + delta[0],
+        current[1] + delta[1],
+        current[2] + delta[2],
+      ],
+    },
+    "nudging node",
+  );
+  await refreshScene(false);
+}
+
 async function applyTransform() {
   if (!editorState || !editorState.selection) {
     throw new Error("Select a node before editing its transform.");
@@ -939,6 +959,15 @@ async function init() {
   }
 }
 
+const NUDGE_DIRECTIONS = {
+  ArrowLeft: [-1, 0, 0],
+  ArrowRight: [1, 0, 0],
+  ArrowUp: [0, 0, -1],
+  ArrowDown: [0, 0, 1],
+  PageUp: [0, 1, 0],
+  PageDown: [0, -1, 0],
+};
+
 function isEditingTarget(target) {
   const tag = target && target.tagName;
   return (
@@ -963,6 +992,19 @@ document.addEventListener("keydown", (event) => {
   if (modifier && key === "y") {
     event.preventDefault();
     run(redoEditor);
+    return;
+  }
+  const direction = NUDGE_DIRECTIONS[event.key];
+  if (direction && editorState.selection) {
+    event.preventDefault();
+    const step = event.shiftKey ? 1.0 : 0.1;
+    run(() =>
+      nudgeSelection([
+        direction[0] * step,
+        direction[1] * step,
+        direction[2] * step,
+      ]),
+    );
     return;
   }
   if (event.key === "Delete" && editorState.selection) {

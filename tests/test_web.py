@@ -988,6 +988,8 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("rename_scene", script)
         self.assertIn("duplicate_scene", script)
         self.assertIn("applySceneSettings", script)
+        self.assertIn("nudgeSelection", script)
+        self.assertIn("ArrowLeft", script)
         self.assertIn("assign_asset", script)
         self.assertIn("fillDatalist", script)
         self.assertIn("setSelected", script)

@@ -872,3 +872,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The editor could change nodes but not the scene camera, lights, atmosphere or render toggles; those settings required code or direct scene-file edits.
 - **Decision**: Add `set_scene` with optional `camera` and `environment` mappings, strict validation (finite vectors, FOV/near/far ranges, non-negative fog, light/point-light constructors, boolean toggles, unknown-key rejection), and assign only after full validation. Expose `scene_settings` in `/api/editor`, add a console JSON editor, and extend `EditorHistory` snapshots from nodes-only to the full scene state so undo/redo restores camera and environment too. Bump the editor schema to 15.
 - **Consequences**: 719 tests green; camera, lighting, atmosphere and render toggles are AI- and human-authorable with atomic failure and full-scene undo. Transform gizmos, prefab overrides and behavior systems remain future work.
+
+### ADR-106: Add keyboard transform nudging for the selection
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Transforms required typing into numeric fields or dragging nodes in the viewport; there was no quick keyboard adjustment for placement.
+- **Decision**: Add arrow-key X/Z nudges and PageUp/PageDown Y nudges for the selected node, 0.1 units normally and 1.0 with Shift, reusing the validated `transform` action and undo history. Ignore input/textarea/select/contenteditable targets and suppress browser scrolling. No API or schema change.
+- **Consequences**: 719 tests green and `app.js` passes `node --check`; placement is keyboard-accessible while retaining one undo step per nudge. Transform gizmos remain future work.
