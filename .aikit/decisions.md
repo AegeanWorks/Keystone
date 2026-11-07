@@ -800,3 +800,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Mesh metadata listed vertex and triangle counts but not extents, so AI clients could not reason about size or choose focus distances.
 - **Decision**: Bump the editor schema to 12 and add `bounds.min`/`bounds.max` to mesh metadata, computed from the payload positions (zero bounds for empty meshes). No new API action.
 - **Consequences**: 710 tests green; asset summaries now carry placement and framing information, and the console metadata readout shows it automatically. Thumbnail previews remain future work.
+
+### ADR-097: Add play-mode frame and action controls to the console
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: `play_step` accepted actions, but the console always advanced one default-input frame, so play mode could not exercise gameplay controls.
+- **Decision**: Add `play-frames` and `play-actions` inputs, validate a 1..10000 frame count and JSON action list, and send both to `play_step`; the API already repeats the last action and clears pressed edges. No backend or schema change.
+- **Consequences**: 710 tests green and `app.js` passes `node --check`; play mode exercises real action scripts while preserving authored-scene restore. Thumbnail previews and camera panning remain future work.

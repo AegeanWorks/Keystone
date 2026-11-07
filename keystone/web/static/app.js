@@ -15,6 +15,8 @@ const elements = {
   playStart: document.getElementById("play-start"),
   playStep: document.getElementById("play-step"),
   playStop: document.getElementById("play-stop"),
+  playFrames: document.getElementById("play-frames"),
+  playActions: document.getElementById("play-actions"),
   playState: document.getElementById("play-state"),
   nodeCreate: document.getElementById("node-create"),
   nodeDuplicate: document.getElementById("node-duplicate"),
@@ -576,7 +578,23 @@ async function playStart() {
 }
 
 async function playStep() {
-  await editorAction({ action: "play_step", frames: 1 }, "stepping play");
+  const frames = Number.parseInt(elements.playFrames.value, 10);
+  if (!Number.isInteger(frames) || frames < 1 || frames > 10000) {
+    throw new Error("Play frames must be an integer between 1 and 10000.");
+  }
+  let actions;
+  try {
+    actions = JSON.parse(elements.playActions.value || "[]");
+  } catch (error) {
+    throw new Error(`Play actions JSON: ${error.message}`);
+  }
+  if (!Array.isArray(actions)) {
+    throw new Error("Play actions JSON must be a list.");
+  }
+  await editorAction(
+    { action: "play_step", frames, actions },
+    "stepping play",
+  );
   await refreshScene(false);
 }
 

@@ -813,6 +813,8 @@ class WebServerTest(unittest.TestCase):
             "play-start",
             "play-step",
             "play-stop",
+            "play-frames",
+            "play-actions",
             "play-state",
             "node-parent",
             "node-create",
@@ -870,6 +872,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("renderComponentFields", script)
         self.assertIn("updateAssetInfo", script)
         self.assertIn("play_start", script)
+        self.assertIn("playFrames", script)
         self.assertIn("set_node", script)
         status, _, body = self._request("/viewer.js")
         self.assertEqual(status, 200)

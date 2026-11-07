@@ -42,6 +42,11 @@
           <button id="play-step" type="button">Step</button>
           <button id="play-stop" type="button">Stop</button>
         </div>
+        <div class="field-grid">
+          <label>Play frames <input id="play-frames" type="number" min="1" max="10000" step="1" value="1"></label>
+        </div>
+        <label class="stack" for="play-actions">Play actions JSON</label>
+        <textarea id="play-actions" spellcheck="false" rows="3">[]</textarea>
         <div id="play-state" class="hint">Stopped</div>
         <div class="field-grid">
           <label>Node name <input id="node-name" type="text" value="node"></label>
