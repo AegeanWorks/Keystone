@@ -10,6 +10,14 @@ const elements = {
   simulate: document.getElementById("simulate"),
   refresh: document.getElementById("refresh"),
   hierarchy: document.getElementById("hierarchy"),
+  nodeName: document.getElementById("node-name"),
+  nodeParent: document.getElementById("node-parent"),
+  nodeCreate: document.getElementById("node-create"),
+  nodeDuplicate: document.getElementById("node-duplicate"),
+  nodeDelete: document.getElementById("node-delete"),
+  nodeReparent: document.getElementById("node-reparent"),
+  editorUndo: document.getElementById("editor-undo"),
+  editorRedo: document.getElementById("editor-redo"),
   prefabName: document.getElementById("prefab-name"),
   prefabInstance: document.getElementById("prefab-instance"),
   prefabSave: document.getElementById("prefab-save"),
@@ -54,9 +62,18 @@ function setBusy(value) {
   busy = value;
   for (const button of [
     elements.step, elements.run, elements.simulate, elements.refresh,
+    elements.nodeCreate, elements.nodeDuplicate, elements.nodeDelete, elements.nodeReparent,
     elements.prefabSave, elements.prefabInsert, elements.transformApply, elements.editorRefresh,
   ]) {
     button.disabled = value;
+  }
+  if (value) {
+    elements.editorUndo.disabled = true;
+    elements.editorRedo.disabled = true;
+  } else {
+    const history = (editorState && editorState.history) || { undo: 0, redo: 0 };
+    elements.editorUndo.disabled = history.undo === 0;
+    elements.editorRedo.disabled = history.redo === 0;
   }
 }
 
@@ -125,27 +142,52 @@ function editorSummary(editor) {
       : null,
     prefabs: editor.prefabs,
     actions: editor.actions,
+    history: editor.history,
   };
+}
+
+function nodeDepth(node, byId) {
+  let depth = 0;
+  let current = node;
+  while (current.parent_id && byId.has(current.parent_id) && depth < 64) {
+    depth += 1;
+    current = byId.get(current.parent_id);
+  }
+  return depth;
+}
+
+function renderParentOptions(editor, byId) {
+  const previous = elements.nodeParent.value || "root";
+  elements.nodeParent.replaceChildren();
+  const rootOption = document.createElement("option");
+  rootOption.value = "root";
+  rootOption.textContent = "Scene root";
+  elements.nodeParent.append(rootOption);
+  for (const node of editor.nodes) {
+    const option = document.createElement("option");
+    option.value = node.id;
+    option.textContent =
+      `${"  ".repeat(nodeDepth(node, byId))}${node.name || node.id} · ${node.id}`;
+    elements.nodeParent.append(option);
+  }
+  elements.nodeParent.value = Array.from(elements.nodeParent.options)
+    .some((option) => option.value === previous) ? previous : "root";
 }
 
 function renderHierarchy(editor) {
   const byId = new Map(editor.nodes.map((node) => [node.id, node]));
   elements.hierarchy.replaceChildren();
   for (const node of editor.nodes) {
-    let depth = 0;
-    let current = node;
-    while (current.parent_id && byId.has(current.parent_id) && depth < 64) {
-      depth += 1;
-      current = byId.get(current.parent_id);
-    }
     const option = document.createElement("option");
     option.value = node.id;
-    option.textContent = `${"  ".repeat(depth)}${node.name || "(root)"} · ${node.id}`;
+    option.textContent =
+      `${"  ".repeat(nodeDepth(node, byId))}${node.name || "(root)"} · ${node.id}`;
     elements.hierarchy.append(option);
   }
   if (editor.selection) {
     elements.hierarchy.value = editor.selection.id;
   }
+  renderParentOptions(editor, byId);
 }
 
 function fillTransform(selection) {
@@ -164,9 +206,15 @@ function showEditor(editor) {
   editorState = editor;
   renderHierarchy(editor);
   fillTransform(editor.selection);
+  const history = editor.history || { undo: 0, redo: 0 };
   elements.editorState.textContent =
     `${editor.nodes.length} nodes · ${editor.prefabs.length} prefabs · ` +
+    `undo ${history.undo} / redo ${history.redo} · ` +
     `selected ${editor.selection ? editor.selection.id : "none"}`;
+  if (!busy) {
+    elements.editorUndo.disabled = history.undo === 0;
+    elements.editorRedo.disabled = history.redo === 0;
+  }
 }
 
 async function refreshEditor(display) {
@@ -236,6 +284,56 @@ async function insertPrefab() {
   }
   const instance = elements.prefabInstance.value.trim() || null;
   await editorAction({ action: "insert_prefab", name, instance }, "inserting prefab");
+  await refreshScene(false);
+}
+
+async function createNode() {
+  const name = elements.nodeName.value.trim() || "node";
+  const parent = elements.nodeParent.value || "root";
+  await editorAction({ action: "create_node", name, parent }, "creating node");
+  await refreshScene(false);
+}
+
+async function duplicateNode() {
+  if (!editorState || !editorState.selection) {
+    throw new Error("Select a node before duplicating it.");
+  }
+  const selected = editorState.selection;
+  const name = `${selected.name || "node"} copy`;
+  await editorAction({ action: "duplicate_node", id: selected.id, name }, "duplicating node");
+  await refreshScene(false);
+}
+
+async function deleteNode() {
+  if (!editorState || !editorState.selection) {
+    throw new Error("Select a node before deleting it.");
+  }
+  await editorAction(
+    { action: "delete_node", id: editorState.selection.id },
+    "deleting node",
+  );
+  await refreshScene(false);
+}
+
+async function reparentNode() {
+  if (!editorState || !editorState.selection) {
+    throw new Error("Select a node before reparenting it.");
+  }
+  const parent = elements.nodeParent.value || "root";
+  await editorAction(
+    { action: "reparent_node", id: editorState.selection.id, parent },
+    "reparenting node",
+  );
+  await refreshScene(false);
+}
+
+async function undoEditor() {
+  await editorAction({ action: "undo" }, "undoing editor action");
+  await refreshScene(false);
+}
+
+async function redoEditor() {
+  await editorAction({ action: "redo" }, "redoing editor action");
   await refreshScene(false);
 }
 
@@ -335,6 +433,12 @@ elements.refresh.addEventListener("click", () => run(() => refreshScene(true)));
 elements.editorRefresh.addEventListener("click", () => run(() => refreshEditor(true)));
 elements.hierarchy.addEventListener("change", () => run(() => selectNode(elements.hierarchy.value)));
 elements.transformApply.addEventListener("click", () => run(applyTransform));
+elements.nodeCreate.addEventListener("click", () => run(createNode));
+elements.nodeDuplicate.addEventListener("click", () => run(duplicateNode));
+elements.nodeDelete.addEventListener("click", () => run(deleteNode));
+elements.nodeReparent.addEventListener("click", () => run(reparentNode));
+elements.editorUndo.addEventListener("click", () => run(undoEditor));
+elements.editorRedo.addEventListener("click", () => run(redoEditor));
 elements.prefabSave.addEventListener("click", () => run(savePrefab));
 elements.prefabInsert.addEventListener("click", () => run(insertPrefab));
 

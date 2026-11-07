@@ -38,6 +38,24 @@
         <label class="stack" for="hierarchy">Hierarchy</label>
         <select id="hierarchy" size="8" aria-label="Scene hierarchy"></select>
         <div class="field-grid">
+          <label>Node name <input id="node-name" type="text" value="node"></label>
+          <label>Parent
+            <select id="node-parent" aria-label="Node parent">
+              <option value="root">Scene root</option>
+            </select>
+          </label>
+        </div>
+        <div class="buttons">
+          <button id="node-create" type="button">Create node</button>
+          <button id="node-duplicate" type="button">Duplicate</button>
+          <button id="node-delete" type="button">Delete</button>
+          <button id="node-reparent" type="button">Reparent</button>
+        </div>
+        <div class="buttons">
+          <button id="editor-undo" type="button">Undo</button>
+          <button id="editor-redo" type="button">Redo</button>
+        </div>
+        <div class="field-grid">
           <label>Prefab name <input id="prefab-name" type="text" value="hero"></label>
           <label>Instance prefix <input id="prefab-instance" type="text" placeholder="optional"></label>
         </div>

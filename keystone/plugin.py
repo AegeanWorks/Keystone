@@ -7,7 +7,12 @@ from typing import Protocol, runtime_checkable
 
 from keystone.input import ActionState
 from keystone.scene import Scene
-from keystone.schema import EDITOR_SCHEMA_VERSION, SCENE_SCHEMA_VERSION, WEB_API_VERSION
+from keystone.schema import (
+    EDITOR_ACTIONS,
+    EDITOR_SCHEMA_VERSION,
+    SCENE_SCHEMA_VERSION,
+    WEB_API_VERSION,
+)
 
 
 @runtime_checkable
@@ -64,7 +69,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "inspector": True,
             "editor": {
                 "schema": EDITOR_SCHEMA_VERSION,
-                "actions": ["select", "transform", "save_prefab", "insert_prefab"],
+                "actions": list(EDITOR_ACTIONS),
             },
             "playtest": True,
             "human_ui": {"overlay": "on", "toggle": "h", "pause": "p", "menu": ["resume", "toggle_ui", "quit"]},

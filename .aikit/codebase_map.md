@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `123`
-- **Total Classes**: `191`
-- **Total Top-Level Functions**: `261`
-- **Total Class Methods**: `1166`
-- **Total Source Lines**: `22938`
+- **Total Classes**: `192`
+- **Total Top-Level Functions**: `274`
+- **Total Class Methods**: `1176`
+- **Total Source Lines**: `23406`
 
 ---
 
@@ -990,7 +990,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `110` lines (`4251` bytes)
+**Size**: `115` lines (`4253` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1207,7 +1207,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `8` lines (`199` bytes)
+**Size**: `20` lines (`396` bytes)
 
 ---
 
@@ -1386,13 +1386,36 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `135` lines (`4823` bytes)
+**Size**: `396` lines (`13789` bytes)
+
+**Classes:**
+- `class EditorHistory` - *Bounded in-memory undo/redo for scene-node edits.*
+  - Method `.__init__(limit)`
+  - Method `.describe()`
+  - Method `.apply(scene, operation)` - *Run one scene mutation and push its pre-edit snapshot.*
+  - Method `.undo(scene)`
+  - Method `.redo(scene)`
+  - Method `.clear()`
+  - Method `._push(snapshot)`
 
 **Functions:**
 - `def _finite_array(value, length, label)`
+- `def _node_name(value, default)`
+- `def _node_id(value)`
+- `def _node_tags(value)`
+- `def _transform_from_payload(payload, current)`
+- `def _asset_payload(registry, value, kind, label)`
+- `def _node_snapshot(node)`
+- `def _snapshot_nodes(scene)`
+- `def _node_from_snapshot(data)`
+- `def _restore_nodes(scene, snapshot)`
 - `def node_document(node, selected_id)`
-- `def editor_document(scene, selected_id, prefabs)`
+- `def editor_document(scene, selected_id, prefabs, history)`
 - `def find_node(scene, node_id)`
+- `def create_node(scene, payload, parent, registry)` - *Create, validate and attach one node from an editor payload.*
+- `def delete_node(scene, node)` - *Detach one node subtree and return its former parent.*
+- `def duplicate_node(scene, node, name)` - *Clone one node subtree as a sibling with fresh scene-allocated ids.*
+- `def reparent_node(scene, node, parent)` - *Move one node subtree below a new parent, or the scene root.*
 - `def transform_from_payload(node, payload)`
 - `def save_prefab(scene, node, name, prefabs)`
 - `def insert_prefab(scene, prefabs, name, parent, instance)`
@@ -1416,14 +1439,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `38` lines (`1896` bytes)
+**Size**: `50` lines (`2347` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `541` lines (`24441` bytes)
+**Size**: `609` lines (`27037` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1435,6 +1458,8 @@
   - Method `.simulate(frames, actions, step, trace)`
   - Method `._scene_locked()`
   - Method `.scene()`
+  - Method `._registry_locked()`
+  - Method `._parent_locked(scene, value)`
   - Method `._editor_locked(scene)`
   - Method `.editor()`
   - Method `.editor_action(payload)`
@@ -2287,7 +2312,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `112` lines (`4228` bytes)
+**Size**: `114` lines (`4387` bytes)
 
 **Classes:**
 - `class PluginTest`
@@ -2762,7 +2787,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `362` lines (`15440` bytes)
+**Size**: `470` lines (`19751` bytes)
 
 **Classes:**
 - `class Health`
@@ -2786,6 +2811,7 @@
   - Method `.test_scene_endpoint_returns_the_scene_document()`
   - Method `.test_simulate_endpoint_returns_a_deterministic_result()`
   - Method `.test_editor_hierarchy_selection_and_transform()`
+  - Method `.test_editor_node_authoring_and_undo_redo()`
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_static_controls_and_index()`
   - Method `.test_step_button_documents_its_reset_semantics()`

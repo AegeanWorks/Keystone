@@ -2,18 +2,30 @@
 
 from __future__ import annotations
 
-from keystone.schema import EDITOR_SCHEMA_VERSION, SCENE_SCHEMA_VERSION, WEB_API_VERSION
+from keystone.schema import (
+    EDITOR_ACTIONS,
+    EDITOR_SCHEMA_VERSION,
+    SCENE_SCHEMA_VERSION,
+    WEB_API_VERSION,
+)
 
 __all__ = ["EDITOR_SCHEMA", "SCENE_SCHEMA", "WEB_API_VERSION"]
 
 EDITOR_SCHEMA = {
     "version": EDITOR_SCHEMA_VERSION,
-    "actions": ["select", "transform", "save_prefab", "insert_prefab"],
+    "actions": list(EDITOR_ACTIONS),
     "fields": {
         "node": ["id", "name", "parent_id", "children", "visible", "selected", "tags", "layer", "components", "transform", "world"],
         "transform": ["position", "rotation", "scale"],
+        "create_node": ["id", "name", "parent", "position", "rotation", "scale", "tags", "layer", "visible", "mesh", "material"],
+        "reparent_node": ["id", "parent"],
+        "history": ["undo", "redo", "limit"],
     },
-    "notes": ["rotation is [x, y, z, w]; transforms are local; world is column-major"],
+    "notes": [
+        "rotation is [x, y, z, w]; transforms are local; world is column-major",
+        "schema 2 adds create/delete/duplicate/reparent, undo/redo and registry-linked mesh/material ids",
+        "mesh and material are asset ids; create_node needs the game to expose an AssetRegistry as assets",
+    ],
 }
 
 SCENE_SCHEMA = {

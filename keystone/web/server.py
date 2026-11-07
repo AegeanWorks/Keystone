@@ -11,15 +11,22 @@ from pathlib import Path
 from typing import ClassVar
 from urllib.parse import urlparse
 
+from keystone.assets import AssetRegistry
 from keystone.headless import run_simulation
 from keystone.input import ActionState
 from keystone.plugin import GameModule, describe_game
 from keystone.replay import FIXED_STEP
-from keystone.scene import Scene
+from keystone.scene import Node, Scene
 from keystone.web.editor import (
+    EDITOR_ACTIONS,
+    EditorHistory,
+    create_node,
+    delete_node,
+    duplicate_node,
     editor_document,
     find_node,
     insert_prefab,
+    reparent_node,
     save_prefab,
     transform_from_payload,
 )
@@ -62,6 +69,7 @@ class GameSession:
         self._built = False
         self.selected_id: str | None = None
         self.prefabs: dict[str, object] = {}
+        self.history = EditorHistory()
 
     @property
     def name(self) -> str:
@@ -110,10 +118,19 @@ class GameSession:
         with self.lock:
             return scene_document(self._scene_locked(), game=self.name)
 
+    def _registry_locked(self) -> AssetRegistry | None:
+        registry = getattr(self.game, "assets", None)
+        return registry if isinstance(registry, AssetRegistry) else None
+
+    def _parent_locked(self, scene: Scene, value: object) -> Node | None:
+        if value in (None, "", "root"):
+            return None
+        return find_node(scene, value)
+
     def _editor_locked(self, scene: Scene) -> dict:
         if self.selected_id is not None and scene.find_by_id(self.selected_id) is None:
             self.selected_id = None
-        document = editor_document(scene, self.selected_id, self.prefabs)
+        document = editor_document(scene, self.selected_id, self.prefabs, self.history)
         document["game"] = self.name
         return document
 
@@ -126,7 +143,11 @@ class GameSession:
             raise WebProblem(400, "editor request must be a JSON object", 'send {"action": "select", "id": "cube"}')
         action = payload.get("action")
         if not isinstance(action, str) or not action.strip():
-            raise WebProblem(400, "editor action must be a non-blank string", "use select, transform, save_prefab or insert_prefab")
+            raise WebProblem(
+                400,
+                "editor action must be a non-blank string",
+                "use " + ", ".join(EDITOR_ACTIONS),
+            )
         with self.lock:
             scene = self._scene_locked()
             try:
@@ -141,7 +162,38 @@ class GameSession:
                         raise ValueError("select id must be a string or null")
                 elif action == "transform":
                     node = find_node(scene, payload.get("id"))
-                    node.transform = transform_from_payload(node, payload)
+
+                    def apply_transform() -> None:
+                        node.transform = transform_from_payload(node, payload)
+
+                    self.history.apply(scene, apply_transform)
+                    self.selected_id = node.id
+                elif action == "create_node":
+                    parent = self._parent_locked(scene, payload.get("parent"))
+                    node = self.history.apply(
+                        scene,
+                        lambda: create_node(
+                            scene,
+                            payload,
+                            parent=parent,
+                            registry=self._registry_locked(),
+                        ),
+                    )
+                    self.selected_id = node.id
+                elif action == "delete_node":
+                    node = find_node(scene, payload.get("id"))
+                    parent = self.history.apply(scene, lambda: delete_node(scene, node))
+                    self.selected_id = None if parent is scene.root else parent.id
+                elif action == "duplicate_node":
+                    node = find_node(scene, payload.get("id"))
+                    clone = self.history.apply(
+                        scene, lambda: duplicate_node(scene, node, payload.get("name"))
+                    )
+                    self.selected_id = clone.id
+                elif action == "reparent_node":
+                    node = find_node(scene, payload.get("id"))
+                    parent = self._parent_locked(scene, payload.get("parent"))
+                    self.history.apply(scene, lambda: reparent_node(scene, node, parent))
                     self.selected_id = node.id
                 elif action == "save_prefab":
                     node_id = payload.get("id") or self.selected_id
@@ -153,17 +205,33 @@ class GameSession:
                     self.selected_id = node.id
                 elif action == "insert_prefab":
                     name = payload.get("name")
-                    parent_id = payload.get("parent")
-                    parent = None if parent_id in (None, "", "root") else find_node(scene, parent_id)
-                    roots = insert_prefab(scene, self.prefabs, name, parent, payload.get("instance"))
+                    parent = self._parent_locked(scene, payload.get("parent"))
+                    roots = self.history.apply(
+                        scene,
+                        lambda: insert_prefab(
+                            scene, self.prefabs, name, parent, payload.get("instance")
+                        ),
+                    )
                     if roots:
                         self.selected_id = roots[0].id
+                elif action == "undo":
+                    self.history.undo(scene)
+                elif action == "redo":
+                    self.history.redo(scene)
                 else:
                     raise ValueError(f"unknown editor action {action!r}")
             except KeyError as exc:
-                raise WebProblem(404, str(exc), "refresh /api/editor and choose an existing node or prefab") from exc
+                raise WebProblem(
+                    404,
+                    str(exc),
+                    "refresh /api/editor and choose an existing node or prefab",
+                ) from exc
             except (TypeError, ValueError) as exc:
-                raise WebProblem(400, str(exc), "send a valid editor action and finite transform values") from exc
+                raise WebProblem(
+                    400,
+                    str(exc),
+                    "send a valid editor action with finite transform values",
+                ) from exc
             return self._editor_locked(scene)
 
     def inspector(self) -> dict:

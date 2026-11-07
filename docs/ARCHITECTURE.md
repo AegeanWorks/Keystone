@@ -122,7 +122,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 - `TextureData` is immutable RGBA8 data with PNG and checker factories; `Material.texture` is sampled through mesh UVs with repeat wrapping and mipmaps, and the renderer caches one GPU texture per payload.
 - `keystone.ui.report.describe_canvas()` turns the rendered `Canvas` into `ui` metadata: visibility, pause state, label text/position/scale/color and button label/action/rect/selection/hover.
 - `describe_game()` exposes `name`, `actions()`, `snapshot()`, capabilities (`simulate`, `render`, `human_ui`, `game_ui`, `web`) and the versioned report/scene schemas; `--describe` prints it without a window.
-- `--serve` starts the local JSON API and browser console without OpenGL; `keystone.web.scene.scene_document()` exports the viewer document and `/api/editor` exposes hierarchy, selection, transforms and prefab insertion.
+- `--serve` starts the local JSON API and browser console without OpenGL; `keystone.web.scene.scene_document()` exports the viewer document and `/api/editor` exposes hierarchy, selection, node authoring, transforms, undo/redo and prefab insertion.
 - `ActionState` includes `mouse_clicked` as a one-frame edge so games and menus can react without importing GLFW.
 - `testing.run_script()`, `verify_determinism()` and `assert_deterministic()` turn an action script into test evidence; `--verify-determinism` exposes the two-run check to agents; `--expect-hash` pins a final result.
 - `--simulate` requires no GPU; `--headless` renders off-screen; `--ui` adds the human overlay to a capture; `--start-paused` renders the pause menu; `--no-ui` disables it; `--report` documents a rendered frame; `--compare-baseline` gates visual changes; `--describe` discovers the contract.
@@ -170,7 +170,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Frame report | Implemented | image statistics, projected nodes, materials, UI metadata and report diff |
 | Human UI | Implemented | bitmap font, canvas, HUD/help, interactive pause menu |
 | Web console | Implemented | scene export, JSON API, CORS, static WebGL2 viewer |
-| Scene editor | Implemented | hierarchy, selection, transform edits, prefab capture/insertion via `/api/editor` and console controls |
+| Scene editor | Implemented | hierarchy, node create/duplicate/reparent/delete, transform edits, bounded undo/redo, prefab capture/insertion via `/api/editor` and console controls |
 | Physics | Implemented | rays, AABB, sphere queries, broadphase, character movement and triggers |
 | AI adapters | Implemented | validated action parsing, fused observations, report summaries, hash-chained audit trail |
 | Playtest | Implemented | seeded bot policies, CommandLog-compatible transcripts, transcript diffing, schema-1 reports, fairness validation |
@@ -217,6 +217,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - `Scene` assigns unique IDs, preserves them across reparenting and rejects duplicate explicit IDs.
 - `Scene.query()`/`find()` filter by name, tag, layer and component; `find_by_id()` resolves an ID.
 - `Prefab` captures a detached subtree, saves/loads schema-1 `.kprefab` files through registered mesh/material ids, instantiates deterministic IDs, preserves tags/layers/components and isolates component copies.
+- `/api/editor` schema 2 creates, deletes, duplicates and reparents nodes, links mesh/material ids through the game's asset registry, and restores bounded undo/redo snapshots atomically.
 - `python -m keystone --new <dir>` scaffolds a project whose `--project <dir> --describe` and `--simulate` paths pass the five-operation contract.
 - Schema-4 reports include node ID, parent ID, tags, layer and component names; older reports still compare by name.
 - `TextureData.checker()` renders through a textured plane and material metadata appears in reports.

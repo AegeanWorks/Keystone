@@ -173,9 +173,10 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 1)
+        self.assertEqual(editor["schema"], 2)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
+        self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
         cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
 
         status, _, editor = self._json(
@@ -216,6 +217,98 @@ class WebServerTest(unittest.TestCase):
         )
         self.assertEqual(status, 400)
 
+    def test_editor_node_authoring_and_undo_redo(self):
+        _, _, editor = self._json("/api/editor")
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        status, _, editor = self._json(
+            "/api/editor",
+            method="POST",
+            payload={
+                "action": "create_node",
+                "name": "lamp",
+                "parent": cube["id"],
+                "position": [1.0, 2.0, 3.0],
+                "tags": ["prop"],
+                "layer": "props",
+                "mesh": "mesh.cube",
+                "material": "material.cube.0",
+            },
+        )
+        self.assertEqual(status, 200)
+        lamp = editor["selection"]
+        self.assertEqual(lamp["name"], "lamp")
+        self.assertEqual(lamp["parent_id"], cube["id"])
+        self.assertEqual(lamp["transform"]["position"], [1.0, 2.0, 3.0])
+        self.assertEqual(lamp["tags"], ["prop"])
+        self.assertEqual(lamp["layer"], "props")
+        self.assertEqual(editor["history"]["undo"], 1)
+        _, _, scene = self._json("/api/scene")
+        lamp_scene = next(item for item in scene["nodes"] if item["id"] == lamp["id"])
+        self.assertIsNotNone(lamp_scene["mesh"])
+        self.assertIsNotNone(lamp_scene["material"])
+
+        status, _, editor = self._json(
+            "/api/editor",
+            method="POST",
+            payload={"action": "duplicate_node", "id": lamp["id"], "name": "lamp-copy"},
+        )
+        self.assertEqual(status, 200)
+        copy = editor["selection"]
+        self.assertNotEqual(copy["id"], lamp["id"])
+        self.assertEqual(copy["name"], "lamp-copy")
+        self.assertEqual(copy["parent_id"], cube["id"])
+
+        status, _, editor = self._json(
+            "/api/editor",
+            method="POST",
+            payload={"action": "reparent_node", "id": copy["id"], "parent": "root"},
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(editor["selection"]["parent_id"], "root")
+        status, _, editor = self._json(
+            "/api/editor", method="POST", payload={"action": "undo"}
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(editor["history"]["undo"], 2)
+        self.assertEqual(editor["history"]["redo"], 1)
+        self.assertEqual(editor["selection"]["parent_id"], cube["id"])
+        status, _, editor = self._json(
+            "/api/editor", method="POST", payload={"action": "redo"}
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(editor["selection"]["parent_id"], "root")
+
+        status, _, editor = self._json(
+            "/api/editor",
+            method="POST",
+            payload={"action": "delete_node", "id": lamp["id"]},
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(editor["selection"]["id"], cube["id"])
+        self.assertNotIn(lamp["id"], {node["id"] for node in editor["nodes"]})
+        self.assertIn(copy["id"], {node["id"] for node in editor["nodes"]})
+        status, _, editor = self._json(
+            "/api/editor", method="POST", payload={"action": "undo"}
+        )
+        self.assertEqual(status, 200)
+        self.assertIn(lamp["id"], {node["id"] for node in editor["nodes"]})
+
+        status, _, _ = self._json(
+            "/api/editor",
+            method="POST",
+            payload={"action": "create_node", "name": "bad", "mesh": "missing.mesh"},
+        )
+        self.assertEqual(status, 400)
+        status, _, _ = self._json(
+            "/api/editor",
+            method="POST",
+            payload={"action": "reparent_node", "id": cube["id"], "parent": lamp["id"]},
+        )
+        self.assertEqual(status, 400)
+        _, _, editor = self._json("/api/editor")
+        cube_now = next(node for node in editor["nodes"] if node["id"] == cube["id"])
+        self.assertEqual(cube_now["parent_id"], "root")
+
     def test_editor_prefab_capture_and_insert(self):
         _, _, editor = self._json("/api/editor")
         cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
@@ -242,11 +335,26 @@ class WebServerTest(unittest.TestCase):
         status, _, body = self._request("/")
         text = body.decode("utf-8")
         self.assertEqual(status, 200)
-        for control in ("hierarchy", "prefab-save", "prefab-insert", "transform-apply"):
+        for control in (
+            "hierarchy",
+            "node-parent",
+            "node-create",
+            "node-duplicate",
+            "node-delete",
+            "node-reparent",
+            "editor-undo",
+            "editor-redo",
+            "prefab-save",
+            "prefab-insert",
+            "transform-apply",
+        ):
             self.assertIn(f'id="{control}"', text)
         status, _, body = self._request("/app.js")
         self.assertEqual(status, 200)
-        self.assertIn("/api/editor", body.decode("utf-8"))
+        script = body.decode("utf-8")
+        self.assertIn("/api/editor", script)
+        self.assertIn("create_node", script)
+        self.assertIn("duplicate_node", script)
         status, _, payload = self._json("/api")
         self.assertEqual(status, 200)
         self.assertIn("editor", payload["endpoints"])
