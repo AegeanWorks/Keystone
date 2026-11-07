@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `130`
-- **Total Classes**: `204`
-- **Total Top-Level Functions**: `310`
-- **Total Class Methods**: `1255`
-- **Total Source Lines**: `27181`
+- **Total Python Modules**: `132`
+- **Total Classes**: `205`
+- **Total Top-Level Functions**: `313`
+- **Total Class Methods**: `1259`
+- **Total Source Lines**: `27412`
 
 ---
 
@@ -1236,6 +1236,18 @@
 
 ---
 
+### [`keystone/scene_diff.py`](keystone/scene_diff.py)
+> *Structured diffs between versioned scene snapshot documents.*
+
+**Size**: `90` lines (`3394` bytes)
+
+**Functions:**
+- `def _node_map(document)`
+- `def _section_diff(before, after)`
+- `def diff_scene_documents(before, after)` - *Compare two scene snapshot documents and return a structured diff.*
+
+---
+
 ### [`keystone/scene_library.py`](keystone/scene_library.py)
 > *File-backed scene libraries for editors, tools and AI clients.*
 
@@ -1291,7 +1303,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `37` lines (`725` bytes)
+**Size**: `38` lines (`743` bytes)
 
 ---
 
@@ -1470,7 +1482,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `1055` lines (`39179` bytes)
+**Size**: `1057` lines (`39244` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene and environment edits.*
@@ -1510,7 +1522,7 @@
 - `def _restore_scene_state(scene, snapshot)`
 - `def _component_documents(node)`
 - `def node_document(node, selected_id, registry)`
-- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, component_schema_documents, play_state)`
+- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, component_schema_documents, play_state, diff)`
 - `def find_node(scene, node_id)`
 - `def create_node(scene, payload, parent, registry)` - *Create, validate and attach one node from an editor payload.*
 - `def delete_node(scene, node)` - *Detach one node subtree and return its former parent.*
@@ -1543,14 +1555,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `168` lines (`7480` bytes)
+**Size**: `172` lines (`7757` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `948` lines (`41383` bytes)
+**Size**: `963` lines (`42123` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2699,6 +2711,19 @@
 
 ---
 
+### [`tests/test_scene_diff.py`](tests/test_scene_diff.py)
+> *Tests for structured scene snapshot diffs.*
+
+**Size**: `70` lines (`2589` bytes)
+
+**Classes:**
+- `class SceneDiffTest`
+  - Method `.test_identical_documents_have_no_changes()`
+  - Method `.test_reports_node_and_scene_changes()`
+  - Method `.test_rejects_bad_documents()`
+
+---
+
 ### [`tests/test_scene_library.py`](tests/test_scene_library.py)
 > *Tests for file-backed scene libraries.*
 
@@ -2969,7 +2994,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `1138` lines (`48603` bytes)
+**Size**: `1187` lines (`50768` bytes)
 
 **Classes:**
 - `class Health`
@@ -3002,6 +3027,7 @@
   - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_library_rename_and_delete()`
   - Method `.test_editor_library_duplicate()`
+  - Method `.test_editor_scene_diff()`
   - Method `.test_editor_initial_scene_loads_at_startup()`
   - Method `.test_editor_scene_library_persists_and_restores()`
   - Method `.test_editor_scene_settings_and_undo()`

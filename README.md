@@ -257,8 +257,8 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 - **Action input**: `InputMap` maps keys/pointer motion to `forward`, `right`, `up`, `look_yaw`, `look_pitch`, `pressed` and `held` with rebindable bindings and action contexts (`gameplay`, `menu`, custom) as JSON; no direct GLFW access.
 - **Audio core**: dependency-free synth (`sine`, `square`, `noise`), named-bus `Mixer` with deterministic mixdown, mono 16-bit WAV IO and `audio_report()`; no hardware.
 - **Animation core**: keyframe `Track`/`AnimationClip` linear/step, looping, crossfade blending, timed events, `apply_pose()`, linear-blend skinning (CPU + GPU), JSON round trips and `animation_report()`.
-- **Replay runner**: `run_log()`/`verify_log()` replay a `CommandLog`, and `--replay log.json` (with `--out`, `--expect-hash`, `--trace`) audits files.
-- **Particles**: CPU `Emitter`/`ParticleSystem` (seeded spawn, gravity/drag, swept collision with bounce, friction and contact-kill, bursts, culling, JSON round trips, reports); HUD/inspector/describe counts; one GPU billboard each.
+- **Replay runner**: `run_log()`/`verify_log()` replay a `CommandLog`, and `--replay` audits logs.
+- **Particles**: CPU `Emitter`/`ParticleSystem` (seeded spawn, forces, swept collision, bursts, culling, JSON reports); HUD/inspector/describe counts; one GPU billboard each.
 - **Physics**: ray/AABB/sphere queries, sphere pushout, spatial-grid broadphase, AABB movement with gravity/ground, trigger tracking and filtered raycasts.
 - **Replay and persistence**: `ActionState` command logs, stable hashes and atomic JSON writes with `.bak` snapshots.
 - **Plugin loading**: `load_game("package.module:Factory")` validates the five-op contract at startup.
@@ -266,7 +266,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 - **AI discovery and testing**: `--describe` exposes actions, capabilities, schemas and snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; `testing`/`agents`/`playtest` add helpers, action validation, observations and seeded bots.
 - **Visual regression gate**: `--compare-baseline baseline.json` re-renders, compares hashes, stats and nodes, and exits non-zero on change. `--diff-out diff.png` writes a changed-pixel diff.
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip loading, changed-pixel counts, bbox and visual diff.
-- **Frame reports for AI analysis**: `--report` writes schema-11 JSON with image hashes, pixel stats, content box, palette, 8×8 grid, camera, projected nodes and materials, sprite/FX counts and UI labels/buttons.
+- **Frame reports for AI analysis**: `--report` writes schema-11 JSON with image hashes, pixel stats, content box, palette, camera, projected content, FX counts and UI metadata.
 - **Human overlay**: game-agnostic HUD with status, FPS, frame, time and profiler lines, plus help/pause menu; 5×7 font, no asset. Games add HUD via `draw_ui(canvas, state)`.
 - **Web console and WebGL viewer**: `--serve` starts a stdlib JSON API and dashboard sharing the CLI contract (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/editor`, `/api/simulate`); a scene editor exposes hierarchy, node/asset/component authoring, transforms, undo/redo, persistent prefabs/scenes and play mode; WebGL2 previews scenes.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code.
@@ -372,6 +372,7 @@ keystone/
 │   ├── history.py            <- bounded undo/redo snapshots
 │   ├── scene_snapshot.py     <- versioned scene save/load
 │   ├── scene_library.py      <- file-backed scene library
+│   ├── scene_diff.py         <- structured saved-scene diffs
 │   ├── serialization.py      <- atomic JSON persistence
 │   ├── headless.py           <- no-GL simulation and action scripts
 │   ├── analysis.py           <- frame stats, projection and report diff
@@ -493,6 +494,7 @@ keystone/
 │   ├── test_culling.py        <- frustum culling
 │   ├── test_scene_snapshot.py <- versioned scene save/load
 │   ├── test_scene_library.py <- scene library save, load and restore
+│   ├── test_scene_diff.py   <- structured scene diff coverage
 │   ├── test_plugin.py        <- GameModule contract and loader
 │   ├── test_replay.py        <- command log and hashes
 │   ├── test_serialization.py <- atomic JSON persistence

@@ -21,6 +21,7 @@ from keystone.prefab import Prefab
 from keystone.prefab_library import PrefabLibrary
 from keystone.replay import FIXED_STEP
 from keystone.scene import Node, Scene
+from keystone.scene_diff import diff_scene_documents
 from keystone.scene_library import SceneLibrary
 from keystone.scene_snapshot import restore_scene, scene_to_dict
 from keystone.web.editor import (
@@ -111,6 +112,7 @@ class GameSession:
         self.playing = False
         self.play_frames = 0
         self._play_snapshot: dict | None = None
+        self.last_diff: dict[str, object] | None = None
         self.prefab_library: PrefabLibrary | None = None
         if prefab_dir is not None:
             self.prefab_library = PrefabLibrary(
@@ -217,8 +219,11 @@ class GameSession:
 
     def _apply_history(self, scene: Scene, operation: Callable[[], object]) -> object:
         if self._batch_depth:
-            return operation()
-        return self.history.apply(scene, operation)
+            result = operation()
+        else:
+            result = self.history.apply(scene, operation)
+        self.last_diff = None
+        return result
 
     def _batch_locked(self, scene: Scene, payload: dict) -> None:
         actions = payload.get("actions")
@@ -280,6 +285,7 @@ class GameSession:
                 "frames": self.play_frames,
                 "step": FIXED_STEP,
             },
+            diff=self.last_diff,
         )
         document["game"] = self.name
         document["workspace"] = {
@@ -456,6 +462,13 @@ class GameSession:
                     self.scene_library.load_into(payload.get("name"), scene)
                     self.history.clear()
                     self.selected_id = None
+                    self.last_diff = None
+                elif action == "diff_scene":
+                    if self.scene_library is None:
+                        raise ValueError("no scene library is configured")
+                    saved = self.scene_library.document(payload.get("name"))
+                    current = scene_to_dict(scene, self._registry_locked())
+                    self.last_diff = diff_scene_documents(saved, current)
                 elif action == "rename_scene":
                     if self.scene_library is None:
                         raise ValueError("no scene library is configured")
@@ -526,8 +539,10 @@ class GameSession:
                         self.selected_id = roots[0].id
                 elif action == "undo":
                     self.history.undo(scene)
+                    self.last_diff = None
                 elif action == "redo":
                     self.history.redo(scene)
+                    self.last_diff = None
                 else:
                     raise ValueError(f"unknown editor action {action!r}")
             except KeyError as exc:

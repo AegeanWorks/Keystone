@@ -189,7 +189,7 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 15)
+        self.assertEqual(editor["schema"], 16)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
         self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
@@ -545,6 +545,53 @@ class WebServerTest(unittest.TestCase):
                 {"action": "load_scene", "name": "level-copy"}
             )
             self.assertIsNone(loaded["selection"])
+
+    def test_editor_scene_diff(self):
+        with tempfile.TemporaryDirectory() as directory:
+            scene_dir = Path(directory) / "scenes"
+            session = GameSession(CubeDemo(), scene_dir=scene_dir)
+            editor = session.editor()
+            cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+            session.editor_action({"action": "save_scene", "name": "level"})
+            session.editor_action(
+                {
+                    "action": "transform",
+                    "id": cube["id"],
+                    "position": [1.0, 2.0, 3.0],
+                }
+            )
+            session.editor_action(
+                {"action": "create_node", "id": "extra", "name": "Extra"}
+            )
+            session.editor_action({"action": "delete_node", "id": "floor"})
+            session.editor_action(
+                {
+                    "action": "set_scene",
+                    "camera": {"fov_y": 50.0},
+                    "environment": {"background": [0.1, 0.2, 0.3]},
+                }
+            )
+            result = session.editor_action(
+                {"action": "diff_scene", "name": "level"}
+            )
+            diff = result["diff"]
+            self.assertTrue(diff["has_changes"])
+            self.assertIn("extra", diff["added"])
+            self.assertIn("floor", diff["removed"])
+            changed = next(item for item in diff["changed"] if item["id"] == cube["id"])
+            self.assertIn("transform", changed["fields"])
+            self.assertIn("fov_y", diff["camera"])
+            self.assertIn("background", diff["environment"])
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "diff_scene", "name": "missing"}
+                )
+            self.assertEqual(caught.exception.status, 404)
+
+        plain = GameSession(CubeDemo())
+        with self.assertRaises(WebProblem) as caught:
+            plain.editor_action({"action": "diff_scene", "name": "level"})
+        self.assertEqual(caught.exception.status, 400)
 
     def test_editor_initial_scene_loads_at_startup(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -952,6 +999,7 @@ class WebServerTest(unittest.TestCase):
             "scene-new-name",
             "scene-save",
             "scene-load",
+            "scene-diff",
             "scene-rename",
             "scene-duplicate",
             "scene-delete",
@@ -989,6 +1037,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("save_scene", script)
         self.assertIn("rename_scene", script)
         self.assertIn("duplicate_scene", script)
+        self.assertIn("diff_scene", script)
         self.assertIn("applySceneSettings", script)
         self.assertIn("nudgeSelection", script)
         self.assertIn("ArrowLeft", script)

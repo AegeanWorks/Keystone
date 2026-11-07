@@ -35,6 +35,7 @@ const elements = {
   sceneNewName: document.getElementById("scene-new-name"),
   sceneSave: document.getElementById("scene-save"),
   sceneLoad: document.getElementById("scene-load"),
+  sceneDiff: document.getElementById("scene-diff"),
   sceneRename: document.getElementById("scene-rename"),
   sceneDuplicate: document.getElementById("scene-duplicate"),
   sceneDelete: document.getElementById("scene-delete"),
@@ -105,8 +106,8 @@ function setBusy(value) {
     elements.step, elements.run, elements.simulate, elements.refresh,
     elements.nodeCreate, elements.nodeDuplicate, elements.nodeDelete, elements.nodeReparent,
     elements.nodeProperties,
-    elements.sceneSave, elements.sceneLoad, elements.sceneRename, elements.sceneDuplicate,
-    elements.sceneDelete, elements.sceneSettingsApply,
+    elements.sceneSave, elements.sceneLoad, elements.sceneDiff, elements.sceneRename,
+    elements.sceneDuplicate, elements.sceneDelete, elements.sceneSettingsApply,
     elements.assignAsset, elements.playStart, elements.playStep, elements.playStop,
     elements.componentSet, elements.componentRemove,
     elements.prefabSave, elements.prefabInsert, elements.prefabRename,
@@ -803,6 +804,18 @@ async function saveScene() {
   await editorAction({ action: "save_scene", name }, "saving scene");
 }
 
+async function diffScene() {
+  const name = elements.sceneName.value.trim();
+  if (!name) {
+    throw new Error("Enter the saved scene name to compare.");
+  }
+  const editor = await editorAction(
+    { action: "diff_scene", name },
+    "diffing scene",
+  );
+  show({ ok: true, action: "diff_scene", diff: editor.diff });
+}
+
 async function renameScene() {
   const name = elements.sceneName.value.trim();
   const newName = elements.sceneNewName.value.trim();
@@ -1097,6 +1110,7 @@ elements.editorUndo.addEventListener("click", () => run(undoEditor));
 elements.editorRedo.addEventListener("click", () => run(redoEditor));
 elements.sceneSave.addEventListener("click", () => run(saveScene));
 elements.sceneLoad.addEventListener("click", () => run(loadScene));
+elements.sceneDiff.addEventListener("click", () => run(diffScene));
 elements.sceneRename.addEventListener("click", () => run(renameScene));
 elements.sceneDuplicate.addEventListener("click", () => run(duplicateScene));
 elements.sceneDelete.addEventListener("click", () => run(deleteScene));

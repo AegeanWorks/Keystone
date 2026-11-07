@@ -83,6 +83,7 @@ EDITOR_EXAMPLES = {
     "delete_prefab": {"action": "delete_prefab", "name": "cube"},
     "save_scene": {"action": "save_scene", "name": "level"},
     "load_scene": {"action": "load_scene", "name": "level"},
+    "diff_scene": {"action": "diff_scene", "name": "level"},
     "rename_scene": {"action": "rename_scene", "name": "level", "new_name": "level-alt"},
     "duplicate_scene": {
         "action": "duplicate_scene",
@@ -109,9 +110,11 @@ EDITOR_SCHEMA = {
         "rename_prefab": ["name", "new_name"],
         "duplicate_prefab": ["name", "new_name"],
         "delete_prefab": ["name"],
+        "diff_scene": ["name"],
         "rename_scene": ["name", "new_name"],
         "duplicate_scene": ["name", "new_name"],
         "delete_scene": ["name"],
+        "scene_diff": ["added", "removed", "changed", "camera", "environment", "root", "has_changes"],
         "create_node": ["id", "name", "parent", "position", "rotation", "scale", "tags", "layer", "visible", "mesh", "material"],
         "assign_asset": ["id", "mesh", "material"],
         "set_component": ["id", "type", "data"],
@@ -142,6 +145,7 @@ EDITOR_SCHEMA = {
         "schema 13 adds material/texture preview thumbnails to asset metadata",
         "schema 14 adds safe scene/prefab duplication",
         "schema 15 adds set_scene camera/environment authoring with full-scene undo",
+        "schema 16 adds diff_scene structural comparisons against saved scenes",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

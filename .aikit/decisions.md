@@ -896,3 +896,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Project failures surfaced only when a game was loaded or a scene/prefab was opened. AI and CI needed one command that checked assets, glTF imports and both libraries without mutating the project.
 - **Decision**: Add `validate_project(context, game=None)`: build the game scene, copy game assets into an isolated registry, import manifest assets, import glTF scenes into a temporary prefab library, then report per-entry scene/prefab errors. Add `--project DIR --validate-project` as a standalone command, print a schema-1 JSON report and exit 1 on errors. Skip the normal project asset attachment on validation so no glTF prefabs are written.
 - **Consequences**: 721 tests green; AI/CI can validate the full project authoring surface without side effects. Transform gizmos, prefab overrides and behavior systems remain future work.
+
+### ADR-109: Add structured scene diffs for AI iteration
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: AI clients could save and load scenes but could not tell what had changed since the last save, forcing full-document comparisons or blind overwrites.
+- **Decision**: Add `keystone.scene_diff.diff_scene_documents()`: deterministic node diffs keyed by id (name, parent, tags, layer, visibility, transform, mesh/material ids, components) plus one-level camera/environment/root section diffs. Expose `diff_scene` against a saved `.kscene`, keep the last diff on the editor document, add a console Diff scene button and bump the editor schema to 16.
+- **Consequences**: 725 tests green; AI and human editors can inspect deltas without loading the saved scene or diffing full JSON. Three-way merges, transform gizmos and prefab overrides remain future work.
