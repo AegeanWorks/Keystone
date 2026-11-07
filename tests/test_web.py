@@ -181,7 +181,7 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 10)
+        self.assertEqual(editor["schema"], 11)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
         self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
@@ -440,6 +440,51 @@ class WebServerTest(unittest.TestCase):
             third = GameSession(CubeDemo(), prefab_dir=prefab_dir)
             entries = {entry["name"]: entry for entry in third.editor()["prefabs"]}
             self.assertIsNotNone(entries["broken"]["error"])
+
+    def test_editor_library_rename_and_delete(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefab_dir = Path(directory) / "prefabs"
+            scene_dir = Path(directory) / "scenes"
+            session = GameSession(CubeDemo(), prefab_dir=prefab_dir, scene_dir=scene_dir)
+            editor = session.editor()
+            cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+            session.editor_action({"action": "select", "id": cube["id"]})
+            session.editor_action({"action": "save_prefab", "name": "cube-template"})
+            result = session.editor_action(
+                {
+                    "action": "rename_prefab",
+                    "name": "cube-template",
+                    "new_name": "cube-alt",
+                }
+            )
+            self.assertEqual([item["name"] for item in result["prefabs"]], ["cube-alt"])
+            self.assertIn("cube-alt", session.prefabs)
+            self.assertNotIn("cube-template", session.prefabs)
+            inserted = session.editor_action(
+                {"action": "insert_prefab", "name": "cube-alt", "instance": "copy"}
+            )
+            self.assertIsNotNone(inserted["selection"])
+            result = session.editor_action(
+                {"action": "delete_prefab", "name": "cube-alt"}
+            )
+            self.assertEqual(result["prefabs"], [])
+            self.assertNotIn("cube-alt", session.prefabs)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action({"action": "delete_prefab", "name": "cube-alt"})
+            self.assertEqual(caught.exception.status, 404)
+
+            session.editor_action({"action": "save_scene", "name": "level"})
+            result = session.editor_action(
+                {"action": "rename_scene", "name": "level", "new_name": "level-alt"}
+            )
+            self.assertEqual([item["name"] for item in result["scenes"]], ["level-alt"])
+            result = session.editor_action(
+                {"action": "delete_scene", "name": "level-alt"}
+            )
+            self.assertEqual(result["scenes"], [])
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action({"action": "load_scene", "name": "level-alt"})
+            self.assertEqual(caught.exception.status, 404)
 
     def test_editor_initial_scene_loads_at_startup(self):
         with tempfile.TemporaryDirectory() as directory:

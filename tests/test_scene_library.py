@@ -122,6 +122,32 @@ class SceneLibraryTest(unittest.TestCase):
             with self.assertRaises(TypeError):
                 library.save("level", object())  # type: ignore[arg-type]
 
+    def test_rename_and_delete_entries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            library, _, scene = self._fixture(directory)
+            library.save("level", scene)
+            renamed = library.rename("level", "level-alt")
+            self.assertEqual(renamed.name, "level-alt")
+            self.assertFalse(library.path_for("level").exists())
+            self.assertTrue(library.path_for("level-alt").is_file())
+            loaded = library.load("level-alt")
+            self.assertEqual(loaded.background, scene.background)
+            self.assertEqual(
+                loaded.find_by_id("hero").require_component(Health), Health(7)
+            )
+
+            library.save("other", scene)
+            with self.assertRaises(FileExistsError):
+                library.rename("level-alt", "other")
+            with self.assertRaises(KeyError):
+                library.rename("missing", "new")
+            self.assertEqual(library.rename("level-alt", "level-alt").name, "level-alt")
+
+            path = library.delete("other")
+            self.assertFalse(path.exists())
+            with self.assertRaises(KeyError):
+                library.delete("other")
+
     def test_load_requires_assets_and_component_types(self):
         with tempfile.TemporaryDirectory() as directory:
             library, registry, scene = self._fixture(directory)

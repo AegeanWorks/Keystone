@@ -696,3 +696,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: AI clients could list component type names but not the fields needed for `set_component`, so payloads were guesswork. Dataclasses already carry enough metadata to describe their fields safely.
 - **Decision**: Bump the editor schema to 10 and add `component_schemas`: dataclass types expose field name, type name, required flag and JSON-safe default; non-dataclass types expose an empty field list with a manual-codec note. No runtime component data is exposed beyond the existing serialized `component_data`.
 - **Consequences**: 700 tests green; an AI can construct valid dataclass component payloads from `/api/editor` and still fall back to the `to_dict`/`from_dict` contract for custom types. Editor camera polish and non-serve scene loading remain future work.
+
+### ADR-084: Add safe rename/delete for prefab and scene libraries
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: The editor could save and load library entries but never rename or remove them, so AI clients had no lifecycle management and stale files accumulated.
+- **Decision**: Add `PrefabLibrary`/`SceneLibrary` `rename()` and `delete()` with portable names, missing-entry KeyErrors, destination collision checks, raw JSON name updates, and atomic writes. Expose `rename_prefab`, `delete_prefab`, `rename_scene` and `delete_scene`; keep the cached prefab dictionary in sync and reject the actions in batches or play mode. Bump the editor schema to 11.
+- **Consequences**: 703 tests green; library lifecycle is safe and AI-addressable, while deletes remain immediate and intentionally non-undoable. Library UI controls and editor camera polish remain future work.

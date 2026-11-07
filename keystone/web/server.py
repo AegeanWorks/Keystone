@@ -452,6 +452,16 @@ class GameSession:
                     self.scene_library.load_into(payload.get("name"), scene)
                     self.history.clear()
                     self.selected_id = None
+                elif action == "rename_scene":
+                    if self.scene_library is None:
+                        raise ValueError("no scene library is configured")
+                    self.scene_library.rename(
+                        payload.get("name"), payload.get("new_name")
+                    )
+                elif action == "delete_scene":
+                    if self.scene_library is None:
+                        raise ValueError("no scene library is configured")
+                    self.scene_library.delete(payload.get("name"))
                 elif action == "save_prefab":
                     node_id = payload.get("id") or self.selected_id
                     if node_id is None:
@@ -470,6 +480,20 @@ class GameSession:
                                 self.prefabs[name] = previous
                             raise
                     self.selected_id = node.id
+                elif action == "rename_prefab":
+                    if self.prefab_library is None:
+                        raise ValueError("no prefab library is configured")
+                    old = payload.get("name")
+                    entry = self.prefab_library.rename(old, payload.get("new_name"))
+                    self.prefabs.pop(old, None)
+                    self.prefabs.pop(entry.name, None)
+                    self.prefabs[entry.name] = self.prefab_library.load(entry.name)
+                elif action == "delete_prefab":
+                    if self.prefab_library is None:
+                        raise ValueError("no prefab library is configured")
+                    name = payload.get("name")
+                    self.prefab_library.delete(name)
+                    self.prefabs.pop(name, None)
                 elif action == "insert_prefab":
                     name = payload.get("name")
                     self._ensure_prefab_locked(name)

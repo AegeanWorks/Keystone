@@ -15,6 +15,7 @@ from pathlib import Path
 
 from keystone.component_codec import validate_component_types
 from keystone.prefab import Prefab
+from keystone.serialization import read_json, write_json_atomic
 
 __all__ = [
     "PREFAB_SUFFIX",
@@ -96,6 +97,32 @@ class PrefabLibrary:
             return Prefab.load(path, self.registry, self.component_types)
         except (OSError, KeyError, TypeError, ValueError) as exc:
             raise ValueError(f"could not load prefab {name!r}: {exc}") from exc
+
+    def rename(self, old: str, new: str) -> PrefabEntry:
+        """Rename one entry, updating its internal name and rejecting collisions."""
+        old_path = self.path_for(old)
+        new_path = self.path_for(new)
+        if old == new:
+            return self.entry(old)
+        if not old_path.is_file():
+            raise KeyError(f"no saved prefab {old!r} in {self.directory}")
+        if new_path.exists():
+            raise FileExistsError(f"prefab {new!r} already exists in {self.directory}")
+        data = read_json(old_path)
+        if not isinstance(data, dict):
+            raise TypeError(f"prefab {old!r} must be a JSON object")
+        data["name"] = new
+        write_json_atomic(new_path, data, backup=False)
+        old_path.unlink()
+        return self.entry(new)
+
+    def delete(self, name: str) -> Path:
+        """Delete one entry and return its former path."""
+        path = self.path_for(name)
+        if not path.is_file():
+            raise KeyError(f"no saved prefab {name!r} in {self.directory}")
+        path.unlink()
+        return path
 
     def entry(self, name: str) -> PrefabEntry:
         """Load one entry's summary, capturing load failures as ``error``."""

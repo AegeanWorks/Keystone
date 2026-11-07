@@ -19,6 +19,10 @@ EDITOR_SCHEMA = {
         "transform": ["position", "rotation", "scale"],
         "set_node": ["id", "name", "visible", "tags", "layer"],
         "batch": ["actions"],
+        "rename_prefab": ["name", "new_name"],
+        "delete_prefab": ["name"],
+        "rename_scene": ["name", "new_name"],
+        "delete_scene": ["name"],
         "create_node": ["id", "name", "parent", "position", "rotation", "scale", "tags", "layer", "visible", "mesh", "material"],
         "assign_asset": ["id", "mesh", "material"],
         "set_component": ["id", "type", "data"],
@@ -44,6 +48,7 @@ EDITOR_SCHEMA = {
         "schema 8 adds atomic multi-action batches with one undo entry",
         "schema 9 adds mesh/material/texture/prefab metadata to the asset inventory",
         "schema 10 adds dataclass field schemas for component_types",
+        "schema 11 adds safe prefab/scene rename and delete actions",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

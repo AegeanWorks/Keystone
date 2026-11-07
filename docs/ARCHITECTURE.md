@@ -170,7 +170,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Frame report | Implemented | image statistics, projected nodes, materials, UI metadata and report diff |
 | Human UI | Implemented | bitmap font, canvas, HUD/help, interactive pause menu |
 | Web console | Implemented | scene export, JSON API, CORS, static WebGL2 viewer |
-| Scene editor | Implemented | hierarchy, node create/duplicate/reparent/delete, node property and transform edits, atomic batch authoring, asset inventory/metadata/assignment, typed component authoring with field schemas, play/step/stop with authored-scene restore, bounded undo/redo, prefab capture/insertion, file-backed scene save/load and `--scene` startup via `/api/editor` and console controls |
+| Scene editor | Implemented | hierarchy, node create/duplicate/reparent/delete, node property and transform edits, atomic batch authoring, asset inventory/metadata/assignment, typed component authoring with field schemas, play/step/stop with authored-scene restore, bounded undo/redo, prefab capture/insertion, file-backed scene/prefab save/load/rename/delete and `--scene` startup via `/api/editor` and console controls |
 | Physics | Implemented | rays, AABB, sphere queries, broadphase, character movement and triggers |
 | AI adapters | Implemented | validated action parsing, fused observations, report summaries, hash-chained audit trail |
 | Playtest | Implemented | seeded bot policies, CommandLog-compatible transcripts, transcript diffing, schema-1 reports, fairness validation |
@@ -228,6 +228,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - Editor schema 8 applies up to 100 scene-mutating actions atomically with one undo entry and full rollback on failure.
 - Editor schema 9 adds kind-specific asset metadata: mesh counts/flags, material factors, texture size and prefab node/dependency summaries.
 - Editor schema 10 adds dataclass field hints for `component_types`, while custom codecs report a manual-codec note.
+- Editor schema 11 safely renames or deletes scene/prefab library entries and keeps cached prefabs in sync.
 - `--serve --scene NAME` opens a saved `.kscene` from the project/scene library before the first editor request and requires an explicit library.
 - `--project . --serve` uses `<project>/prefabs/*.kprefab`; `--prefab-dir DIR` overrides the library, and library entries report load errors instead of breaking the editor.
 - `python -m keystone --new <dir>` scaffolds a project whose `--project <dir> --describe` and `--simulate` paths pass the five-operation contract.

@@ -102,6 +102,30 @@ class PrefabLibraryTest(unittest.TestCase):
             with tempfile.TemporaryDirectory() as empty:
                 self.assertEqual(PrefabLibrary(Path(empty) / "absent").entries(), ())
 
+    def test_rename_and_delete_entries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            library, registry, prefab = self._fixture(directory)
+            library.save("hero-template", prefab)
+            renamed = library.rename("hero-template", "hero-alt")
+            self.assertEqual(renamed.name, "hero-alt")
+            self.assertFalse(library.path_for("hero-template").exists())
+            self.assertTrue(library.path_for("hero-alt").is_file())
+            loaded = library.load("hero-alt")
+            self.assertEqual(loaded.name, "hero-alt")
+            self.assertIs(loaded.roots[0].mesh, registry.require("mesh.hero").payload)
+
+            library.path_for("other").write_bytes(library.path_for("hero-alt").read_bytes())
+            with self.assertRaises(FileExistsError):
+                library.rename("hero-alt", "other")
+            with self.assertRaises(KeyError):
+                library.rename("missing", "new")
+            self.assertEqual(library.rename("hero-alt", "hero-alt").name, "hero-alt")
+
+            path = library.delete("hero-alt")
+            self.assertFalse(path.exists())
+            with self.assertRaises(KeyError):
+                library.delete("hero-alt")
+
     def test_load_requires_assets_and_component_types(self):
         with tempfile.TemporaryDirectory() as directory:
             library, registry, prefab = self._fixture(directory)
