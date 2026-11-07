@@ -148,6 +148,26 @@ class SceneLibraryTest(unittest.TestCase):
             with self.assertRaises(KeyError):
                 library.delete("other")
 
+    def test_duplicate_entries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            library, _, scene = self._fixture(directory)
+            library.save("level", scene)
+            copied = library.duplicate("level", "level-copy")
+            self.assertEqual(copied.name, "level-copy")
+            self.assertTrue(library.path_for("level").exists())
+            self.assertTrue(library.path_for("level-copy").exists())
+            loaded = library.load("level-copy")
+            self.assertEqual(loaded.background, scene.background)
+            self.assertEqual(
+                loaded.find_by_id("hero").require_component(Health), Health(7)
+            )
+            with self.assertRaises(FileExistsError):
+                library.duplicate("level", "level-copy")
+            with self.assertRaises(KeyError):
+                library.duplicate("missing", "new")
+            with self.assertRaises(ValueError):
+                library.duplicate("level", "level")
+
     def test_load_requires_assets_and_component_types(self):
         with tempfile.TemporaryDirectory() as directory:
             library, registry, scene = self._fixture(directory)

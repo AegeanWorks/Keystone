@@ -162,6 +162,23 @@ class SceneLibrary:
         old_path.unlink()
         return self.entry(new)
 
+    def duplicate(self, old: str, new: str) -> SceneEntry:
+        """Copy one entry to a new name, updating its internal name."""
+        old_path = self.path_for(old)
+        new_path = self.path_for(new)
+        if old == new:
+            raise ValueError("duplicate target must differ from the source")
+        if not old_path.is_file():
+            raise KeyError(f"no saved scene {old!r} in {self.directory}")
+        if new_path.exists():
+            raise FileExistsError(f"scene {new!r} already exists in {self.directory}")
+        data = read_json(old_path)
+        if not isinstance(data, dict):
+            raise TypeError(f"scene {old!r} must be a JSON object")
+        data["name"] = new
+        write_json_atomic(new_path, data, backup=False)
+        return self.entry(new)
+
     def delete(self, name: str) -> Path:
         """Delete one entry and return its former path."""
         path = self.path_for(name)

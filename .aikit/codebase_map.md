@@ -9,8 +9,8 @@
 - **Total Python Modules**: `130`
 - **Total Classes**: `204`
 - **Total Top-Level Functions**: `301`
-- **Total Class Methods**: `1246`
-- **Total Source Lines**: `26347`
+- **Total Class Methods**: `1251`
+- **Total Source Lines**: `26479`
 
 ---
 
@@ -1075,7 +1075,7 @@
 ### [`keystone/prefab_library.py`](keystone/prefab_library.py)
 > *File-backed prefab libraries for editors, tools and AI clients.*
 
-**Size**: `157` lines (`5938` bytes)
+**Size**: `174` lines (`6732` bytes)
 
 **Classes:**
 - `class PrefabEntry` - *One library file and its loaded summary, or why it could not load.*
@@ -1086,6 +1086,7 @@
   - Method `.save(name, prefab)` - *Write one prefab atomically; its internal name must match the entry.*
   - Method `.load(name)` - *Load one prefab or raise KeyError when the entry is absent.*
   - Method `.rename(old, new)` - *Rename one entry, updating its internal name and rejecting collisions.*
+  - Method `.duplicate(old, new)` - *Copy one entry to a new name, updating its internal name.*
   - Method `.delete(name)` - *Delete one entry and return its former path.*
   - Method `.entry(name)` - *Load one entry's summary, capturing load failures as ``error``.*
   - Method `.entries()` - *Return every ``.kprefab`` file in stable name order.*
@@ -1237,7 +1238,7 @@
 ### [`keystone/scene_library.py`](keystone/scene_library.py)
 > *File-backed scene libraries for editors, tools and AI clients.*
 
-**Size**: `203` lines (`7997` bytes)
+**Size**: `220` lines (`8787` bytes)
 
 **Classes:**
 - `class SceneEntry` - *One library file and its loaded summary, or why it could not load.*
@@ -1251,6 +1252,7 @@
   - Method `.load(name)` - *Load one scene or raise KeyError when the entry is absent.*
   - Method `.load_into(name, scene)` - *Replace one existing Scene in place from a library entry.*
   - Method `.rename(old, new)` - *Rename one entry, updating its internal name and rejecting collisions.*
+  - Method `.duplicate(old, new)` - *Copy one entry to a new name, updating its internal name.*
   - Method `.delete(name)` - *Delete one entry and return its former path.*
   - Method `.entry(name)` - *Load one entry's summary, capturing load failures as ``error``.*
   - Method `.entries()` - *Return every ``.kscene`` file in stable name order.*
@@ -1288,7 +1290,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `34` lines (`661` bytes)
+**Size**: `36` lines (`708` bytes)
 
 ---
 
@@ -1532,14 +1534,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `77` lines (`4041` bytes)
+**Size**: `80` lines (`4196` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `930` lines (`40436` bytes)
+**Size**: `944` lines (`41221` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2528,7 +2530,7 @@
 ### [`tests/test_prefab_library.py`](tests/test_prefab_library.py)
 > *Tests for file-backed prefab libraries.*
 
-**Size**: `148` lines (`6292` bytes)
+**Size**: `166` lines (`7244` bytes)
 
 **Classes:**
 - `class Health`
@@ -2538,6 +2540,7 @@
   - Method `.test_describe_reports_corrupt_and_invalid_entries()`
   - Method `.test_names_are_safe_and_must_match_the_prefab()`
   - Method `.test_rename_and_delete_entries()`
+  - Method `.test_duplicate_entries()`
   - Method `.test_load_requires_assets_and_component_types()`
 
 ---
@@ -2688,7 +2691,7 @@
 ### [`tests/test_scene_library.py`](tests/test_scene_library.py)
 > *Tests for file-backed scene libraries.*
 
-**Size**: `168` lines (`7136` bytes)
+**Size**: `188` lines (`8126` bytes)
 
 **Classes:**
 - `class Health`
@@ -2699,6 +2702,7 @@
   - Method `.test_describe_reports_corrupt_and_invalid_entries()`
   - Method `.test_names_and_missing_entries()`
   - Method `.test_rename_and_delete_entries()`
+  - Method `.test_duplicate_entries()`
   - Method `.test_load_requires_assets_and_component_types()`
 
 ---
@@ -2954,7 +2958,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `1015` lines (`43172` bytes)
+**Size**: `1056` lines (`44930` bytes)
 
 **Classes:**
 - `class Health`
@@ -2985,6 +2989,7 @@
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_library_rename_and_delete()`
+  - Method `.test_editor_library_duplicate()`
   - Method `.test_editor_initial_scene_loads_at_startup()`
   - Method `.test_editor_scene_library_persists_and_restores()`
   - Method `.test_editor_batch_authoring_is_atomic()`

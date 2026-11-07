@@ -848,3 +848,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Asset metadata exposed counts and factors but no visual preview, so choosing a texture or textured material required opening the scene document or external files.
 - **Decision**: Add an in-memory `png_bytes()` encoder, generate a nearest-neighbour thumbnail capped at 64px for each texture, encode it as a PNG data URI, expose it on texture metadata and on each material's `texture` summary, and show the selected material texture preview in the console. Bump the editor schema to 13.
 - **Consequences**: 714 tests green and `app.js` passes `node --check`; previews stay bounded in size and the PNG writer reuses the same encoder. Triangle-accurate picking and richer material swatches remain future work.
+
+### ADR-103: Add scene/prefab duplication to the library lifecycle
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Save/load/rename/delete existed, but copying a scene or prefab required saving under a new name or manual file work. Unity/Unreal-style asset libraries treat duplicate as a first-class operation.
+- **Decision**: Add `duplicate(old, new)` to `PrefabLibrary` and `SceneLibrary`: validate names, require the source, reject same-name and destination collisions, copy the JSON with the internal `name` updated, and return the new entry. Expose `duplicate_prefab`/`duplicate_scene` and console buttons, and refresh the cached prefab under its new name. Bump the editor schema to 14.
+- **Consequences**: 717 tests green; scene/prefab libraries now cover save, load, rename, duplicate and delete with cached-prefab consistency. Transform gizmos and prefab overrides remain future work.

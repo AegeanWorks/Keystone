@@ -20,8 +20,10 @@ EDITOR_SCHEMA = {
         "set_node": ["id", "name", "visible", "tags", "layer"],
         "batch": ["actions"],
         "rename_prefab": ["name", "new_name"],
+        "duplicate_prefab": ["name", "new_name"],
         "delete_prefab": ["name"],
         "rename_scene": ["name", "new_name"],
+        "duplicate_scene": ["name", "new_name"],
         "delete_scene": ["name"],
         "create_node": ["id", "name", "parent", "position", "rotation", "scale", "tags", "layer", "visible", "mesh", "material"],
         "assign_asset": ["id", "mesh", "material"],
@@ -51,6 +53,7 @@ EDITOR_SCHEMA = {
         "schema 11 adds safe prefab/scene rename and delete actions",
         "schema 12 adds mesh bounds to asset metadata",
         "schema 13 adds material/texture preview thumbnails to asset metadata",
+        "schema 14 adds safe scene/prefab duplication",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

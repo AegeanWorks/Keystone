@@ -458,6 +458,12 @@ class GameSession:
                     self.scene_library.rename(
                         payload.get("name"), payload.get("new_name")
                     )
+                elif action == "duplicate_scene":
+                    if self.scene_library is None:
+                        raise ValueError("no scene library is configured")
+                    self.scene_library.duplicate(
+                        payload.get("name"), payload.get("new_name")
+                    )
                 elif action == "delete_scene":
                     if self.scene_library is None:
                         raise ValueError("no scene library is configured")
@@ -486,6 +492,14 @@ class GameSession:
                     old = payload.get("name")
                     entry = self.prefab_library.rename(old, payload.get("new_name"))
                     self.prefabs.pop(old, None)
+                    self.prefabs.pop(entry.name, None)
+                    self.prefabs[entry.name] = self.prefab_library.load(entry.name)
+                elif action == "duplicate_prefab":
+                    if self.prefab_library is None:
+                        raise ValueError("no prefab library is configured")
+                    entry = self.prefab_library.duplicate(
+                        payload.get("name"), payload.get("new_name")
+                    )
                     self.prefabs.pop(entry.name, None)
                     self.prefabs[entry.name] = self.prefab_library.load(entry.name)
                 elif action == "delete_prefab":

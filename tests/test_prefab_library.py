@@ -126,6 +126,24 @@ class PrefabLibraryTest(unittest.TestCase):
             with self.assertRaises(KeyError):
                 library.delete("hero-alt")
 
+    def test_duplicate_entries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            library, _, prefab = self._fixture(directory)
+            library.save("hero-template", prefab)
+            copied = library.duplicate("hero-template", "hero-copy")
+            self.assertEqual(copied.name, "hero-copy")
+            self.assertTrue(library.path_for("hero-template").exists())
+            self.assertTrue(library.path_for("hero-copy").exists())
+            loaded = library.load("hero-copy")
+            self.assertEqual(loaded.name, "hero-copy")
+            self.assertEqual(loaded.node_count, 1)
+            with self.assertRaises(FileExistsError):
+                library.duplicate("hero-template", "hero-copy")
+            with self.assertRaises(KeyError):
+                library.duplicate("missing", "new")
+            with self.assertRaises(ValueError):
+                library.duplicate("hero-template", "hero-template")
+
     def test_load_requires_assets_and_component_types(self):
         with tempfile.TemporaryDirectory() as directory:
             library, registry, prefab = self._fixture(directory)

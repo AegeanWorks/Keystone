@@ -181,7 +181,7 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 13)
+        self.assertEqual(editor["schema"], 14)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
         self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
@@ -499,6 +499,44 @@ class WebServerTest(unittest.TestCase):
             with self.assertRaises(WebProblem) as caught:
                 session.editor_action({"action": "load_scene", "name": "level-alt"})
             self.assertEqual(caught.exception.status, 404)
+
+    def test_editor_library_duplicate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefab_dir = Path(directory) / "prefabs"
+            scene_dir = Path(directory) / "scenes"
+            session = GameSession(CubeDemo(), prefab_dir=prefab_dir, scene_dir=scene_dir)
+            editor = session.editor()
+            cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+            session.editor_action({"action": "select", "id": cube["id"]})
+            session.editor_action({"action": "save_prefab", "name": "cube-template"})
+            result = session.editor_action(
+                {
+                    "action": "duplicate_prefab",
+                    "name": "cube-template",
+                    "new_name": "cube-copy",
+                }
+            )
+            self.assertEqual(
+                {item["name"] for item in result["prefabs"]},
+                {"cube-template", "cube-copy"},
+            )
+            self.assertIn("cube-copy", session.prefabs)
+            session.editor_action({"action": "save_scene", "name": "level"})
+            result = session.editor_action(
+                {
+                    "action": "duplicate_scene",
+                    "name": "level",
+                    "new_name": "level-copy",
+                }
+            )
+            self.assertEqual(
+                {item["name"] for item in result["scenes"]},
+                {"level", "level-copy"},
+            )
+            loaded = session.editor_action(
+                {"action": "load_scene", "name": "level-copy"}
+            )
+            self.assertIsNone(loaded["selection"])
 
     def test_editor_initial_scene_loads_at_startup(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -843,10 +881,12 @@ class WebServerTest(unittest.TestCase):
             "scene-save",
             "scene-load",
             "scene-rename",
+            "scene-duplicate",
             "scene-delete",
             "prefab-names",
             "prefab-new-name",
             "prefab-rename",
+            "prefab-duplicate",
             "prefab-delete",
             "mesh-asset",
             "material-asset",
@@ -874,6 +914,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("duplicate_node", script)
         self.assertIn("save_scene", script)
         self.assertIn("rename_scene", script)
+        self.assertIn("duplicate_scene", script)
         self.assertIn("assign_asset", script)
         self.assertIn("fillDatalist", script)
         self.assertIn("setSelected", script)
