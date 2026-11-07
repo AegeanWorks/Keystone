@@ -10,7 +10,7 @@
 - **Total Classes**: `202`
 - **Total Top-Level Functions**: `291`
 - **Total Class Methods**: `1228`
-- **Total Source Lines**: `25405`
+- **Total Source Lines**: `25422`
 
 ---
 
@@ -1100,7 +1100,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `344` lines (`12967` bytes)
+**Size**: `357` lines (`13501` bytes)
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -2501,7 +2501,7 @@
 ### [`tests/test_project.py`](tests/test_project.py)
 > *Tests for project manifests, scaffolding and the --project CLI path.*
 
-**Size**: `269` lines (`11411` bytes)
+**Size**: `273` lines (`11676` bytes)
 
 **Classes:**
 - `class ProjectManifestTest`

@@ -147,7 +147,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Math | Implemented | Vec3, Mat4, Quat, transforms |
 | Scene | Implemented | hierarchy, visibility, lights, IDs, tags, layers and components |
 | Prefabs | Implemented | detached subtree capture, versioned `.kprefab` save/load, file-backed libraries, deterministic instance IDs, component copy isolation, JSON-safe describe |
-| Projects | Implemented | versioned `keystone.json` manifest, `--new` scaffold, `--project` loader, relative asset import as `project:<path>` and generated five-op game |
+| Projects | Implemented | versioned `keystone.json` manifest, `--new` scaffold with prefab/scene libraries and component hooks, `--project` loader, relative asset import as `project:<path>` and generated five-op game |
 | Scene queries | Implemented | name/tag/layer/component filters and ID lookup |
 | Camera | Implemented | perspective and view matrices |
 | Geometry | Implemented | indexed meshes, materials, vertex colors |

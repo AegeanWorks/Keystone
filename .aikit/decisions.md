@@ -680,3 +680,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: `.kscene` files survived restarts, but every console start rebuilt the game scene and required a manual load. A Unity/Unreal-style project should open its scene directly.
 - **Decision**: Add `--scene NAME` for `--serve` with `--project` or `--scene-dir`, pass `initial_scene` through `serve`/`create_server`/`GameSession`, and eagerly build the game scene and `load_into` the named entry before the first request. Missing libraries or entries fail at startup with explicit errors.
 - **Consequences**: 700 tests green; the editor opens on the authored scene with empty history/selection, and invalid scene names fail before serving. Non-serve scene loading and asset previews remain future work.
+
+### ADR-082: Scaffold the editor workflow into new projects
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: New projects had `keystone.json` and a game module, but no prefab/scene directories or component hook, so the editor workflow required manual setup and `--scene` had no default library.
+- **Decision**: Make `create_project()` create `prefabs/` and `scenes/` with short README files, initialize `self.assets = AssetRegistry()` and `self.component_types = {}` in the generated game, and document the save/serve/`--scene` loop in the generated README.
+- **Consequences**: 700 tests green; a new project can open the console, save prefabs/scenes and reload them without extra setup, while existing projects remain compatible. Editor camera polish and non-serve scene loading remain future work.

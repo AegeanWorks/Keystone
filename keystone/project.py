@@ -244,6 +244,7 @@ class Game:
     def __init__(self) -> None:
         self.scene: Scene | None = None
         self.assets = AssetRegistry()
+        self.component_types: dict[str, type] = {{}}
         self.time = 0.0
         self._cube: Node | None = None
 
@@ -297,12 +298,14 @@ python -m keystone --project . --headless --frames 1 --out frame.png --report fr
 python -m keystone --project . --serve
 ```
 
+Save a scene in the console, then reopen it with `--serve --scene NAME`.
+
 ## Files
 
 - `keystone.json` — versioned project manifest.
 - `{_module_name(manifest.name)}.py` — the generated five-operation game module.
-- `prefabs/` — optional editor prefab library, created on the first save.
-- `scenes/` — optional editor scene library, created on the first save.
+- `prefabs/` — editor prefab library; save prefabs here from the console.
+- `scenes/` — editor scene library; save scenes here from the console.
 
 ## Assets
 
@@ -341,4 +344,14 @@ def create_project(
     (target / f"{module}.py").write_text(_game_source(manifest), encoding="utf-8")
     (target / "README.md").write_text(_project_readme(manifest), encoding="utf-8")
     (target / ".gitignore").write_text("__pycache__/\n*.pyc\nframe.png\nframe.json\n", encoding="utf-8")
+    (target / "prefabs").mkdir(exist_ok=True)
+    (target / "prefabs" / "README.md").write_text(
+        "# Prefabs\n\nSaved by the editor as versioned `.kprefab` files.\n",
+        encoding="utf-8",
+    )
+    (target / "scenes").mkdir(exist_ok=True)
+    (target / "scenes" / "README.md").write_text(
+        "# Scenes\n\nSaved by the editor as versioned `.kscene` files.\n",
+        encoding="utf-8",
+    )
     return ProjectContext(manifest, target.resolve())
