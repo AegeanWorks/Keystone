@@ -28,6 +28,15 @@ EDITOR_EXAMPLES = {
         "tags": ["player"],
         "layer": "actors",
     },
+    "set_scene": {
+        "action": "set_scene",
+        "camera": {"position": [0.0, 2.0, 5.0], "fov_y": 55.0},
+        "environment": {
+            "background": [0.05, 0.06, 0.08],
+            "fog_density": 0.01,
+            "shadow": True,
+        },
+    },
     "batch": {
         "action": "batch",
         "actions": [
@@ -93,6 +102,9 @@ EDITOR_SCHEMA = {
         "node": ["id", "name", "parent_id", "children", "visible", "selected", "tags", "layer", "components", "component_data", "mesh", "material", "transform", "world"],
         "transform": ["position", "rotation", "scale"],
         "set_node": ["id", "name", "visible", "tags", "layer"],
+        "set_scene": ["camera", "environment"],
+        "camera": ["position", "yaw", "pitch", "fov_y", "near", "far"],
+        "environment": ["ambient", "background", "sky", "fog_density", "light", "point_light", "shadow", "color", "post", "bloom", "sprites", "culling"],
         "batch": ["actions"],
         "rename_prefab": ["name", "new_name"],
         "duplicate_prefab": ["name", "new_name"],
@@ -129,6 +141,7 @@ EDITOR_SCHEMA = {
         "schema 12 adds mesh bounds to asset metadata",
         "schema 13 adds material/texture preview thumbnails to asset metadata",
         "schema 14 adds safe scene/prefab duplication",
+        "schema 15 adds set_scene camera/environment authoring with full-scene undo",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `130`
 - **Total Classes**: `204`
-- **Total Top-Level Functions**: `301`
-- **Total Class Methods**: `1252`
-- **Total Source Lines**: `26565`
+- **Total Top-Level Functions**: `309`
+- **Total Class Methods**: `1253`
+- **Total Source Lines**: `26989`
 
 ---
 
@@ -1290,7 +1290,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `36` lines (`708` bytes)
+**Size**: `37` lines (`725` bytes)
 
 ---
 
@@ -1469,10 +1469,10 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `714` lines (`25910` bytes)
+**Size**: `1055` lines (`39179` bytes)
 
 **Classes:**
-- `class EditorHistory` - *Bounded in-memory undo/redo for scene-node edits.*
+- `class EditorHistory` - *Bounded in-memory undo/redo for scene and environment edits.*
   - Method `.__init__(limit)`
   - Method `.describe()`
   - Method `.apply(scene, operation)` - *Run one scene mutation and push its pre-edit snapshot.*
@@ -1487,6 +1487,12 @@
 - `def _node_id(value)`
 - `def _node_tags(value)`
 - `def _transform_from_payload(payload, current)`
+- `def _finite_number(value, label)`
+- `def _payload_vec3(value, label)`
+- `def _unknown_keys(payload, allowed, label)`
+- `def _vec3_list(value)`
+- `def scene_settings_document(scene)` - *Return JSON-safe camera and environment settings for the editor.*
+- `def set_scene(scene, payload)` - *Update camera and/or environment settings after full validation.*
 - `def _type_name(value)`
 - `def component_schemas(component_types)` - *Return JSON-safe field hints for every game component type.*
 - `def _texture_preview(texture, max_size)`
@@ -1499,6 +1505,8 @@
 - `def _snapshot_nodes(scene)`
 - `def _node_from_snapshot(data)`
 - `def _restore_nodes(scene, snapshot)`
+- `def _scene_snapshot(scene)`
+- `def _restore_scene_state(scene, snapshot)`
 - `def _component_documents(node)`
 - `def node_document(node, selected_id, registry)`
 - `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, component_schema_documents, play_state)`
@@ -1534,14 +1542,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `155` lines (`6856` bytes)
+**Size**: `168` lines (`7480` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `944` lines (`41221` bytes)
+**Size**: `948` lines (`41383` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2958,7 +2966,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `1067` lines (`45431` bytes)
+**Size**: `1132` lines (`48358` bytes)
 
 **Classes:**
 - `class Health`
@@ -2993,6 +3001,7 @@
   - Method `.test_editor_library_duplicate()`
   - Method `.test_editor_initial_scene_loads_at_startup()`
   - Method `.test_editor_scene_library_persists_and_restores()`
+  - Method `.test_editor_scene_settings_and_undo()`
   - Method `.test_editor_batch_authoring_is_atomic()`
   - Method `.test_editor_node_property_editing()`
   - Method `.test_editor_play_mode_restores_authored_scene()`

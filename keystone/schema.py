@@ -4,12 +4,13 @@ from __future__ import annotations
 
 WEB_API_VERSION = 1
 SCENE_SCHEMA_VERSION = 2
-EDITOR_SCHEMA_VERSION = 14
+EDITOR_SCHEMA_VERSION = 15
 PREFAB_SCHEMA_VERSION = 1
 EDITOR_ACTIONS = (
     "select",
     "transform",
     "set_node",
+    "set_scene",
     "batch",
     "assign_asset",
     "set_component",

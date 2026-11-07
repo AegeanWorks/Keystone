@@ -36,6 +36,8 @@ const elements = {
   sceneRename: document.getElementById("scene-rename"),
   sceneDuplicate: document.getElementById("scene-duplicate"),
   sceneDelete: document.getElementById("scene-delete"),
+  sceneSettings: document.getElementById("scene-settings"),
+  sceneSettingsApply: document.getElementById("scene-settings-apply"),
   prefabName: document.getElementById("prefab-name"),
   prefabNames: document.getElementById("prefab-names"),
   prefabNewName: document.getElementById("prefab-new-name"),
@@ -102,7 +104,7 @@ function setBusy(value) {
     elements.nodeCreate, elements.nodeDuplicate, elements.nodeDelete, elements.nodeReparent,
     elements.nodeProperties,
     elements.sceneSave, elements.sceneLoad, elements.sceneRename, elements.sceneDuplicate,
-    elements.sceneDelete,
+    elements.sceneDelete, elements.sceneSettingsApply,
     elements.assignAsset, elements.playStart, elements.playStep, elements.playStop,
     elements.componentSet, elements.componentRemove,
     elements.prefabSave, elements.prefabInsert, elements.prefabRename,
@@ -486,6 +488,11 @@ function showEditor(editor) {
   if (viewer) {
     viewer.setSelected(editor.selection ? editor.selection.id : null);
   }
+  elements.sceneSettings.value = JSON.stringify(
+    editor.scene_settings || {},
+    null,
+    2,
+  );
   renderHierarchy(editor);
   renderLibraryOptions(editor);
   renderAssets(editor);
@@ -721,6 +728,26 @@ async function removeComponent() {
   await editorAction(
     { action: "remove_component", id: editorState.selection.id, type },
     "removing component",
+  );
+  await refreshScene(false);
+}
+
+async function applySceneSettings() {
+  let data;
+  try {
+    data = JSON.parse(elements.sceneSettings.value || "{}");
+  } catch (error) {
+    throw new Error(`Scene settings JSON: ${error.message}`);
+  }
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("Scene settings JSON must be an object.");
+  }
+  if (!("camera" in data) && !("environment" in data)) {
+    throw new Error("Scene settings need camera or environment.");
+  }
+  await editorAction(
+    { action: "set_scene", ...data },
+    "applying scene settings",
   );
   await refreshScene(false);
 }
@@ -995,6 +1022,7 @@ elements.sceneLoad.addEventListener("click", () => run(loadScene));
 elements.sceneRename.addEventListener("click", () => run(renameScene));
 elements.sceneDuplicate.addEventListener("click", () => run(duplicateScene));
 elements.sceneDelete.addEventListener("click", () => run(deleteScene));
+elements.sceneSettingsApply.addEventListener("click", () => run(applySceneSettings));
 elements.prefabSave.addEventListener("click", () => run(savePrefab));
 elements.prefabRename.addEventListener("click", () => run(renamePrefab));
 elements.prefabDuplicate.addEventListener("click", () => run(duplicatePrefab));

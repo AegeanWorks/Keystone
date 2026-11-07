@@ -189,7 +189,7 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 14)
+        self.assertEqual(editor["schema"], 15)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
         self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
@@ -616,6 +616,68 @@ class WebServerTest(unittest.TestCase):
             entries = {entry["name"]: entry for entry in broken.editor()["scenes"]}
             self.assertIsNotNone(entries["broken"]["error"])
 
+    def test_editor_scene_settings_and_undo(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        settings = editor["scene_settings"]
+        self.assertIn("camera", settings)
+        self.assertIn("environment", settings)
+        original_camera = dict(settings["camera"])
+        original_environment = dict(settings["environment"])
+
+        result = session.editor_action(
+            {
+                "action": "set_scene",
+                "camera": {"position": [1.0, 2.0, 3.0], "fov_y": 50.0, "pitch": 0.2},
+                "environment": {
+                    "background": [0.1, 0.2, 0.3],
+                    "fog_density": 0.02,
+                    "light": {"intensity": 0.5},
+                    "point_light": {"position": [0.0, 1.0, 0.0], "radius": 5.0},
+                    "shadow": False,
+                },
+            }
+        )
+        camera = result["scene_settings"]["camera"]
+        self.assertEqual(camera["position"], [1.0, 2.0, 3.0])
+        self.assertEqual(camera["fov_y"], 50.0)
+        environment = result["scene_settings"]["environment"]
+        self.assertEqual(environment["background"], [0.1, 0.2, 0.3])
+        self.assertAlmostEqual(environment["fog_density"], 0.02)
+        self.assertFalse(environment["shadow"])
+        self.assertEqual(environment["point_light"]["radius"], 5.0)
+
+        scene = session.scene()
+        self.assertEqual(scene["camera"]["position"], [1.0, 2.0, 3.0])
+        self.assertEqual(scene["atmosphere"]["background"], [0.1, 0.2, 0.3])
+        self.assertFalse(scene["shadows"]["enabled"])
+
+        result = session.editor_action({"action": "undo"})
+        self.assertEqual(result["scene_settings"]["camera"], original_camera)
+        self.assertEqual(
+            result["scene_settings"]["environment"], original_environment
+        )
+
+        result = session.editor_action(
+            {"action": "set_scene", "environment": {"point_light": None}}
+        )
+        self.assertIsNone(result["scene_settings"]["environment"]["point_light"])
+
+        for payload in (
+            {"action": "set_scene"},
+            {"action": "set_scene", "camera": {}},
+            {"action": "set_scene", "camera": {"fov_y": 0}},
+            {"action": "set_scene", "camera": {"near": 0}},
+            {"action": "set_scene", "camera": {"far": 0.01}},
+            {"action": "set_scene", "camera": {"position": [1.0, 2.0]}},
+            {"action": "set_scene", "environment": {"fog_density": -1}},
+            {"action": "set_scene", "environment": {"unknown": 1}},
+            {"action": "set_scene", "environment": {"shadow": "yes"}},
+        ):
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(payload)
+            self.assertEqual(caught.exception.status, 400)
+
     def test_editor_batch_authoring_is_atomic(self):
         session = GameSession(CubeDemo())
         session.editor()
@@ -891,6 +953,8 @@ class WebServerTest(unittest.TestCase):
             "scene-rename",
             "scene-duplicate",
             "scene-delete",
+            "scene-settings",
+            "scene-settings-apply",
             "prefab-names",
             "prefab-new-name",
             "prefab-rename",
@@ -923,6 +987,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("save_scene", script)
         self.assertIn("rename_scene", script)
         self.assertIn("duplicate_scene", script)
+        self.assertIn("applySceneSettings", script)
         self.assertIn("assign_asset", script)
         self.assertIn("fillDatalist", script)
         self.assertIn("setSelected", script)

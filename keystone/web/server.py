@@ -40,6 +40,7 @@ from keystone.web.editor import (
     save_prefab,
     set_component,
     set_node_properties,
+    set_scene,
     transform_from_payload,
 )
 from keystone.web.scene import scene_document
@@ -52,6 +53,7 @@ BATCH_ACTIONS = frozenset(
     {
         "transform",
         "set_node",
+        "set_scene",
         "assign_asset",
         "set_component",
         "remove_component",
@@ -338,6 +340,8 @@ class GameSession:
                         scene, lambda: set_node_properties(node, payload)
                     )
                     self.selected_id = node.id
+                elif action == "set_scene":
+                    self._apply_history(scene, lambda: set_scene(scene, payload))
                 elif action == "assign_asset":
                     node = find_node(scene, payload.get("id"))
                     self._apply_history(

@@ -864,3 +864,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Field schemas told AI clients which keys existed but not how to assemble a valid request. Every action still required inference from docs or tests.
 - **Decision**: Add `EDITOR_EXAMPLES` with one JSON payload per action, include it as `endpoints.editor.schema.examples` in `/api`, and test that the example keys exactly match `EDITOR_ACTIONS` and each payload's `action` matches its key.
 - **Consequences**: 718 tests green; AI clients can copy a known-valid request shape directly from the discovery endpoint. Examples are documentation and must be updated whenever an action's required fields change. Transform gizmos and prefab overrides remain future work.
+
+### ADR-105: Add camera/environment authoring with full-scene undo
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The editor could change nodes but not the scene camera, lights, atmosphere or render toggles; those settings required code or direct scene-file edits.
+- **Decision**: Add `set_scene` with optional `camera` and `environment` mappings, strict validation (finite vectors, FOV/near/far ranges, non-negative fog, light/point-light constructors, boolean toggles, unknown-key rejection), and assign only after full validation. Expose `scene_settings` in `/api/editor`, add a console JSON editor, and extend `EditorHistory` snapshots from nodes-only to the full scene state so undo/redo restores camera and environment too. Bump the editor schema to 15.
+- **Consequences**: 719 tests green; camera, lighting, atmosphere and render toggles are AI- and human-authorable with atomic failure and full-scene undo. Transform gizmos, prefab overrides and behavior systems remain future work.

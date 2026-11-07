@@ -14,6 +14,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import MISSING, fields, is_dataclass
 from typing import TypeVar
 
+from keystone.camera import MAX_PITCH
 from keystone.component_codec import (
     ComponentTypes,
     component_from_dict,
@@ -23,7 +24,19 @@ from keystone.geometry import Material, MeshData
 from keystone.math3d import Quat, Vec3
 from keystone.png import png_bytes
 from keystone.prefab import Prefab
-from keystone.scene import Node, Scene, Transform
+from keystone.scene import (
+    BloomSettings,
+    ColorSettings,
+    CullingSettings,
+    DirectionalLight,
+    Node,
+    PointLight,
+    PostSettings,
+    Scene,
+    ShadowSettings,
+    SpriteSettings,
+    Transform,
+)
 from keystone.schema import EDITOR_ACTIONS, EDITOR_SCHEMA_VERSION
 from keystone.texture import TextureData
 
@@ -42,8 +55,10 @@ __all__ = [
     "remove_component",
     "reparent_node",
     "save_prefab",
+    "scene_settings_document",
     "set_component",
     "set_node_properties",
+    "set_scene",
     "transform_from_payload",
 ]
 
@@ -118,6 +133,280 @@ def _transform_from_payload(payload: Mapping[str, object], current: Transform | 
     else:
         rotation = base.rotation
     return Transform(position=position, rotation=rotation, scale=scale)
+
+
+def _finite_number(value: object, label: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise TypeError(f"{label} must be a number")
+    number = float(value)
+    if not math.isfinite(number):
+        raise ValueError(f"{label} must be finite")
+    return number
+
+
+def _payload_vec3(value: object, label: str) -> Vec3:
+    x, y, z = _finite_array(value, 3, label)
+    return Vec3(x, y, z)
+
+
+def _unknown_keys(
+    payload: Mapping[str, object], allowed: set[str], label: str
+) -> None:
+    unknown = sorted(set(payload) - allowed)
+    if unknown:
+        raise ValueError(f"{label} has unknown keys: {unknown}")
+
+
+def _vec3_list(value: Vec3) -> list[float]:
+    return [value.x, value.y, value.z]
+
+
+def scene_settings_document(scene: Scene) -> dict[str, object]:
+    """Return JSON-safe camera and environment settings for the editor."""
+    camera = scene.camera
+    light = scene.light
+    point = scene.point_light
+    return {
+        "camera": {
+            "position": _vec3_list(camera.position),
+            "yaw": camera.yaw,
+            "pitch": camera.pitch,
+            "fov_y": camera.fov_y,
+            "near": camera.near,
+            "far": camera.far,
+        },
+        "environment": {
+            "ambient": _vec3_list(scene.ambient),
+            "background": _vec3_list(scene.background),
+            "sky": _vec3_list(scene.sky),
+            "fog_density": scene.fog_density,
+            "light": {
+                "direction": _vec3_list(light.direction),
+                "color": _vec3_list(light.color),
+                "intensity": light.intensity,
+            },
+            "point_light": (
+                {
+                    "position": _vec3_list(point.position),
+                    "color": _vec3_list(point.color),
+                    "intensity": point.intensity,
+                    "radius": point.radius,
+                }
+                if point is not None
+                else None
+            ),
+            "shadow": bool(scene.shadow.enabled),
+            "color": bool(scene.color.enabled),
+            "post": bool(scene.post.enabled),
+            "bloom": bool(scene.bloom.enabled),
+            "sprites": bool(scene.sprite.enabled),
+            "culling": bool(scene.culling.enabled),
+        },
+    }
+
+
+def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
+    """Update camera and/or environment settings after full validation."""
+    if not isinstance(scene, Scene):
+        raise TypeError("set_scene target must be a Scene")
+    if not isinstance(payload, Mapping):
+        raise TypeError("set_scene payload must be a mapping")
+    _unknown_keys(
+        payload, {"action", "camera", "environment"}, "set_scene payload"
+    )
+    if "camera" not in payload and "environment" not in payload:
+        raise ValueError("set_scene needs camera or environment")
+    camera_payload = payload.get("camera")
+    environment_payload = payload.get("environment")
+    if camera_payload is not None and not isinstance(camera_payload, Mapping):
+        raise TypeError("camera must be a mapping or null")
+    if environment_payload is not None and not isinstance(
+        environment_payload, Mapping
+    ):
+        raise TypeError("environment must be a mapping or null")
+    if camera_payload is None and environment_payload is None:
+        raise ValueError("set_scene needs camera or environment data")
+    if camera_payload == {}:
+        raise ValueError("camera needs at least one field")
+    if environment_payload == {}:
+        raise ValueError("environment needs at least one field")
+
+    camera = scene.camera
+    position = camera.position
+    yaw = camera.yaw
+    pitch = camera.pitch
+    fov_y = camera.fov_y
+    near = camera.near
+    far = camera.far
+    if isinstance(camera_payload, Mapping):
+        _unknown_keys(
+            camera_payload,
+            {"position", "yaw", "pitch", "fov_y", "near", "far"},
+            "camera",
+        )
+        if "position" in camera_payload:
+            position = _payload_vec3(camera_payload["position"], "camera position")
+        if "yaw" in camera_payload:
+            yaw = _finite_number(camera_payload["yaw"], "camera yaw")
+        if "pitch" in camera_payload:
+            pitch = _finite_number(camera_payload["pitch"], "camera pitch")
+        if "fov_y" in camera_payload:
+            fov_y = _finite_number(camera_payload["fov_y"], "camera fov_y")
+            if not 0.0 < fov_y < 180.0:
+                raise ValueError("camera fov_y must be between 0 and 180")
+        if "near" in camera_payload:
+            near = _finite_number(camera_payload["near"], "camera near")
+            if near <= 0.0:
+                raise ValueError("camera near must be positive")
+        if "far" in camera_payload:
+            far = _finite_number(camera_payload["far"], "camera far")
+        if far <= near:
+            raise ValueError("camera far must be greater than near")
+        pitch = max(-MAX_PITCH, min(MAX_PITCH, pitch))
+
+    ambient = scene.ambient
+    background = scene.background
+    sky = scene.sky
+    fog_density = scene.fog_density
+    light = scene.light
+    point_light = scene.point_light
+    shadow = scene.shadow.enabled
+    color = scene.color.enabled
+    post = scene.post.enabled
+    bloom = scene.bloom.enabled
+    sprites = scene.sprite.enabled
+    culling = scene.culling.enabled
+    if isinstance(environment_payload, Mapping):
+        _unknown_keys(
+            environment_payload,
+            {
+                "ambient",
+                "background",
+                "sky",
+                "fog_density",
+                "light",
+                "point_light",
+                "shadow",
+                "color",
+                "post",
+                "bloom",
+                "sprites",
+                "culling",
+            },
+            "environment",
+        )
+        for key, label in (
+            ("ambient", "environment ambient"),
+            ("background", "environment background"),
+            ("sky", "environment sky"),
+        ):
+            if key in environment_payload:
+                value = _payload_vec3(environment_payload[key], label)
+                if key == "ambient":
+                    ambient = value
+                elif key == "background":
+                    background = value
+                else:
+                    sky = value
+        if "fog_density" in environment_payload:
+            fog_density = _finite_number(
+                environment_payload["fog_density"], "environment fog_density"
+            )
+            if fog_density < 0.0:
+                raise ValueError("environment fog_density must be non-negative")
+        if "light" in environment_payload:
+            raw = environment_payload["light"]
+            if not isinstance(raw, Mapping):
+                raise TypeError("environment light must be a mapping")
+            _unknown_keys(raw, {"direction", "color", "intensity"}, "environment light")
+            direction = light.direction
+            light_color = light.color
+            intensity = light.intensity
+            if "direction" in raw:
+                direction = _payload_vec3(raw["direction"], "light direction")
+            if "color" in raw:
+                light_color = _payload_vec3(raw["color"], "light color")
+            if "intensity" in raw:
+                intensity = _finite_number(raw["intensity"], "light intensity")
+            light = DirectionalLight(
+                direction=direction, color=light_color, intensity=intensity
+            )
+        if "point_light" in environment_payload:
+            raw = environment_payload["point_light"]
+            if raw is None:
+                point_light = None
+            elif isinstance(raw, Mapping):
+                _unknown_keys(
+                    raw,
+                    {"position", "color", "intensity", "radius"},
+                    "environment point_light",
+                )
+                base = point_light or PointLight()
+                point_position = base.position
+                point_color = base.color
+                point_intensity = base.intensity
+                radius = base.radius
+                if "position" in raw:
+                    point_position = _payload_vec3(
+                        raw["position"], "point light position"
+                    )
+                if "color" in raw:
+                    point_color = _payload_vec3(raw["color"], "point light color")
+                if "intensity" in raw:
+                    point_intensity = _finite_number(
+                        raw["intensity"], "point light intensity"
+                    )
+                if "radius" in raw:
+                    radius = _finite_number(raw["radius"], "point light radius")
+                point_light = PointLight(
+                    position=point_position,
+                    color=point_color,
+                    intensity=point_intensity,
+                    radius=radius,
+                )
+            else:
+                raise TypeError("environment point_light must be a mapping or null")
+        toggles = {
+            "shadow": (shadow, "shadow"),
+            "color": (color, "color"),
+            "post": (post, "post"),
+            "bloom": (bloom, "bloom"),
+            "sprites": (sprites, "sprites"),
+            "culling": (culling, "culling"),
+        }
+        values: dict[str, bool] = {}
+        for key, (_, label) in toggles.items():
+            if key in environment_payload:
+                value = environment_payload[key]
+                if not isinstance(value, bool):
+                    raise TypeError(f"environment {label} must be a boolean")
+                values[key] = value
+        shadow = values.get("shadow", shadow)
+        color = values.get("color", color)
+        post = values.get("post", post)
+        bloom = values.get("bloom", bloom)
+        sprites = values.get("sprites", sprites)
+        culling = values.get("culling", culling)
+
+    scene.camera.position = position
+    scene.camera.yaw = yaw
+    scene.camera.pitch = pitch
+    scene.camera.fov_y = fov_y
+    scene.camera.near = near
+    scene.camera.far = far
+    scene.ambient = ambient
+    scene.background = background
+    scene.sky = sky
+    scene.fog_density = fog_density
+    scene.light = light
+    scene.point_light = point_light
+    scene.shadow = ShadowSettings(enabled=shadow)
+    scene.color = ColorSettings(enabled=color)
+    scene.post = PostSettings(enabled=post)
+    scene.bloom = BloomSettings(enabled=bloom)
+    scene.sprite = SpriteSettings(enabled=sprites)
+    scene.culling = CullingSettings(enabled=culling)
+    return scene
 
 
 def _type_name(value: object) -> str:
@@ -351,26 +640,77 @@ def _restore_nodes(scene: Scene, snapshot: list[dict[str, object]]) -> None:
     list(scene.traverse())
 
 
+def _scene_snapshot(scene: Scene) -> dict[str, object]:
+    return {
+        "nodes": _snapshot_nodes(scene),
+        "camera": {
+            "position": scene.camera.position,
+            "yaw": scene.camera.yaw,
+            "pitch": scene.camera.pitch,
+            "fov_y": scene.camera.fov_y,
+            "near": scene.camera.near,
+            "far": scene.camera.far,
+        },
+        "light": scene.light,
+        "point_light": scene.point_light,
+        "shadow": scene.shadow,
+        "color": scene.color,
+        "post": scene.post,
+        "bloom": scene.bloom,
+        "sprite": scene.sprite,
+        "culling": scene.culling,
+        "ambient": scene.ambient,
+        "background": scene.background,
+        "sky": scene.sky,
+        "fog_density": scene.fog_density,
+    }
+
+
+def _restore_scene_state(scene: Scene, snapshot: dict[str, object]) -> None:
+    _restore_nodes(scene, snapshot["nodes"])  # type: ignore[arg-type]
+    camera = snapshot["camera"]
+    if not isinstance(camera, Mapping):
+        raise TypeError("editor camera snapshot must be a mapping")
+    scene.camera.position = camera["position"]  # type: ignore[assignment]
+    scene.camera.yaw = camera["yaw"]  # type: ignore[assignment]
+    scene.camera.pitch = camera["pitch"]  # type: ignore[assignment]
+    scene.camera.fov_y = camera["fov_y"]  # type: ignore[assignment]
+    scene.camera.near = camera["near"]  # type: ignore[assignment]
+    scene.camera.far = camera["far"]  # type: ignore[assignment]
+    scene.light = snapshot["light"]  # type: ignore[assignment]
+    scene.point_light = snapshot["point_light"]  # type: ignore[assignment]
+    scene.shadow = snapshot["shadow"]  # type: ignore[assignment]
+    scene.color = snapshot["color"]  # type: ignore[assignment]
+    scene.post = snapshot["post"]  # type: ignore[assignment]
+    scene.bloom = snapshot["bloom"]  # type: ignore[assignment]
+    scene.sprite = snapshot["sprite"]  # type: ignore[assignment]
+    scene.culling = snapshot["culling"]  # type: ignore[assignment]
+    scene.ambient = snapshot["ambient"]  # type: ignore[assignment]
+    scene.background = snapshot["background"]  # type: ignore[assignment]
+    scene.sky = snapshot["sky"]  # type: ignore[assignment]
+    scene.fog_density = snapshot["fog_density"]  # type: ignore[assignment]
+
+
 class EditorHistory:
-    """Bounded in-memory undo/redo for scene-node edits."""
+    """Bounded in-memory undo/redo for scene and environment edits."""
 
     def __init__(self, limit: int = 50) -> None:
         if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
             raise ValueError("history limit must be a positive integer")
         self._limit = limit
-        self._undo: list[list[dict[str, object]]] = []
-        self._redo: list[list[dict[str, object]]] = []
+        self._undo: list[dict[str, object]] = []
+        self._redo: list[dict[str, object]] = []
 
     def describe(self) -> dict[str, int]:
         return {"undo": len(self._undo), "redo": len(self._redo), "limit": self._limit}
 
     def apply(self, scene: Scene, operation: Callable[[], T]) -> T:
         """Run one scene mutation and push its pre-edit snapshot."""
-        before = _snapshot_nodes(scene)
+        before = _scene_snapshot(scene)
         try:
             result = operation()
         except Exception:
-            _restore_nodes(scene, before)
+            _restore_scene_state(scene, before)
             raise
         self._push(before)
         return result
@@ -378,16 +718,16 @@ class EditorHistory:
     def undo(self, scene: Scene) -> bool:
         if not self._undo:
             return False
-        current = _snapshot_nodes(scene)
-        _restore_nodes(scene, self._undo.pop())
+        current = _scene_snapshot(scene)
+        _restore_scene_state(scene, self._undo.pop())
         self._redo.append(current)
         return True
 
     def redo(self, scene: Scene) -> bool:
         if not self._redo:
             return False
-        current = _snapshot_nodes(scene)
-        _restore_nodes(scene, self._redo.pop())
+        current = _scene_snapshot(scene)
+        _restore_scene_state(scene, self._redo.pop())
         self._push(current)
         return True
 
@@ -395,7 +735,7 @@ class EditorHistory:
         self._undo.clear()
         self._redo.clear()
 
-    def _push(self, snapshot: list[dict[str, object]]) -> None:
+    def _push(self, snapshot: dict[str, object]) -> None:
         self._undo.append(snapshot)
         if len(self._undo) > self._limit:
             self._undo.pop(0)
@@ -465,6 +805,7 @@ def editor_document(
         "roots": [node.id for node in scene.root.children],
         "selection": selection,
         "nodes": nodes,
+        "scene_settings": scene_settings_document(scene),
         "prefabs": (
             prefab_entries
             if prefab_entries is not None
