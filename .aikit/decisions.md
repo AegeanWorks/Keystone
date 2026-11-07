@@ -648,3 +648,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The editor could create nodes with names, tags, layers and visibility, but could not change those properties afterwards. A Unity/Unreal-style inspector needs rename, hide/show, tagging and layer reassignment without delete-and-recreate.
 - **Decision**: Bump the editor schema to 7 and add `set_node` with optional `name`, `visible`, `tags` and `layer` fields. Validate every supplied value before mutating, update atomically through `EditorHistory`, reject blank names/layers, non-boolean visibility and non-list tags, and add inspector fields plus an apply button to the console.
 - **Consequences**: 695 tests green; node metadata edits undo cleanly and remain compatible with scene files, prefabs and queries. Transactional batch authoring and asset previews remain future work.
+
+### ADR-078: Add atomic batch authoring for AI clients
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: AI clients often need several related edits (create a node, name it, assign assets, parent a child). Sending them one by one leaves partial scenes on failure and creates many undo steps.
+- **Decision**: Bump the editor schema to 8 and add `batch` with up to 100 actions from a fixed scene-mutating set (`transform`, `set_node`, `assign_asset`, `set_component`, `remove_component`, `create_node`, `delete_node`, `duplicate_node`, `reparent_node`, `insert_prefab`). Run sub-actions through a reentrant session lock with history suppressed, take one pre-batch snapshot, restore the whole scene and selection on failure, and reject nested batches, undo/redo, play and file actions.
+- **Consequences**: 696 tests green; an AI can apply a complete structural edit atomically and undo it in one step, while invalid or unsupported sub-actions fail before mutation. Asset previews and richer schema hints remain future work.

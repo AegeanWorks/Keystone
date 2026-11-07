@@ -9,8 +9,8 @@
 - **Total Python Modules**: `128`
 - **Total Classes**: `202`
 - **Total Top-Level Functions**: `290`
-- **Total Class Methods**: `1221`
-- **Total Source Lines**: `25081`
+- **Total Class Methods**: `1224`
+- **Total Source Lines**: `25219`
 
 ---
 
@@ -1270,7 +1270,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `29` lines (`565` bytes)
+**Size**: `30` lines (`578` bytes)
 
 ---
 
@@ -1509,14 +1509,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `64` lines (`3294` bytes)
+**Size**: `66` lines (`3397` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `829` lines (`36328` bytes)
+**Size**: `881` lines (`38180` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1531,6 +1531,8 @@
   - Method `._registry_locked()`
   - Method `._parent_locked(scene, value)`
   - Method `._prefab_entries_locked()`
+  - Method `._apply_history(scene, operation)`
+  - Method `._batch_locked(scene, payload)`
   - Method `._ensure_prefab_locked(name)`
   - Method `._editor_locked(scene)`
   - Method `.editor()`
@@ -2900,7 +2902,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `770` lines (`32706` bytes)
+**Size**: `853` lines (`35904` bytes)
 
 **Classes:**
 - `class Health`
@@ -2930,6 +2932,7 @@
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_scene_library_persists_and_restores()`
+  - Method `.test_editor_batch_authoring_is_atomic()`
   - Method `.test_editor_node_property_editing()`
   - Method `.test_editor_play_mode_restores_authored_scene()`
   - Method `.test_editor_component_authoring_and_scene_round_trip()`

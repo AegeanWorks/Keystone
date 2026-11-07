@@ -6,6 +6,7 @@ import json
 import math
 import sys
 import threading
+from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import ClassVar
@@ -45,6 +46,21 @@ from keystone.web.schema import EDITOR_SCHEMA, SCENE_SCHEMA, WEB_API_VERSION
 
 MAX_BODY = 1_000_000
 MAX_FRAMES = 1_000_000
+MAX_BATCH_ACTIONS = 100
+BATCH_ACTIONS = frozenset(
+    {
+        "transform",
+        "set_node",
+        "assign_asset",
+        "set_component",
+        "remove_component",
+        "create_node",
+        "delete_node",
+        "duplicate_node",
+        "reparent_node",
+        "insert_prefab",
+    }
+)
 
 
 def _enabled(value: object) -> bool:
@@ -80,7 +96,8 @@ class GameSession:
         scene_dir: str | Path | None = None,
     ) -> None:
         self.game = game
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
+        self._batch_depth = 0
         self._built = False
         self.selected_id: str | None = None
         self.prefabs: dict[str, Prefab] = {}
@@ -185,6 +202,39 @@ class GameSession:
         entries.sort(key=lambda entry: str(entry["name"]))
         return entries
 
+    def _apply_history(self, scene: Scene, operation: Callable[[], object]) -> object:
+        if self._batch_depth:
+            return operation()
+        return self.history.apply(scene, operation)
+
+    def _batch_locked(self, scene: Scene, payload: dict) -> None:
+        actions = payload.get("actions")
+        if not isinstance(actions, list) or not actions:
+            raise ValueError("batch actions must be a non-empty list")
+        if len(actions) > MAX_BATCH_ACTIONS:
+            raise ValueError(f"batch actions must contain at most {MAX_BATCH_ACTIONS} entries")
+        for index, item in enumerate(actions):
+            if not isinstance(item, dict):
+                raise TypeError(f"batch actions[{index}] must be a JSON object")
+            action = item.get("action")
+            if action not in BATCH_ACTIONS:
+                raise ValueError(
+                    f"batch actions[{index}] {action!r} is not allowed; "
+                    f"use {', '.join(sorted(BATCH_ACTIONS))}"
+                )
+        before = self.selected_id
+        self._batch_depth += 1
+        try:
+            self.history.apply(
+                scene,
+                lambda: [self.editor_action(item) for item in actions],
+            )
+        except Exception:
+            self.selected_id = before
+            raise
+        finally:
+            self._batch_depth -= 1
+
     def _ensure_prefab_locked(self, name: object) -> None:
         if not isinstance(name, str) or not name.strip():
             raise ValueError("prefab name must be a non-blank string")
@@ -251,7 +301,9 @@ class GameSession:
             try:
                 if self.playing and action not in ("select", "play_step", "play_stop"):
                     raise ValueError("play mode is active; stop it before editing")
-                if action == "select":
+                if action == "batch":
+                    self._batch_locked(scene, payload)
+                elif action == "select":
                     node_id = payload.get("id")
                     if node_id is None:
                         self.selected_id = None
@@ -266,17 +318,17 @@ class GameSession:
                     def apply_transform() -> None:
                         node.transform = transform_from_payload(node, payload)
 
-                    self.history.apply(scene, apply_transform)
+                    self._apply_history(scene, apply_transform)
                     self.selected_id = node.id
                 elif action == "set_node":
                     node = find_node(scene, payload.get("id"))
-                    self.history.apply(
+                    self._apply_history(
                         scene, lambda: set_node_properties(node, payload)
                     )
                     self.selected_id = node.id
                 elif action == "assign_asset":
                     node = find_node(scene, payload.get("id"))
-                    self.history.apply(
+                    self._apply_history(
                         scene,
                         lambda: assign_assets(node, payload, self._registry_locked()),
                     )
@@ -331,7 +383,7 @@ class GameSession:
                     self.selected_id = None
                 elif action == "set_component":
                     node = find_node(scene, payload.get("id"))
-                    self.history.apply(
+                    self._apply_history(
                         scene,
                         lambda: set_component(
                             node,
@@ -343,7 +395,7 @@ class GameSession:
                     self.selected_id = node.id
                 elif action == "remove_component":
                     node = find_node(scene, payload.get("id"))
-                    self.history.apply(
+                    self._apply_history(
                         scene,
                         lambda: remove_component(
                             node, payload.get("type"), self.component_types
@@ -352,7 +404,7 @@ class GameSession:
                     self.selected_id = node.id
                 elif action == "create_node":
                     parent = self._parent_locked(scene, payload.get("parent"))
-                    node = self.history.apply(
+                    node = self._apply_history(
                         scene,
                         lambda: create_node(
                             scene,
@@ -364,18 +416,18 @@ class GameSession:
                     self.selected_id = node.id
                 elif action == "delete_node":
                     node = find_node(scene, payload.get("id"))
-                    parent = self.history.apply(scene, lambda: delete_node(scene, node))
+                    parent = self._apply_history(scene, lambda: delete_node(scene, node))
                     self.selected_id = None if parent is scene.root else parent.id
                 elif action == "duplicate_node":
                     node = find_node(scene, payload.get("id"))
-                    clone = self.history.apply(
+                    clone = self._apply_history(
                         scene, lambda: duplicate_node(scene, node, payload.get("name"))
                     )
                     self.selected_id = clone.id
                 elif action == "reparent_node":
                     node = find_node(scene, payload.get("id"))
                     parent = self._parent_locked(scene, payload.get("parent"))
-                    self.history.apply(scene, lambda: reparent_node(scene, node, parent))
+                    self._apply_history(scene, lambda: reparent_node(scene, node, parent))
                     self.selected_id = node.id
                 elif action == "save_scene":
                     if self.scene_library is None:
@@ -410,7 +462,7 @@ class GameSession:
                     name = payload.get("name")
                     self._ensure_prefab_locked(name)
                     parent = self._parent_locked(scene, payload.get("parent"))
-                    roots = self.history.apply(
+                    roots = self._apply_history(
                         scene,
                         lambda: insert_prefab(
                             scene, self.prefabs, name, parent, payload.get("instance")

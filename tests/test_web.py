@@ -180,7 +180,7 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 7)
+        self.assertEqual(editor["schema"], 8)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
         self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
@@ -457,6 +457,89 @@ class WebServerTest(unittest.TestCase):
             broken = GameSession(CubeDemo(), scene_dir=scene_dir)
             entries = {entry["name"]: entry for entry in broken.editor()["scenes"]}
             self.assertIsNotNone(entries["broken"]["error"])
+
+    def test_editor_batch_authoring_is_atomic(self):
+        session = GameSession(CubeDemo())
+        session.editor()
+        result = session.editor_action(
+            {
+                "action": "batch",
+                "actions": [
+                    {
+                        "action": "create_node",
+                        "id": "batch-a",
+                        "name": "Batch A",
+                        "position": [1.0, 0.0, 0.0],
+                    },
+                    {
+                        "action": "set_node",
+                        "id": "batch-a",
+                        "tags": ["batch"],
+                        "layer": "actors",
+                    },
+                    {
+                        "action": "assign_asset",
+                        "id": "batch-a",
+                        "mesh": "mesh.cube",
+                        "material": "material.cube.0",
+                    },
+                    {
+                        "action": "create_node",
+                        "id": "batch-b",
+                        "name": "Batch B",
+                        "parent": "batch-a",
+                    },
+                ],
+            }
+        )
+        ids = {node["id"] for node in result["nodes"]}
+        self.assertIn("batch-a", ids)
+        self.assertIn("batch-b", ids)
+        self.assertEqual(result["history"]["undo"], 1)
+        batch_a = next(node for node in result["nodes"] if node["id"] == "batch-a")
+        self.assertEqual(batch_a["tags"], ["batch"])
+        self.assertEqual(batch_a["layer"], "actors")
+        self.assertEqual(batch_a["mesh"], "mesh.cube")
+
+        result = session.editor_action({"action": "undo"})
+        ids = {node["id"] for node in result["nodes"]}
+        self.assertNotIn("batch-a", ids)
+        self.assertNotIn("batch-b", ids)
+        self.assertEqual(result["history"]["undo"], 0)
+
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action(
+                {
+                    "action": "batch",
+                    "actions": [
+                        {
+                            "action": "create_node",
+                            "id": "rollback",
+                            "name": "Rollback",
+                        },
+                        {
+                            "action": "transform",
+                            "id": "missing",
+                            "position": [1.0, 0.0, 0.0],
+                        },
+                    ],
+                }
+            )
+        self.assertEqual(caught.exception.status, 404)
+        self.assertNotIn(
+            "rollback", {node["id"] for node in session.editor()["nodes"]}
+        )
+
+        for payload in (
+            {"action": "batch", "actions": []},
+            {"action": "batch", "actions": "x"},
+            {"action": "batch", "actions": [{"action": "batch", "actions": []}]},
+            {"action": "batch", "actions": [{"action": "play_start"}]},
+            {"action": "batch", "actions": [{"action": "undo"}]},
+        ):
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(payload)
+            self.assertEqual(caught.exception.status, 400)
 
     def test_editor_node_property_editing(self):
         _, _, editor = self._json("/api/editor")
