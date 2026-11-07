@@ -10,7 +10,7 @@
 - **Total Classes**: `202`
 - **Total Top-Level Functions**: `293`
 - **Total Class Methods**: `1242`
-- **Total Source Lines**: `25993`
+- **Total Source Lines**: `26006`
 
 ---
 
@@ -1453,7 +1453,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `674` lines (`24387` bytes)
+**Size**: `682` lines (`24712` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene-node edits.*
@@ -1516,7 +1516,7 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `75` lines (`3905` bytes)
+**Size**: `76` lines (`3961` bytes)
 
 ---
 
@@ -2920,7 +2920,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `991` lines (`42197` bytes)
+**Size**: `995` lines (`42417` bytes)
 
 **Classes:**
 - `class Health`

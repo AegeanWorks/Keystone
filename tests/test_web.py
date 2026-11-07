@@ -181,7 +181,7 @@ class WebServerTest(unittest.TestCase):
     def test_editor_hierarchy_selection_and_transform(self):
         status, _, editor = self._json("/api/editor")
         self.assertEqual(status, 200)
-        self.assertEqual(editor["schema"], 11)
+        self.assertEqual(editor["schema"], 12)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
         self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
@@ -326,6 +326,10 @@ class WebServerTest(unittest.TestCase):
         assets = {asset["id"]: asset for asset in editor["assets"]}
         self.assertGreater(assets["mesh.cube"]["metadata"]["vertices"], 0)
         self.assertGreater(assets["mesh.cube"]["metadata"]["triangles"], 0)
+        bounds = assets["mesh.cube"]["metadata"]["bounds"]
+        self.assertEqual(len(bounds["min"]), 3)
+        self.assertEqual(len(bounds["max"]), 3)
+        self.assertLessEqual(bounds["min"][0], bounds["max"][0])
         self.assertIn("color", assets["material.cube.0"]["metadata"])
         self.assertEqual(assets["texture.floor-checker"]["metadata"]["width"], 64)
         self.assertEqual(assets["texture.floor-checker"]["metadata"]["height"], 64)

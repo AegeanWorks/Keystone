@@ -160,12 +160,20 @@ def component_schemas(
 
 def _asset_metadata(registry: object | None, kind: object, payload: object) -> dict:
     if kind == "mesh" and isinstance(payload, MeshData):
+        if payload.positions:
+            xs, ys, zs = zip(*payload.positions)
+            minimum = [min(xs), min(ys), min(zs)]
+            maximum = [max(xs), max(ys), max(zs)]
+        else:
+            minimum = [0.0, 0.0, 0.0]
+            maximum = [0.0, 0.0, 0.0]
         return {
             "vertices": len(payload.positions),
             "triangles": len(payload.indices) // 3,
             "has_uvs": bool(payload.uvs),
             "has_colors": bool(payload.colors),
             "skin_joints": len(payload.skin_joints),
+            "bounds": {"min": minimum, "max": maximum},
         }
     if kind == "material" and isinstance(payload, Material):
         return {

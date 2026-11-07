@@ -226,7 +226,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - Editor schema 6 runs the game from the authored scene, blocks edits while playing, and restores the pre-play scene on stop.
 - Editor schema 7 edits an existing node's name, visibility, tags and layer with undo and strict validation.
 - Editor schema 8 applies up to 100 scene-mutating actions atomically with one undo entry and full rollback on failure.
-- Editor schema 9 adds kind-specific asset metadata: mesh counts/flags, material factors, texture size and prefab node/dependency summaries.
+- Editor schema 9 adds kind-specific asset metadata: mesh counts/flags, material factors, texture size and prefab node/dependency summaries; schema 12 adds mesh bounds.
 - Editor schema 10 adds dataclass field hints for `component_types`, while custom codecs report a manual-codec note.
 - The console renders dataclass component fields as typed inputs (int/float/string/bool/JSON) and keeps the JSON editor for custom codecs.
 - Editor schema 11 safely renames or deletes scene/prefab library entries and keeps cached prefabs in sync.

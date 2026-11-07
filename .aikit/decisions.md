@@ -792,3 +792,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The editor API exposed mesh/material metadata, but the console asset selectors showed only ids, so humans could not compare counts or material factors before assignment.
 - **Decision**: Add an `asset-info` readout that renders the selected mesh/material metadata as formatted JSON and refresh it on selection changes. No API or schema change.
 - **Consequences**: 710 tests green and `app.js` passes `node --check`; asset metadata is visible in both AI documents and the human console. Thumbnail previews remain future work.
+
+### ADR-096: Add mesh bounds to editor asset metadata
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: Mesh metadata listed vertex and triangle counts but not extents, so AI clients could not reason about size or choose focus distances.
+- **Decision**: Bump the editor schema to 12 and add `bounds.min`/`bounds.max` to mesh metadata, computed from the payload positions (zero bounds for empty meshes). No new API action.
+- **Consequences**: 710 tests green; asset summaries now carry placement and framing information, and the console metadata readout shows it automatically. Thumbnail previews remain future work.
