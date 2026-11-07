@@ -73,18 +73,26 @@
         </div>
         <div class="field-grid">
           <label>Scene name <input id="scene-name" type="text" value="scene"></label>
+          <label>New scene name <input id="scene-new-name" type="text" placeholder="renamed-scene"></label>
         </div>
         <div class="buttons">
           <button id="scene-save" type="button">Save scene</button>
           <button id="scene-load" type="button">Load scene</button>
+          <button id="scene-rename" type="button">Rename scene</button>
+          <button id="scene-delete" type="button">Delete scene</button>
         </div>
         <div class="field-grid">
           <label>Prefab name <input id="prefab-name" type="text" value="hero"></label>
-          <label>Instance prefix <input id="prefab-instance" type="text" placeholder="optional"></label>
+          <label>New prefab name <input id="prefab-new-name" type="text" placeholder="renamed-prefab"></label>
         </div>
         <div class="buttons">
           <button id="prefab-save" type="button">Save prefab</button>
           <button id="prefab-insert" type="button">Insert prefab</button>
+          <button id="prefab-rename" type="button">Rename prefab</button>
+          <button id="prefab-delete" type="button">Delete prefab</button>
+        </div>
+        <div class="field-grid">
+          <label>Instance prefix <input id="prefab-instance" type="text" placeholder="optional"></label>
         </div>
         <label class="stack" for="position">Position x/y/z</label>
         <input id="position" type="text" value="0, 0, 0">

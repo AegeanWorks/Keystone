@@ -27,12 +27,18 @@ const elements = {
   editorUndo: document.getElementById("editor-undo"),
   editorRedo: document.getElementById("editor-redo"),
   sceneName: document.getElementById("scene-name"),
+  sceneNewName: document.getElementById("scene-new-name"),
   sceneSave: document.getElementById("scene-save"),
   sceneLoad: document.getElementById("scene-load"),
+  sceneRename: document.getElementById("scene-rename"),
+  sceneDelete: document.getElementById("scene-delete"),
   prefabName: document.getElementById("prefab-name"),
+  prefabNewName: document.getElementById("prefab-new-name"),
   prefabInstance: document.getElementById("prefab-instance"),
   prefabSave: document.getElementById("prefab-save"),
   prefabInsert: document.getElementById("prefab-insert"),
+  prefabRename: document.getElementById("prefab-rename"),
+  prefabDelete: document.getElementById("prefab-delete"),
   position: document.getElementById("position"),
   rotation: document.getElementById("rotation"),
   scale: document.getElementById("scale"),
@@ -82,10 +88,11 @@ function setBusy(value) {
     elements.step, elements.run, elements.simulate, elements.refresh,
     elements.nodeCreate, elements.nodeDuplicate, elements.nodeDelete, elements.nodeReparent,
     elements.nodeProperties,
-    elements.sceneSave, elements.sceneLoad, elements.assignAsset,
-    elements.playStart, elements.playStep, elements.playStop,
+    elements.sceneSave, elements.sceneLoad, elements.sceneRename, elements.sceneDelete,
+    elements.assignAsset, elements.playStart, elements.playStep, elements.playStop,
     elements.componentSet, elements.componentRemove,
-    elements.prefabSave, elements.prefabInsert, elements.transformApply, elements.editorRefresh,
+    elements.prefabSave, elements.prefabInsert, elements.prefabRename, elements.prefabDelete,
+    elements.transformApply, elements.editorRefresh,
   ]) {
     button.disabled = value;
   }
@@ -362,6 +369,27 @@ async function applyTransform() {
   await refreshScene(false);
 }
 
+async function renamePrefab() {
+  const name = elements.prefabName.value.trim();
+  const newName = elements.prefabNewName.value.trim();
+  if (!name || !newName) {
+    throw new Error("Enter the current and new prefab names.");
+  }
+  await editorAction(
+    { action: "rename_prefab", name, new_name: newName },
+    "renaming prefab",
+  );
+  elements.prefabName.value = newName;
+}
+
+async function deletePrefab() {
+  const name = elements.prefabName.value.trim();
+  if (!name) {
+    throw new Error("Enter the prefab name to delete.");
+  }
+  await editorAction({ action: "delete_prefab", name }, "deleting prefab");
+}
+
 async function savePrefab() {
   if (!editorState || !editorState.selection) {
     throw new Error("Select a node before saving a prefab.");
@@ -473,6 +501,27 @@ async function removeComponent() {
 async function saveScene() {
   const name = elements.sceneName.value.trim() || "scene";
   await editorAction({ action: "save_scene", name }, "saving scene");
+}
+
+async function renameScene() {
+  const name = elements.sceneName.value.trim();
+  const newName = elements.sceneNewName.value.trim();
+  if (!name || !newName) {
+    throw new Error("Enter the current and new scene names.");
+  }
+  await editorAction(
+    { action: "rename_scene", name, new_name: newName },
+    "renaming scene",
+  );
+  elements.sceneName.value = newName;
+}
+
+async function deleteScene() {
+  const name = elements.sceneName.value.trim();
+  if (!name) {
+    throw new Error("Enter the scene name to delete.");
+  }
+  await editorAction({ action: "delete_scene", name }, "deleting scene");
 }
 
 async function loadScene() {
@@ -646,7 +695,11 @@ elements.editorUndo.addEventListener("click", () => run(undoEditor));
 elements.editorRedo.addEventListener("click", () => run(redoEditor));
 elements.sceneSave.addEventListener("click", () => run(saveScene));
 elements.sceneLoad.addEventListener("click", () => run(loadScene));
+elements.sceneRename.addEventListener("click", () => run(renameScene));
+elements.sceneDelete.addEventListener("click", () => run(deleteScene));
 elements.prefabSave.addEventListener("click", () => run(savePrefab));
+elements.prefabRename.addEventListener("click", () => run(renamePrefab));
+elements.prefabDelete.addEventListener("click", () => run(deletePrefab));
 elements.prefabInsert.addEventListener("click", () => run(insertPrefab));
 
 init();

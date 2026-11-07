@@ -704,3 +704,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The editor could save and load library entries but never rename or remove them, so AI clients had no lifecycle management and stale files accumulated.
 - **Decision**: Add `PrefabLibrary`/`SceneLibrary` `rename()` and `delete()` with portable names, missing-entry KeyErrors, destination collision checks, raw JSON name updates, and atomic writes. Expose `rename_prefab`, `delete_prefab`, `rename_scene` and `delete_scene`; keep the cached prefab dictionary in sync and reject the actions in batches or play mode. Bump the editor schema to 11.
 - **Consequences**: 703 tests green; library lifecycle is safe and AI-addressable, while deletes remain immediate and intentionally non-undoable. Library UI controls and editor camera polish remain future work.
+
+### ADR-085: Expose library rename/delete in the console
+
+- **Date**: 2026-11-07
+- **Status**: Accepted
+- **Context**: Rename/delete existed only in the JSON API; humans had to call the API directly to manage scene and prefab files.
+- **Decision**: Add new-name fields plus Rename/Delete buttons for scene and prefab libraries, wire them to the existing schema-11 actions, and include them in the busy-state button set. No API or schema change.
+- **Consequences**: 703 tests green; the console covers the full save/load/rename/delete lifecycle for both libraries. Editor camera polish and non-serve scene loading remain future work.
