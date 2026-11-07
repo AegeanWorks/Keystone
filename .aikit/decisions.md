@@ -880,3 +880,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Transforms required typing into numeric fields or dragging nodes in the viewport; there was no quick keyboard adjustment for placement.
 - **Decision**: Add arrow-key X/Z nudges and PageUp/PageDown Y nudges for the selected node, 0.1 units normally and 1.0 with Shift, reusing the validated `transform` action and undo history. Ignore input/textarea/select/contenteditable targets and suppress browser scrolling. No API or schema change.
 - **Consequences**: 719 tests green and `app.js` passes `node --check`; placement is keyboard-accessible while retaining one undo step per nudge. Transform gizmos remain future work.
+
+### ADR-107: Add hierarchy and asset filters to the console
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Large scenes and registries produced long select lists, making the target node or mesh/material hard to find.
+- **Decision**: Add case-insensitive hierarchy and asset filter inputs. Hierarchy matching covers id, name, layer, tags and component names while preserving indentation; asset matching covers id, kind and metadata. Filters update client-side without API calls.
+- **Consequences**: 719 tests green and `app.js` passes `node --check`; navigation stays fast without changing the editor document contract. Transform gizmos and prefab overrides remain future work.

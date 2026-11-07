@@ -36,6 +36,7 @@
       <section class="card editor-card">
         <h2>Scene editor</h2>
         <label class="stack" for="hierarchy">Hierarchy</label>
+        <input id="hierarchy-filter" type="text" placeholder="Filter hierarchy">
         <select id="hierarchy" size="8" aria-label="Scene hierarchy"></select>
         <div class="buttons">
           <button id="play-start" type="button">Play</button>
@@ -118,6 +119,7 @@
           <button id="transform-apply" type="button" class="primary">Apply transform</button>
           <button id="editor-refresh" type="button">Refresh editor</button>
         </div>
+        <input id="asset-filter" type="text" placeholder="Filter assets">
         <div class="field-grid">
           <label>Mesh asset <select id="mesh-asset"></select></label>
           <label>Material asset <select id="material-asset"></select></label>

@@ -928,6 +928,8 @@ class WebServerTest(unittest.TestCase):
         self.assertEqual(status, 200)
         for control in (
             "hierarchy",
+            "hierarchy-filter",
+            "asset-filter",
             "play-start",
             "play-step",
             "play-stop",
@@ -990,6 +992,8 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("applySceneSettings", script)
         self.assertIn("nudgeSelection", script)
         self.assertIn("ArrowLeft", script)
+        self.assertIn("hierarchyFilter", script)
+        self.assertIn("assetFilter", script)
         self.assertIn("assign_asset", script)
         self.assertIn("fillDatalist", script)
         self.assertIn("setSelected", script)

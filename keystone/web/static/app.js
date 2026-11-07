@@ -10,6 +10,8 @@ const elements = {
   simulate: document.getElementById("simulate"),
   refresh: document.getElementById("refresh"),
   hierarchy: document.getElementById("hierarchy"),
+  hierarchyFilter: document.getElementById("hierarchy-filter"),
+  assetFilter: document.getElementById("asset-filter"),
   nodeName: document.getElementById("node-name"),
   nodeParent: document.getElementById("node-parent"),
   playStart: document.getElementById("play-start"),
@@ -226,15 +228,31 @@ function renderParentOptions(editor, byId) {
 
 function renderHierarchy(editor) {
   const byId = new Map(editor.nodes.map((node) => [node.id, node]));
+  const query = elements.hierarchyFilter.value.trim().toLowerCase();
   elements.hierarchy.replaceChildren();
   for (const node of editor.nodes) {
+    if (query) {
+      const haystack = [
+        node.id,
+        node.name,
+        node.layer,
+        ...(node.tags || []),
+        ...(node.components || []),
+      ]
+        .join(" ")
+        .toLowerCase();
+      if (!haystack.includes(query)) {
+        continue;
+      }
+    }
     const option = document.createElement("option");
     option.value = node.id;
     option.textContent =
       `${"  ".repeat(nodeDepth(node, byId))}${node.name || "(root)"} · ${node.id}`;
     elements.hierarchy.append(option);
   }
-  if (editor.selection) {
+  const values = Array.from(elements.hierarchy.options).map((option) => option.value);
+  if (editor.selection && values.includes(editor.selection.id)) {
     elements.hierarchy.value = editor.selection.id;
   }
   renderParentOptions(editor, byId);
@@ -259,12 +277,20 @@ function renderLibraryOptions(editor) {
 
 function fillAssetSelect(select, kind, assets) {
   const previous = select.value;
+  const query = elements.assetFilter.value.trim().toLowerCase();
   select.replaceChildren();
   const none = document.createElement("option");
   none.value = "";
   none.textContent = "(none)";
   select.append(none);
   for (const asset of assets.filter((item) => item.kind === kind)) {
+    if (query) {
+      const haystack =
+        `${asset.id} ${asset.kind} ${JSON.stringify(asset.metadata || {})}`.toLowerCase();
+      if (!haystack.includes(query)) {
+        continue;
+      }
+    }
     const option = document.createElement("option");
     option.value = asset.id;
     option.textContent = `${asset.id} · ${asset.kind}`;
@@ -1043,6 +1069,16 @@ elements.transformApply.addEventListener("click", () => run(applyTransform));
 elements.playStart.addEventListener("click", () => run(playStart));
 elements.playStep.addEventListener("click", () => run(playStep));
 elements.playStop.addEventListener("click", () => run(playStop));
+elements.hierarchyFilter.addEventListener("input", () => {
+  if (editorState) {
+    renderHierarchy(editorState);
+  }
+});
+elements.assetFilter.addEventListener("input", () => {
+  if (editorState) {
+    renderAssets(editorState);
+  }
+});
 elements.meshAsset.addEventListener("change", updateAssetInfo);
 elements.materialAsset.addEventListener("change", updateAssetInfo);
 elements.assignAsset.addEventListener("click", () => run(assignAssets));
