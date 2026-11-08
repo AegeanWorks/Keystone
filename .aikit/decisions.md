@@ -1240,3 +1240,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The timeline could scrub one pose at a time but could not play a clip continuously, so animation review required repeated manual releases.
 - **Decision**: Add a `record` flag to `preview_animation` (default true); record-free frames apply the sampled pose without history. The console adds a Play/Pause button that records one initial frame, then drives wall-clock preview frames through direct API calls at roughly 30 fps, wrapping at the clip duration, capping elapsed catch-up, guarding one in-flight frame, and stopping on errors or any editor action. Bump the editor schema to 41.
 - **Consequences**: 779 tests green; record-free history behavior, playback wiring, schema examples and duration/scrub integration are covered. Playback leaves the final pose in the scene until Undo, does not persist or loop-event, and the browser loop is not covered by a real-browser timing test.
+
+### ADR-152: Collapsible hierarchy tree
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The draggable hierarchy rendered every node, so large scenes became a long list with no way to fold subtrees.
+- **Decision**: Keep a client-side set of collapsed node ids. Rows with children get a toggle that stops propagation, flips the set, and re-renders; descendants of collapsed nodes are hidden unless a hierarchy filter is active, and a selection change expands the selected node's ancestors. No API or schema change.
+- **Consequences**: 779 tests green; static coverage verifies collapse state, ancestor checks, toggle markup and selection reveal. Collapse state is not persisted across reloads, filtered views deliberately ignore folding, and drag/drop still targets visible rows.

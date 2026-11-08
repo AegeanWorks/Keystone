@@ -163,6 +163,8 @@ let animationPlayActive = false;
 let animationPlayTimer = null;
 let animationPlayBusy = false;
 let animationPlayLast = 0;
+let collapsedNodes = new Set();
+let lastHierarchySelection = "";
 let gizmoSpace = "world";
 let boxSelect = false;
 
@@ -370,6 +372,17 @@ function renderParentOptions(editor, byId) {
     .some((option) => option.value === previous) ? previous : "root";
 }
 
+function ancestorCollapsed(node, byId) {
+  let current = byId.get(node.parent_id);
+  while (current) {
+    if (collapsedNodes.has(current.id)) {
+      return true;
+    }
+    current = byId.get(current.parent_id);
+  }
+  return false;
+}
+
 function renderHierarchy(editor) {
   const byId = new Map(editor.nodes.map((node) => [node.id, node]));
   const query = elements.hierarchyFilter.value.trim().toLowerCase();
@@ -377,9 +390,23 @@ function renderHierarchy(editor) {
     editor.selected_ids ||
       (editor.selection ? [editor.selection.id] : []),
   );
+  const selectionKey = [...selected].sort().join("\u0000");
+  if (selectionKey !== lastHierarchySelection) {
+    for (const nodeId of selected) {
+      let current = byId.get(nodeId);
+      while (current && current.parent_id) {
+        collapsedNodes.delete(current.parent_id);
+        current = byId.get(current.parent_id);
+      }
+    }
+    lastHierarchySelection = selectionKey;
+  }
   elements.hierarchy.replaceChildren();
   let visible = 0;
   for (const node of editor.nodes) {
+    if (!query && ancestorCollapsed(node, byId)) {
+      continue;
+    }
     if (query) {
       const haystack = [
         node.id,
@@ -403,11 +430,36 @@ function renderHierarchy(editor) {
     row.dataset.nodeId = node.id;
     row.draggable = true;
     row.setAttribute("role", "treeitem");
+    const hasChildren = (node.children || []).length > 0;
+    const toggle = document.createElement("span");
+    toggle.className =
+      "hierarchy-toggle" + (hasChildren ? "" : " hierarchy-toggle-empty");
+    if (hasChildren) {
+      const collapsed = collapsedNodes.has(node.id);
+      toggle.textContent = collapsed ? "\u25b8" : "\u25be";
+      toggle.setAttribute("role", "button");
+      toggle.setAttribute("aria-label", collapsed ? "Expand" : "Collapse");
+      toggle.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (collapsedNodes.has(node.id)) {
+          collapsedNodes.delete(node.id);
+        } else {
+          collapsedNodes.add(node.id);
+        }
+        renderHierarchy(editorState);
+      });
+    } else {
+      toggle.textContent = " ";
+    }
+    row.append(toggle);
+    const label = document.createElement("span");
+    label.className = "hierarchy-label";
     const badge = node.prefab_link
       ? ` [prefab:${node.prefab_link.name}/${node.prefab_link.instance}]`
       : "";
-    row.textContent =
+    label.textContent =
       `${"  ".repeat(nodeDepth(node, byId))}${node.name || "(root)"} · ${node.id}${badge}`;
+    row.append(label);
     row.addEventListener("click", (event) => {
       if (event.ctrlKey || event.metaKey) {
         run(() => selectMany([node.id], "toggle"));

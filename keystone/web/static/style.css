@@ -259,6 +259,27 @@ button:disabled {
   color: var(--accent);
 }
 
+.hierarchy-toggle {
+  display: inline-block;
+  width: 12px;
+  margin-right: 2px;
+  color: var(--muted);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.hierarchy-toggle:hover {
+  color: var(--accent);
+}
+
+.hierarchy-toggle-empty {
+  cursor: default;
+}
+
+.hierarchy-label {
+  white-space: nowrap;
+}
+
 .hierarchy-row.dragging {
   opacity: 0.5;
 }

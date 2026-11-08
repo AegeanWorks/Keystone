@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-animation-playback-v1",
+    "task_id": "keystone-hierarchy-collapse-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794116736.0684137,
+    "updated_at": 1794117079.6063664,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794116736.3939333
+    "completed_at": 1794117079.8145046
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-layout-persistence-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan localStorage persistence for editor camera, view mode, projection, grid and snap",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794112158.95438,
-      "timestamp_str": "2026-11-08 07:29:18",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "The editor forgets its camera, view mode, projection and overlay settings on every reload, unlike Unity/Unreal workspaces.",
-        "benefits": "The browser console restores the editor camera and viewport toggles per game, with debounced saves and a safe fallback when storage is unavailable.",
-        "risks": "contract: UI-only, no API/schema change; dependency: browser localStorage; concurrency: debounced writes during camera drags; state: malformed stored JSON, game-name keys, game-view camera state, toggles restoring before the scene loads.",
-        "mitigation": "Snapshot only editor camera state, scope the key by game, validate/clamp restored values, save debounced on layout changes, restore after the first scene load, and catch storage errors."
-      },
-      "plan_digest": "109b15986425f1434e701dbad296df225f47b155ed71a71990e07e398ab37f08"
-    },
-    {
-      "task_id": "keystone-layout-persistence-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Workspace layout persistence implemented: per-game localStorage snapshot of editor camera, Scene/Game mode, projection, grid and snap, debounced saves on camera/view changes, restore after first scene load, Reset layout control, safe malformed/storage fallbacks; 775 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 38, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794113060.2876577,
-      "timestamp_str": "2026-11-08 07:44:20",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-layout-persistence-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-layout-persistence-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794113060.6877222,
-      "timestamp_str": "2026-11-08 07:44:20",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-material-editor-v1",
       "phase": "in_progress",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794116736.3939352,
       "timestamp_str": "2026-11-08 08:45:36",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-hierarchy-collapse-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan collapse/expand rows for the draggable hierarchy tree",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794116763.8729453,
+      "timestamp_str": "2026-11-08 08:46:03",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "The hierarchy tree now renders every node, so large scenes become a long unwieldy list with no way to fold subtrees.",
+        "benefits": "Nodes with children get a collapse toggle, descendants hide while folded, filtered searches reveal matches, and selecting a hidden node expands its ancestors.",
+        "risks": "contract: UI-only, no API/schema change; dependency: none; concurrency: editor lock; state: stale collapse ids, drag/drop on collapsed rows, filter behavior, selection reveal, rebuilding rows.",
+        "mitigation": "Keep collapse state in a Set, hide only descendants of collapsed nodes, bypass collapse while filtering, reveal selected ancestors, and add static tree/collapse regressions."
+      },
+      "plan_digest": "6ae01350de0da095698209616bc9385ffa028dd5ef705b41fcf0c011336a8dd7"
+    },
+    {
+      "task_id": "keystone-hierarchy-collapse-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Collapsible hierarchy implemented: per-node collapse toggles, descendant hiding via ancestorCollapsed, filtered searches bypass folding, selection changes reveal ancestors, drag/drop/selection preserved; 779 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 41, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794117079.6063664,
+      "timestamp_str": "2026-11-08 08:51:19",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-hierarchy-collapse-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-hierarchy-collapse-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794117079.8145063,
+      "timestamp_str": "2026-11-08 08:51:19",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]
