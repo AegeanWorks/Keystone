@@ -2411,6 +2411,7 @@ class WebServerTest(unittest.TestCase):
             "component-remove",
             "view-reset",
             "view-focus",
+            "view-mode",
             "gizmo-move",
             "gizmo-rotate",
             "gizmo-scale",
@@ -2452,6 +2453,9 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("save_prefab_edit", script)
         self.assertIn("close_prefab_edit", script)
         self.assertIn("updatePrefabEditButtons", script)
+        self.assertIn("setViewMode", script)
+        self.assertIn("toggleViewMode", script)
+        self.assertIn("updateViewModeButton", script)
         self.assertIn("applyGizmoSelectionTransform", script)
         self.assertIn("applyGizmoSelectionRotation", script)
         self.assertIn("applyGizmoSelectionScale", script)
@@ -2502,6 +2506,9 @@ class WebServerTest(unittest.TestCase):
         self.assertEqual(status, 200)
         viewer_script = body.decode("utf-8")
         self.assertIn("resetCamera", viewer_script)
+        self.assertIn("cameraStateFromScene", viewer_script)
+        self.assertIn("setViewMode", viewer_script)
+        self.assertIn("viewMode", viewer_script)
         self.assertIn("focusNode", viewer_script)
         self.assertIn("setSelected", viewer_script)
         self.assertIn("setSelectedIds", viewer_script)

@@ -499,10 +499,17 @@ export class SceneViewer {
     this.gizmoSpace = "world";
     this.hoverAxis = null;
     this.editable = true;
+    this.viewMode = "scene";
+    this.editorCameraState = null;
+    this.onViewMode = null;
     this.pointerStart = [0, 0];
     this.pointerMoved = false;
     this.lastPointer = [0, 0];
     this.canvas.addEventListener("pointerdown", (event) => {
+      if (this.viewMode === "game") {
+        event.preventDefault();
+        return;
+      }
       if (event.button !== 0) {
         return;
       }
@@ -526,6 +533,9 @@ export class SceneViewer {
       event.preventDefault();
     });
     this.canvas.addEventListener("pointermove", (event) => {
+      if (this.viewMode === "game") {
+        return;
+      }
       if (this.boxDrag) {
         this.updateBoxDrag(event);
         event.preventDefault();
@@ -572,6 +582,9 @@ export class SceneViewer {
       this.render();
     });
     this.canvas.addEventListener("pointerup", (event) => {
+      if (this.viewMode === "game") {
+        return;
+      }
       if (this.boxDrag) {
         this.finishBoxDrag(event);
         if (this.canvas.hasPointerCapture(event.pointerId)) {
@@ -601,6 +614,9 @@ export class SceneViewer {
       this.dragging = false;
     });
     this.canvas.addEventListener("pointerleave", () => {
+      if (this.viewMode === "game") {
+        return;
+      }
       if (!this.dragging && !this.gizmoDrag && !this.boxDrag) {
         this.updateGizmoHover(-Infinity, -Infinity);
       }
@@ -608,7 +624,7 @@ export class SceneViewer {
     this.canvas.addEventListener(
       "wheel",
       (event) => {
-        if (!this.cameraState) {
+        if (!this.cameraState || this.viewMode === "game") {
           return;
         }
         event.preventDefault();
@@ -654,10 +670,72 @@ export class SceneViewer {
     };
   }
 
+  cameraStateFromScene(scene) {
+    if (!scene || !scene.camera) {
+      return null;
+    }
+    const camera = scene.camera;
+    const distance = 10.0;
+    const cosPitch = Math.cos(camera.pitch);
+    const forward = [
+      -cosPitch * Math.sin(camera.yaw),
+      -Math.sin(camera.pitch),
+      -cosPitch * Math.cos(camera.yaw),
+    ];
+    return {
+      target: [
+        camera.position[0] + forward[0] * distance,
+        camera.position[1] + forward[1] * distance,
+        camera.position[2] + forward[2] * distance,
+      ],
+      distance,
+      yaw: camera.yaw,
+      pitch: camera.pitch,
+    };
+  }
+
+  setViewMode(mode) {
+    const next = mode === "game" ? "game" : "scene";
+    if (next === this.viewMode) {
+      return this.viewMode;
+    }
+    if (next === "game") {
+      this.editorCameraState = this.cameraState
+        ? {
+            target: [...this.cameraState.target],
+            distance: this.cameraState.distance,
+            yaw: this.cameraState.yaw,
+            pitch: this.cameraState.pitch,
+          }
+        : null;
+      this.cameraState = this.cameraStateFromScene(this.scene);
+    } else {
+      this.cameraState =
+        this.editorCameraState || this.cameraStateFromScene(this.scene);
+      this.editorCameraState = null;
+    }
+    this.viewMode = next;
+    this.cancelGizmoDrag();
+    this.cancelBoxDrag();
+    this.dragging = false;
+    this.hoverAxis = null;
+    this.canvas.style.cursor =
+      this.viewMode === "scene" && this.boxSelect ? "crosshair" : "";
+    if (typeof this.onViewMode === "function") {
+      this.onViewMode(this.viewMode);
+    }
+    this.render();
+    return this.viewMode;
+  }
+
   resetCamera() {
-    this.cameraState = null;
-    if (this.scene) {
-      this.ensureCamera(this.scene);
+    if (this.viewMode === "game") {
+      this.cameraState = this.cameraStateFromScene(this.scene);
+    } else {
+      this.cameraState = null;
+      if (this.scene) {
+        this.ensureCamera(this.scene);
+      }
     }
     this.render();
   }
@@ -762,7 +840,7 @@ export class SceneViewer {
   }
 
   focusSelection() {
-    if (!this.scene) {
+    if (!this.scene || this.viewMode === "game") {
       return;
     }
     const origin = this.selectionOrigin();
@@ -940,7 +1018,7 @@ export class SceneViewer {
   }
 
   focusNode(nodeId) {
-    if (!this.scene) {
+    if (!this.scene || this.viewMode === "game") {
       return;
     }
     const node = (this.scene.nodes || []).find((item) => item.id === nodeId);
@@ -1140,7 +1218,12 @@ export class SceneViewer {
   }
 
   gizmoAt(clientX, clientY) {
-    if (!this.editable || !this.scene || !this.selectedIds.size) {
+    if (
+      !this.editable ||
+      this.viewMode !== "scene" ||
+      !this.scene ||
+      !this.selectedIds.size
+    ) {
       return null;
     }
     const matrix = this.viewProjectionMatrix();
@@ -1622,7 +1705,11 @@ export class SceneViewer {
   loadScene(scene) {
     this.clearScene();
     this.scene = scene;
-    this.ensureCamera(scene);
+    if (this.viewMode === "game") {
+      this.cameraState = this.cameraStateFromScene(scene);
+    } else {
+      this.ensureCamera(scene);
+    }
     this.updateNodeBounds();
     for (const [id, mesh] of Object.entries(scene.meshes || {})) {
       this.meshes.set(id, this.uploadMesh(mesh));
@@ -1771,7 +1858,10 @@ export class SceneViewer {
       gl.uniform1f(this.uniforms.roughness, material.roughness ?? 0.7);
       gl.uniform3fv(this.uniforms.emissive, material.emissive || [0, 0, 0]);
       gl.uniform1f(this.uniforms.checker_scale, material.checker_scale || 0);
-      gl.uniform1f(this.uniforms.selected, this.selectedIds.has(node.id) ? 1 : 0);
+      gl.uniform1f(
+        this.uniforms.selected,
+        this.viewMode === "scene" && this.selectedIds.has(node.id) ? 1 : 0,
+      );
       const texture = material.texture ? this.textures.get(material.texture) : null;
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, texture || this.white);
@@ -1786,7 +1876,7 @@ export class SceneViewer {
   }
 
   renderGizmo(viewProjection) {
-    if (!this.editable) {
+    if (!this.editable || this.viewMode !== "scene") {
       return;
     }
     const nodes = this.selectedNodes();

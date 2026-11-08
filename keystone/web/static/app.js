@@ -90,6 +90,7 @@ const elements = {
   viewerStatus: document.getElementById("viewer-status"),
   viewReset: document.getElementById("view-reset"),
   viewFocus: document.getElementById("view-focus"),
+  viewMode: document.getElementById("view-mode"),
   gizmoMove: document.getElementById("gizmo-move"),
   gizmoRotate: document.getElementById("gizmo-rotate"),
   gizmoScale: document.getElementById("gizmo-scale"),
@@ -104,6 +105,7 @@ let playLoopActive = false;
 let playLoopTimer = null;
 let playLoopBusy = false;
 let playLoopLast = 0;
+let wasPlaying = false;
 let gizmoSpace = "world";
 let boxSelect = false;
 
@@ -125,6 +127,8 @@ try {
     run(() => applyGizmoScale(axis, factor));
   viewer.onScaleSelection = (axis, factor, pivot) =>
     run(() => applyGizmoSelectionScale(axis, factor, pivot));
+  viewer.onViewMode = updateViewModeButton;
+  updateViewModeButton(viewer.viewMode);
 } catch (error) {
   elements.viewerStatus.textContent = `Viewer unavailable: ${error.message}`;
 }
@@ -640,8 +644,14 @@ function showEditor(editor) {
   const play = editor.play || { active: false, paused: false, frames: 0 };
   const lifecycle = play.lifecycle || { started: 0 };
   if (viewer) {
+    if (play.active && !wasPlaying) {
+      viewer.setViewMode("game");
+    } else if (!play.active && wasPlaying) {
+      viewer.setViewMode("scene");
+    }
     viewer.setEditable(!play.active);
   }
+  wasPlaying = Boolean(play.active);
   elements.playState.textContent = play.active
     ? `${play.paused ? "Paused" : "Playing"} · ${play.frames} frames · ${lifecycle.started ?? 0} behaviors`
     : "Stopped";
@@ -914,6 +924,19 @@ function setGizmoMode(mode) {
     viewer.setGizmoMode(mode);
   }
   setStatus(`gizmo: ${mode}`);
+}
+
+function updateViewModeButton(mode) {
+  elements.viewMode.textContent = mode === "game" ? "View: Game" : "View: Scene";
+}
+
+function toggleViewMode() {
+  if (!viewer) {
+    return;
+  }
+  const next = viewer.viewMode === "game" ? "scene" : "game";
+  viewer.setViewMode(next);
+  setStatus(next === "game" ? "game view" : "scene view");
 }
 
 function toggleGizmoSpace() {
@@ -1599,6 +1622,7 @@ elements.viewReset.addEventListener("click", () => {
     viewer.resetCamera();
   }
 });
+elements.viewMode.addEventListener("click", () => run(toggleViewMode));
 elements.viewFocus.addEventListener("click", () => {
   if (viewer && editorState && (editorState.selection_count || 0) > 0) {
     if ((editorState.selection_count || 0) > 1) {

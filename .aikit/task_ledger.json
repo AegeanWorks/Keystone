@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-prefab-edit-mode-v1",
+    "task_id": "keystone-view-modes-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794105440.0751677,
+    "updated_at": 1794105873.5788555,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794105440.4964173
+    "completed_at": 1794105874.19911
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-multi-inspector-v1",
-      "phase": "verification",
-      "phase_num": 4,
-      "description": "[2/3] Multi-node inspector implemented: shared/mixed selection_summary, set_selection_properties, set_selection_transform, one-undo batch edits, console routing and property/transform/undo regressions; 758 tests green, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 28, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794101684.3550658,
-      "timestamp_str": "2026-11-08 04:34:44",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-multi-inspector-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-multi-inspector-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794101684.7460864,
-      "timestamp_str": "2026-11-08 04:34:44",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-axis-group-scale-v1",
-      "phase": "planning",
-      "phase_num": 2,
-      "description": "[1/3] Plan axis-local group scaling around the selection centroid",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794101737.4680018,
-      "timestamp_str": "2026-11-08 04:35:37",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Multi-selection scale is uniform; X/Y/Z handles must scale only their own world axis around the centroid.",
-        "benefits": "Group scale accepts X/Y/Z factors, previews the selected axis in the viewport, commits one transform_selection action and remains undoable.",
-        "risks": "contract: editor schema 29 and group_scale shape extension; dependency: none; concurrency: editor lock; state: scalar compatibility, positive factor validation, rotated-node approximation and parent inverse conversion.",
-        "mitigation": "Accept scalar or three-factor group_scale, apply world-axis offsets with local scale factors, update the gizmo preview/callback, and add axis scaling and undo tests."
-      },
-      "plan_digest": "5613c60004d88befaa81cc9f0af2684649093471fabc12ac618234a25f506234"
-    },
     {
       "task_id": "keystone-axis-group-scale-v1",
       "phase": "verification",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794105440.4964194,
       "timestamp_str": "2026-11-08 05:37:20",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-view-modes-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan Scene/Game viewport modes with game-camera follow and Play auto-switch",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794105517.6027665,
+      "timestamp_str": "2026-11-08 05:38:37",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "The viewport always uses the free editor camera, so there is no Game view that follows the scene camera and Play mode never cuts to the game camera.",
+        "benefits": "A Scene/Game toggle keeps editor navigation in Scene view, follows the live scene camera in Game view, suppresses selection/gizmos there, and auto-switches on Play/Stop.",
+        "risks": "contract: UI-only, no API/schema change; dependency: none; concurrency: pointer arbitration with orbit, gizmos and box select; state: camera-state restoration, live scene refresh, auto-switch transitions, selection and gizmo suppression.",
+        "mitigation": "Store and restore the editor camera, derive the game camera from scene yaw/pitch/position, guard pointer/wheel/gizmo/box paths by mode, switch only on play transitions, and add static viewer/console regressions."
+      },
+      "plan_digest": "589fda93fe39e7a3d453d794d2f17ebe95e7de6c5259c5a23323d7d77ffe7dd2"
+    },
+    {
+      "task_id": "keystone-view-modes-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Scene/Game view modes implemented: View toggle, game camera derived from live scene yaw/pitch/position, editor camera preserved across switches, pointer/selection/gizmo/box suppression in Game view, Play auto-switch and Stop restore, Reset in Game view; 763 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 33, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794105873.5788555,
+      "timestamp_str": "2026-11-08 05:44:33",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-view-modes-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-view-modes-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794105874.1991124,
+      "timestamp_str": "2026-11-08 05:44:34",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]
