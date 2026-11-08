@@ -54,6 +54,8 @@ const elements = {
   sceneNewName: document.getElementById("scene-new-name"),
   sceneSave: document.getElementById("scene-save"),
   sceneLoad: document.getElementById("scene-load"),
+  sceneRevert: document.getElementById("scene-revert"),
+  sceneDirtyState: document.getElementById("scene-dirty-state"),
   sceneDiff: document.getElementById("scene-diff"),
   sceneRename: document.getElementById("scene-rename"),
   sceneDuplicate: document.getElementById("scene-duplicate"),
@@ -971,6 +973,12 @@ function showEditor(editor) {
     : "No startup scene.";
   elements.startupSet.disabled = !projectDir;
   elements.startupClear.disabled = !projectDir || !editor.startup_scene;
+  elements.sceneDirtyState.textContent = editor.scene_dirty
+    ? `Unsaved changes${editor.saved_scene ? ` · saved: ${editor.saved_scene}` : ""}`
+    : editor.saved_scene
+      ? `Saved: ${editor.saved_scene}`
+      : "New scene";
+  elements.sceneRevert.disabled = !editor.saved_scene || !editor.scene_dirty;
   if (!busy) {
     elements.editorUndo.disabled = history.undo === 0;
     elements.editorRedo.disabled = history.redo === 0;
@@ -2250,6 +2258,15 @@ async function clearStartupScene() {
   });
 }
 
+async function revertScene() {
+  const editor = await editorAction(
+    { action: "revert_scene" },
+    "reverting scene",
+  );
+  await refreshScene(false);
+  show({ ok: true, action: "revert_scene", revert: editor.revert });
+}
+
 async function diffScene() {
   const name = elements.sceneName.value.trim();
   if (!name) {
@@ -2712,6 +2729,7 @@ elements.editorUndo.addEventListener("click", () => run(undoEditor));
 elements.editorRedo.addEventListener("click", () => run(redoEditor));
 elements.sceneSave.addEventListener("click", () => run(saveScene));
 elements.sceneLoad.addEventListener("click", () => run(loadScene));
+elements.sceneRevert.addEventListener("click", () => run(revertScene));
 elements.startupSet.addEventListener("click", () => run(setStartupScene));
 elements.startupClear.addEventListener("click", () => run(clearStartupScene));
 elements.sceneDiff.addEventListener("click", () => run(diffScene));

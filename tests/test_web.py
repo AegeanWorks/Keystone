@@ -2697,6 +2697,112 @@ class WebServerTest(unittest.TestCase):
                 )
             self.assertIn("--prefab-dir", caught.exception.fix)
 
+    def test_editor_scene_dirty_and_revert(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name="dirty-demo")
+            session = GameSession(
+                CubeDemo(),
+                project_dir=root,
+                scene_dir=root / "scenes",
+                prefab_dir=root / "prefabs",
+            )
+            editor = session.editor()
+            self.assertIsNone(editor["saved_scene"])
+            self.assertFalse(editor["scene_dirty"])
+            saved_main = session.editor_action(
+                {"action": "save_scene", "name": "main"}
+            )
+            self.assertEqual(saved_main["saved_scene"], "main")
+            self.assertFalse(saved_main["scene_dirty"])
+            editor = saved_main
+            cube = next(
+                node for node in editor["nodes"] if node["name"] == "cube-0"
+            )
+            original = cube["transform"]["position"]
+
+            played = session.editor_action({"action": "play_start"})
+            self.assertFalse(played["scene_dirty"])
+            stopped = session.editor_action({"action": "play_stop"})
+            self.assertFalse(stopped["scene_dirty"])
+
+            selected = session.editor_action(
+                {"action": "select", "id": cube["id"]}
+            )
+            self.assertFalse(selected["scene_dirty"])
+            moved = session.editor_action(
+                {
+                    "action": "transform",
+                    "id": cube["id"],
+                    "position": [4.0, 5.0, 6.0],
+                }
+            )
+            self.assertTrue(moved["scene_dirty"])
+            self.assertEqual(moved["saved_scene"], "main")
+            self.assertGreater(moved["history"]["undo"], 0)
+
+            reverted = session.editor_action({"action": "revert_scene"})
+            self.assertFalse(reverted["scene_dirty"])
+            self.assertEqual(reverted["saved_scene"], "main")
+            self.assertEqual(reverted["history"]["undo"], 0)
+            self.assertEqual(reverted["revert"]["name"], "main")
+            self.assertTrue(reverted["revert"]["cleared_history"])
+            restored = next(
+                node for node in reverted["nodes"] if node["id"] == cube["id"]
+            )
+            self.assertEqual(restored["transform"]["position"], original)
+
+            saved = session.editor_action(
+                {"action": "save_scene", "name": "level"}
+            )
+            self.assertEqual(saved["saved_scene"], "level")
+            self.assertFalse(saved["scene_dirty"])
+            session.editor_action(
+                {
+                    "action": "transform",
+                    "id": cube["id"],
+                    "position": [1.0, 0.0, 0.0],
+                }
+            )
+            renamed = session.editor_action(
+                {"action": "rename_scene", "name": "level", "new_name": "level-alt"}
+            )
+            self.assertEqual(renamed["saved_scene"], "level-alt")
+            reverted = session.editor_action({"action": "revert_scene"})
+            self.assertEqual(reverted["revert"]["name"], "level-alt")
+
+            session.editor_action(
+                {"action": "set_startup_scene", "name": None}
+            )
+            deleted = session.editor_action(
+                {"action": "delete_scene", "name": "level-alt"}
+            )
+            self.assertIsNone(deleted["saved_scene"])
+            self.assertTrue(deleted["scene_dirty"])
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action({"action": "revert_scene"})
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("no saved scene", caught.exception.why)
+
+            no_saved = GameSession(CubeDemo())
+            with self.assertRaises(WebProblem) as caught:
+                no_saved.editor_action({"action": "revert_scene"})
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("no saved scene", caught.exception.why)
+
+            session.editor_action(
+                {"action": "save_scene", "name": "restored"}
+            )
+            session.editor_action(
+                {"action": "select", "id": cube["id"]}
+            )
+            session.editor_action({"action": "save_prefab", "name": "hero"})
+            session.editor_action({"action": "edit_prefab", "name": "hero"})
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action({"action": "revert_scene"})
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("prefab", caught.exception.why)
+
     def test_editor_startup_scene_persists_and_clears(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "project"
@@ -3342,6 +3448,8 @@ class WebServerTest(unittest.TestCase):
             "scene-new-name",
             "scene-save",
             "scene-load",
+            "scene-revert",
+            "scene-dirty-state",
             "scene-diff",
             "scene-rename",
             "scene-duplicate",
@@ -3456,6 +3564,11 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("set_startup_scene", script)
         self.assertIn("startup_scene", script)
         self.assertIn("startup-state", script)
+        self.assertIn("revertScene", script)
+        self.assertIn("revert_scene", script)
+        self.assertIn("scene_dirty", script)
+        self.assertIn("saved_scene", script)
+        self.assertIn("scene-dirty-state", script)
         self.assertIn("importAsset", script)
         self.assertIn("import_asset", script)
         self.assertIn("imported_asset", script)

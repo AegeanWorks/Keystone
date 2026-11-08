@@ -185,6 +185,7 @@ EDITOR_EXAMPLES = {
     "restore_prefab": {"action": "restore_prefab", "trash": "cube.deadbeef.kprefab"},
     "save_scene": {"action": "save_scene", "name": "level"},
     "load_scene": {"action": "load_scene", "name": "level"},
+    "revert_scene": {"action": "revert_scene"},
     "add_scene": {"action": "add_scene", "name": "level"},
     "unload_scene": {"action": "unload_scene", "id": "scene-1"},
     "save_scene_group": {
@@ -310,6 +311,8 @@ EDITOR_SCHEMA = {
         ],
         "validation_issue": ["severity", "node_id", "field", "message"],
         "set_startup_scene": ["name"],
+        "scene_state": ["saved_scene", "scene_dirty", "revert"],
+        "revert": ["name", "node_count", "cleared_history"],
         "import_asset": ["path"],
         "imported_asset": ["path", "asset", "kind", "duplicate", "count"],
         "import_gltf": ["path", "name"],
@@ -388,6 +391,7 @@ EDITOR_SCHEMA = {
         "schema 44 adds reload_assets, which refreshes file-backed assets, rebinds scene and history payloads and reports reloaded/failed/missing/rebound counts",
         "schema 45 adds import_gltf, which imports project .gltf/.glb scenes as prefabs, registers gltf.<name>.* assets and records the source in keystone.json",
         "schema 46 adds set_startup_scene and a startup_scene document field for project-relative default scene selection",
+        "schema 47 adds saved_scene/scene_dirty tracking and revert_scene, which reloads the saved scene and clears history and selection",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

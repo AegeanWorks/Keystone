@@ -87,6 +87,7 @@ PREFAB_EDIT_BLOCKED = frozenset(
         "play_stop",
         "save_prefab",
         "import_gltf",
+        "revert_scene",
         "refresh_prefab_instances",
         "apply_prefab",
         "revert_prefab",
@@ -100,6 +101,45 @@ PREFAB_EDIT_BLOCKED = frozenset(
         "unload_scene",
         "save_scene_group",
         "diff_scene",
+        "rename_scene",
+        "duplicate_scene",
+        "delete_scene",
+        "restore_scene",
+    }
+)
+
+SCENE_CLEAN_ACTIONS = frozenset({"save_scene", "load_scene", "revert_scene"})
+
+SCENE_NEUTRAL_ACTIONS = frozenset(
+    {
+        "select",
+        "select_many",
+        "play_start",
+        "play_step",
+        "play_pause",
+        "play_resume",
+        "play_stop",
+        "save_animation",
+        "delete_animation",
+        "restore_animation",
+        "save_material",
+        "delete_material",
+        "restore_material",
+        "save_prefab",
+        "edit_prefab",
+        "save_prefab_edit",
+        "close_prefab_edit",
+        "duplicate_prefab",
+        "delete_prefab",
+        "restore_prefab",
+        "apply_prefab",
+        "apply_prefab_override",
+        "diff_scene",
+        "validate_scene",
+        "set_startup_scene",
+        "import_asset",
+        "import_gltf",
+        "reload_assets",
         "rename_scene",
         "duplicate_scene",
         "delete_scene",
@@ -205,6 +245,9 @@ class GameSession:
         self.last_import: dict[str, object] | None = None
         self.last_gltf_import: dict[str, object] | None = None
         self.last_asset_reload: dict[str, object] | None = None
+        self.last_revert: dict[str, object] | None = None
+        self.scene_dirty = False
+        self.saved_scene = initial_scene
         self._prefab_edit_original_history: EditorHistory | None = None
         self._prefab_edit_original_selection: list[str] = []
         self._scene_override: Scene | None = None
@@ -612,6 +655,9 @@ class GameSession:
         document["imported_gltf"] = self.last_gltf_import
         document["asset_reload"] = self.last_asset_reload
         document["startup_scene"] = self.startup_scene
+        document["saved_scene"] = self.saved_scene
+        document["scene_dirty"] = self.scene_dirty
+        document["revert"] = self.last_revert
         document["animations"] = (
             [entry.describe() for entry in self.animation_library.entries()]
             if self.animation_library is not None
@@ -680,6 +726,7 @@ class GameSession:
         self.last_import = None
         self.last_gltf_import = None
         self.last_asset_reload = None
+        self.last_revert = None
         with self.lock:
             scene = self._scene_locked()
             try:
@@ -1114,13 +1161,48 @@ class GameSession:
                         raise ValueError("no scene library is configured")
                     name = payload.get("name") or "scene"
                     self.scene_library.save(name, scene)
+                    self.saved_scene = name
+                    self.scene_dirty = False
                 elif action == "load_scene":
                     if self.scene_library is None:
                         raise ValueError("no scene library is configured")
-                    self.scene_library.load_into(payload.get("name"), scene)
+                    name = payload.get("name")
+                    self.scene_library.load_into(name, scene)
                     self.history.clear()
                     self.selected_id = None
                     self.last_diff = None
+                    self.saved_scene = name
+                    self.scene_dirty = False
+                elif action == "revert_scene":
+                    name = self.saved_scene or self.startup_scene
+                    if name is None:
+                        raise ValueError(
+                            "no saved scene to revert to; save the scene first"
+                        )
+                    if self.scene_library is None:
+                        raise WebProblem(
+                            400,
+                            "revert needs a scene library",
+                            "start with --project or pass --scene-dir <dir>",
+                        )
+                    try:
+                        self.scene_library.load_into(name, scene)
+                    except (KeyError, ValueError) as exc:
+                        raise WebProblem(
+                            400,
+                            f"could not revert to scene {name!r}: {exc}",
+                            "save the scene again or choose an existing startup scene",
+                        ) from exc
+                    self.history.clear()
+                    self.selected_id = None
+                    self.last_diff = None
+                    self.saved_scene = name
+                    self.scene_dirty = False
+                    self.last_revert = {
+                        "name": name,
+                        "node_count": len(list(scene.traverse())),
+                        "cleared_history": True,
+                    }
                 elif action == "add_scene":
                     if self.scene_library is None:
                         raise ValueError("no scene library is configured")
@@ -1171,9 +1253,12 @@ class GameSession:
                 elif action == "rename_scene":
                     if self.scene_library is None:
                         raise ValueError("no scene library is configured")
-                    self.scene_library.rename(
-                        payload.get("name"), payload.get("new_name")
+                    old = payload.get("name")
+                    entry = self.scene_library.rename(
+                        old, payload.get("new_name")
                     )
+                    if self.saved_scene == old:
+                        self.saved_scene = entry.name
                 elif action == "duplicate_scene":
                     if self.scene_library is None:
                         raise ValueError("no scene library is configured")
@@ -1183,7 +1268,11 @@ class GameSession:
                 elif action == "delete_scene":
                     if self.scene_library is None:
                         raise ValueError("no scene library is configured")
-                    self.scene_library.delete(payload.get("name"))
+                    name = payload.get("name")
+                    self.scene_library.delete(name)
+                    if self.saved_scene == name:
+                        self.saved_scene = None
+                        self.scene_dirty = True
                 elif action == "restore_scene":
                     if self.scene_library is None:
                         raise ValueError("no scene library is configured")
@@ -1565,6 +1654,11 @@ class GameSession:
                     str(exc),
                     "send a valid editor action with finite transform values",
                 ) from exc
+            if (
+                action not in SCENE_CLEAN_ACTIONS
+                and action not in SCENE_NEUTRAL_ACTIONS
+            ):
+                self.scene_dirty = True
             return self._editor_locked(scene)
 
     def inspector(self) -> dict:

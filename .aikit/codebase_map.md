@@ -9,8 +9,8 @@
 - **Total Python Modules**: `141`
 - **Total Classes**: `224`
 - **Total Top-Level Functions**: `385`
-- **Total Class Methods**: `1391`
-- **Total Source Lines**: `35108`
+- **Total Class Methods**: `1392`
+- **Total Source Lines**: `35320`
 
 ---
 
@@ -1425,7 +1425,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `72` lines (`1543` bytes)
+**Size**: `73` lines (`1563` bytes)
 
 ---
 
@@ -1727,14 +1727,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `414` lines (`18669` bytes)
+**Size**: `418` lines (`18983` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1983` lines (`88268` bytes)
+**Size**: `2077` lines (`91681` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3263,7 +3263,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `3779` lines (`158199` bytes)
+**Size**: `3892` lines (`163159` bytes)
 
 **Classes:**
 - `class Health`
@@ -3335,6 +3335,7 @@
   - Method `.test_editor_validate_scene_reports_issues()`
   - Method `.test_editor_import_asset_updates_manifest_and_registry()`
   - Method `.test_editor_import_gltf_generates_prefab()`
+  - Method `.test_editor_scene_dirty_and_revert()`
   - Method `.test_editor_startup_scene_persists_and_clears()`
   - Method `.test_editor_reload_assets_rebinds_scene_and_history()`
   - Method `.test_editor_preview_animation_and_undo()`
