@@ -213,6 +213,7 @@ function editorSummary(editor) {
       : null,
     prefabs: editor.prefabs,
     scenes: editor.scenes,
+    prefab_override_count: editor.prefab_override_count,
     assets: (editor.assets || []).length,
     component_types: editor.component_types,
     play: editor.play,
@@ -573,6 +574,7 @@ function showEditor(editor) {
   elements.editorState.textContent =
     `${editor.nodes.length} nodes · ${editor.prefabs.length} prefabs · ` +
     `${editor.prefab_instance_count ?? (editor.prefab_instances || []).length} instances · ` +
+    `${editor.prefab_override_count ?? 0} overrides · ` +
     `undo ${history.undo} / redo ${history.redo} · ` +
     `selected ${editor.selection ? editor.selection.id : "none"}`;
   if (!busy) {

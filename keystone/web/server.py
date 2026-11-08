@@ -28,6 +28,7 @@ from keystone.web.editor import (
     EDITOR_ACTIONS,
     EditorHistory,
     apply_prefab_instance,
+    apply_prefab_override,
     asset_entries,
     assign_assets,
     component_schemas,
@@ -41,6 +42,7 @@ from keystone.web.editor import (
     rename_prefab_links,
     reparent_node,
     revert_prefab_instance,
+    revert_prefab_override,
     save_prefab,
     set_component,
     set_node_properties,
@@ -273,6 +275,13 @@ class GameSession:
             self.scene_library.describe() if self.scene_library is not None else None
         )
         registry = self._registry_locked()
+        for node in scene.traverse():
+            link = node.prefab_link
+            if link is not None and link.name not in self.prefabs:
+                try:
+                    self._ensure_prefab_locked(link.name)
+                except (KeyError, ValueError):  # hygiene: allow missing prefabs stay in prefab_overrides errors
+                    pass
         document = editor_document(
             scene,
             self.selected_id,
@@ -598,6 +607,37 @@ class GameSession:
                             else:
                                 self.prefabs[link.name] = previous
                             raise
+                    self.selected_id = node.id
+                elif action == "revert_prefab_override":
+                    node_id = payload.get("id") or self.selected_id
+                    if node_id is None:
+                        raise ValueError("select a node before reverting an override")
+                    node = self._apply_history(
+                        scene,
+                        lambda: revert_prefab_override(
+                            scene,
+                            node_id,
+                            payload.get("field"),
+                            self.prefabs,
+                            self._registry_locked(),
+                        ),
+                    )
+                    self.selected_id = node.id
+                elif action == "apply_prefab_override":
+                    node_id = payload.get("id") or self.selected_id
+                    if node_id is None:
+                        raise ValueError("select a node before applying an override")
+                    node = find_node(scene, node_id)
+                    updated = apply_prefab_override(
+                        scene,
+                        node_id,
+                        payload.get("field"),
+                        self.prefabs,
+                        self._registry_locked(),
+                    )
+                    if self.prefab_library is not None:
+                        self.prefab_library.save(updated.name, updated)
+                    self.prefabs[updated.name] = updated
                     self.selected_id = node.id
                 elif action == "undo":
                     self.history.undo(scene)

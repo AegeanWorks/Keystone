@@ -819,6 +819,12 @@ def editor_document(
             if node.prefab_link is not None
         }
     )
+    prefab_overrides = prefab_override_document(scene, prefabs, registry)
+    prefab_override_count = sum(
+        len(node["fields"])
+        for group in prefab_overrides
+        for node in group["nodes"]
+    )
     return {
         "schema": EDITOR_SCHEMA_VERSION,
         "game": None,
@@ -827,6 +833,8 @@ def editor_document(
         "nodes": nodes,
         "prefab_instances": prefab_instances,
         "prefab_instance_count": prefab_instance_count,
+        "prefab_overrides": prefab_overrides,
+        "prefab_override_count": prefab_override_count,
         "scene_settings": scene_settings_document(scene),
         "prefabs": (
             prefab_entries
@@ -1176,4 +1184,310 @@ def rename_prefab_links(scene: Scene, old: str, new: str) -> int:
         if link is not None and link.name == old:
             node.prefab_link = PrefabLink(new, link.instance)
             updated += 1
+    return updated
+
+
+def _instance_groups(scene: Scene) -> dict[PrefabLink, list[Node]]:
+    groups: dict[PrefabLink, list[Node]] = {}
+    for node in scene.traverse():
+        link = node.prefab_link
+        if link is not None:
+            groups.setdefault(link, []).append(node)
+    ordered: dict[PrefabLink, list[Node]] = {}
+    for link, roots in groups.items():
+        parent = roots[0].parent
+        if parent is not None and all(root.parent is parent for root in roots):
+            ordered[link] = [node for node in parent.children if node in roots]
+        else:
+            ordered[link] = roots
+    return ordered
+
+
+def _containing_instance_link(node: Node) -> PrefabLink | None:
+    current: Node | None = node
+    while current is not None:
+        if current.prefab_link is not None:
+            return current.prefab_link
+        current = current.parent
+    return None
+
+
+def _map_prefab_nodes(
+    prefab: Prefab, roots: list[Node]
+) -> list[tuple[Node, Node]]:
+    pairs: list[tuple[Node, Node]] = []
+    if len(prefab.roots) != len(roots):
+        return pairs
+
+    def walk(template: Node, instance: Node) -> None:
+        pairs.append((template, instance))
+        if len(template.children) != len(instance.children):
+            return
+        for template_child, instance_child in zip(
+            template.children, instance.children
+        ):
+            if (
+                template_child.prefab_link is not None
+                or instance_child.prefab_link is not None
+            ):
+                continue
+            walk(template_child, instance_child)
+
+    for template_root, instance_root in zip(prefab.roots, roots):
+        walk(template_root, instance_root)
+    return pairs
+
+
+def _node_override_values(
+    node: Node, registry: object | None
+) -> dict[str, object]:
+    transform = node.transform
+    values: dict[str, object] = {
+        "name": node.name,
+        "visible": node.visible,
+        "tags": sorted(node.tags),
+        "layer": node.layer,
+        "transform.position": [
+            transform.position.x,
+            transform.position.y,
+            transform.position.z,
+        ],
+        "transform.rotation": [
+            transform.rotation.x,
+            transform.rotation.y,
+            transform.rotation.z,
+            transform.rotation.w,
+        ],
+        "transform.scale": [
+            transform.scale.x,
+            transform.scale.y,
+            transform.scale.z,
+        ],
+    }
+    if registry is not None:
+        values["mesh"] = _payload_id(registry, node.mesh, "mesh")
+        values["material"] = _payload_id(registry, node.material, "material")
+    for component_type, component in sorted(
+        node.components.items(),
+        key=lambda item: (item[0].__module__, item[0].__qualname__),
+    ):
+        name = component_type.__name__
+        try:
+            values[f"components.{name}"] = component_to_dict(component)["data"]
+        except (TypeError, ValueError) as exc:
+            values[f"components.{name}"] = {"error": str(exc)}
+    return values
+
+
+def prefab_override_document(
+    scene: Scene,
+    prefabs: dict[str, Prefab],
+    registry: object | None = None,
+) -> list[dict[str, object]]:
+    """Return field-level diffs for every linked scene instance group."""
+    reports: list[dict[str, object]] = []
+    groups = _instance_groups(scene)
+    for link, roots in sorted(
+        groups.items(), key=lambda item: (item[0].name, item[0].instance)
+    ):
+        report: dict[str, object] = {
+            "prefab": link.name,
+            "instance": link.instance,
+            "roots": [root.id for root in roots],
+            "nodes": [],
+        }
+        prefab = prefabs.get(link.name)
+        if prefab is None:
+            report["error"] = f"no saved prefab {link.name!r}"
+            reports.append(report)
+            continue
+        if roots[0].parent is None or any(
+            root.parent is not roots[0].parent for root in roots
+        ):
+            report["error"] = "prefab instance roots must share a parent"
+            reports.append(report)
+            continue
+        if len(prefab.roots) != len(roots):
+            report["error"] = "prefab instance root count does not match prefab"
+            reports.append(report)
+            continue
+        node_reports: list[dict[str, object]] = []
+        for template, instance in _map_prefab_nodes(prefab, roots):
+            before = _node_override_values(template, registry)
+            after = _node_override_values(instance, registry)
+            fields: dict[str, dict[str, object]] = {}
+            for field in sorted(set(before) | set(after)):
+                if (
+                    field not in before
+                    or field not in after
+                    or before[field] != after[field]
+                ):
+                    fields[field] = {
+                        "template": before.get(field),
+                        "instance": after.get(field),
+                    }
+            if fields:
+                node_reports.append(
+                    {
+                        "id": instance.id,
+                        "template_id": template.id,
+                        "fields": fields,
+                    }
+                )
+        report["nodes"] = node_reports
+        if node_reports:
+            reports.append(report)
+    return reports
+
+
+def _node_path(
+    roots: tuple[Node, ...], target: Node
+) -> tuple[int, ...] | None:
+    def find(node: Node, path: tuple[int, ...]) -> tuple[int, ...] | None:
+        if node is target:
+            return path
+        for index, child in enumerate(node.children):
+            found = find(child, path + (index,))
+            if found is not None:
+                return found
+        return None
+
+    for root_index, root in enumerate(roots):
+        found = find(root, (root_index,))
+        if found is not None:
+            return found
+    return None
+
+
+def _follow_path(roots: tuple[Node, ...], path: tuple[int, ...]) -> Node:
+    node = roots[path[0]]
+    for index in path[1:]:
+        node = node.children[index]
+    return node
+
+
+def _resolve_prefab_override(
+    scene: Scene,
+    node_id: str,
+    field: object,
+    prefabs: dict[str, Prefab],
+    registry: object | None,
+) -> tuple[Prefab, Node, Node]:
+    if not isinstance(field, str) or not field.strip():
+        raise ValueError("override field must be a non-blank string")
+    node = find_node(scene, node_id)
+    link = _containing_instance_link(node)
+    if link is None:
+        raise ValueError("node is not part of a prefab instance")
+    prefab = prefabs.get(link.name)
+    if prefab is None:
+        raise KeyError(f"no saved prefab {link.name!r}")
+    roots = _prefab_instance_roots(scene, link)
+    pairs = _map_prefab_nodes(prefab, roots)
+    pair = next(
+        (
+            (template, instance)
+            for template, instance in pairs
+            if instance is node
+        ),
+        None,
+    )
+    if pair is None:
+        raise ValueError("node is not mapped to the prefab template")
+    template, instance = pair
+    before = _node_override_values(template, registry)
+    after = _node_override_values(instance, registry)
+    if field not in before and field not in after:
+        raise ValueError(f"unknown override field {field!r}")
+    if field in before and field in after and before[field] == after[field]:
+        raise ValueError(f"field {field!r} has no prefab override")
+    return prefab, template, instance
+
+
+def _copy_node_field(source: Node, target: Node, field: str) -> None:
+    if field == "name":
+        target.name = source.name
+    elif field == "visible":
+        target.visible = source.visible
+    elif field == "tags":
+        target.tags = set(source.tags)
+    elif field == "layer":
+        target.layer = source.layer
+    elif field == "transform.position":
+        target.transform = Transform(
+            position=source.transform.position,
+            rotation=target.transform.rotation,
+            scale=target.transform.scale,
+        )
+    elif field == "transform.rotation":
+        target.transform = Transform(
+            position=target.transform.position,
+            rotation=source.transform.rotation,
+            scale=target.transform.scale,
+        )
+    elif field == "transform.scale":
+        target.transform = Transform(
+            position=target.transform.position,
+            rotation=target.transform.rotation,
+            scale=source.transform.scale,
+        )
+    elif field == "mesh":
+        target.mesh = source.mesh
+    elif field == "material":
+        target.material = source.material
+    elif field.startswith("components."):
+        type_name = field.split(".", 1)[1]
+        found = False
+        source_component: object | None = None
+        for component_type, component in source.components.items():
+            if component_type.__name__ == type_name:
+                found = True
+                source_component = component
+                break
+        for existing_type in list(target.components):
+            if existing_type.__name__ == type_name:
+                target.components.pop(existing_type)
+        if found:
+            target.components[type(source_component)] = copy.deepcopy(
+                source_component
+            )
+    else:
+        raise ValueError(f"unknown override field {field!r}")
+
+
+def revert_prefab_override(
+    scene: Scene,
+    node_id: str,
+    field: object,
+    prefabs: dict[str, Prefab],
+    registry: object | None = None,
+) -> Node:
+    """Restore one field on a linked instance from its prefab template."""
+    _, template, instance = _resolve_prefab_override(
+        scene, node_id, field, prefabs, registry
+    )
+    _copy_node_field(template, instance, field)  # type: ignore[arg-type]
+    return instance
+
+
+def apply_prefab_override(
+    scene: Scene,
+    node_id: str,
+    field: object,
+    prefabs: dict[str, Prefab],
+    registry: object | None = None,
+) -> Prefab:
+    """Return a template copy with one instance field applied to it."""
+    prefab, template, instance = _resolve_prefab_override(
+        scene, node_id, field, prefabs, registry
+    )
+    path = _node_path(prefab.roots, template)
+    if path is None:
+        raise ValueError("prefab template node is not reachable")
+    updated = prefab.copy()
+    _copy_node_field(
+        instance,
+        _follow_path(updated.roots, path),
+        field,  # type: ignore[arg-type]
+    )
     return updated

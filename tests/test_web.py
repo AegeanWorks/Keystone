@@ -648,6 +648,13 @@ class WebServerTest(unittest.TestCase):
                 "position": [3.0, 1.0, 0.0],
             }
         )
+        overrides = session.editor()["prefab_overrides"]
+        groups = {group["instance"]: group for group in overrides}
+        self.assertNotIn("outer-1", groups)
+        self.assertIn("outer-1.inner-1", groups)
+        override_fields = groups["outer-1.inner-1"]["nodes"][0]["fields"]
+        self.assertIn("transform.position", override_fields)
+        self.assertEqual(session.editor()["prefab_override_count"], 1)
         reverted = session.editor_action(
             {"action": "revert_prefab", "id": nested_id}
         )
@@ -693,6 +700,275 @@ class WebServerTest(unittest.TestCase):
             node for node in undone_outer["nodes"] if node["id"] == nested_id
         )
         self.assertEqual(nested["transform"]["position"], [3.0, 1.0, 0.0])
+
+    def test_editor_prefab_override_revert_and_apply(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        template_position = cube["transform"]["position"]
+        session.editor_action({"action": "select", "id": cube["id"]})
+        session.editor_action({"action": "save_prefab", "name": "cube-template"})
+        inserted = session.editor_action(
+            {"action": "insert_prefab", "name": "cube-template", "instance": "copy"}
+        )
+        instance_id = inserted["selection"]["id"]
+        session.editor_action(
+            {"action": "transform", "id": instance_id, "position": [2.0, 0.0, 0.0]}
+        )
+        session.editor_action(
+            {
+                "action": "set_node",
+                "id": instance_id,
+                "name": "hero",
+                "visible": False,
+            }
+        )
+        editor = session.editor()
+        group = next(
+            item for item in editor["prefab_overrides"] if item["instance"] == "copy"
+        )
+        self.assertEqual(group["prefab"], "cube-template")
+        self.assertEqual(group["roots"], [instance_id])
+        node_override = next(
+            item for item in group["nodes"] if item["id"] == instance_id
+        )
+        self.assertEqual(
+            node_override["fields"]["transform.position"],
+            {"template": template_position, "instance": [2.0, 0.0, 0.0]},
+        )
+        self.assertEqual(
+            node_override["fields"]["name"],
+            {"template": "cube-0", "instance": "hero"},
+        )
+        self.assertEqual(
+            node_override["fields"]["visible"],
+            {"template": True, "instance": False},
+        )
+        reverted = session.editor_action(
+            {
+                "action": "revert_prefab_override",
+                "id": instance_id,
+                "field": "transform.position",
+            }
+        )
+        fields = next(
+            item for item in reverted["prefab_overrides"][0]["nodes"]
+        )["fields"]
+        self.assertNotIn("transform.position", fields)
+        self.assertIn("name", fields)
+        undone = session.editor_action({"action": "undo"})
+        fields = next(
+            item for item in undone["prefab_overrides"][0]["nodes"]
+        )["fields"]
+        self.assertIn("transform.position", fields)
+        session.editor_action(
+            {
+                "action": "apply_prefab_override",
+                "id": instance_id,
+                "field": "name",
+            }
+        )
+        self.assertEqual(session.prefabs["cube-template"].roots[0].name, "hero")
+        second = session.editor_action(
+            {"action": "insert_prefab", "name": "cube-template", "instance": "copy-2"}
+        )
+        self.assertEqual(second["selection"]["name"], "hero")
+        session.editor_action(
+            {
+                "action": "apply_prefab_override",
+                "id": instance_id,
+                "field": "transform.position",
+            }
+        )
+        self.assertEqual(
+            list(session.prefabs["cube-template"].roots[0].transform.position),
+            [2.0, 0.0, 0.0],
+        )
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action(
+                {
+                    "action": "revert_prefab_override",
+                    "id": instance_id,
+                    "field": "missing",
+                }
+            )
+        self.assertEqual(caught.exception.status, 400)
+
+    def test_editor_prefab_component_override_revert_and_apply(self):
+        session = GameSession(ComponentDemo())
+        editor = session.editor()
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        session.editor_action({"action": "select", "id": cube["id"]})
+        session.editor_action(
+            {
+                "action": "set_component",
+                "id": cube["id"],
+                "type": "Health",
+                "data": {"value": 10},
+            }
+        )
+        session.editor_action({"action": "save_prefab", "name": "health-cube"})
+        inserted = session.editor_action(
+            {"action": "insert_prefab", "name": "health-cube", "instance": "copy"}
+        )
+        instance_id = inserted["selection"]["id"]
+        session.editor_action(
+            {
+                "action": "set_component",
+                "id": instance_id,
+                "type": "Health",
+                "data": {"value": 99},
+            }
+        )
+        editor = session.editor()
+        group = next(
+            item for item in editor["prefab_overrides"] if item["instance"] == "copy"
+        )
+        fields = next(
+            item for item in group["nodes"] if item["id"] == instance_id
+        )["fields"]
+        self.assertEqual(
+            fields["components.Health"],
+            {"template": {"value": 10}, "instance": {"value": 99}},
+        )
+        session.editor_action(
+            {
+                "action": "apply_prefab_override",
+                "id": instance_id,
+                "field": "components.Health",
+            }
+        )
+        self.assertEqual(
+            session.prefabs["health-cube"].roots[0].require_component(Health).value,
+            99,
+        )
+        session.editor_action(
+            {
+                "action": "set_component",
+                "id": instance_id,
+                "type": "Health",
+                "data": {"value": 50},
+            }
+        )
+        reverted = session.editor_action(
+            {
+                "action": "revert_prefab_override",
+                "id": instance_id,
+                "field": "components.Health",
+            }
+        )
+        node = next(
+            item for item in reverted["nodes"] if item["id"] == instance_id
+        )
+        health = next(
+            item for item in node["component_data"] if item["type"] == "Health"
+        )
+        self.assertEqual(health["data"], {"value": 99})
+        undone = session.editor_action({"action": "undo"})
+        node = next(
+            item for item in undone["nodes"] if item["id"] == instance_id
+        )
+        health = next(
+            item for item in node["component_data"] if item["type"] == "Health"
+        )
+        self.assertEqual(health["data"], {"value": 50})
+
+    def test_editor_prefab_mesh_override_revert_and_apply(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        template_mesh = cube["mesh"]
+        session.editor_action({"action": "select", "id": cube["id"]})
+        session.editor_action({"action": "save_prefab", "name": "cube-template"})
+        inserted = session.editor_action(
+            {"action": "insert_prefab", "name": "cube-template", "instance": "copy"}
+        )
+        instance_id = inserted["selection"]["id"]
+        session.editor_action(
+            {"action": "assign_asset", "id": instance_id, "mesh": "mesh.sphere"}
+        )
+        editor = session.editor()
+        group = next(
+            item for item in editor["prefab_overrides"] if item["instance"] == "copy"
+        )
+        fields = next(
+            item for item in group["nodes"] if item["id"] == instance_id
+        )["fields"]
+        self.assertEqual(
+            fields["mesh"],
+            {"template": template_mesh, "instance": "mesh.sphere"},
+        )
+        reverted = session.editor_action(
+            {
+                "action": "revert_prefab_override",
+                "id": instance_id,
+                "field": "mesh",
+            }
+        )
+        node = next(
+            item for item in reverted["nodes"] if item["id"] == instance_id
+        )
+        self.assertEqual(node["mesh"], template_mesh)
+        session.editor_action(
+            {"action": "assign_asset", "id": instance_id, "mesh": "mesh.sphere"}
+        )
+        session.editor_action(
+            {
+                "action": "apply_prefab_override",
+                "id": instance_id,
+                "field": "mesh",
+            }
+        )
+        second = session.editor_action(
+            {"action": "insert_prefab", "name": "cube-template", "instance": "copy-2"}
+        )
+        self.assertEqual(second["selection"]["mesh"], "mesh.sphere")
+
+    def test_editor_apply_prefab_override_persists_library(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefab_dir = Path(directory) / "prefabs"
+            session = GameSession(CubeDemo(), prefab_dir=prefab_dir)
+            editor = session.editor()
+            cube = next(
+                node for node in editor["nodes"] if node["name"] == "cube-0"
+            )
+            session.editor_action({"action": "select", "id": cube["id"]})
+            session.editor_action(
+                {"action": "save_prefab", "name": "cube-template"}
+            )
+            inserted = session.editor_action(
+                {
+                    "action": "insert_prefab",
+                    "name": "cube-template",
+                    "instance": "copy",
+                }
+            )
+            instance_id = inserted["selection"]["id"]
+            session.editor_action(
+                {
+                    "action": "transform",
+                    "id": instance_id,
+                    "position": [2.0, 0.0, 0.0],
+                }
+            )
+            session.editor_action(
+                {
+                    "action": "apply_prefab_override",
+                    "id": instance_id,
+                    "field": "transform.position",
+                }
+            )
+            reloaded = GameSession(CubeDemo(), prefab_dir=prefab_dir)
+            fresh = reloaded.editor_action(
+                {
+                    "action": "insert_prefab",
+                    "name": "cube-template",
+                    "instance": "fresh",
+                }
+            )
+            self.assertEqual(
+                fresh["selection"]["transform"]["position"], [2.0, 0.0, 0.0]
+            )
 
     def test_editor_batch_can_revert_prefab_instance(self):
         session = GameSession(CubeDemo())

@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `133`
 - **Total Classes**: `206`
-- **Total Top-Level Functions**: `326`
-- **Total Class Methods**: `1282`
-- **Total Source Lines**: `28511`
+- **Total Top-Level Functions**: `337`
+- **Total Class Methods**: `1287`
+- **Total Source Lines**: `29162`
 
 ---
 
@@ -1061,7 +1061,7 @@
 ### [`keystone/prefab.py`](keystone/prefab.py)
 > *Deterministic prefabs: capture, persist and instantiate reusable subtrees.*
 
-**Size**: `498` lines (`20152` bytes)
+**Size**: `503` lines (`20431` bytes)
 
 **Classes:**
 - `class Prefab` - *An immutable-name, detached template of one or more scene subtrees.*
@@ -1069,6 +1069,7 @@
   - Method `.from_node(node, name)` - *Capture one detached subtree.*
   - Method `.from_nodes(nodes, name)` - *Capture several subtrees as a deterministic multi-root prefab.*
   - Method `.from_scene(scene, name)` - *Capture every child of a scene root as a multi-root prefab.*
+  - Method `.copy(name)` - *Return a detached template copy, preserving nested links and IDs.*
   - Property `.node_count`
   - Method `.asset_ids(registry)` - *Return the mesh/material asset ids referenced by this prefab.*
   - Method `.to_dict(registry)` - *Serialize to versioned JSON; mesh/material payloads need registered assets.*
@@ -1329,7 +1330,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `42` lines (`827` bytes)
+**Size**: `44` lines (`886` bytes)
 
 ---
 
@@ -1508,7 +1509,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `1179` lines (`43578` bytes)
+**Size**: `1493` lines (`54320` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene and environment edits.*
@@ -1566,6 +1567,17 @@
 - `def revert_prefab_instance(scene, node, prefabs)` - *Replace the linked instance group with a fresh prefab template.*
 - `def apply_prefab_instance(scene, node, prefabs)` - *Capture the linked instance group as the new prefab definition.*
 - `def rename_prefab_links(scene, old, new)` - *Point every instance link at a renamed prefab; return the updates made.*
+- `def _instance_groups(scene)`
+- `def _containing_instance_link(node)`
+- `def _map_prefab_nodes(prefab, roots)`
+- `def _node_override_values(node, registry)`
+- `def prefab_override_document(scene, prefabs, registry)` - *Return field-level diffs for every linked scene instance group.*
+- `def _node_path(roots, target)`
+- `def _follow_path(roots, path)`
+- `def _resolve_prefab_override(scene, node_id, field, prefabs, registry)`
+- `def _copy_node_field(source, target, field)`
+- `def revert_prefab_override(scene, node_id, field, prefabs, registry)` - *Restore one field on a linked instance from its prefab template.*
+- `def apply_prefab_override(scene, node_id, field, prefabs, registry)` - *Return a template copy with one instance field applied to it.*
 
 ---
 
@@ -1586,14 +1598,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `188` lines (`8937` bytes)
+**Size**: `202` lines (`9502` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1025` lines (`45160` bytes)
+**Size**: `1065` lines (`47080` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3034,7 +3046,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `1566` lines (`66832` bytes)
+**Size**: `1842` lines (`77347` bytes)
 
 **Classes:**
 - `class Health`
@@ -3068,6 +3080,10 @@
   - Method `.test_editor_multi_root_prefab_instance_group()`
   - Method `.test_editor_multi_root_group_delete_and_reparent()`
   - Method `.test_editor_nested_prefab_capture_revert_and_apply()`
+  - Method `.test_editor_prefab_override_revert_and_apply()`
+  - Method `.test_editor_prefab_component_override_revert_and_apply()`
+  - Method `.test_editor_prefab_mesh_override_revert_and_apply()`
+  - Method `.test_editor_apply_prefab_override_persists_library()`
   - Method `.test_editor_batch_can_revert_prefab_instance()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_library_rename_and_delete()`

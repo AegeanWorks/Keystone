@@ -992,3 +992,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Prefab capture and instantiation stripped every link, so nested instances were flattened and could not be composed, reverted or applied as nested prefabs.
 - **Decision**: Prefab documents are schema 2 and persist each node's `prefab_link`; schema-1 documents load with flat links. Capture strips the captured roots' links and effective instance prefixes, preserves descendant links, normalizes each nested link relative to its immediate parent, and rejects root links, self-references and links outside their parent instance. Instantiation computes effective `outer.inner...` prefixes, rebases nested links and IDs, and allocates a deterministic `prefab` prefix when a nested template is instantiated without one. Bump the editor schema to 22.
 - **Consequences**: 740 tests green; nested capture, instantiation, revert/apply, prefix rebasing and schema-1 migration are covered. Cross-prefab cycles, per-property overrides and automatic dependency validation remain future work; nested prefab assets should be saved alongside their dependencies.
+
+### ADR-121: Track and resolve per-field prefab overrides
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Whole-instance revert/apply hid which fields diverged from the template and forced all-or-nothing resolution.
+- **Decision**: Structurally map instance roots and children to prefab roots and children, stopping at nested prefab boundaries. Compare `name`, `visible`, `tags`, `layer`, transform position/rotation/scale, registry-resolved mesh/material ids and whole components. Expose `prefab_overrides` and `prefab_override_count` in `/api/editor`. Add `revert_prefab_override` and `apply_prefab_override` with `id` and `field`: revert restores one scene field through the undo history; apply clones the template, mutates one field, saves the library and swaps the cache only after success. Bump the editor schema to 23.
+- **Consequences**: 744 tests green; field-level overrides are discoverable and resolvable. Component overrides are whole-component granularity, structural mismatches stop child mapping, nested applies update that prefab only because outer templates are snapshots, and apply is an asset write rather than a scene-undo operation.

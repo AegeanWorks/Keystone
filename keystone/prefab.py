@@ -226,6 +226,11 @@ class Prefab:
         )
         return cls(name, roots)
 
+    def copy(self, name: str | None = None) -> Prefab:
+        """Return a detached template copy, preserving nested links and IDs."""
+        selected = name if name is not None else self.name
+        return Prefab(selected, tuple(_copy_template(root) for root in self.roots))
+
     @property
     def node_count(self) -> int:
         return sum(1 for root in self.roots for _ in root.traverse())

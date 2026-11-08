@@ -76,6 +76,16 @@ EDITOR_EXAMPLES = {
     },
     "revert_prefab": {"action": "revert_prefab", "id": "copy:cube-0"},
     "apply_prefab": {"action": "apply_prefab", "id": "copy:cube-0"},
+    "revert_prefab_override": {
+        "action": "revert_prefab_override",
+        "id": "copy:cube-0",
+        "field": "transform.position",
+    },
+    "apply_prefab_override": {
+        "action": "apply_prefab_override",
+        "id": "copy:cube-0",
+        "field": "name",
+    },
     "rename_prefab": {"action": "rename_prefab", "name": "cube", "new_name": "cube-alt"},
     "duplicate_prefab": {
         "action": "duplicate_prefab",
@@ -118,6 +128,9 @@ EDITOR_SCHEMA = {
         "restore_prefab": ["trash"],
         "revert_prefab": ["id"],
         "apply_prefab": ["id"],
+        "revert_prefab_override": ["id", "field"],
+        "apply_prefab_override": ["id", "field"],
+        "prefab_override": ["id", "template_id", "fields"],
         "diff_scene": ["name"],
         "rename_scene": ["name", "new_name"],
         "duplicate_scene": ["name", "new_name"],
@@ -162,6 +175,7 @@ EDITOR_SCHEMA = {
         "schema 20 allows revert_prefab inside atomic batch actions",
         "schema 21 makes prefab instance links and revert/apply/delete/reparent group-aware for multi-root prefabs; prefab_instance_count counts distinct groups",
         "schema 22 supports nested prefab instances: prefab schema 2 persists nested links and instantiation rebases nested prefixes and IDs",
+        "schema 23 adds per-field prefab override tracking and revert_prefab_override/apply_prefab_override actions",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }
