@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `147`
-- **Total Classes**: `234`
-- **Total Top-Level Functions**: `425`
-- **Total Class Methods**: `1512`
-- **Total Source Lines**: `41399`
+- **Total Python Modules**: `149`
+- **Total Classes**: `237`
+- **Total Top-Level Functions**: `426`
+- **Total Class Methods**: `1536`
+- **Total Source Lines**: `41720`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `669` lines (`36132` bytes)
+**Size**: `671` lines (`36286` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -418,12 +418,13 @@
 ### [`keystone/component_codec.py`](keystone/component_codec.py)
 > *Shared JSON codec for typed scene components.*
 
-**Size**: `117` lines (`4566` bytes)
+**Size**: `141` lines (`5498` bytes)
 
 **Functions:**
 - `def validate_component_types(component_types)` - *Copy and validate a component name-to-type map.*
 - `def json_safe(value, label)` - *Return the value after proving it can cross a JSON boundary.*
 - `def component_to_dict(component)` - *Encode one component as ``{'type': name, 'data': ...}``.*
+- `def _dataclass_from_mapping(name, component_type, data)` - *Construct a dataclass, rejecting fields it does not declare.*
 - `def component_from_dict(item, component_types)` - *Decode one component, requiring an explicit type map.*
 
 ---
@@ -2108,7 +2109,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `538` lines (`21921` bytes)
+**Size**: `554` lines (`22672` bytes)
 
 **Classes:**
 - `class HudCube`
@@ -2145,6 +2146,7 @@
 - `class CleanupAndCliTest`
   - Method `.test_close_closes_context_when_release_raises()`
   - Method `.test_standalone_commands_reject_irrelevant_flags()`
+  - Method `.test_zero_frames_is_rejected_instead_of_silently_defaulted()` - *`--frames 0` must fail: every mode used a falsy check and ran 1 or 120.*
 - `class _CadenceContext`
   - Method `.__init__(times, keys, pointer_step, press_from)`
   - Method `.should_close()`
@@ -2359,6 +2361,27 @@
   - Method `.test_invalid_configuration()`
   - Method `.test_backwards_time_mints_no_debt()`
   - Method `.test_non_finite_time_is_rejected()`
+
+---
+
+### [`tests/test_component_codec.py`](tests/test_component_codec.py)
+> *Tests for the shared typed-component JSON codec.*
+
+**Size**: `113` lines (`4116` bytes)
+
+**Classes:**
+- `class Health`
+- `class ComponentCodecTest`
+  - Method `.test_dataclass_round_trip()`
+  - Method `.test_primitive_round_trips()`
+  - Method `.test_from_dict_rejects_unknown_type_fields()`
+  - Method `.test_from_dict_rejects_unknown_document_keys()`
+  - Method `.test_from_dict_requires_type_and_data()`
+  - Method `.test_from_dict_requires_a_type_map()`
+  - Method `.test_from_dict_rejects_unknown_component_type()`
+  - Method `.test_to_dict_rejects_an_unserializable_object()`
+  - Method `.test_json_safe_rejects_non_finite_and_opaque_values()`
+  - Method `.test_validate_component_types_copies_and_rejects_bad_input()`
 
 ---
 
@@ -2611,6 +2634,29 @@
 
 **Functions:**
 - `def make_scene(count, same_material)`
+
+---
+
+### [`tests/test_library_trash.py`](tests/test_library_trash.py)
+> *Tests for recoverable library deletes (soft delete and restore).*
+
+**Size**: `166` lines (`6909` bytes)
+
+**Classes:**
+- `class LibraryTrashTest`
+  - Method `._library(directory)`
+  - Method `.test_move_to_trash_relocates_and_hides_the_entry()`
+  - Method `.test_trash_entries_is_empty_without_a_trash_directory()`
+  - Method `.test_trash_entries_is_stable_and_reports_the_source()`
+  - Method `.test_two_deletes_of_the_same_name_do_not_collide()`
+  - Method `.test_restore_returns_the_entry_to_the_library()`
+  - Method `.test_restore_preserves_dots_in_the_original_name()`
+  - Method `.test_restore_rejects_a_path_instead_of_a_file_name()`
+  - Method `.test_restore_rejects_a_blank_name()`
+  - Method `.test_restore_rejects_a_missing_entry()`
+  - Method `.test_restore_rejects_the_wrong_suffix()`
+  - Method `.test_restore_never_overwrites_a_live_entry()`
+  - Method `.test_restore_uses_the_validator()`
 
 ---
 

@@ -24,8 +24,10 @@ def _frames(text: str) -> int:
         value = int(text)
     except ValueError as exc:
         raise argparse.ArgumentTypeError("frame count must be an integer") from exc
-    if value < 0:
-        raise argparse.ArgumentTypeError("frame count cannot be negative")
+    if value < 1:
+        # 0 has no meaning for any mode, and a falsy check downstream used to
+        # turn it into 1 or 120, so rejecting it here keeps the CLI honest.
+        raise argparse.ArgumentTypeError("frame count must be at least 1")
     return value
 
 

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict, fields, is_dataclass
 
 __all__ = [
     "ComponentTypes",
@@ -66,10 +66,34 @@ def component_to_dict(component: object) -> dict:
     }
 
 
+def _dataclass_from_mapping(
+    name: str, component_type: type, data: Mapping[str, object]
+) -> object:
+    """Construct a dataclass, rejecting fields it does not declare."""
+    declared = {field.name for field in fields(component_type)}
+    unknown = sorted(set(data) - declared)
+    if unknown:
+        raise ValueError(
+            f"component {name!r} has unknown fields: {', '.join(unknown)}"
+        )
+    try:
+        return component_type(**data)
+    except TypeError as exc:
+        raise ValueError(f"component {name!r} could not be built: {exc}") from exc
+
+
 def component_from_dict(item: object, component_types: ComponentTypes | None) -> object:
-    """Decode one component, requiring an explicit type map."""
+    """Decode one component, requiring an explicit type map.
+
+    Unknown keys are rejected, matching every other versioned loader in the
+    engine: a typo in an authored component document must fail loudly rather
+    than be silently dropped.
+    """
     if not isinstance(item, Mapping) or not isinstance(item.get("type"), str) or "data" not in item:
         raise ValueError("component must hold 'type' and 'data'")
+    unknown = sorted(set(item) - {"type", "data"})
+    if unknown:
+        raise ValueError(f"component has unknown keys: {unknown}")
     if component_types is None:
         raise ValueError("loading components needs component_types")
     name = item["type"]
@@ -83,7 +107,7 @@ def component_from_dict(item: object, component_types: ComponentTypes | None) ->
     if is_dataclass(component_type):
         if not isinstance(data, Mapping):
             raise ValueError(f"component {name!r} data must be a mapping")
-        return component_type(**data)
+        return _dataclass_from_mapping(name, component_type, data)
     if component_type is type(None):
         if data is not None:
             raise ValueError(f"component {name!r} data must be null")

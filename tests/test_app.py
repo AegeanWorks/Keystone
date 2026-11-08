@@ -375,6 +375,22 @@ class CleanupAndCliTest(unittest.TestCase):
                 main(argv)
             self.assertEqual(caught.exception.code, 2, argv)
 
+    def test_zero_frames_is_rejected_instead_of_silently_defaulted(self):
+        """`--frames 0` must fail: every mode used a falsy check and ran 1 or 120."""
+        for argv in (
+            ["--simulate", "--frames", "0"],
+            ["--headless", "--frames", "0", "--size", "64x48"],
+            ["--verify-determinism", "--frames", "0"],
+            ["--playtest", "--frames", "0"],
+        ):
+            with self.subTest(argv=argv):
+                with contextlib.redirect_stderr(io.StringIO()) as err, self.assertRaises(
+                    SystemExit
+                ) as caught:
+                    main(argv)
+                self.assertEqual(caught.exception.code, 2, argv)
+                self.assertIn("at least 1", err.getvalue())
+
 
 class _CadenceContext:
     def __init__(self, times, keys=(), pointer_step=0.0, press_from=0):
