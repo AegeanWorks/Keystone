@@ -14,6 +14,7 @@ from typing import ClassVar
 from urllib.parse import urlparse
 
 from keystone.animation import AnimationClip, apply_pose
+from keystone.animation_library import AnimationLibrary
 from keystone.assets import AssetRegistry
 from keystone.component_codec import validate_component_types
 from keystone.headless import run_simulation
@@ -161,6 +162,7 @@ class GameSession:
         game: GameModule,
         prefab_dir: str | Path | None = None,
         scene_dir: str | Path | None = None,
+        animation_dir: str | Path | None = None,
         initial_scene: str | None = None,
     ) -> None:
         self.game = game
@@ -202,6 +204,9 @@ class GameSession:
                 registry=self._registry_locked(),
                 component_types=component_types,
             )
+        self.animation_library: AnimationLibrary | None = None
+        if animation_dir is not None:
+            self.animation_library = AnimationLibrary(animation_dir)
         self.initial_scene = initial_scene
         self._initial_scene_loaded = False
         if initial_scene is not None:
@@ -569,6 +574,16 @@ class GameSession:
         document["game"] = self.name
         document["prefab_refresh"] = self.last_prefab_refresh
         document["animation_preview"] = self.last_animation_preview
+        document["animations"] = (
+            [entry.describe() for entry in self.animation_library.entries()]
+            if self.animation_library is not None
+            else []
+        )
+        document["trash"]["animations"] = (
+            self.animation_library.trash()
+            if self.animation_library is not None
+            else []
+        )
         document["workspace"] = {
             "prefab_dir": (
                 self.prefab_library.directory.as_posix()
@@ -578,6 +593,11 @@ class GameSession:
             "scene_dir": (
                 self.scene_library.directory.as_posix()
                 if self.scene_library is not None
+                else None
+            ),
+            "animation_dir": (
+                self.animation_library.directory.as_posix()
+                if self.animation_library is not None
                 else None
             ),
         }
@@ -799,11 +819,26 @@ class GameSession:
                         self.history.clear()
                         self.selected_id = None
                 elif action == "preview_animation":
+                    name = payload.get("name")
                     clip_payload = payload.get("clip")
-                    if not isinstance(clip_payload, dict):
-                        raise TypeError(
-                            "preview_animation clip must be a JSON object"
+                    if name is not None and clip_payload is not None:
+                        raise ValueError(
+                            "preview_animation needs name or clip, not both"
                         )
+                    if name is not None:
+                        if self.animation_library is None:
+                            raise ValueError(
+                                "no animation library is configured"
+                            )
+                        clip = self.animation_library.load(name)
+                        source = "library"
+                    else:
+                        if not isinstance(clip_payload, dict):
+                            raise TypeError(
+                                "preview_animation clip must be a JSON object"
+                            )
+                        clip = AnimationClip.from_dict(clip_payload)
+                        source = "inline"
                     time = payload.get("time", 0.0)
                     if (
                         isinstance(time, bool)
@@ -817,7 +852,6 @@ class GameSession:
                         raise ValueError(
                             "preview_animation time must be non-negative"
                         )
-                    clip = AnimationClip.from_dict(clip_payload)
                     updated = self._apply_history(
                         scene,
                         lambda: apply_pose(
@@ -831,7 +865,31 @@ class GameSession:
                         "track_count": len(clip.position_tracks)
                         + len(clip.rotation_tracks)
                         + len(clip.scale_tracks),
+                        "source": source,
                     }
+                elif action == "save_animation":
+                    if self.animation_library is None:
+                        raise ValueError("no animation library is configured")
+                    name = payload.get("name")
+                    if not isinstance(name, str) or not name.strip():
+                        raise ValueError(
+                            "animation name must be a non-blank string"
+                        )
+                    clip_payload = payload.get("clip")
+                    if not isinstance(clip_payload, dict):
+                        raise TypeError("save_animation clip must be a JSON object")
+                    data = dict(clip_payload)
+                    data["name"] = name
+                    clip = AnimationClip.from_dict(data)
+                    self.animation_library.save(name, clip)
+                elif action == "delete_animation":
+                    if self.animation_library is None:
+                        raise ValueError("no animation library is configured")
+                    self.animation_library.delete(payload.get("name"))
+                elif action == "restore_animation":
+                    if self.animation_library is None:
+                        raise ValueError("no animation library is configured")
+                    self.animation_library.restore(payload.get("trash"))
                 elif action == "set_component":
                     node = find_node(scene, payload.get("id"))
                     self._apply_history(
@@ -1531,6 +1589,7 @@ def create_server(
     port: int = 0,
     prefab_dir: str | Path | None = None,
     scene_dir: str | Path | None = None,
+    animation_dir: str | Path | None = None,
     initial_scene: str | None = None,
 ) -> KeystoneHTTPServer:
     """Create a bound server; port 0 asks the OS for a free port."""
@@ -1542,6 +1601,7 @@ def create_server(
             game,
             prefab_dir=prefab_dir,
             scene_dir=scene_dir,
+            animation_dir=animation_dir,
             initial_scene=initial_scene,
         ),
     )
@@ -1553,6 +1613,7 @@ def serve(
     port: int = 8000,
     prefab_dir: str | Path | None = None,
     scene_dir: str | Path | None = None,
+    animation_dir: str | Path | None = None,
     initial_scene: str | None = None,
 ) -> int:
     """Run the local console until interrupted."""
@@ -1563,6 +1624,7 @@ def serve(
             port=port,
             prefab_dir=prefab_dir,
             scene_dir=scene_dir,
+            animation_dir=animation_dir,
             initial_scene=initial_scene,
         )
     except OSError as exc:

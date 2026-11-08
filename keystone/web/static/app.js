@@ -25,8 +25,13 @@ const elements = {
   playSnapshot: document.getElementById("play-snapshot"),
   animationClip: document.getElementById("animation-clip"),
   animationTime: document.getElementById("animation-time"),
+  animationName: document.getElementById("animation-name"),
+  animationNames: document.getElementById("animation-names"),
   animationPreview: document.getElementById("animation-preview"),
   animationSample: document.getElementById("animation-sample"),
+  animationSave: document.getElementById("animation-save"),
+  animationDelete: document.getElementById("animation-delete"),
+  animationRestore: document.getElementById("animation-restore"),
   animationState: document.getElementById("animation-state"),
   nodeCreate: document.getElementById("node-create"),
   nodeDuplicate: document.getElementById("node-duplicate"),
@@ -189,6 +194,7 @@ function setBusy(value) {
     elements.environmentSettingsApply, elements.assignAsset, elements.playStart,
     elements.playPause, elements.playResume, elements.playStep, elements.playStop, elements.componentSet, elements.componentRemove,
     elements.animationPreview, elements.animationSample,
+    elements.animationSave, elements.animationDelete, elements.animationRestore,
     elements.prefabSave, elements.prefabInsert, elements.prefabRename,
     elements.prefabRevert, elements.prefabApply, elements.prefabRefresh,
     elements.prefabDuplicate, elements.prefabDelete, elements.prefabRestore,
@@ -391,6 +397,7 @@ function fillDatalist(list, entries) {
 function renderLibraryOptions(editor) {
   fillDatalist(elements.sceneNames, editor.scenes || []);
   fillDatalist(elements.prefabNames, editor.prefabs || []);
+  fillDatalist(elements.animationNames, editor.animations || []);
 }
 
 function fillAssetSelect(select, kind, assets) {
@@ -1441,10 +1448,47 @@ function sampleAnimationClip() {
     events: [],
   };
   elements.animationClip.value = JSON.stringify(clip, null, 2);
+  if (!elements.animationName.value.trim()) {
+    elements.animationName.value = `${node.name || node.id}-clip`;
+  }
   elements.animationState.textContent = `Sample clip for ${node.id}.`;
 }
 
 async function previewAnimation() {
+  const time = Number(elements.animationTime.value);
+  if (!Number.isFinite(time) || time < 0) {
+    throw new Error("Preview time must be a non-negative number.");
+  }
+  const name = elements.animationName.value.trim();
+  let payload;
+  if (name) {
+    payload = { action: "preview_animation", name, time };
+  } else {
+    let clip;
+    try {
+      clip = JSON.parse(elements.animationClip.value || "{}");
+    } catch (error) {
+      throw new Error(`Animation clip JSON: ${error.message}`);
+    }
+    if (!clip || typeof clip !== "object" || Array.isArray(clip)) {
+      throw new Error("Animation clip JSON must be an object.");
+    }
+    payload = { action: "preview_animation", clip, time };
+  }
+  const editor = await editorAction(payload, "previewing animation");
+  await refreshScene(false);
+  show({
+    ok: true,
+    action: "preview_animation",
+    preview: editor.animation_preview,
+  });
+}
+
+async function saveAnimation() {
+  const name = elements.animationName.value.trim();
+  if (!name) {
+    throw new Error("Enter a clip name before saving.");
+  }
   let clip;
   try {
     clip = JSON.parse(elements.animationClip.value || "{}");
@@ -1454,20 +1498,35 @@ async function previewAnimation() {
   if (!clip || typeof clip !== "object" || Array.isArray(clip)) {
     throw new Error("Animation clip JSON must be an object.");
   }
-  const time = Number(elements.animationTime.value);
-  if (!Number.isFinite(time) || time < 0) {
-    throw new Error("Preview time must be a non-negative number.");
-  }
-  const editor = await editorAction(
-    { action: "preview_animation", clip, time },
-    "previewing animation",
+  clip.name = name;
+  await editorAction(
+    { action: "save_animation", name, clip },
+    `saving animation ${name}`,
   );
-  await refreshScene(false);
-  show({
-    ok: true,
-    action: "preview_animation",
-    preview: editor.animation_preview,
-  });
+}
+
+async function deleteAnimation() {
+  const name = elements.animationName.value.trim();
+  if (!name) {
+    throw new Error("Enter the clip name to delete.");
+  }
+  await editorAction(
+    { action: "delete_animation", name },
+    `deleting animation ${name}`,
+  );
+}
+
+async function restoreAnimation() {
+  const entry = (
+    (editorState && editorState.trash && editorState.trash.animations) || []
+  )[0];
+  if (!entry) {
+    throw new Error("No trashed animation is available.");
+  }
+  await editorAction(
+    { action: "restore_animation", trash: entry.trash },
+    "restoring animation",
+  );
 }
 
 async function applyNodeProperties() {
@@ -1978,6 +2037,9 @@ elements.playStep.addEventListener("click", () => run(playStep));
 elements.playStop.addEventListener("click", () => run(playStop));
 elements.animationPreview.addEventListener("click", () => run(previewAnimation));
 elements.animationSample.addEventListener("click", () => run(sampleAnimationClip));
+elements.animationSave.addEventListener("click", () => run(saveAnimation));
+elements.animationDelete.addEventListener("click", () => run(deleteAnimation));
+elements.animationRestore.addEventListener("click", () => run(restoreAnimation));
 elements.hierarchyFilter.addEventListener("input", () => {
   if (editorState) {
     renderHierarchy(editorState);

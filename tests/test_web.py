@@ -1109,7 +1109,11 @@ class WebServerTest(unittest.TestCase):
             self.assertTrue(path.is_file())
             self.assertEqual(
                 saved["workspace"],
-                {"prefab_dir": prefab_dir.as_posix(), "scene_dir": None},
+                {
+                    "prefab_dir": prefab_dir.as_posix(),
+                    "scene_dir": None,
+                    "animation_dir": None,
+                },
             )
             self.assertEqual(saved["prefabs"][0]["source"], path.as_posix())
             self.assertIsNone(saved["prefabs"][0]["error"])
@@ -2502,6 +2506,107 @@ class WebServerTest(unittest.TestCase):
         self.assertEqual(caught.exception.status, 400)
         session.editor_action({"action": "play_stop"})
 
+    def test_editor_animation_library_round_trip(self):
+        with tempfile.TemporaryDirectory() as directory:
+            animation_dir = Path(directory) / "animations"
+            session = GameSession(CubeDemo(), animation_dir=animation_dir)
+            editor = session.editor()
+            cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+            original = cube["transform"]["position"]
+            clip = {
+                "schema": 1,
+                "name": "bob",
+                "position": {
+                    cube["id"]: {
+                        "interpolation": "linear",
+                        "keys": [
+                            {"t": 0.0, "v": original},
+                            {
+                                "t": 1.0,
+                                "v": [
+                                    original[0],
+                                    original[1] + 2.0,
+                                    original[2],
+                                ],
+                            },
+                        ],
+                    }
+                },
+                "rotation": {},
+                "scale": {},
+                "events": [],
+            }
+            saved = session.editor_action(
+                {"action": "save_animation", "name": "bob", "clip": clip}
+            )
+            self.assertTrue((animation_dir / "bob.kanim").is_file())
+            entry = next(
+                item for item in saved["animations"] if item["name"] == "bob"
+            )
+            self.assertEqual(entry["track_count"], 1)
+            self.assertAlmostEqual(entry["duration"], 1.0)
+
+            previewed = session.editor_action(
+                {"action": "preview_animation", "name": "bob", "time": 0.5}
+            )
+            self.assertEqual(
+                previewed["animation_preview"]["source"], "library"
+            )
+            self.assertIn(
+                cube["id"], previewed["animation_preview"]["updated"]
+            )
+            moved = next(
+                node for node in previewed["nodes"] if node["id"] == cube["id"]
+            )
+            self.assertAlmostEqual(
+                moved["transform"]["position"][1],
+                original[1] + 1.0,
+                places=4,
+            )
+            session.editor_action({"action": "undo"})
+
+            reloaded = GameSession(CubeDemo(), animation_dir=animation_dir)
+            names = {item["name"] for item in reloaded.editor()["animations"]}
+            self.assertIn("bob", names)
+
+            deleted = session.editor_action(
+                {"action": "delete_animation", "name": "bob"}
+            )
+            self.assertEqual(deleted["animations"], [])
+            self.assertEqual(deleted["trash"]["animations"][0]["name"], "bob")
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "preview_animation", "name": "bob", "time": 0.0}
+                )
+            self.assertEqual(caught.exception.status, 404)
+
+            restored = session.editor_action(
+                {
+                    "action": "restore_animation",
+                    "trash": deleted["trash"]["animations"][0]["trash"],
+                }
+            )
+            self.assertIn(
+                "bob", {item["name"] for item in restored["animations"]}
+            )
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "preview_animation",
+                        "name": "bob",
+                        "clip": clip,
+                        "time": 0.0,
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+
+            standalone = GameSession(CubeDemo())
+            with self.assertRaises(WebProblem) as caught:
+                standalone.editor_action(
+                    {"action": "save_animation", "name": "bob", "clip": clip}
+                )
+            self.assertEqual(caught.exception.status, 400)
+
     def test_editor_component_lifecycle_play_mode(self):
         session = GameSession(LifecycleDemo())
         editor = session.editor()
@@ -2648,8 +2753,13 @@ class WebServerTest(unittest.TestCase):
             "play-snapshot",
             "animation-clip",
             "animation-time",
+            "animation-name",
+            "animation-names",
             "animation-preview",
             "animation-sample",
+            "animation-save",
+            "animation-delete",
+            "animation-restore",
             "animation-state",
             "node-parent",
             "node-create",
@@ -2815,7 +2925,13 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("playSnapshot", script)
         self.assertIn("previewAnimation", script)
         self.assertIn("sampleAnimationClip", script)
+        self.assertIn("saveAnimation", script)
+        self.assertIn("deleteAnimation", script)
+        self.assertIn("restoreAnimation", script)
         self.assertIn("preview_animation", script)
+        self.assertIn("save_animation", script)
+        self.assertIn("delete_animation", script)
+        self.assertIn("restore_animation", script)
         self.assertIn("animation_preview", script)
         self.assertIn("playFrames", script)
         self.assertIn("set_node", script)

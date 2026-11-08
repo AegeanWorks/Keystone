@@ -272,7 +272,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip loading, changed-pixel counts, bbox and visual diff.
 - **Frame reports for AI analysis**: `--report` writes schema-11 JSON with image hashes, pixel stats, content box, palette, camera, projected content, FX counts and UI metadata.
 - **Human overlay**: game-agnostic HUD with status, FPS, frame, time and profiler lines, plus help/pause menu; 5×7 font, no asset. Games add HUD via `draw_ui(canvas, state)`.
-- **Web console and WebGL viewer**: `--serve` starts a stdlib JSON API sharing the CLI contract (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/editor`, `/api/simulate`); a scene editor exposes hierarchy, node/asset/component authoring, transforms, undo, prefab edit, multi-root and play/snapshot; Scene/Game/ortho views, grid/snap/animation.
+- **Web console and WebGL viewer**: `--serve` starts a stdlib JSON API sharing the CLI contract (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/editor`, `/api/simulate`); a scene editor exposes hierarchy, node/asset/component authoring, transforms, undo, prefab edit, multi-root and play/snapshot; Scene/Game/ortho views, grid/snap/animation library.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code.
 
 ## 🤖 AI Testing & Frame Analysis
@@ -364,6 +364,7 @@ keystone/
 │   ├── __main__.py           <- CLI: --game, headless frames, PNG
 │   ├── agents.py             <- AI adapters and audit trail
 │   ├── animation.py          <- clips, controller and pose reports
+│   ├── animation_library.py  <- file-backed .kanim clip library
 │   ├── app.py                <- Engine loop
 │   ├── audio.py              <- synth clips, mixer and WAV I/O
 │   ├── batch.py              <- static batch planning, world-space and rig merge
@@ -485,6 +486,7 @@ keystone/
 │   ├── test_triggers.py      <- enter/exit tracking and multiple volumes
 │   ├── test_agents.py        <- AI adapters, validation and audit trail
 │   ├── test_animation.py     <- clips, blending and timed events
+│   ├── test_animation_library.py <- clip library save, load, delete and restore
 │   ├── test_skinning.py      <- skin math, GPU path, glTF
 │   ├── test_sprites.py       <- sprite math, report, sample fixture
 │   ├── test_merge_skin.py    <- skin-aware merge

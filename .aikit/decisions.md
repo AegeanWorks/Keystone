@@ -1176,3 +1176,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The engine had deterministic clips, sampling and pose application, but the editor could not preview an authored clip, so animation remained a code-only feature.
 - **Decision**: Add `preview_animation` with an inline schema-1 clip document and a non-negative preview time. The action parses through `AnimationClip.from_dict`, samples the pose, applies it with `apply_pose` in one undo entry, and exposes `animation_preview` with name, time, updated node ids and track count. The console adds a clip JSON editor, preview time, Preview animation and Sample selected node actions. Bump the editor schema to 37.
 - **Consequences**: 772 tests green; pose application, undo, invalid time/clip rejection, play-mode blocking and sample generation are covered. Clips are inline and non-persistent for now, unknown node ids are ignored by `apply_pose`, and previews overwrite scene transforms until undo or another preview.
+
+### ADR-144: File-backed animation clip library
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Animation preview accepted only inline clip JSON, so authored clips could not be saved, listed, or reused between editor sessions.
+- **Decision**: Add `AnimationLibrary` over `.kanim` documents in a project `animations/` directory, with save/load/delete/restore/trash and stable entries. Add `--animation-dir`, default it to `DIR/animations` for projects, and expose the inventory in `/api/editor`. Add `save_animation`, `delete_animation` and `restore_animation`; `preview_animation` now accepts a library `name` or inline `clip` and reports its source. The console adds a clip-name field, datalist, save/delete/restore controls and preview-by-name. Bump the editor schema to 38.
+- **Consequences**: 775 tests green; library round trips, cross-session reload, preview by name, delete/restore, missing-library errors and ambiguous preview payloads are covered. Clip names are portable file stems, save is an asset write rather than scene undo, and there is no rename/duplicate or timeline keyframe editor yet.

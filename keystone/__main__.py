@@ -108,6 +108,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--port", type=_port, default=None, help="web console port (default: 8000; 0 picks a free port)")
     parser.add_argument("--prefab-dir", type=Path, default=None, metavar="DIR", help="persist editor prefabs as .kprefab files (default for --project: DIR/prefabs)")
     parser.add_argument("--scene-dir", type=Path, default=None, metavar="DIR", help="persist editor scenes as .kscene files (default for --project: DIR/scenes)")
+    parser.add_argument("--animation-dir", type=Path, default=None, metavar="DIR", help="persist editor animation clips as .kanim files (default for --project: DIR/animations)")
     parser.add_argument("--scene", default=None, metavar="NAME", help="open a saved scene from the editor library at startup (requires --serve)")
     parser.add_argument("--out", type=Path, default=None, help="PNG for rendering; JSON report for --simulate")
     parser.add_argument("--report", type=Path, default=None, help="machine-readable frame report (requires --headless)")
@@ -123,7 +124,8 @@ def main(argv: list[str] | None = None) -> int:
             or args.post or args.no_post or args.bloom or args.no_bloom or args.sprites or args.no_sprites
             or args.culling or args.no_culling or args.start_paused or args.serve
             or args.host is not None or args.port is not None or args.prefab_dir is not None
-            or args.scene_dir is not None or args.scene is not None or args.out is not None
+            or args.scene_dir is not None or args.animation_dir is not None
+            or args.scene is not None or args.out is not None
             or args.validate_project or args.export is not None
             or args.report is not None or args.game != "keystone.samples:CubeDemo"
         )
@@ -167,6 +169,7 @@ def main(argv: list[str] | None = None) -> int:
             or args.culling or args.no_culling or args.start_paused
             or args.serve or args.host is not None or args.port is not None
             or args.prefab_dir is not None or args.scene_dir is not None
+            or args.animation_dir is not None
             or args.scene is not None or args.out is not None
             or args.report is not None or args.validate_project
         ):
@@ -211,6 +214,7 @@ def main(argv: list[str] | None = None) -> int:
         or args.culling or args.no_culling or args.start_paused
         or args.out is not None or args.report is not None
         or args.scene is not None or args.scene_dir is not None
+        or args.animation_dir is not None
         or args.prefab_dir is not None
     ):
         parser.error("--validate-project is a standalone project command")
@@ -229,8 +233,11 @@ def main(argv: list[str] | None = None) -> int:
         args.host is not None
         or args.port is not None
         or args.prefab_dir is not None
+        or args.animation_dir is not None
     ) and not args.serve:
-        parser.error("--host, --port and --prefab-dir require --serve")
+        parser.error(
+            "--host, --port, --prefab-dir and --animation-dir require --serve"
+        )
     if args.scene_dir is not None and not (args.serve or args.scene is not None):
         parser.error("--scene-dir requires --serve or --scene")
     if args.scene is not None:
@@ -370,11 +377,14 @@ def main(argv: list[str] | None = None) -> int:
             return 0 if report["ok"] else 1
         prefab_dir = args.prefab_dir
         scene_dir = args.scene_dir
+        animation_dir = args.animation_dir
         if project_context is not None:
             if prefab_dir is None:
                 prefab_dir = project_context.directory / "prefabs"
             if scene_dir is None:
                 scene_dir = project_context.directory / "scenes"
+            if animation_dir is None:
+                animation_dir = project_context.directory / "animations"
         def make_game():
             fresh = load_game(args.game)
             if project_context is not None:
@@ -412,6 +422,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.port if args.port is not None else 8000,
                 prefab_dir=prefab_dir,
                 scene_dir=scene_dir,
+                animation_dir=animation_dir,
                 initial_scene=args.scene,
             )
         if args.describe:

@@ -56,10 +56,15 @@
         <textarea id="animation-clip" spellcheck="false" rows="6">{}</textarea>
         <div class="field-grid">
           <label>Preview time <input id="animation-time" type="number" min="0" step="0.05" value="0"></label>
+          <label>Clip name <input id="animation-name" type="text" list="animation-names"></label>
         </div>
+        <datalist id="animation-names"></datalist>
         <div class="buttons">
           <button id="animation-preview" type="button">Preview animation</button>
           <button id="animation-sample" type="button">Sample selected node</button>
+          <button id="animation-save" type="button">Save clip</button>
+          <button id="animation-delete" type="button">Delete clip</button>
+          <button id="animation-restore" type="button">Restore clip</button>
         </div>
         <div id="animation-state" class="hint">No animation preview.</div>
         <div class="field-grid">

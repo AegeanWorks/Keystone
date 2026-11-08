@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `137`
-- **Total Classes**: `217`
+- **Total Python Modules**: `139`
+- **Total Classes**: `220`
 - **Total Top-Level Functions**: `372`
-- **Total Class Methods**: `1348`
-- **Total Source Lines**: `32663`
+- **Total Class Methods**: `1361`
+- **Total Source Lines**: `33059`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `644` lines (`34650` bytes)
+**Size**: `655` lines (`35242` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -119,6 +119,27 @@
 - `def blend_poses(first, second, factor)` - *Blend two sampled poses; factor 0 returns first, 1 returns second.*
 - `def apply_pose(scene, pose)` - *Write sampled Transforms onto nodes by id or name; return updated ids.*
 - `def animation_report(controller)`
+
+---
+
+### [`keystone/animation_library.py`](keystone/animation_library.py)
+> *File-backed animation clip libraries for editors, tools and AI clients.*
+
+**Size**: `132` lines (`4952` bytes)
+
+**Classes:**
+- `class AnimationEntry` - *One library file and its clip summary, or why it could not load.*
+  - Method `.describe()` - *Return a JSON-safe entry for editor and AI documents.*
+- `class AnimationLibrary` - *Discover, save and load ``.kanim`` clips in one directory.*
+  - Method `.__init__(directory)`
+  - Method `.path_for(name)` - *Return the safe file path for one library name.*
+  - Method `.save(name, clip)` - *Write one clip atomically; its internal name must match the entry.*
+  - Method `.load(name)` - *Load one clip or raise KeyError when the entry is absent.*
+  - Method `.delete(name)` - *Move one entry to the library trash and return its former path.*
+  - Method `.trash()` - *Return recoverable deleted entries.*
+  - Method `.restore(trash_name)` - *Restore one trashed entry and return its summary.*
+  - Method `.entry(name)` - *Load one entry's summary, capturing load failures as ``error``.*
+  - Method `.entries()` - *Return every ``.kanim`` file in stable name order.*
 
 ---
 
@@ -1174,7 +1195,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `538` lines (`20288` bytes)
+**Size**: `544` lines (`20584` bytes)
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -1372,7 +1393,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `60` lines (`1274` bytes)
+**Size**: `63` lines (`1345` bytes)
 
 ---
 
@@ -1668,20 +1689,20 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `300` lines (`14443` bytes)
+**Size**: `322` lines (`15246` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1586` lines (`69050` bytes)
+**Size**: `1648` lines (`72144` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
   - Method `.__init__(status, why, fix)`
 - `class GameSession` - *One in-memory game guarded by a lock for concurrent HTTP requests.*
-  - Method `.__init__(game, prefab_dir, scene_dir, initial_scene)`
+  - Method `.__init__(game, prefab_dir, scene_dir, animation_dir, initial_scene)`
   - Property `.name`
   - Property `.selected_ids`
   - Method `.selected_ids(value)`
@@ -1735,8 +1756,8 @@
 **Functions:**
 - `def _copy_scene_settings(source, target)` - *Copy camera and environment settings without copying scene nodes.*
 - `def _enabled(value)`
-- `def create_server(game, host, port, prefab_dir, scene_dir, initial_scene)` - *Create a bound server; port 0 asks the OS for a free port.*
-- `def serve(game, host, port, prefab_dir, scene_dir, initial_scene)` - *Run the local console until interrupted.*
+- `def create_server(game, host, port, prefab_dir, scene_dir, animation_dir, initial_scene)` - *Create a bound server; port 0 asks the OS for a free port.*
+- `def serve(game, host, port, prefab_dir, scene_dir, animation_dir, initial_scene)` - *Run the local console until interrupted.*
 
 ---
 
@@ -1859,6 +1880,18 @@
 
 **Functions:**
 - `def _vec_track(pairs)`
+
+---
+
+### [`tests/test_animation_library.py`](tests/test_animation_library.py)
+> *Tests for file-backed animation clip libraries.*
+
+**Size**: `44` lines (`1715` bytes)
+
+**Classes:**
+- `class AnimationLibraryTest`
+  - Method `.test_save_load_entries_delete_and_restore()`
+  - Method `.test_invalid_name_and_missing_entries()`
 
 ---
 
@@ -3170,7 +3203,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `3016` lines (`127403` bytes)
+**Size**: `3132` lines (`132031` bytes)
 
 **Classes:**
 - `class Health`
@@ -3240,6 +3273,7 @@
   - Method `.test_editor_play_state_exposes_snapshot_and_status()`
   - Method `.test_editor_play_state_reports_hook_errors()`
   - Method `.test_editor_preview_animation_and_undo()`
+  - Method `.test_editor_animation_library_round_trip()`
   - Method `.test_editor_component_lifecycle_play_mode()`
   - Method `.test_editor_component_authoring_and_scene_round_trip()`
   - Method `.test_editor_static_controls_and_index()`
