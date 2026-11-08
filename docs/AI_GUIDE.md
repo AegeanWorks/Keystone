@@ -250,6 +250,33 @@ print(eventful.events_in_range(0.0, 0.75))
 controller.crossfade("bob", 0.25)
 pose, fired = controller.advance_with_events(0.016)
 
+# Parameter-driven state machine with transitions, triggers and crossfades.
+from keystone import (
+    AnimationState,
+    AnimationStateMachine,
+    AnimationTransition,
+)
+
+idle = AnimationState("idle", clip)
+run = AnimationState("run", eventful, speed=1.5)
+machine = AnimationStateMachine(
+    [idle, run],
+    [
+        AnimationTransition(
+            source="idle",
+            target="run",
+            parameter="speed",
+            operator="greater",
+            value=0.5,
+            duration=0.2,
+        )
+    ],
+    {"speed": 0.0},
+)
+machine.set_parameter("speed", 1.0)
+apply_pose(CubeDemo().build_scene(), machine.advance(0.016))
+print(machine.report())
+
 from keystone.input import ActionState
 from keystone.replay import CommandLog, run_log
 

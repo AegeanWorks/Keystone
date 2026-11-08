@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `141`
-- **Total Classes**: `224`
-- **Total Top-Level Functions**: `387`
-- **Total Class Methods**: `1400`
-- **Total Source Lines**: `36031`
+- **Total Python Modules**: `143`
+- **Total Classes**: `228`
+- **Total Top-Level Functions**: `392`
+- **Total Class Methods**: `1425`
+- **Total Source Lines**: `36551`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `173` lines (`3802` bytes)
+**Size**: `181` lines (`3993` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -140,6 +140,41 @@
   - Method `.restore(trash_name)` - *Restore one trashed entry and return its summary.*
   - Method `.entry(name)` - *Load one entry's summary, capturing load failures as ``error``.*
   - Method `.entries()` - *Return every ``.kanim`` file in stable name order.*
+
+---
+
+### [`keystone/animation_state.py`](keystone/animation_state.py)
+> *Deterministic parameter-driven animation state machines.*
+
+**Size**: `341` lines (`12643` bytes)
+
+**Classes:**
+- `class AnimationState` - *One named clip with its loop and speed settings.*
+  - Method `.__post_init__()`
+  - Method `.to_dict()`
+  - Method `.from_dict(data)`
+- `class AnimationTransition` - *One parameter condition that moves between states.*
+  - Method `.__post_init__()`
+  - Method `.matches(parameters)` - *Return whether the parameter condition currently passes.*
+  - Method `.to_dict()`
+  - Method `.from_dict(data)`
+- `class AnimationStateMachine` - *One deterministic controller driven by named states and transitions.*
+  - Method `.__init__(states, transitions, parameters, current)`
+  - Method `._state(name)`
+  - Method `.play(name, restart)`
+  - Method `.set_parameter(name, value)`
+  - Method `.set_trigger(name)`
+  - Method `.available_transitions()`
+  - Method `.advance(dt)`
+  - Method `.take_events()`
+  - Method `.report()`
+  - Method `.to_dict()`
+  - Method `.from_dict(data)`
+
+**Functions:**
+- `def _name(label, value)`
+- `def _finite(label, value, *, minimum)`
+- `def _parameter_value(label, value)`
 
 ---
 
@@ -1935,6 +1970,27 @@
 - `class AnimationLibraryTest`
   - Method `.test_save_load_entries_delete_and_restore()`
   - Method `.test_invalid_name_and_missing_entries()`
+
+---
+
+### [`tests/test_animation_state.py`](tests/test_animation_state.py)
+> *Tests for deterministic parameter-driven animation state machines.*
+
+**Size**: `171` lines (`6335` bytes)
+
+**Classes:**
+- `class AnimationStateMachineTest`
+  - Method `.test_parameter_transition_and_state_settings()`
+  - Method `.test_trigger_transition_and_events()`
+  - Method `.test_crossfade_blending_finishes()`
+  - Method `.test_serialization_round_trip_and_report()`
+  - Method `.test_validation_rejects_bad_shapes()`
+  - Method `.test_available_transitions_and_play_errors()`
+  - Method `.test_parameter_can_be_added_after_construction()`
+
+**Functions:**
+- `def _clip(name, offset, events)`
+- `def _machine(duration)`
 
 ---
 

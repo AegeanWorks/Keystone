@@ -11,6 +11,11 @@ from keystone.animation import (
     apply_pose,
     blend_poses,
 )
+from keystone.animation_state import (
+    AnimationState,
+    AnimationStateMachine,
+    AnimationTransition,
+)
 from keystone.assets import AssetRegistry
 from keystone.audio import (
     SAMPLE_RATE,
@@ -85,6 +90,9 @@ __all__ = [
     "ActionState",
     "AnimationClip",
     "AnimationController",
+    "AnimationState",
+    "AnimationStateMachine",
+    "AnimationTransition",
     "AssetRegistry",
     "AudioClip",
     "AuditTrail",

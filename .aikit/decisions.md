@@ -1336,3 +1336,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The material panel accepted a free-text texture id, so imported texture assets had to be typed manually and there was no visual confirmation of the chosen texture.
 - **Decision**: Replace the texture id input with a select populated from registry texture assets, independent of the asset text filter. Preserve unregistered texture ids as a "missing" option, show a thumbnail from the asset preview metadata, and update the preview on selection changes. No API or schema change.
 - **Consequences**: Static console tests cover the select, preview image, re-render wiring and missing-id fallback. The picker only lists registered textures; a missing id is preserved but saving it still fails through the existing material decoder until the texture is imported again.
+
+### ADR-164: Deterministic animation state machines
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The engine had deterministic clips, crossfades, timed events and an animation controller, but no state machine, so games and AI clients had to reimplement state, parameter and trigger handling.
+- **Decision**: Add `AnimationState`, `AnimationTransition` and `AnimationStateMachine` with named clips, loop/speed settings, parameter conditions (`greater`, `less`, `equal`, `not_equal`, `trigger`), declaration-order transitions, trigger consumption on entry, crossfade durations, clip events, a schema-1 JSON round trip and a report. States and transitions validate shapes, names, references, operators and finite values; the machine owns one `AnimationController`. Export the types from the public `keystone` package.
+- **Consequences**: New tests cover parameter transitions, state speed/loop settings, trigger consumption, timed events, crossfades, serialization, reports and validation. The machine is synchronous and core-only; editor state-machine authoring and file libraries are not included yet, and multiple states sharing a clip name share one controller clip.
