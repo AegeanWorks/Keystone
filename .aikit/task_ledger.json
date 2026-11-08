@@ -1,50 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-commit-audit-v2",
+    "task_id": "keystone-prefab-edit-baseline-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794140487.4873438,
+    "updated_at": 1794141078.2761855,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
     "continuations": [],
-    "completed_at": 1794140489.629259
+    "completed_at": 1794141079.4157233
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-commit-audit-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[run 2/6] Audited commits 1-6: found startup_scene left pointing at missing files after rename/delete; startup manifest now follows rename/delete with rollback, covered by a new web test; full AIKit 6/6 passed; commit and publish next",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794131784.0527139,
-      "timestamp_str": "2026-11-08 12:56:24",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-commit-audit-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[run 3/6] Audited commits 1-9: found refresh order could load dependent prefabs before changed mesh assets; refresh now uses dependency-first ordering with sorted reports and a prefab-before-mesh regression; full AIKit 6/6 passed; commit and publish next",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794132548.841291,
-      "timestamp_str": "2026-11-08 13:09:08",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-commit-audit-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[run 4/6] Audited commits 1-12: found states sharing a clip name overwrote controller payloads; state machine now registers state-name-keyed clip copies and a collision regression passes; full AIKit 6/6 passed; commit and publish next",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794133102.482813,
-      "timestamp_str": "2026-11-08 13:18:22",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-commit-audit-v1",
       "phase": "in_progress",
@@ -284,6 +251,49 @@
       "status": "completed",
       "timestamp": 1794140489.6292613,
       "timestamp_str": "2026-11-08 15:21:29",
+      "agent": "opencode:keystone"
+    },
+    {
+      "task_id": "keystone-prefab-edit-baseline-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Plan: rebase the isolated prefab edit scene after a successful save so saved fields stop reporting as overrides",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794140881.0008354,
+      "timestamp_str": "2026-11-08 15:28:00",
+      "agent": "opencode:keystone",
+      "impact_assessment": {
+        "why": "Removing baseline seeding from apply_prefab_instance fixed rollback and nested-group behavior, but save_prefab_edit no longer rebased the edit scene; saved names and transforms appeared as overrides until close.",
+        "benefits": "Prefab edit mode reflects the saved template immediately, while failed writes leave the old baseline intact.",
+        "risks": "contract: prefab_edit override report only; dependency: existing baseline helper; concurrency: session lock unchanged; state: edit scene baseline and library write order.",
+        "mitigation": "Seed only after the library write succeeds, add a failing-first assertion to the existing round-trip test, and rerun the 6/6 gate."
+      },
+      "plan_digest": "d9e3313f4d40353e9875f5f79695600391a9e3a523e726f471c0fbd7f654ab31"
+    },
+    {
+      "task_id": "keystone-prefab-edit-baseline-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Rebase edit-scene baselines after a successful prefab save; regression asserts zero overrides; 6/6 gate passed; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794141078.2761855,
+      "timestamp_str": "2026-11-08 15:31:18",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "next": "commit and push the follow-up",
+        "evidence": "prefab edit and prefab suites green, full 6/6 gate green"
+      }
+    },
+    {
+      "task_id": "keystone-prefab-edit-baseline-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-prefab-edit-baseline-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794141079.4157255,
+      "timestamp_str": "2026-11-08 15:31:19",
       "agent": "opencode:keystone"
     }
   ]

@@ -10,7 +10,7 @@
 - **Total Classes**: `231`
 - **Total Top-Level Functions**: `413`
 - **Total Class Methods**: `1461`
-- **Total Source Lines**: `39354`
+- **Total Source Lines**: `39359`
 
 ---
 
@@ -1812,7 +1812,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2795` lines (`125172` bytes)
+**Size**: `2798` lines (`125271` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3388,7 +3388,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `5443` lines (`224413` bytes)
+**Size**: `5445` lines (`224537` bytes)
 
 **Classes:**
 - `class Health`

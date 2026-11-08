@@ -1496,3 +1496,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->30 audit found two problems in the new override baseline flow. Applying an outer prefab seeded baselines for every descendant, including nested prefab groups, which erased nested overrides. Applying also rebased baselines before the prefab library write, so a failed write left instance metadata pointing at a template that was never saved.
 - **Decision**: Remove baseline seeding from `apply_prefab_instance` and add `seed_prefab_instance_baselines`, which rebases only the applied group's own nodes and skips nested groups. The `apply_prefab` action calls it only after the library write succeeds. Add regressions for nested overrides surviving an outer apply and for a failed library write keeping the old template, baseline and override report.
 - **Consequences**: Nested instance overrides survive outer prefab applies, and failed applies are metadata-atomic. `apply_prefab_instance` is now a pure capture helper; callers that need baselines call the new helper after persistence.
+
+### ADR-184: Commit audit rebases prefab edit baselines after save
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Moving baseline seeding out of `apply_prefab_instance` fixed apply rollback and nested-group preservation, but `save_prefab_edit` still captured the edit scene without rebasing it. After a successful save, the isolated edit scene reported every saved name/transform as an override against the old baseline.
+- **Decision**: Call `seed_prefab_instance_baselines` on the edit scene after the prefab library write succeeds. Add assertions that a saved prefab edit reports zero overrides while remaining dirty until the save.
+- **Consequences**: The edit scene reflects its saved prefab immediately, and a failed write still leaves the edit baseline untouched. The direct apply action already uses the same post-write rebase helper.

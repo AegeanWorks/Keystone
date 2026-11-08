@@ -1589,6 +1589,8 @@ class WebServerTest(unittest.TestCase):
             self.assertFalse(saved["prefab_edit"]["dirty"])
             self.assertTrue((prefab_dir / "hero.kprefab").is_file())
             self.assertEqual(session.prefabs["hero"].roots[0].name, "hero-edited")
+            self.assertEqual(saved["prefab_overrides"], [])
+            self.assertEqual(saved["prefab_override_count"], 0)
 
             session.editor_action(
                 {

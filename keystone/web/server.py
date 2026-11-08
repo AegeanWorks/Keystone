@@ -689,6 +689,9 @@ class GameSession:
                 self.prefabs[name] = previous
             raise
         self.prefabs[prefab.name] = prefab
+        seed_prefab_instance_baselines(
+            scene, node, self._registry_locked()
+        )
         self._prefab_edit_dirty = False
         return prefab
 
