@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `133`
-- **Total Classes**: `206`
-- **Total Top-Level Functions**: `337`
-- **Total Class Methods**: `1287`
-- **Total Source Lines**: `29162`
+- **Total Python Modules**: `135`
+- **Total Classes**: `214`
+- **Total Top-Level Functions**: `338`
+- **Total Class Methods**: `1310`
+- **Total Source Lines**: `29578`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `167` lines (`3614` bytes)
+**Size**: `171` lines (`3768` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -815,6 +815,28 @@
 
 ---
 
+### [`keystone/lifecycle.py`](keystone/lifecycle.py)
+> *Deterministic start/update/stop lifecycle for scene components.*
+
+**Size**: `148` lines (`5138` bytes)
+
+**Classes:**
+- `class LifecycleContext` - *Arguments passed to one component lifecycle hook.*
+- `class ComponentRuntime` - *Run deterministic component lifecycle hooks for one scene.*
+  - Method `.__init__(scene)`
+  - Method `._entries()`
+  - Method `._context(node, component, dt)`
+  - Method `._start_component(node, component)`
+  - Method `.start()` - *Start every hook-bearing component once and return the count.*
+  - Method `.update(dt)` - *Advance one fixed tick and return the number of update hooks run.*
+  - Method `.stop()` - *Stop started components in reverse order and return the count.*
+  - Method `.describe()` - *Return the JSON-safe runtime summary for editor documents.*
+
+**Functions:**
+- `def lifecycle_hooks(value)` - *Return the lifecycle hook names implemented by a component or type.*
+
+---
+
 ### [`keystone/material_graph.py`](keystone/material_graph.py)
 > *Declarative, deterministic material graphs that evaluate to a Material.*
 
@@ -1509,7 +1531,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `1493` lines (`54320` bytes)
+**Size**: `1501` lines (`54569` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene and environment edits.*
@@ -1598,14 +1620,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `202` lines (`9502` bytes)
+**Size**: `203` lines (`9672` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1065` lines (`47080` bytes)
+**Size**: `1092` lines (`48309` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1623,6 +1645,7 @@
   - Method `._apply_history(scene, operation)`
   - Method `._batch_locked(scene, payload)`
   - Method `._ensure_prefab_locked(name)`
+  - Method `._lifecycle_state()`
   - Method `._editor_locked(scene)`
   - Method `.editor()`
   - Method `.editor_action(payload)`
@@ -2263,6 +2286,29 @@
 
 **Functions:**
 - `def make_scene(count, same_material)`
+
+---
+
+### [`tests/test_lifecycle.py`](tests/test_lifecycle.py)
+> *Tests for deterministic component start/update/stop lifecycle hooks.*
+
+**Size**: `165` lines (`5135` bytes)
+
+**Classes:**
+- `class Alpha`
+  - Method `.start(context)`
+  - Method `.update(context)`
+  - Method `.stop(context)`
+- `class Beta`
+- `class Plain`
+- `class LifecycleTest`
+  - Method `.setUp()`
+  - Method `._scene()`
+  - Method `.test_start_update_stop_order_context_and_counts()`
+  - Method `.test_components_added_after_start_begin_on_the_next_tick()`
+  - Method `.test_components_without_hooks_are_ignored()`
+  - Method `.test_lifecycle_hooks_reports_available_methods()`
+  - Method `.test_runtime_state_and_dt_validation()`
 
 ---
 
@@ -3046,11 +3092,16 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `1842` lines (`77347` bytes)
+**Size**: `1905` lines (`79571` bytes)
 
 **Classes:**
 - `class Health`
 - `class ComponentDemo`
+- `class Ticker`
+  - Method `.start(context)`
+  - Method `.update(context)`
+  - Method `.stop(context)`
+- `class LifecycleDemo`
 - `class SceneDocumentTest`
   - Method `.test_sample_scene_document_has_identity_geometry_and_texture()`
   - Method `.test_world_matrices_and_mesh_references_are_exported()`
@@ -3096,6 +3147,7 @@
   - Method `.test_editor_batch_authoring_is_atomic()`
   - Method `.test_editor_node_property_editing()`
   - Method `.test_editor_play_mode_restores_authored_scene()`
+  - Method `.test_editor_component_lifecycle_play_mode()`
   - Method `.test_editor_component_authoring_and_scene_round_trip()`
   - Method `.test_editor_static_controls_and_index()`
   - Method `.test_step_button_documents_its_reset_semantics()`

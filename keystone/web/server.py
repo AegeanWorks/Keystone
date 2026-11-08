@@ -16,6 +16,7 @@ from keystone.assets import AssetRegistry
 from keystone.component_codec import validate_component_types
 from keystone.headless import run_simulation
 from keystone.input import ActionState
+from keystone.lifecycle import ComponentRuntime
 from keystone.plugin import GameModule, describe_game
 from keystone.prefab import Prefab
 from keystone.prefab_library import PrefabLibrary
@@ -117,6 +118,7 @@ class GameSession:
         self.component_types = component_types
         self.playing = False
         self.play_frames = 0
+        self.lifecycle: ComponentRuntime | None = None
         self._play_snapshot: dict | None = None
         self.last_diff: dict[str, object] | None = None
         self.prefab_library: PrefabLibrary | None = None
@@ -268,6 +270,11 @@ class GameSession:
             raise KeyError(f"no saved prefab {name!r}")
         self.prefabs[name] = self.prefab_library.load(name)
 
+    def _lifecycle_state(self) -> dict[str, object]:
+        if self.lifecycle is not None:
+            return self.lifecycle.describe()
+        return {"active": False, "frame": 0, "started": 0, "hooks": []}
+
     def _editor_locked(self, scene: Scene) -> dict:
         if self.selected_id is not None and scene.find_by_id(self.selected_id) is None:
             self.selected_id = None
@@ -297,6 +304,7 @@ class GameSession:
                 "active": self.playing,
                 "frames": self.play_frames,
                 "step": FIXED_STEP,
+                "lifecycle": self._lifecycle_state(),
             },
             diff=self.last_diff,
             trash={
@@ -383,7 +391,18 @@ class GameSession:
                 elif action == "play_start":
                     if self.playing:
                         raise ValueError("play mode is already active")
-                    self._play_snapshot = scene_to_dict(scene, self._registry_locked())
+                    registry = self._registry_locked()
+                    snapshot = scene_to_dict(scene, registry)
+                    lifecycle = ComponentRuntime(scene)
+                    try:
+                        lifecycle.start()
+                    except Exception:
+                        restore_scene(
+                            scene, snapshot, registry, self.component_types
+                        )
+                        raise
+                    self._play_snapshot = snapshot
+                    self.lifecycle = lifecycle
                     self.playing = True
                     self.play_frames = 0
                     self.history.clear()
@@ -411,23 +430,31 @@ class GameSession:
                             )
                         else:
                             state = ActionState()
+                        if self.lifecycle is not None:
+                            self.lifecycle.update(FIXED_STEP)
                         self.game.update(FIXED_STEP, state)
                     self.play_frames += frames
                 elif action == "play_stop":
                     if not self.playing:
                         raise ValueError("play mode is not active")
-                    if self._play_snapshot is not None:
-                        restore_scene(
-                            scene,
-                            self._play_snapshot,
-                            self._registry_locked(),
-                            self.component_types,
-                        )
-                    self.playing = False
-                    self.play_frames = 0
-                    self._play_snapshot = None
-                    self.history.clear()
-                    self.selected_id = None
+                    lifecycle = self.lifecycle
+                    self.lifecycle = None
+                    try:
+                        if lifecycle is not None:
+                            lifecycle.stop()
+                    finally:
+                        if self._play_snapshot is not None:
+                            restore_scene(
+                                scene,
+                                self._play_snapshot,
+                                self._registry_locked(),
+                                self.component_types,
+                            )
+                        self.playing = False
+                        self.play_frames = 0
+                        self._play_snapshot = None
+                        self.history.clear()
+                        self.selected_id = None
                 elif action == "set_component":
                     node = find_node(scene, payload.get("id"))
                     self._apply_history(

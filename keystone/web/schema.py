@@ -176,6 +176,7 @@ EDITOR_SCHEMA = {
         "schema 21 makes prefab instance links and revert/apply/delete/reparent group-aware for multi-root prefabs; prefab_instance_count counts distinct groups",
         "schema 22 supports nested prefab instances: prefab schema 2 persists nested links and instantiation rebases nested prefixes and IDs",
         "schema 23 adds per-field prefab override tracking and revert_prefab_override/apply_prefab_override actions",
+        "schema 24 adds deterministic component lifecycle hooks: component schemas advertise start/update/stop and play state reports the runtime started/frame summary",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

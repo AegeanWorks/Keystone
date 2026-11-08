@@ -38,6 +38,7 @@ from keystone.gltf import GltfImport, load_gltf
 from keystone.gpu.instancing import group_instances, plan_instanced
 from keystone.history import History
 from keystone.input import ActionState, InputMap
+from keystone.lifecycle import ComponentRuntime, LifecycleContext, lifecycle_hooks
 from keystone.material_graph import MaterialGraph, MaterialGraphNode
 from keystone.math3d import Mat4, Quat, Vec3
 from keystone.particles import Emitter, Particle, ParticleSystem, particles_report
@@ -89,6 +90,7 @@ __all__ = [
     "BloomSettings",
     "BotPolicy",
     "ColorSettings",
+    "ComponentRuntime",
     "CullingSettings",
     "DirectionalLight",
     "Emitter",
@@ -98,6 +100,7 @@ __all__ = [
     "GreedyPolicy",
     "History",
     "InputMap",
+    "LifecycleContext",
     "Mat4",
     "MaterialGraph",
     "MaterialGraphNode",
@@ -131,6 +134,7 @@ __all__ = [
     "diff_transcripts",
     "extract_planes",
     "group_instances",
+    "lifecycle_hooks",
     "load_gltf",
     "make_report",
     "merge_batches",

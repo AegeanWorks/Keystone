@@ -565,11 +565,12 @@ function showEditor(editor) {
   renderComponentFields(editor, editor.selection);
   const history = editor.history || { undo: 0, redo: 0 };
   const play = editor.play || { active: false, frames: 0 };
+  const lifecycle = play.lifecycle || { started: 0 };
   if (viewer) {
     viewer.setEditable(!play.active);
   }
   elements.playState.textContent = play.active
-    ? `Playing · ${play.frames} frames`
+    ? `Playing · ${play.frames} frames · ${lifecycle.started ?? 0} behaviors`
     : "Stopped";
   elements.editorState.textContent =
     `${editor.nodes.length} nodes · ${editor.prefabs.length} prefabs · ` +

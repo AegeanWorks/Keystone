@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-prefab-overrides-v1",
+    "task_id": "keystone-component-lifecycle-v1",
     "last_phase": "verification",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794097388.0104587,
+    "updated_at": 1794098123.3170104,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794097388.4824116
+    "completed_at": 1794098123.7473571
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-batch-prefab-revert-v1",
-      "phase": "verification",
-      "phase_num": 4,
-      "description": "[2/2] revert_prefab added to atomic batches with one-undo regression coverage; 732 tests green, editor schema 20, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794093528.0609856,
-      "timestamp_str": "2026-11-08 02:18:48",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-batch-prefab-revert-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-batch-prefab-revert-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794093528.4441404,
-      "timestamp_str": "2026-11-08 02:18:48",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-hierarchy-prefab-badges-v1",
-      "phase": "planning",
-      "phase_num": 2,
-      "description": "[1/1] Add prefab-instance badges and an instance count to the console hierarchy",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794093559.8381162,
-      "timestamp_str": "2026-11-08 02:19:19",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Linked prefab roots are visible in the inspector but indistinguishable in the hierarchy list, unlike Unity/Unreal prefab markers.",
-        "benefits": "Hierarchy rows show prefab name and instance prefix, filters match them, and the status line reports the instance count.",
-        "risks": "contract: no API or schema change; dependency: none; concurrency: none; state: display-only.",
-        "mitigation": "Derive badges from prefab_link, add static assertions, run node --check and the full gate cycle."
-      },
-      "plan_digest": "91cd6c80b5742f5ebcd5f2439add1144886934ae2a14ef5f2e74c9b99f40fbd9"
-    },
     {
       "task_id": "keystone-hierarchy-prefab-badges-v1",
       "phase": "verification",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794097388.482414,
       "timestamp_str": "2026-11-08 03:23:08",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-component-lifecycle-v1",
+      "phase": "planning",
+      "phase_num": 2,
+      "description": "[1/3] Plan deterministic component lifecycle hooks with editor schema/play-state exposure and tests",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794097493.838476,
+      "timestamp_str": "2026-11-08 03:24:53",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "Authored components are inert data; there is no start/update/stop lifecycle, so behaviors cannot run deterministically in editor play mode.",
+        "benefits": "A core ComponentRuntime runs start/update/stop in deterministic scene/type order, editor component schemas advertise hooks, play mode reports started/frame state, and authored behaviors execute without changing the five-operation game contract.",
+        "risks": "contract: editor schema 24 and a new core module; dependency: stdlib only; concurrency: editor lock; state: hook order, one start/stop, frame counting, removal/adding during play, and authored-scene restore.",
+        "mitigation": "Use DFS node order plus sorted component types, track started identities, reverse-order stop, validate dt, restore the play snapshot on stop, and add order/exposure/play regressions."
+      },
+      "plan_digest": "81666fe2797b4046eabb11f882e72e24461ee5ebc76f37f7c9ee8cfcd11fd434"
+    },
+    {
+      "task_id": "keystone-component-lifecycle-v1",
+      "phase": "verification",
+      "phase_num": 4,
+      "description": "[2/3] Deterministic component lifecycle implemented: ComponentRuntime start/update/stop, LifecycleContext, schema 24 hooks/play summary, editor play integration, order/context/play tests; 750 tests green, node check clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 24, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794098123.3170104,
+      "timestamp_str": "2026-11-08 03:35:23",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-component-lifecycle-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-component-lifecycle-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794098123.7473595,
+      "timestamp_str": "2026-11-08 03:35:23",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

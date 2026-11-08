@@ -21,6 +21,7 @@ from keystone.component_codec import (
     component_to_dict,
 )
 from keystone.geometry import Material, MeshData
+from keystone.lifecycle import lifecycle_hooks
 from keystone.math3d import Quat, Vec3
 from keystone.png import png_bytes
 from keystone.prefab import Prefab
@@ -424,7 +425,11 @@ def component_schemas(
     for name in sorted(component_types):
         component_type = component_types[name]
         if not is_dataclass(component_type):
-            schemas[name] = {"fields": [], "note": "custom to_dict/from_dict codec"}
+            schemas[name] = {
+                "fields": [],
+                "note": "custom to_dict/from_dict codec",
+                "lifecycle": list(lifecycle_hooks(component_type)),
+            }
             continue
         fields_list: list[dict[str, object]] = []
         for item in fields(component_type):
@@ -446,7 +451,10 @@ def component_schemas(
                     "default": default if not required else None,
                 }
             )
-        schemas[name] = {"fields": fields_list}
+        schemas[name] = {
+            "fields": fields_list,
+            "lifecycle": list(lifecycle_hooks(component_type)),
+        }
     return schemas
 
 

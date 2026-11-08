@@ -32,6 +32,26 @@ class ComponentDemo(CubeDemo):
     component_types: ClassVar[dict[str, type]] = {"Health": Health}
 
 
+@dataclass
+class Ticker:
+    ticks: int = 0
+    started: int = 0
+    stopped: int = 0
+
+    def start(self, context) -> None:
+        self.started += 1
+
+    def update(self, context) -> None:
+        self.ticks += 1
+
+    def stop(self, context) -> None:
+        self.stopped += 1
+
+
+class LifecycleDemo(CubeDemo):
+    component_types: ClassVar[dict[str, type]] = {"Ticker": Ticker}
+
+
 class SceneDocumentTest(unittest.TestCase):
     def test_sample_scene_document_has_identity_geometry_and_texture(self):
         document = scene_document(CubeDemo().build_scene(), game="cube-demo")
@@ -1494,6 +1514,49 @@ class WebServerTest(unittest.TestCase):
         with self.assertRaises(WebProblem) as caught:
             session.editor_action({"action": "play_step", "frames": 1})
         self.assertEqual(caught.exception.status, 400)
+
+    def test_editor_component_lifecycle_play_mode(self):
+        session = GameSession(LifecycleDemo())
+        editor = session.editor()
+        self.assertEqual(
+            editor["component_schemas"]["Ticker"]["lifecycle"],
+            ["start", "update", "stop"],
+        )
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        session.editor_action(
+            {
+                "action": "set_component",
+                "id": cube["id"],
+                "type": "Ticker",
+                "data": {},
+            }
+        )
+        started = session.editor_action({"action": "play_start"})
+        self.assertEqual(started["play"]["lifecycle"]["started"], 1)
+        self.assertEqual(started["play"]["lifecycle"]["frame"], 0)
+        self.assertEqual(
+            started["play"]["lifecycle"]["hooks"],
+            ["start", "update", "stop"],
+        )
+        stepped = session.editor_action({"action": "play_step", "frames": 2})
+        self.assertEqual(stepped["play"]["lifecycle"]["frame"], 2)
+        node = next(node for node in stepped["nodes"] if node["id"] == cube["id"])
+        data = next(
+            item["data"]
+            for item in node["component_data"]
+            if item["type"] == "Ticker"
+        )
+        self.assertEqual(data, {"ticks": 2, "started": 1, "stopped": 0})
+        stopped = session.editor_action({"action": "play_stop"})
+        self.assertFalse(stopped["play"]["lifecycle"]["active"])
+        self.assertEqual(stopped["play"]["lifecycle"]["started"], 0)
+        node = next(node for node in stopped["nodes"] if node["id"] == cube["id"])
+        data = next(
+            item["data"]
+            for item in node["component_data"]
+            if item["type"] == "Ticker"
+        )
+        self.assertEqual(data, {"ticks": 0, "started": 0, "stopped": 0})
 
     def test_editor_component_authoring_and_scene_round_trip(self):
         with tempfile.TemporaryDirectory() as directory:
