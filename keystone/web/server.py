@@ -2080,15 +2080,28 @@ class GameSession:
                         raise ValueError("select a node before applying an override")
                     node = find_node(scene, node_id)
                     self._ensure_unlocked_locked([node])
-                    updated = apply_prefab_override(
-                        scene,
-                        node_id,
-                        payload.get("field"),
-                        self.prefabs,
-                        self._registry_locked(),
-                    )
-                    if self.prefab_library is not None:
-                        self.prefab_library.save(updated.name, updated)
+                    baselines = {
+                        item.id: copy.deepcopy(item.prefab_base)
+                        for item in scene.traverse()
+                        if item.prefab_base is not None
+                    }
+                    try:
+                        updated = apply_prefab_override(
+                            scene,
+                            node_id,
+                            payload.get("field"),
+                            self.prefabs,
+                            self._registry_locked(),
+                        )
+                        if self.prefab_library is not None:
+                            self.prefab_library.save(updated.name, updated)
+                    except Exception:
+                        for item in scene.traverse():
+                            if item.id in baselines:
+                                item.prefab_base = copy.deepcopy(
+                                    baselines[item.id]
+                                )
+                        raise
                     self.prefabs[updated.name] = updated
                     self.selected_id = node.id
                 elif action == "validate_scene":

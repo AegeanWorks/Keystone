@@ -2082,6 +2082,51 @@ class WebServerTest(unittest.TestCase):
                 fields["name"], {"template": "cube-0", "instance": "custom"}
             )
 
+    def test_editor_apply_prefab_override_failure_keeps_baseline(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefab_dir = Path(directory) / "prefabs"
+            session = GameSession(CubeDemo(), prefab_dir=prefab_dir)
+            editor = session.editor()
+            cube = next(
+                node for node in editor["nodes"] if node["name"] == "cube-0"
+            )
+            session.editor_action({"action": "select", "id": cube["id"]})
+            session.editor_action({"action": "save_prefab", "name": "hero"})
+            session.editor_action(
+                {"action": "insert_prefab", "name": "hero", "instance": "a"}
+            )
+            session.editor_action(
+                {"action": "set_node", "id": "a:cube-0", "name": "custom"}
+            )
+            with patch.object(
+                session.prefab_library,
+                "save",
+                side_effect=OSError("disk full"),
+            ), self.assertRaises(OSError):
+                session.editor_action(
+                    {
+                        "action": "apply_prefab_override",
+                        "id": "a:cube-0",
+                        "field": "name",
+                    }
+                )
+            self.assertEqual(
+                session.prefabs["hero"].roots[0].name, "cube-0"
+            )
+            group = next(
+                item
+                for item in session.editor()["prefab_overrides"]
+                if item["instance"] == "a"
+            )
+            fields = next(
+                item
+                for item in group["nodes"]
+                if item["id"] == "a:cube-0"
+            )["fields"]
+            self.assertEqual(
+                fields["name"], {"template": "cube-0", "instance": "custom"}
+            )
+
     def test_editor_refresh_skips_locked_instance_groups(self):
         session = GameSession(CubeDemo())
         editor = session.editor()

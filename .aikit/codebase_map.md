@@ -9,8 +9,8 @@
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
 - **Total Top-Level Functions**: `420`
-- **Total Class Methods**: `1475`
-- **Total Source Lines**: `40085`
+- **Total Class Methods**: `1476`
+- **Total Source Lines**: `40143`
 
 ---
 
@@ -1823,7 +1823,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2880` lines (`128804` bytes)
+**Size**: `2893` lines (`129425` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3403,7 +3403,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `5715` lines (`235527` bytes)
+**Size**: `5760` lines (`237322` bytes)
 
 **Classes:**
 - `class Health`
@@ -3463,6 +3463,7 @@
   - Method `.test_editor_refresh_drops_overrides_for_removed_template_nodes()`
   - Method `.test_editor_apply_outer_prefab_keeps_nested_override_baseline()`
   - Method `.test_editor_apply_prefab_failure_keeps_override_baseline()`
+  - Method `.test_editor_apply_prefab_override_failure_keeps_baseline()`
   - Method `.test_editor_refresh_skips_locked_instance_groups()`
   - Method `.test_editor_prefab_overrides_survive_scene_round_trip()`
   - Method `.test_editor_multi_root_prefab_save_from_selection()`

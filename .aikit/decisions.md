@@ -1576,3 +1576,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->27 audit found that lock checks covered selected nodes and ancestors but not descendants. Deleting an unlocked parent removed a subtree containing a locked child, bypassing lock protection.
 - **Decision**: Add `_ensure_subtree_unlocked_locked` and use it for `delete_node` and `delete_selection`. It reports every locked node in the affected subtrees. Child creation under locked parents remains allowed because such children inherit the lock; only destructive deletion is blocked.
 - **Consequences**: Locks now protect complete subtrees from deletion without changing hierarchy-growth behavior. Existing lock and inherited-lock tests remain valid.
+
+### ADR-194: Commit audit makes prefab override apply transactional
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->30 audit found that `apply_prefab_override` rebased instance baselines before the prefab library write. If the write failed, the template stayed old but the override diff disappeared, so clients could no longer see or revert it.
+- **Decision**: Snapshot every node baseline before applying an override, and restore all baselines if template construction or the library write raises. Add a regression that patches `PrefabLibrary.save` to fail and asserts the old template and override report remain.
+- **Consequences**: Failed override applies are metadata-atomic. Successful applies still rebase all affected instances and assign the updated prefab cache only after persistence.
