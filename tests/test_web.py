@@ -812,6 +812,31 @@ class WebServerTest(unittest.TestCase):
         )
         self.assertEqual(moved["locked_count"], 0)
 
+    def test_editor_locked_descendant_blocks_parent_delete(self):
+        session = GameSession(CubeDemo())
+        parent = session.editor_action(
+            {"action": "create_node", "name": "parent"}
+        )["selection"]["id"]
+        child = session.editor_action(
+            {"action": "create_node", "name": "child", "parent": parent}
+        )["selection"]["id"]
+        session.editor_action(
+            {"action": "set_nodes_locked", "ids": [child], "locked": True}
+        )
+        session.editor_action({"action": "select", "id": parent})
+        for payload in (
+            {"action": "delete_node", "id": parent},
+            {"action": "delete_selection"},
+        ):
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(payload)
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn(child, caught.exception.why)
+        editor = session.editor()
+        self.assertIsNotNone(editor["selection"])
+        self.assertIn(parent, {node["id"] for node in editor["nodes"]})
+        self.assertIn(child, {node["id"] for node in editor["nodes"]})
+
     def test_editor_copy_paste_selection(self):
         session = GameSession(CubeDemo())
         editor = session.editor()

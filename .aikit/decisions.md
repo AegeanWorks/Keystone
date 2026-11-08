@@ -1568,3 +1568,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->24 audit found that dependency-first refresh used each prefab's previous dependency list. A changed prefab that newly referenced a changed mesh not in its old list could load before the mesh and keep the old payload.
 - **Decision**: When selecting the next ready source, order non-prefab kinds before prefabs, then sort by id. Prefabs therefore resolve new asset ids against freshly loaded meshes, materials and textures while prefab-to-prefab edges still follow the old graph. Add a regression where an initially meshless prefab starts referencing a changed mesh.
 - **Consequences**: New prefab asset edges are handled without a second refresh pass. The known limitation remains for new material-to-texture edges, which are both non-prefab and still ordered by the old graph.
+
+### ADR-193: Commit audit blocks deleting ancestors of locked nodes
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->27 audit found that lock checks covered selected nodes and ancestors but not descendants. Deleting an unlocked parent removed a subtree containing a locked child, bypassing lock protection.
+- **Decision**: Add `_ensure_subtree_unlocked_locked` and use it for `delete_node` and `delete_selection`. It reports every locked node in the affected subtrees. Child creation under locked parents remains allowed because such children inherit the lock; only destructive deletion is blocked.
+- **Consequences**: Locks now protect complete subtrees from deletion without changing hierarchy-growth behavior. Existing lock and inherited-lock tests remain valid.

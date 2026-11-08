@@ -9,8 +9,8 @@
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
 - **Total Top-Level Functions**: `420`
-- **Total Class Methods**: `1473`
-- **Total Source Lines**: `40048`
+- **Total Class Methods**: `1475`
+- **Total Source Lines**: `40085`
 
 ---
 
@@ -1823,7 +1823,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2868` lines (`128363` bytes)
+**Size**: `2880` lines (`128804` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1843,6 +1843,7 @@
   - Method `._registry_locked()`
   - Method `._node_locked_locked(node)`
   - Method `._ensure_unlocked_locked(nodes)`
+  - Method `._ensure_subtree_unlocked_locked(nodes)`
   - Method `._document_asset_ids(value, ids)` - *Collect mesh/material/texture ids from one scene document.*
   - Method `._format_asset_usage(report)`
   - Method `._asset_usage_report_locked(scene, registry, asset_id)` - *Return structured references to one asset across live and saved content.*
@@ -3402,7 +3403,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `5690` lines (`234391` bytes)
+**Size**: `5715` lines (`235527` bytes)
 
 **Classes:**
 - `class Health`
@@ -3441,6 +3442,7 @@
   - Method `.test_editor_layer_visibility()`
   - Method `.test_editor_hiding_layer_prunes_selection()`
   - Method `.test_editor_node_locking_blocks_edits()`
+  - Method `.test_editor_locked_descendant_blocks_parent_delete()`
   - Method `.test_editor_copy_paste_selection()`
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_prefab_instance_revert_and_apply()`

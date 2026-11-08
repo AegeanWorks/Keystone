@@ -441,6 +441,18 @@ class GameSession:
                 + ", ".join(sorted(set(locked)))
             )
 
+    def _ensure_subtree_unlocked_locked(self, nodes: list[Node]) -> None:
+        locked: set[str] = set()
+        for root in nodes:
+            for node in root.traverse():
+                if self._node_locked_locked(node):
+                    locked.add(node.id)
+        if locked:
+            raise ValueError(
+                "locked nodes cannot be deleted: "
+                + ", ".join(sorted(locked))
+            )
+
     @staticmethod
     def _document_asset_ids(value: object, ids: set[str]) -> None:
         """Collect mesh/material/texture ids from one scene document."""
@@ -1110,7 +1122,7 @@ class GameSession:
                         find_node(scene, node_id)
                         for node_id in self.selected_ids
                     ]
-                    self._ensure_unlocked_locked(nodes)
+                    self._ensure_subtree_unlocked_locked(nodes)
                     parent = self._apply_history(
                         scene,
                         lambda: delete_selection(scene, self.selected_ids),
@@ -1667,7 +1679,7 @@ class GameSession:
                     self.selected_id = node.id
                 elif action == "delete_node":
                     node = find_node(scene, payload.get("id"))
-                    self._ensure_unlocked_locked([node])
+                    self._ensure_subtree_unlocked_locked([node])
                     parent = self._apply_history(scene, lambda: delete_node(scene, node))
                     self.selected_id = None if parent is scene.root else parent.id
                 elif action == "duplicate_node":
