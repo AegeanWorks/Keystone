@@ -5,30 +5,12 @@
     "last_phase": "in_progress",
     "active_phase": 4,
     "status": "in_progress",
-    "updated_at": 1794128697.1001728,
+    "updated_at": 1794131784.0527139,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-selection-assets-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan assigning shared mesh/material assets to the multi-node selection",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794124482.674025,
-      "timestamp_str": "2026-11-08 10:54:42",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Asset assignment only targets one node, so a multi-selection cannot share or clear a mesh/material in one edit.",
-        "benefits": "assign_asset_selection applies validated mesh/material ids to every selected node in one undo entry, with a console Assign to selection control.",
-        "risks": "contract: editor schema 53 and one action; dependency: AssetRegistry; concurrency: editor lock; state: empty selection, invalid ids, clearing both fields, nested selected nodes, undo grouping.",
-        "mitigation": "Reuse assign_assets validation per node, resolve selected nodes under the editor lock, wrap the whole loop in one history entry, and add multi-node/undo/error tests."
-      },
-      "plan_digest": "646258a5f8d6944d41198fd1504a850fa073d77b1a5baec14e5fc79d1c5efcc1"
-    },
     {
       "task_id": "keystone-selection-assets-v1",
       "phase": "in_progress",
@@ -272,6 +254,17 @@
       "status": "in_progress",
       "timestamp": 1794128697.1001728,
       "timestamp_str": "2026-11-08 12:04:57",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-commit-audit-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[run 2/6] Audited commits 1-6: found startup_scene left pointing at missing files after rename/delete; startup manifest now follows rename/delete with rollback, covered by a new web test; full AIKit 6/6 passed; commit and publish next",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794131784.0527139,
+      "timestamp_str": "2026-11-08 12:56:24",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

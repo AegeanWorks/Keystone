@@ -1416,3 +1416,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1→3 audit found that `AssetRegistry.refresh()` re-registers a changed file even when its digest is unchanged. `reload_scene_assets` rebound only `reloaded` records, leaving scene and history references on the old payload object. Identity-based asset usage and forget protection could then miss live nodes after a no-op re-save.
 - **Decision**: Rebind old payload identities for both `reloaded` and `unchanged` refresh results when the payload object actually changed. Add a regression that touches an identical `.obj`, reloads, asserts the node and history use the new registry payload, and confirms `asset_usages` still finds the node.
 - **Consequences**: The audit fix is covered by the targeted web test and the full AIKit 6/6 gate. Unchanged records now do a small identity-map check even when their content did not change.
+
+### ADR-174: Commit audit keeps startup scene in sync with library edits
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1→6 audit found that renaming or deleting a saved scene updated `saved_scene` but not the project manifest's `startup_scene`. A restart could open a missing startup scene.
+- **Decision**: When the renamed/deleted scene is the startup scene and a project is configured, rewrite the manifest atomically through `set_project_startup_scene`. Rename rolls the file name back if the manifest write fails; delete clears the manifest before moving the file and restores the old startup value if the delete fails.
+- **Consequences**: A new web test covers startup rename and delete persistence. Scene library operations are slightly heavier when they touch the startup scene; scenes without a project manifest behave as before.

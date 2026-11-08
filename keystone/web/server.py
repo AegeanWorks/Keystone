@@ -1748,6 +1748,25 @@ class GameSession:
                     )
                     if self.saved_scene == old:
                         self.saved_scene = entry.name
+                    if (
+                        self.startup_scene == old
+                        and self.project_dir is not None
+                    ):
+                        try:
+                            context = load_project(self.project_dir)
+                            manifest = set_project_startup_scene(
+                                context, entry.name
+                            )
+                        except (OSError, TypeError, ValueError):
+                            try:
+                                self.scene_library.rename(
+                                    entry.name, old
+                                )
+                            # hygiene: allow best-effort rollback; the original error is re-raised
+                            except (KeyError, OSError, TypeError, ValueError):
+                                pass
+                            raise
+                        self.startup_scene = manifest.startup_scene
                 elif action == "duplicate_scene":
                     if self.scene_library is None:
                         raise ValueError("no scene library is configured")
@@ -1758,7 +1777,28 @@ class GameSession:
                     if self.scene_library is None:
                         raise ValueError("no scene library is configured")
                     name = payload.get("name")
-                    self.scene_library.delete(name)
+                    old_startup = self.startup_scene
+                    if old_startup == name and self.project_dir is not None:
+                        context = load_project(self.project_dir)
+                        manifest = set_project_startup_scene(context, None)
+                        self.startup_scene = manifest.startup_scene
+                    try:
+                        self.scene_library.delete(name)
+                    except Exception:
+                        if (
+                            old_startup == name
+                            and self.project_dir is not None
+                        ):
+                            try:
+                                context = load_project(self.project_dir)
+                                manifest = set_project_startup_scene(
+                                    context, old_startup
+                                )
+                                self.startup_scene = manifest.startup_scene
+                            # hygiene: allow best-effort rollback; the original error is re-raised
+                            except (OSError, TypeError, ValueError):
+                                pass
+                        raise
                     if self.saved_scene == name:
                         self.saved_scene = None
                         self.scene_dirty = True

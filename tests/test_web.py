@@ -3126,6 +3126,39 @@ class WebServerTest(unittest.TestCase):
             self.assertEqual(caught.exception.status, 400)
             self.assertIn("--scene-dir", caught.exception.fix)
 
+    def test_editor_startup_scene_follows_rename_and_delete(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name="startup-sync")
+            session = GameSession(
+                CubeDemo(),
+                project_dir=root,
+                scene_dir=root / "scenes",
+            )
+            session.editor_action(
+                {"action": "save_scene", "name": "level"}
+            )
+            session.editor_action(
+                {"action": "set_startup_scene", "name": "level"}
+            )
+            renamed = session.editor_action(
+                {
+                    "action": "rename_scene",
+                    "name": "level",
+                    "new_name": "level-alt",
+                }
+            )
+            self.assertEqual(renamed["startup_scene"], "level-alt")
+            self.assertEqual(
+                load_project(root).manifest.startup_scene, "level-alt"
+            )
+
+            deleted = session.editor_action(
+                {"action": "delete_scene", "name": "level-alt"}
+            )
+            self.assertIsNone(deleted["startup_scene"])
+            self.assertIsNone(load_project(root).manifest.startup_scene)
+
     def test_editor_forget_asset_and_project_inventory(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "project"
