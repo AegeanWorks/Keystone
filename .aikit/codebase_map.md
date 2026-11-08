@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
-- **Total Top-Level Functions**: `410`
+- **Total Top-Level Functions**: `411`
 - **Total Class Methods**: `1457`
-- **Total Source Lines**: `39064`
+- **Total Source Lines**: `39117`
 
 ---
 
@@ -1663,7 +1663,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `2972` lines (`105591` bytes)
+**Size**: `3002` lines (`106678` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1704,10 +1704,11 @@
 - `def _restore_nodes(scene, snapshot)`
 - `def _rebind_payload(payload, replacements)` - *Return a reloaded payload (or a material with a reloaded texture).*
 - `def _rebind_node_assets(node, replacements)`
+- `def _rebind_prefab_assets(prefab, replacements)` - *Swap reloaded payloads inside one cached prefab template.*
 - `def _rebind_snapshot_nodes(nodes, replacements)`
 - `def _scene_snapshot(scene)`
 - `def _restore_scene_state(scene, snapshot)`
-- `def reload_scene_assets(scene, registry, history)` - *Reload changed file-backed assets and rebind scene plus history payloads.*
+- `def reload_scene_assets(scene, registry, history, prefabs, clipboard)` - *Reload file-backed assets and rebind scene, history, prefab and clipboard payloads.*
 - `def _key_time(value)`
 - `def _key_value(channel, value)`
 - `def _channel_tracks(clip, channel)`
@@ -1802,14 +1803,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `578` lines (`24760` bytes)
+**Size**: `580` lines (`24849` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2784` lines (`124680` bytes)
+**Size**: `2788` lines (`124807` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3385,7 +3386,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `5230` lines (`215858` bytes)
+**Size**: `5247` lines (`216821` bytes)
 
 **Classes:**
 - `class Health`

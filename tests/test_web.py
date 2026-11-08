@@ -3863,6 +3863,12 @@ class WebServerTest(unittest.TestCase):
             crate = session.game.scene.find_by_id(crate_id)
             old_mesh = crate.mesh
             session.editor_action(
+                {"action": "save_prefab", "id": crate_id, "name": "crate-prop"}
+            )
+            session.editor_action({"action": "copy_selection"})
+            self.assertIs(session.prefabs["crate-prop"].roots[0].mesh, old_mesh)
+            self.assertIs(session.clipboard.roots[0].mesh, old_mesh)
+            session.editor_action(
                 {
                     "action": "transform",
                     "id": crate_id,
@@ -3884,6 +3890,8 @@ class WebServerTest(unittest.TestCase):
             )
             self.assertGreaterEqual(reloaded["rebound"], 1)
             self.assertGreaterEqual(reloaded["history_rebound"], 1)
+            self.assertGreaterEqual(reloaded["prefab_rebound"], 1)
+            self.assertGreaterEqual(reloaded["clipboard_rebound"], 1)
             record = session.game.assets.require(
                 "project:assets/crate.obj"
             )
@@ -3891,6 +3899,15 @@ class WebServerTest(unittest.TestCase):
             self.assertIs(crate.mesh, record.payload)
             self.assertIs(
                 session.game.scene.find_by_id(crate_id).mesh, record.payload
+            )
+            self.assertIs(session.prefabs["crate-prop"].roots[0].mesh, record.payload)
+            self.assertIs(session.clipboard.roots[0].mesh, record.payload)
+            inserted = session.editor_action(
+                {"action": "insert_prefab", "name": "crate-prop", "instance": "copy"}
+            )
+            inserted_id = inserted["selection"]["id"]
+            self.assertIs(
+                session.game.scene.find_by_id(inserted_id).mesh, record.payload
             )
 
             usages = session.editor_action(

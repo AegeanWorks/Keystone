@@ -2176,7 +2176,11 @@ class GameSession:
                             "expose self.assets = AssetRegistry() in the game module",
                         )
                     self.last_asset_reload = reload_scene_assets(
-                        scene, registry, self.history
+                        scene,
+                        registry,
+                        self.history,
+                        self.prefabs,
+                        self.clipboard,
                     )
                 elif action == "forget_asset":
                     if self.project_dir is None:

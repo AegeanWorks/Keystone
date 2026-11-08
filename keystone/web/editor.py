@@ -697,6 +697,15 @@ def _rebind_node_assets(node: Node, replacements: Mapping[int, object]) -> int:
     return rebound
 
 
+def _rebind_prefab_assets(prefab: Prefab, replacements: Mapping[int, object]) -> int:
+    """Swap reloaded payloads inside one cached prefab template."""
+    return sum(
+        _rebind_node_assets(node, replacements)
+        for root in prefab.roots
+        for node in root.traverse()
+    )
+
+
 def _rebind_snapshot_nodes(
     nodes: list[object], replacements: Mapping[int, object]
 ) -> int:
@@ -860,14 +869,20 @@ def reload_scene_assets(
     scene: Scene,
     registry: AssetRegistry,
     history: EditorHistory | None = None,
+    prefabs: Mapping[str, Prefab] | None = None,
+    clipboard: Prefab | None = None,
 ) -> dict[str, object]:
-    """Reload changed file-backed assets and rebind scene plus history payloads."""
+    """Reload file-backed assets and rebind scene, history, prefab and clipboard payloads."""
     if not isinstance(scene, Scene):
         raise TypeError("asset reload target must be a Scene")
     if not isinstance(registry, AssetRegistry):
         raise TypeError("asset reload needs an AssetRegistry")
     if history is not None and not isinstance(history, EditorHistory):
         raise TypeError("history must be an EditorHistory or None")
+    if prefabs is not None and not isinstance(prefabs, Mapping):
+        raise TypeError("prefabs must be a mapping of name to Prefab or None")
+    if clipboard is not None and not isinstance(clipboard, Prefab):
+        raise TypeError("clipboard must be a Prefab or None")
     before = {record.id: record for record in registry}
     report = registry.refresh()
     replacements: dict[int, object] = {}
@@ -883,6 +898,19 @@ def reload_scene_assets(
     history_rebound = (
         history.rebind_assets(replacements) if history is not None else 0
     )
+    prefab_rebound = (
+        sum(
+            _rebind_prefab_assets(prefab, replacements)
+            for prefab in prefabs.values()
+        )
+        if prefabs is not None
+        else 0
+    )
+    clipboard_rebound = (
+        _rebind_prefab_assets(clipboard, replacements)
+        if clipboard is not None
+        else 0
+    )
     return {
         "schema": 1,
         "ok": report.ok,
@@ -895,6 +923,8 @@ def reload_scene_assets(
         "missing": list(report.missing),
         "rebound": rebound,
         "history_rebound": history_rebound,
+        "prefab_rebound": prefab_rebound,
+        "clipboard_rebound": clipboard_rebound,
     }
 
 
