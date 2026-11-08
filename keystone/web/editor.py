@@ -66,6 +66,7 @@ __all__ = [
     "set_node_properties",
     "set_scene",
     "transform_from_payload",
+    "validate_scene",
 ]
 
 T = TypeVar("T")
@@ -1156,6 +1157,102 @@ def assign_assets(
             registry, payload.get("material"), "material", "node material"
         )
     return node
+
+
+def validate_scene(
+    scene: Scene,
+    prefabs: dict[str, Prefab],
+    registry: object | None = None,
+) -> dict[str, object]:
+    """Return structured errors and warnings for one authored scene."""
+    issues: list[dict[str, object]] = []
+    names: dict[str, list[str]] = {}
+    for node in scene.traverse():
+        if node is scene.root:
+            continue
+        if registry is None:
+            continue
+        if node.mesh is not None and _payload_id(registry, node.mesh, "mesh") is None:
+            issues.append(
+                {
+                    "severity": "error",
+                    "node_id": node.id,
+                    "field": "mesh",
+                    "message": f"node {node.id!r} references an unregistered mesh",
+                }
+            )
+        if (
+            node.material is not None
+            and _payload_id(registry, node.material, "material") is None
+        ):
+            issues.append(
+                {
+                    "severity": "error",
+                    "node_id": node.id,
+                    "field": "material",
+                    "message": f"node {node.id!r} references an unregistered material",
+                }
+            )
+        link = node.prefab_link
+        if link is not None and link.name not in prefabs:
+            issues.append(
+                {
+                    "severity": "error",
+                    "node_id": node.id,
+                    "field": "prefab_link",
+                    "message": f"node {node.id!r} links to missing prefab {link.name!r}",
+                }
+            )
+        if not node.name.strip():
+            issues.append(
+                {
+                    "severity": "warning",
+                    "node_id": node.id,
+                    "field": "name",
+                    "message": f"node {node.id!r} has a blank name",
+                }
+            )
+        names.setdefault(node.name, []).append(node.id)
+        if node.scene_group is not None and not node.children:
+            issues.append(
+                {
+                    "severity": "warning",
+                    "node_id": node.id,
+                    "field": "scene_group",
+                    "message": f"scene group {node.scene_group.name!r} has no nodes",
+                }
+            )
+    for name, ids in sorted(names.items()):
+        if name and len(ids) > 1:
+            issues.append(
+                {
+                    "severity": "warning",
+                    "node_id": None,
+                    "field": "name",
+                    "message": f"{len(ids)} nodes share the name {name!r}: {', '.join(ids)}",
+                }
+            )
+    if registry is None:
+        issues.append(
+            {
+                "severity": "warning",
+                "node_id": None,
+                "field": "assets",
+                "message": "no AssetRegistry is exposed; asset references were not checked",
+            }
+        )
+    errors = sum(1 for issue in issues if issue["severity"] == "error")
+    warnings = len(issues) - errors
+    return {
+        "schema": 1,
+        "ok": errors == 0,
+        "issues": issues,
+        "errors": errors,
+        "warnings": warnings,
+        "node_count": len(
+            [node for node in scene.traverse() if node is not scene.root]
+        ),
+    }
 
 
 def save_prefab(scene: Scene, node: Node, name: str, prefabs: dict[str, Prefab]) -> Prefab:

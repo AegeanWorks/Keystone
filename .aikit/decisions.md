@@ -1248,3 +1248,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The draggable hierarchy rendered every node, so large scenes became a long list with no way to fold subtrees.
 - **Decision**: Keep a client-side set of collapsed node ids. Rows with children get a toggle that stops propagation, flips the set, and re-renders; descendants of collapsed nodes are hidden unless a hierarchy filter is active, and a selection change expands the selected node's ancestors. No API or schema change.
 - **Consequences**: 779 tests green; static coverage verifies collapse state, ancestor checks, toggle markup and selection reveal. Collapse state is not persisted across reloads, filtered views deliberately ignore folding, and drag/drop still targets visible rows.
+
+### ADR-153: AI-readable scene validation report
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: AI and human authors could save scenes with unregistered assets, dangling prefab links or duplicate names without an explicit preflight report.
+- **Decision**: Add `validate_scene`, returning a schema-1 report with `ok`, error/warning counts, node count and structured issues (`severity`, `node_id`, `field`, `message`). Check unregistered mesh/material references, dangling prefab links, blank names, duplicate names and empty scene groups; warn when the game exposes no AssetRegistry. The action does not mutate history, resets on the next editor action, and the console adds Validate scene with a compact count readout. Bump the editor schema to 42.
+- **Consequences**: 780 tests green; valid, missing-material, dangling-link, duplicate-name and reset cases are covered. Validation uses registry identity and current prefab cache, reports no geometry/topology or performance issues, and does not block saving on errors.

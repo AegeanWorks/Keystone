@@ -2435,6 +2435,55 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("status failed", started["play"]["status_error"])
         session.editor_action({"action": "play_stop"})
 
+    def test_editor_validate_scene_reports_issues(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        valid = session.editor_action({"action": "validate_scene"})
+        validation = valid["validation"]
+        self.assertTrue(validation["ok"])
+        self.assertEqual(validation["errors"], 0)
+        self.assertGreater(validation["node_count"], 0)
+        self.assertIsNone(
+            session.editor_action(
+                {"action": "select", "id": cube["id"]}
+            )["validation"]
+        )
+
+        session.editor_action({"action": "create_node", "name": "dupe"})
+        session.editor_action({"action": "create_node", "name": "dupe"})
+        warnings = session.editor_action({"action": "validate_scene"})
+        self.assertTrue(
+            any(
+                "share the name" in issue["message"]
+                for issue in warnings["validation"]["issues"]
+            )
+        )
+
+        registry = session.game.assets
+        registry.remove("material.cube.0")
+        missing = session.editor_action({"action": "validate_scene"})
+        self.assertFalse(missing["validation"]["ok"])
+        self.assertTrue(
+            any(
+                issue["field"] == "material"
+                for issue in missing["validation"]["issues"]
+            )
+        )
+
+        session.editor_action({"action": "save_prefab", "name": "hero"})
+        session.editor_action(
+            {"action": "insert_prefab", "name": "hero", "instance": "tmp"}
+        )
+        session.prefabs.pop("hero", None)
+        dangling = session.editor_action({"action": "validate_scene"})
+        self.assertTrue(
+            any(
+                issue["field"] == "prefab_link"
+                for issue in dangling["validation"]["issues"]
+            )
+        )
+
     def test_editor_preview_animation_and_undo(self):
         session = GameSession(CubeDemo())
         editor = session.editor()
@@ -2940,6 +2989,8 @@ class WebServerTest(unittest.TestCase):
             "scene-restore",
             "scene-settings",
             "scene-settings-apply",
+            "scene-validate",
+            "validation-state",
             "camera-position",
             "camera-yaw",
             "camera-pitch",
@@ -3027,6 +3078,9 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("duplicate_scene", script)
         self.assertIn("diff_scene", script)
         self.assertIn("applySceneSettings", script)
+        self.assertIn("validateScene", script)
+        self.assertIn("validate_scene", script)
+        self.assertIn("validationState", script)
         self.assertIn("fillSceneSettings", script)
         self.assertIn("applyCameraSettings", script)
         self.assertIn("applyEnvironmentSettings", script)

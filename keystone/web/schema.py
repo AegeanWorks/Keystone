@@ -193,6 +193,7 @@ EDITOR_EXAMPLES = {
         "name": "level-copy",
     },
     "diff_scene": {"action": "diff_scene", "name": "level"},
+    "validate_scene": {"action": "validate_scene"},
     "rename_scene": {"action": "rename_scene", "name": "level", "new_name": "level-alt"},
     "duplicate_scene": {
         "action": "duplicate_scene",
@@ -291,6 +292,15 @@ EDITOR_SCHEMA = {
         "assign_material": ["id", "name"],
         "delete_material": ["name"],
         "restore_material": ["trash"],
+        "validation": [
+            "schema",
+            "ok",
+            "issues",
+            "errors",
+            "warnings",
+            "node_count",
+        ],
+        "validation_issue": ["severity", "node_id", "field", "message"],
         "asset": ["id", "kind", "sha256", "source", "dependencies", "metadata"],
         "component_types": ["name"],
         "component_schema": ["fields"],
@@ -341,6 +351,7 @@ EDITOR_SCHEMA = {
         "schema 39 adds a file-backed material library with save_material/assign_material and a materials inventory",
         "schema 40 adds material delete/restore with in-use protection and recoverable trash",
         "schema 41 adds a preview_animation record flag for record-free playback frames",
+        "schema 42 adds validate_scene, returning structured errors/warnings for missing assets, dangling prefab links and naming issues",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

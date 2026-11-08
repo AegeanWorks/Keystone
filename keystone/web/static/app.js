@@ -61,6 +61,8 @@ const elements = {
   sceneRestore: document.getElementById("scene-restore"),
   sceneSettings: document.getElementById("scene-settings"),
   sceneSettingsApply: document.getElementById("scene-settings-apply"),
+  sceneValidate: document.getElementById("scene-validate"),
+  validationState: document.getElementById("validation-state"),
   cameraPosition: document.getElementById("camera-position"),
   cameraYaw: document.getElementById("camera-yaw"),
   cameraPitch: document.getElementById("camera-pitch"),
@@ -218,7 +220,8 @@ function setBusy(value) {
     elements.sceneSave, elements.sceneLoad, elements.sceneDiff, elements.sceneRename,
     elements.sceneDuplicate, elements.sceneDelete, elements.sceneRestore,
     elements.sceneSettingsApply, elements.cameraSettingsApply,
-    elements.environmentSettingsApply, elements.assignAsset,
+    elements.environmentSettingsApply, elements.sceneValidate,
+    elements.assignAsset,
     elements.materialSave, elements.materialAssign, elements.materialClear,
     elements.materialDelete, elements.materialRestore,
     elements.playStart,
@@ -919,6 +922,11 @@ function showEditor(editor) {
     `undo ${history.undo} / redo ${history.redo} · ` +
     `selected ${editor.selection_count ?? (editor.selection ? 1 : 0)}` +
     `${editor.selection ? ` (${editor.selection.id})` : ""}`;
+  const validation = editor.validation;
+  elements.validationState.textContent = validation
+    ? `${validation.ok ? "OK" : "Errors"} · ${validation.errors} errors · ` +
+      `${validation.warnings} warnings`
+    : "Not validated.";
   if (!busy) {
     elements.editorUndo.disabled = history.undo === 0;
     elements.editorRedo.disabled = history.redo === 0;
@@ -2072,6 +2080,20 @@ async function applyEnvironmentSettings() {
   await refreshScene(false);
 }
 
+async function validateScene() {
+  const editor = await editorAction(
+    { action: "validate_scene" },
+    "validating scene",
+  );
+  const validation = editor.validation;
+  if (validation) {
+    elements.validationState.textContent =
+      `${validation.ok ? "OK" : "Errors"} · ${validation.errors} errors · ` +
+      `${validation.warnings} warnings`;
+  }
+  show({ ok: true, action: "validate_scene", validation });
+}
+
 async function applySceneSettings() {
   let data;
   try {
@@ -2556,6 +2578,7 @@ elements.sceneDuplicate.addEventListener("click", () => run(duplicateScene));
 elements.sceneDelete.addEventListener("click", () => run(deleteScene));
 elements.sceneRestore.addEventListener("click", () => run(restoreScene));
 elements.sceneSettingsApply.addEventListener("click", () => run(applySceneSettings));
+elements.sceneValidate.addEventListener("click", () => run(validateScene));
 elements.cameraSettingsApply.addEventListener("click", () => run(applyCameraSettings));
 elements.environmentSettingsApply.addEventListener("click", () =>
   run(applyEnvironmentSettings),
