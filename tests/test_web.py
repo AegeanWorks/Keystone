@@ -1912,6 +1912,7 @@ class WebServerTest(unittest.TestCase):
             "node-duplicate",
             "node-delete",
             "selection-toggle-visible",
+            "box-select",
             "node-reparent",
             "node-visible",
             "node-tags",
@@ -1992,6 +1993,9 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("applyGizmoSelectionScale", script)
         self.assertIn("group_rotation", script)
         self.assertIn("group_scale", script)
+        self.assertIn("onBoxSelect", script)
+        self.assertIn("toggleBoxSelect", script)
+        self.assertIn("boxSelect", script)
         self.assertIn("onSelect", script)
         self.assertIn("isEditingTarget", script)
         self.assertIn("keydown", script)
@@ -2037,6 +2041,11 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("onRotateSelection", viewer_script)
         self.assertIn("onScaleSelection", viewer_script)
         self.assertIn("uniformScaleMatrix", viewer_script)
+        self.assertIn("setBoxSelect", viewer_script)
+        self.assertIn("startBoxDrag", viewer_script)
+        self.assertIn("finishBoxDrag", viewer_script)
+        self.assertIn("boxSelectionHits", viewer_script)
+        self.assertIn("selectionBox", viewer_script)
         self.assertIn("u_selected", viewer_script)
         self.assertIn("pointerdown", viewer_script)
         self.assertIn("shiftKey", viewer_script)

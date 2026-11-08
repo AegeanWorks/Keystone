@@ -417,6 +417,12 @@ export class SceneViewer {
     this.scene = null;
     this.selectedId = null;
     this.selectedIds = new Set();
+    this.boxSelect = false;
+    this.boxDrag = null;
+    this.selectionBox = document.createElement("div");
+    this.selectionBox.className = "selection-box";
+    this.selectionBox.hidden = true;
+    this.canvas.parentElement.appendChild(this.selectionBox);
     this.cameraState = null;
     this.nodeBounds = new Map();
     this.dragging = false;
@@ -438,6 +444,12 @@ export class SceneViewer {
         event.preventDefault();
         return;
       }
+      if (this.boxSelect && this.editable) {
+        this.startBoxDrag(event);
+        this.canvas.setPointerCapture(event.pointerId);
+        event.preventDefault();
+        return;
+      }
       this.dragging = true;
       this.pointerStart = [event.clientX, event.clientY];
       this.pointerMoved = false;
@@ -446,6 +458,11 @@ export class SceneViewer {
       event.preventDefault();
     });
     this.canvas.addEventListener("pointermove", (event) => {
+      if (this.boxDrag) {
+        this.updateBoxDrag(event);
+        event.preventDefault();
+        return;
+      }
       if (this.gizmoDrag) {
         this.updateGizmoDrag(event);
         event.preventDefault();
@@ -487,6 +504,13 @@ export class SceneViewer {
       this.render();
     });
     this.canvas.addEventListener("pointerup", (event) => {
+      if (this.boxDrag) {
+        this.finishBoxDrag(event);
+        if (this.canvas.hasPointerCapture(event.pointerId)) {
+          this.canvas.releasePointerCapture(event.pointerId);
+        }
+        return;
+      }
       if (this.gizmoDrag) {
         this.finishGizmoDrag();
         if (this.canvas.hasPointerCapture(event.pointerId)) {
@@ -505,10 +529,11 @@ export class SceneViewer {
     });
     this.canvas.addEventListener("pointercancel", () => {
       this.cancelGizmoDrag();
+      this.cancelBoxDrag();
       this.dragging = false;
     });
     this.canvas.addEventListener("pointerleave", () => {
-      if (!this.dragging && !this.gizmoDrag) {
+      if (!this.dragging && !this.gizmoDrag && !this.boxDrag) {
         this.updateGizmoHover(-Infinity, -Infinity);
       }
     });
@@ -593,6 +618,7 @@ export class SceneViewer {
     this.editable = Boolean(value);
     if (!this.editable) {
       this.cancelGizmoDrag();
+      this.cancelBoxDrag();
       this.hoverAxis = null;
       this.canvas.style.cursor = "";
       this.render();
@@ -682,6 +708,133 @@ export class SceneViewer {
       Math.min(12.0, this.cameraState.distance),
     );
     this.render();
+  }
+
+  setBoxSelect(enabled) {
+    this.boxSelect = Boolean(enabled);
+    this.cancelBoxDrag();
+    this.canvas.style.cursor = this.boxSelect ? "crosshair" : "";
+    this.render();
+  }
+
+  startBoxDrag(event) {
+    this.boxDrag = {
+      startX: event.clientX,
+      startY: event.clientY,
+      currentX: event.clientX,
+      currentY: event.clientY,
+    };
+    this.selectionBox.hidden = false;
+    this.updateBoxOverlay();
+  }
+
+  updateBoxDrag(event) {
+    if (!this.boxDrag) {
+      return;
+    }
+    this.boxDrag.currentX = event.clientX;
+    this.boxDrag.currentY = event.clientY;
+    this.updateBoxOverlay();
+  }
+
+  updateBoxOverlay() {
+    const drag = this.boxDrag;
+    if (!drag || !this.selectionBox.parentElement) {
+      return;
+    }
+    const parent = this.selectionBox.parentElement.getBoundingClientRect();
+    this.selectionBox.style.left = `${
+      Math.min(drag.startX, drag.currentX) - parent.left
+    }px`;
+    this.selectionBox.style.top = `${
+      Math.min(drag.startY, drag.currentY) - parent.top
+    }px`;
+    this.selectionBox.style.width = `${
+      Math.abs(drag.currentX - drag.startX)
+    }px`;
+    this.selectionBox.style.height = `${
+      Math.abs(drag.currentY - drag.startY)
+    }px`;
+  }
+
+  finishBoxDrag(event) {
+    const drag = this.boxDrag;
+    this.boxDrag = null;
+    this.selectionBox.hidden = true;
+    if (!drag) {
+      return;
+    }
+    const left = Math.min(drag.startX, drag.currentX);
+    const right = Math.max(drag.startX, drag.currentX);
+    const top = Math.min(drag.startY, drag.currentY);
+    const bottom = Math.max(drag.startY, drag.currentY);
+    if (right - left < 4 && bottom - top < 4) {
+      return;
+    }
+    const mode = event.shiftKey
+      ? "add"
+      : event.ctrlKey || event.metaKey
+        ? "toggle"
+        : "replace";
+    const hits = this.boxSelectionHits(left, top, right, bottom);
+    if (typeof this.onBoxSelect === "function") {
+      this.onBoxSelect(hits, mode);
+    }
+  }
+
+  cancelBoxDrag() {
+    this.boxDrag = null;
+    if (this.selectionBox) {
+      this.selectionBox.hidden = true;
+    }
+  }
+
+  boxSelectionHits(left, top, right, bottom) {
+    if (!this.scene || !this.cameraState) {
+      return [];
+    }
+    const matrix = this.viewProjectionMatrix();
+    const rect = this.canvas.getBoundingClientRect();
+    if (!matrix || rect.width <= 0 || rect.height <= 0) {
+      return [];
+    }
+    const hits = [];
+    for (const [nodeId, bounds] of this.nodeBounds.entries()) {
+      const corners = [
+        [bounds.min[0], bounds.min[1], bounds.min[2]],
+        [bounds.min[0], bounds.min[1], bounds.max[2]],
+        [bounds.min[0], bounds.max[1], bounds.min[2]],
+        [bounds.min[0], bounds.max[1], bounds.max[2]],
+        [bounds.max[0], bounds.min[1], bounds.min[2]],
+        [bounds.max[0], bounds.min[1], bounds.max[2]],
+        [bounds.max[0], bounds.max[1], bounds.min[2]],
+        [bounds.max[0], bounds.max[1], bounds.max[2]],
+      ];
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      let visible = true;
+      for (const corner of corners) {
+        const screen = this.projectToScreen(corner, matrix, rect);
+        if (!screen) {
+          visible = false;
+          break;
+        }
+        minX = Math.min(minX, screen[0]);
+        minY = Math.min(minY, screen[1]);
+        maxX = Math.max(maxX, screen[0]);
+        maxY = Math.max(maxY, screen[1]);
+      }
+      if (!visible) {
+        continue;
+      }
+      if (maxX < left || minX > right || maxY < top || minY > bottom) {
+        continue;
+      }
+      hits.push(nodeId);
+    }
+    return hits;
   }
 
   focusNode(nodeId) {
@@ -988,7 +1141,11 @@ export class SceneViewer {
       return;
     }
     this.hoverAxis = axis;
-    this.canvas.style.cursor = axis ? "grab" : "";
+    this.canvas.style.cursor = axis
+      ? "grab"
+      : this.boxSelect
+        ? "crosshair"
+        : "";
     this.render();
   }
 

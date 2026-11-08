@@ -309,6 +309,14 @@ code {
   top: 46px;
 }
 
+.selection-box {
+  position: absolute;
+  z-index: 3;
+  border: 1px solid #4fd1a1;
+  background: rgba(79, 209, 161, 0.14);
+  pointer-events: none;
+}
+
 .asset-preview {
   max-width: 96px;
   max-height: 96px;

@@ -24,6 +24,7 @@ const elements = {
   nodeDuplicate: document.getElementById("node-duplicate"),
   nodeDelete: document.getElementById("node-delete"),
   selectionToggleVisible: document.getElementById("selection-toggle-visible"),
+  boxSelect: document.getElementById("box-select"),
   nodeReparent: document.getElementById("node-reparent"),
   nodeVisible: document.getElementById("node-visible"),
   nodeTags: document.getElementById("node-tags"),
@@ -90,11 +91,14 @@ let viewer = null;
 let busy = false;
 let editorState = null;
 let gizmoSpace = "world";
+let boxSelect = false;
 
 try {
   viewer = new SceneViewer(elements.canvas);
   viewer.onSelect = (nodeId, modifiers) =>
     run(() => selectViewportNode(nodeId, modifiers || {}));
+  viewer.onBoxSelect = (ids, mode) =>
+    run(() => selectMany(ids, mode));
   viewer.onTransform = (axis, delta) =>
     run(() => applyGizmoTransform(axis, delta));
   viewer.onTransformSelection = (delta) =>
@@ -840,6 +844,15 @@ function toggleGizmoSpace() {
   setStatus(`gizmo space: ${gizmoSpace}`);
 }
 
+function toggleBoxSelect() {
+  boxSelect = !boxSelect;
+  if (viewer) {
+    viewer.setBoxSelect(boxSelect);
+  }
+  elements.boxSelect.textContent = `Box select: ${boxSelect ? "on" : "off"}`;
+  setStatus(`box select ${boxSelect ? "on" : "off"}`);
+}
+
 async function applyTransform() {
   if (!editorState || !editorState.selection) {
     throw new Error("Select a node before editing its transform.");
@@ -1332,6 +1345,11 @@ document.addEventListener("keydown", (event) => {
     toggleGizmoSpace();
     return;
   }
+  if (!modifier && key === "b") {
+    event.preventDefault();
+    toggleBoxSelect();
+    return;
+  }
   const direction = NUDGE_DIRECTIONS[event.key];
   if (direction && editorState.selection) {
     event.preventDefault();
@@ -1419,6 +1437,7 @@ elements.nodeDelete.addEventListener("click", () => run(deleteSelection));
 elements.selectionToggleVisible.addEventListener("click", () =>
   run(toggleSelectionVisible),
 );
+elements.boxSelect.addEventListener("click", toggleBoxSelect);
 elements.nodeReparent.addEventListener("click", () => run(reparentNode));
 elements.nodeProperties.addEventListener("click", () => run(applyNodeProperties));
 elements.editorUndo.addEventListener("click", () => run(undoEditor));

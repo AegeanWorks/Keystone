@@ -1,62 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-group-transform-v1",
-    "last_phase": "planning",
+    "task_id": "keystone-box-selection-v1",
+    "last_phase": "verification",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794100870.257471,
+    "updated_at": 1794101239.8846185,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "impact_assessment": {
-      "why": "Multi-selection only translated; rotating or scaling several nodes around a shared center required per-node edits.",
-      "benefits": "A pivot rotation or uniform scale preview and one transform_selection action with undo for top-level selected nodes.",
-      "risks": "contract: editor schema 27; dependency: none; concurrency: existing editor lock; state: parent-relative local decomposition, non-uniform parent scales, selected descendant deduplication.",
-      "mitigation": "Filter top-level selected roots, compose parent-world rotation, convert world positions through the parent inverse, preview with pivot matrices, and add rotation/scale/undo tests."
-    },
-    "completed_at": 1794100870.5724053
+    "completed_at": 1794101240.1898053
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-prefab-group-integrity-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-prefab-group-integrity-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794095056.314498,
-      "timestamp_str": "2026-11-08 02:44:16",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-nested-prefabs-v1",
-      "phase": "planning",
-      "phase_num": 2,
-      "description": "[1/3] Plan nested prefab instances with prefab schema 2, prefix/ID rebasing on instantiate, and capture/revert/apply coverage",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794095192.9226375,
-      "timestamp_str": "2026-11-08 02:46:32",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Prefab capture and instantiation flatten nested instances, so nested prefab assets cannot be composed, reverted or applied.",
-        "benefits": "Prefab documents persist nested links with a v1 migration, insertion rebases nested prefixes and IDs, and nested groups support revert/apply without disturbing the outer instance.",
-        "risks": "contract: prefab schema 2 and editor schema 22; dependency: none; concurrency: existing editor lock; state: prefix rebasing, ID uniqueness, direct self-reference and dangling nested assets.",
-        "mitigation": "Normalize template IDs and links during capture, rebase effective prefixes during instantiate, reject self-links and root links, test v1 migration and nested workflows, then run the full gate cycle."
-      },
-      "plan_digest": "f0e363bca7954aa14ab66a945924c6188a5001648e50573be3ae261735479e27"
-    },
-    {
-      "task_id": "keystone-nested-prefabs-v1",
-      "phase": "verification",
-      "phase_num": 4,
-      "description": "[2/3] Nested prefabs implemented: prefab schema 2 with schema-1 migration, parent-relative link normalization, outer.inner prefix/ID rebasing, nested and outer revert/apply; 740 tests green, node check clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 22, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794096149.6984587,
-      "timestamp_str": "2026-11-08 03:02:29",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-nested-prefabs-v1",
       "phase": "completed",
@@ -270,6 +225,45 @@
       "status": "completed",
       "timestamp": 1794100870.5724075,
       "timestamp_str": "2026-11-08 04:21:10",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-box-selection-v1",
+      "phase": "planning",
+      "phase_num": 2,
+      "description": "[1/3] Plan viewport box selection with replace/add/toggle modifiers and existing selection/gizmo integration",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794100939.636614,
+      "timestamp_str": "2026-11-08 04:22:19",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "The viewport can only click-select one node at a time; Unity/Unreal-style multi-selection needs marquee selection over projected bounds.",
+        "benefits": "A box-select mode draws a rectangle and selects intersecting nodes with replace/add/toggle modifiers, reusing select_many, highlighting and the batch centroid gizmo.",
+        "risks": "contract: no REST change, UI-only; dependency: none; concurrency: pointer arbitration with camera orbit, gizmo drags and pointer capture; state: projected AABB edge cases and overlay cleanup.",
+        "mitigation": "Add explicit box-select mode, prioritize gizmo hits, project all eight bounds corners, cancel cleanly on pointercancel, and add static UI/viewer regression checks."
+      },
+      "plan_digest": "d0d870590d57b0d3b644b12fa081f6e5dcbdf38371e995718b8535ee7a9c596b"
+    },
+    {
+      "task_id": "keystone-box-selection-v1",
+      "phase": "verification",
+      "phase_num": 4,
+      "description": "[2/3] Viewport box selection implemented: mode toggle/B shortcut, marquee overlay, projected-AABB hit testing, replace/add/toggle modifiers through select_many, selection highlighting and batch gizmo reuse, static coverage; 756 tests green, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 27, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794101239.8846185,
+      "timestamp_str": "2026-11-08 04:27:19",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-box-selection-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-box-selection-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794101240.1898074,
+      "timestamp_str": "2026-11-08 04:27:20",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]
