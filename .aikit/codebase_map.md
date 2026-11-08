@@ -9,8 +9,8 @@
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
 - **Total Top-Level Functions**: `420`
-- **Total Class Methods**: `1472`
-- **Total Source Lines**: `40002`
+- **Total Class Methods**: `1473`
+- **Total Source Lines**: `40048`
 
 ---
 
@@ -225,7 +225,7 @@
 ### [`keystone/assets.py`](keystone/assets.py)
 > *Game-agnostic asset registry with stable ids, content hashes and dependencies.*
 
-**Size**: `429` lines (`16579` bytes)
+**Size**: `435` lines (`16776` bytes)
 
 **Classes:**
 - `class AssetRecord` - *One registered asset: a stable id, kind, immutable payload and content digest.*
@@ -2123,7 +2123,7 @@
 ### [`tests/test_assets.py`](tests/test_assets.py)
 > *Unit tests for the asset registry: identity, digests and dependencies.*
 
-**Size**: `536` lines (`24254` bytes)
+**Size**: `576` lines (`25811` bytes)
 
 **Classes:**
 - `class PrefabHealth`
@@ -2154,6 +2154,7 @@
   - Method `.test_prefab_suffix_and_default_loader()`
   - Method `.test_register_prefab_file_and_refresh()`
   - Method `.test_refresh_reloads_dependencies_before_dependants()`
+  - Method `.test_refresh_orders_new_prefab_dependencies_first()`
   - Method `.test_register_prefab_file_with_component_types()`
   - Method `.test_prefab_file_requires_registered_assets()`
   - Method `.test_clear_and_remove_drop_sources()`

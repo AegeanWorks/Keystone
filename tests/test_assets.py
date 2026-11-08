@@ -464,6 +464,46 @@ class AssetFileSourceTest(unittest.TestCase):
                 prefab_record.payload.roots[0].mesh, mesh_record.payload
             )
 
+    def test_refresh_orders_new_prefab_dependencies_first(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            mesh_path = root / "zzz.obj"
+            prefab_path = root / "aaa.kprefab"
+            mesh_path.write_text(OBJ_TEXT, encoding="utf-8")
+            registry = AssetRegistry()
+            registry.register_file("zzz.mesh", mesh_path)
+            initial = Prefab.from_node(
+                Node("hero", id="hero"), name="hero"
+            )
+            initial.save(prefab_path, registry)
+            registry.register_file("aaa.prefab", prefab_path)
+
+            mesh_path.write_text(
+                "v 0 0 0\nv 2 0 0\nv 0 2 0\nv 0 0 2\nvn 0 0 1\n"
+                "f 1//1 2//1 3//1\nf 1//1 3//1 4//1\n",
+                encoding="utf-8",
+            )
+            changed = Prefab.from_node(
+                Node(
+                    "hero",
+                    id="hero",
+                    mesh=registry.require("zzz.mesh").payload,
+                ),
+                name="hero",
+            )
+            changed.save(prefab_path, registry)
+            _touch(mesh_path)
+            _touch(prefab_path)
+
+            report = registry.refresh()
+            self.assertTrue(report.ok)
+            mesh_record = registry.require("zzz.mesh")
+            prefab_record = registry.require("aaa.prefab")
+            self.assertEqual(len(mesh_record.payload.positions), 4)
+            self.assertIs(
+                prefab_record.payload.roots[0].mesh, mesh_record.payload
+            )
+
     def test_register_prefab_file_with_component_types(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "hero.kprefab"

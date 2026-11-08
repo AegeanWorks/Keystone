@@ -1560,3 +1560,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->21 audit found that asset reload rebound scene nodes, history, cached prefabs, clipboard and inline node materials, but left registry material records pointing at the old texture object. A future node assigned from the registry could render with stale texture data.
 - **Decision**: Before rebinding scene payloads, walk registry material records, replace any inline texture found in the reload map, re-register the material payload and add the old-material-to-new-material mapping so scene, history, prefab and clipboard references converge on the same object. Report `registry_rebound`. Add a texture-file reload regression that checks registry material, node material and texture identities.
 - **Consequences**: Texture hot reload now reaches every material owner, not only live scene nodes. The report grows by one count; failed or missing textures still keep last-good payloads.
+
+### ADR-192: Commit audit loads prefab sources after non-prefab sources
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->24 audit found that dependency-first refresh used each prefab's previous dependency list. A changed prefab that newly referenced a changed mesh not in its old list could load before the mesh and keep the old payload.
+- **Decision**: When selecting the next ready source, order non-prefab kinds before prefabs, then sort by id. Prefabs therefore resolve new asset ids against freshly loaded meshes, materials and textures while prefab-to-prefab edges still follow the old graph. Add a regression where an initially meshless prefab starts referencing a changed mesh.
+- **Consequences**: New prefab asset edges are handled without a second refresh pass. The known limitation remains for new material-to-texture edges, which are both non-prefab and still ordered by the old graph.

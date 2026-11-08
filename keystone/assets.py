@@ -185,14 +185,20 @@ class AssetRegistry:
         pending = set(self._sources)
         order: list[str] = []
         while pending:
-            ready = [
-                asset_id
-                for asset_id in sorted(pending)
-                if not any(
-                    dependency in pending
-                    for dependency in self._records[asset_id].dependencies
-                )
-            ]
+            ready = sorted(
+                (
+                    asset_id
+                    for asset_id in pending
+                    if not any(
+                        dependency in pending
+                        for dependency in self._records[asset_id].dependencies
+                    )
+                ),
+                key=lambda item: (
+                    self._records[item].kind == "prefab",
+                    item,
+                ),
+            )
             if not ready:
                 order.extend(sorted(pending))
                 break
