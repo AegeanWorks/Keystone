@@ -12,7 +12,7 @@ from collections.abc import Mapping
 
 __all__ = ["SCENE_DIFF_SCHEMA_VERSION", "diff_scene_documents"]
 
-SCENE_DIFF_SCHEMA_VERSION = 3
+SCENE_DIFF_SCHEMA_VERSION = 4
 NODE_FIELDS = (
     "name",
     "parent_id",
@@ -23,6 +23,7 @@ NODE_FIELDS = (
     "mesh",
     "material",
     "prefab_link",
+    "prefab_base",
     "scene_group",
     "components",
 )

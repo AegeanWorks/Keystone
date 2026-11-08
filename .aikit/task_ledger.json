@@ -1,74 +1,16 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-commit-audit-v1",
-    "last_phase": "in_progress",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1794133941.4398015,
-    "owner": "opencode:deepseek-v4.1-flash",
-    "started_by": "opencode:deepseek-v4.1-flash",
-    "continuations": [],
-    "completed_at": 1794134170.372803
+    "task_id": "keystone-prefab-propagation-v1",
+    "last_phase": "phase 4",
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1794137375.019923,
+    "owner": "opencode:keystone",
+    "started_by": "opencode:keystone",
+    "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-animation-keys-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan keyframe authoring for library animation clips at the current timeline time",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794125269.5078092,
-      "timestamp_str": "2026-11-08 11:07:49",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "The editor can preview, sample and save clips but cannot add or remove keyframes, so animation authoring stops at external JSON.",
-        "benefits": "set/remove_animation_key edit the selected node's position, rotation or scale track at a time and save the library clip; console channel/time controls and readout.",
-        "risks": "contract: editor schema 55 and two actions; dependency: animation library/Track; concurrency: editor lock; state: no selection/library/name, invalid time/channel/value, duplicate keys, empty tracks, clip validation, asset writes.",
-        "mitigation": "Validate through Track/AnimationClip, replace keys within epsilon, sort times, remove empty tracks, keep library writes atomic, and add set/replace/remove/error tests."
-      },
-      "plan_digest": "6286b460b9216290cae9946b99bd37a13d14495217460127118d55388a1ebfa5"
-    },
-    {
-      "task_id": "keystone-animation-keys-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Animation keyframe authoring implemented: set_animation_key/remove_animation_key edit library .kanim clips for the selected node/channel/time, replacing keys within 1e-6, sorting times, dropping empty tracks, saving atomically and returning animation_key reports; console channel selector and Set/Remove key controls; schema 55; 811 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, describe schema 55, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794125905.5194201,
-      "timestamp_str": "2026-11-08 11:18:25",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-animation-keys-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-animation-keys-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794125905.9321103,
-      "timestamp_str": "2026-11-08 11:18:25",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-layer-visibility-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan server-backed layer visibility toggles for the scene editor and viewer",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794125940.7227528,
-      "timestamp_str": "2026-11-08 11:19:00",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Scenes with many layers cannot hide unrelated nodes, and there is no AI-readable layer inventory or visibility state.",
-        "benefits": "The editor document exposes layer counts and hidden layers, set_layer_visible toggles them without scene edits, and the console/viewer filter hidden layers in render and picking.",
-        "risks": "contract: editor schema 56 and one action; dependency: none; concurrency: editor lock; state: empty/unknown layer names, hidden selection, picking/pivot filtering, viewer resync.",
-        "mitigation": "Validate name/boolean, keep visibility session-only and neutral to history, render toggles from counts, filter render/picking/pivots, and add toggle/static tests."
-      },
-      "plan_digest": "08dd0ca85127f30df20737100538473bb696e10e30be0ccd24f59e82f226175c"
-    },
     {
       "task_id": "keystone-layer-visibility-v1",
       "phase": "in_progress",
@@ -261,6 +203,71 @@
       "timestamp": 1794134170.372805,
       "timestamp_str": "2026-11-08 13:36:10",
       "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-prefab-propagation-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/5] Plan: merge-preserving prefab instance refresh, regression tests, console control, docs and full gate",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794135820.1386137,
+      "timestamp_str": "2026-11-08 14:03:40",
+      "agent": "opencode:keystone",
+      "impact_assessment": {
+        "why": "Prefab edits currently propagate to existing instances only by discarding every instance edit; keep_overrides skips overridden instances entirely, so authored per-instance values block template updates. Unity/Unreal-style propagation should update template-owned fields while retaining field-level overrides.",
+        "benefits": "Authors can update a prefab once and refresh every instance without losing per-instance names, transforms, assets or components; AI clients get explicit preserved/dropped override counts and one-step undo.",
+        "risks": "contract: refresh_prefab_instances keep_overrides semantics and result keys change; dependency: none beyond the existing registry and prefab mapping; concurrency: editor actions remain under the session lock; state: undo snapshots and prefab library files must stay consistent if merge fails.",
+        "mitigation": "Keep default refresh unchanged, make merge atomic inside the existing history transaction, validate every override before mutation, add failing-first web tests for preserve/drop/undo and refresh the schema/docs/ADR."
+      },
+      "plan_digest": "f5a70a2fb103aff8b49fa792973d52506c5f677da71fdde489d3264df0758a96"
+    },
+    {
+      "task_id": "keystone-prefab-propagation-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/5] Implement persisted prefab baselines and merge-preserving refresh; add regression coverage",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794137365.4072607,
+      "timestamp_str": "2026-11-08 14:29:25",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "state": "core, tests and docs implemented",
+        "next": "record UI delivery evidence, rerun the 6/6 gate, then commit and publish",
+        "open": "UI task still unfinished",
+        "evidence": "pytest web/prefab/snapshot suites green"
+      }
+    },
+    {
+      "task_id": "keystone-prefab-propagation-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[3/5] Add console Keep overrides control, update editor schema/docs/ADR and README prefab contract",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794137374.4126284,
+      "timestamp_str": "2026-11-08 14:29:34",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "state": "static wiring and docs complete",
+        "next": "open the UI delivery task and record a reviewed screenshot"
+      }
+    },
+    {
+      "task_id": "keystone-prefab-propagation-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[4/5] Full AIKit gate passes 6/6 (test, lint, mechanics, hygiene, guidelines, secrets); checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794137375.019923,
+      "timestamp_str": "2026-11-08 14:29:35",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "next": "finish UI delivery evidence, commit and publish",
+        "evidence": "6/6 gate green after README size repair and codebase-map refresh"
+      }
     }
   ]
 }

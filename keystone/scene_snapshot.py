@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import math
 from collections.abc import Mapping
 from typing import Any
@@ -29,7 +30,7 @@ from keystone.scene import (
     Transform,
 )
 
-SCENE_SNAPSHOT_VERSION = 5
+SCENE_SNAPSHOT_VERSION = 6
 
 
 def _vec3_to_list(value: Vec3) -> list[float]:
@@ -188,6 +189,11 @@ def scene_to_dict(scene: Scene, registry: Any = None) -> dict[str, Any]:
                 "mesh": mesh_ids.get(id(node.mesh)) if node.mesh is not None else None,
                 "material": material_ids.get(id(node.material)) if node.material is not None else None,
                 "prefab_link": node.prefab_link.to_dict() if node.prefab_link is not None else None,
+                "prefab_base": (
+                    copy.deepcopy(node.prefab_base)
+                    if node.prefab_base is not None
+                    else None
+                ),
                 "scene_group": node.scene_group.to_dict() if node.scene_group is not None else None,
                 "components": [
                     component_to_dict(component)
@@ -240,7 +246,7 @@ def scene_from_dict(
     if not isinstance(data, Mapping):
         raise TypeError("scene snapshot must be a mapping")
     version = data.get("schema", data.get("version", SCENE_SNAPSHOT_VERSION))
-    if isinstance(version, bool) or not isinstance(version, int) or version not in (1, 2, 3, 4, SCENE_SNAPSHOT_VERSION):
+    if isinstance(version, bool) or not isinstance(version, int) or version not in (1, 2, 3, 4, 5, SCENE_SNAPSHOT_VERSION):
         raise ValueError(f"unsupported scene snapshot version {version}")
     if "nodes" not in data:
         raise ValueError("scene snapshot must contain a nodes list")
@@ -366,6 +372,14 @@ def scene_from_dict(
             components[type(component)] = component
         raw_link = raw.get("prefab_link")
         prefab_link = PrefabLink.from_dict(raw_link) if raw_link is not None else None
+        raw_base = raw.get("prefab_base")
+        if raw_base is not None and not isinstance(raw_base, Mapping):
+            raise TypeError(
+                "scene snapshot node prefab_base must be a mapping or null"
+            )
+        prefab_base = (
+            copy.deepcopy(dict(raw_base)) if raw_base is not None else None
+        )
         raw_group = raw.get("scene_group")
         scene_group = (
             SceneGroup.from_dict(raw_group) if raw_group is not None else None
@@ -376,6 +390,7 @@ def scene_from_dict(
             layer=layer,
             components=components,
             prefab_link=prefab_link,
+            prefab_base=prefab_base,
             scene_group=scene_group,
         )
         node.transform = _transform_from_dict(raw.get("transform", {}))

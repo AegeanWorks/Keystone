@@ -246,7 +246,7 @@ The dashboard can inspect the game contract, run the same action scripts as `--s
 | `/api/simulate` | `POST` | the same deterministic result as `--simulate`; body `{"frames": 60, "actions": [...], "step": 0.0167, "trace": false}` |
 | `/api` | `GET` | endpoint and schema index |
 
-The API sends CORS headers so a local AI client or frontend can call it directly. It is a local development surface, not an internet service: keep the default loopback host, and pass `--host 0.0.0.0` only when you want network exposure. The server never opens a GL context, and prefab writes stay inside the configured library.
+The API sends CORS headers so a local AI client or frontend can call it directly. Keep the default loopback host; pass `--host 0.0.0.0` only for deliberate network exposure. The server never opens a GL context; prefab writes stay in the library.
 
 `/api/scene` exports the game's `self.scene` when it has one, so a live simulation is visible immediately. A game without that attribute gets a fresh `build_scene()` result; put the scene on `self.scene` for live state.
 
@@ -254,7 +254,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 
 - **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth/culling, Blinn-Phong + PBR, shadows, sRGB, post grade, bloom diffusion and point sprites; profiler stats.
 - **Scene graph**: nodes with stable IDs, tags, layers, typed components, local/world transforms, visibility, cycle-safe parenting, queries and cached GPU meshes.
-- **Prefabs**: capture subtrees, persist versioned `.kprefab` files through the asset registry, and instantiate deterministic copies with explicit or scene IDs.
+- **Prefabs**: capture subtrees, persist versioned `.kprefab` files through the asset registry, instantiate deterministic copies, and refresh instances while preserving field-level overrides against each instance baseline.
 - **Assets**: immutable `MeshData` with optional UVs and vertex colors, cube/plane/cone/cylinder/sphere primitives, OBJ loading, and `TextureData` with PNG/checker sources.
 - **PBR materials**: `Material` combines Blinn-Phong specular/shininess with metallic/roughness/emissive; textures wrap/mipmap RGBA; glTF PBR survives import; material graphs add `pbr`.
 - **Fixed-step runtime**: `FixedStepClock` releases whole steps with a bounded catch-up budget; the headless path advances one step per frame for deterministic tests.
@@ -583,7 +583,7 @@ It decodes external/base64/GLB buffers, typed accessors, indexed triangles, PBR 
 
 ## 💾 Scene Snapshots and Undo/Redo
 
-`scene_to_dict()`/`scene_from_dict()` round-trip versioned snapshots (camera, environment, hierarchy, tags, layers, asset ids). Bad ids/parents/kinds/cycles are rejected.
+`scene_to_dict()`/`scene_from_dict()` round-trip versioned snapshots (camera, environment, hierarchy, metadata, asset ids). Bad ids/parents/kinds/cycles are rejected.
 
 ```python
 from keystone.history import History
@@ -594,7 +594,7 @@ history.push(scene_to_dict(scene))
 snapshot = history.undo()
 ```
 
-`History` deep-copies snapshots with bounded capacity; schema 1 stays compatible.
+`History` deep-copies snapshots; schema 6 persists prefab-instance baselines; schema 1-5 stay compatible.
 
 ## 🗺️ Core Roadmap
 

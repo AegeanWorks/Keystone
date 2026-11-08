@@ -144,6 +144,7 @@ class Node:
     layer: str = "default"
     components: dict[type, object] = field(default_factory=dict)
     prefab_link: PrefabLink | None = None
+    prefab_base: dict[str, object] | None = None
     scene_group: SceneGroup | None = None
 
     def __post_init__(self) -> None:
@@ -182,6 +183,10 @@ class Node:
                 raise TypeError("component value must match its key type")
         if self.prefab_link is not None and not isinstance(self.prefab_link, PrefabLink):
             raise TypeError("node prefab_link must be a PrefabLink or None")
+        if self.prefab_base is not None:
+            if not isinstance(self.prefab_base, Mapping):
+                raise TypeError("node prefab_base must be a mapping or None")
+            self.prefab_base = copy.deepcopy(dict(self.prefab_base))
         if self.scene_group is not None and not isinstance(self.scene_group, SceneGroup):
             raise TypeError("node scene_group must be a SceneGroup or None")
         if self.parent is not None:

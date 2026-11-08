@@ -77,6 +77,8 @@ __all__ = [
 
 T = TypeVar("T")
 
+_MISSING = object()
+
 
 def _finite_array(value: object, length: int, label: str) -> tuple[float, ...]:
     if isinstance(value, (str, bytes)) or not isinstance(value, (list, tuple)) or len(value) != length:
@@ -626,6 +628,7 @@ def _node_snapshot(node: Node) -> dict[str, object]:
         "layer": node.layer,
         "components": copy.deepcopy(node.components),
         "prefab_link": node.prefab_link,
+        "prefab_base": copy.deepcopy(node.prefab_base),
         "scene_group": node.scene_group,
         "children": [_node_snapshot(child) for child in node.children],
     }
@@ -651,6 +654,7 @@ def _node_from_snapshot(data: Mapping[str, object]) -> Node:
         layer=data["layer"],
         components=copy.deepcopy(data["components"]),
         prefab_link=data.get("prefab_link"),
+        prefab_base=data.get("prefab_base"),
         scene_group=data.get("scene_group"),
     )
     for child in children:
@@ -1600,6 +1604,7 @@ def insert_prefab(
     name: str,
     parent: Node | None,
     instance: str | None,
+    registry: object | None = None,
 ) -> list[Node]:
     if not isinstance(name, str) or not name.strip():
         raise ValueError("prefab name must be a non-blank string")
@@ -1613,6 +1618,7 @@ def insert_prefab(
         root.prefab_link = link
     # Materialize IDs for instances attached below a non-root parent.
     list(scene.traverse())
+    _seed_instance_baselines(roots, registry)
     return roots
 
 
@@ -1620,6 +1626,7 @@ def revert_prefab_instance(
     scene: Scene,
     node: Node,
     prefabs: dict[str, Prefab],
+    registry: object | None = None,
 ) -> list[Node]:
     """Replace the linked instance group with a fresh prefab template."""
     link = node.prefab_link
@@ -1643,6 +1650,7 @@ def revert_prefab_instance(
         parent.children.insert(index + offset, root)
         root.parent = parent
     list(scene.traverse())
+    _seed_instance_baselines(created, registry)
     return created
 
 
@@ -1650,6 +1658,7 @@ def apply_prefab_instance(
     scene: Scene,
     node: Node,
     prefabs: dict[str, Prefab],
+    registry: object | None = None,
 ) -> Prefab:
     """Capture the linked instance group as the new prefab definition."""
     link = node.prefab_link
@@ -1658,6 +1667,7 @@ def apply_prefab_instance(
     roots = _prefab_instance_roots(scene, link)
     prefab = Prefab.from_nodes(roots, name=link.name)
     prefabs[link.name] = prefab
+    _seed_instance_baselines(roots, registry)
     return prefab
 
 
@@ -1764,6 +1774,236 @@ def _node_override_values(
     return values
 
 
+def _seed_instance_baselines(roots: list[Node], registry: object | None) -> int:
+    """Record each instance node's current values as its override baseline."""
+    seeded = 0
+    for root in roots:
+        for node in root.traverse():
+            node.prefab_base = _node_override_values(node, registry)
+            seeded += 1
+    return seeded
+
+
+def _instance_nodes(roots: list[Node]) -> list[Node]:
+    """Return instance nodes without descending into nested prefab groups."""
+    nodes: list[Node] = []
+    stack = list(roots)
+    while stack:
+        node = stack.pop()
+        nodes.append(node)
+        for child in node.children:
+            if child.prefab_link is not None:
+                continue
+            stack.append(child)
+    return nodes
+
+
+def _ensure_prefab_baselines(
+    scene: Scene,
+    prefabs: Mapping[str, Prefab],
+    registry: object | None,
+) -> int:
+    """Seed missing baselines for legacy or hand-built prefab instances."""
+    seeded = 0
+    for link, roots in _instance_groups(scene).items():
+        prefab = prefabs.get(link.name)
+        template_values: dict[str, dict[str, object]] = {}
+        if prefab is not None:
+            for template, instance in _map_prefab_nodes(prefab, roots):
+                template_values[instance.id] = _node_override_values(
+                    template, registry
+                )
+        for node in _instance_nodes(roots):
+            if node.prefab_base is None:
+                node.prefab_base = template_values.get(
+                    node.id, _node_override_values(node, registry)
+                )
+                seeded += 1
+                continue
+            if registry is None:
+                continue
+            values = _node_override_values(node, registry)
+            for field in ("mesh", "material"):
+                if field not in node.prefab_base:
+                    node.prefab_base[field] = values.get(field)
+                    seeded += 1
+    return seeded
+
+
+def _capture_instance_overrides(
+    roots: list[Node], registry: object | None
+) -> dict[str, tuple[dict[str, object], dict[str, object]]]:
+    """Capture field values that differ from each node's stored baseline."""
+    captured: dict[str, tuple[dict[str, object], dict[str, object]]] = {}
+    for root in roots:
+        for node in root.traverse():
+            base = node.prefab_base
+            if base is None:
+                continue
+            current = _node_override_values(node, registry)
+            fields: dict[str, object] = {}
+            for field in sorted(set(base) | set(current)):
+                if registry is None and field in ("mesh", "material"):
+                    continue
+                if (
+                    field in base
+                    and field in current
+                    and base[field] == current[field]
+                ):
+                    continue
+                fields[field] = current.get(field, _MISSING)
+            if not fields:
+                continue
+            components: dict[str, object] = {}
+            for field in fields:
+                if not field.startswith("components.") or field not in current:
+                    continue
+                type_name = field.split(".", 1)[1]
+                for component_type, component in node.components.items():
+                    if component_type.__name__ == type_name:
+                        components[field] = copy.deepcopy(component)
+                        break
+            captured[node.id] = (fields, components)
+    return captured
+
+
+def _apply_override_value(
+    node: Node,
+    field: str,
+    value: object,
+    component: object | None,
+    registry: object | None,
+) -> bool:
+    """Apply one captured override field to a freshly instantiated node."""
+    if value is _MISSING:
+        if not field.startswith("components."):
+            return False
+        type_name = field.split(".", 1)[1]
+        for component_type in list(node.components):
+            if component_type.__name__ == type_name:
+                node.components.pop(component_type)
+        return True
+    if field == "name":
+        if not isinstance(value, str) or not value.strip():
+            return False
+        node.name = value
+        return True
+    if field == "visible":
+        if not isinstance(value, bool):
+            return False
+        node.visible = value
+        return True
+    if field == "tags":
+        if not isinstance(value, (list, tuple)) or any(
+            not isinstance(tag, str) or not tag for tag in value
+        ):
+            return False
+        node.tags = set(value)
+        return True
+    if field == "layer":
+        if not isinstance(value, str) or not value:
+            return False
+        node.layer = value
+        return True
+    if field == "transform.position":
+        position = _finite_array(value, 3, "override position")
+        node.transform = Transform(
+            Vec3(*position),
+            node.transform.rotation,
+            node.transform.scale,
+        )
+        return True
+    if field == "transform.rotation":
+        x, y, z, w = _finite_array(value, 4, "override rotation")
+        node.transform = Transform(
+            node.transform.position,
+            Quat(w, x, y, z),
+            node.transform.scale,
+        )
+        return True
+    if field == "transform.scale":
+        scale = _finite_array(value, 3, "override scale")
+        node.transform = Transform(
+            node.transform.position,
+            node.transform.rotation,
+            Vec3(*scale),
+        )
+        return True
+    if field in ("mesh", "material"):
+        if value is None:
+            setattr(node, field, None)
+            return True
+        if registry is None or not isinstance(value, str):
+            return False
+        record = registry.require(value)  # type: ignore[union-attr]
+        if getattr(record, "kind", None) != field:
+            return False
+        setattr(node, field, getattr(record, "payload", None))
+        return True
+    if field.startswith("components."):
+        if component is None:
+            return False
+        type_name = field.split(".", 1)[1]
+        for component_type in list(node.components):
+            if component_type.__name__ == type_name:
+                node.components.pop(component_type)
+        node.components[type(component)] = copy.deepcopy(component)
+        return True
+    return False
+
+
+def _apply_instance_overrides(
+    nodes_by_id: Mapping[str, Node],
+    captured: Mapping[str, tuple[dict[str, object], dict[str, object]]],
+    registry: object | None,
+) -> tuple[int, int]:
+    """Reapply captured overrides after a refresh; return preserved/dropped."""
+    preserved = 0
+    dropped = 0
+    for node_id, (override_fields, components) in captured.items():
+        node = nodes_by_id.get(node_id)
+        if node is None:
+            dropped += len(override_fields)
+            continue
+        for field, value in override_fields.items():
+            try:
+                applied = _apply_override_value(
+                    node, field, value, components.get(field), registry
+                )
+            except (KeyError, TypeError, ValueError):
+                applied = False
+            if applied:
+                preserved += 1
+            else:
+                dropped += 1
+    return preserved, dropped
+
+
+def _update_baseline_field(
+    scene: Scene,
+    prefab_name: str,
+    template_id: str,
+    field: str,
+    value: object,
+) -> int:
+    """Move affected instance baselines to the value just applied to a prefab."""
+    updated = 0
+    for link in _instance_groups(scene):
+        if link.name != prefab_name or not template_id:
+            continue
+        node = scene.find_by_id(f"{link.instance}:{template_id}")
+        if node is None or node.prefab_base is None:
+            continue
+        if value is _MISSING:
+            if field in node.prefab_base:
+                node.prefab_base.pop(field)
+                updated += 1
+        else:
+            node.prefab_base[field] = copy.deepcopy(value)
+            updated += 1
+    return updated
+
+
 def prefab_override_document(
     scene: Scene,
     prefabs: dict[str, Prefab],
@@ -1798,8 +2038,15 @@ def prefab_override_document(
             continue
         node_reports: list[dict[str, object]] = []
         for template, instance in _map_prefab_nodes(prefab, roots):
-            before = _node_override_values(template, registry)
+            before = (
+                copy.deepcopy(instance.prefab_base)
+                if instance.prefab_base is not None
+                else _node_override_values(template, registry)
+            )
             after = _node_override_values(instance, registry)
+            if registry is None:
+                for field in ("mesh", "material"):
+                    before.pop(field, None)
             fields: dict[str, dict[str, object]] = {}
             for field in sorted(set(before) | set(after)):
                 if (
@@ -1832,18 +2079,16 @@ def refresh_prefab_instances(
     registry: object | None = None,
     keep_overrides: bool = False,
 ) -> dict[str, int]:
-    """Replace top-level instance groups with the current template."""
+    """Replace top-level instance groups with the current template.
+
+    With ``keep_overrides`` set, field values that differ from each node's
+    stored instance baseline are reapplied to the fresh template copy, so
+    template-owned changes propagate while authored overrides survive.
+    """
     if not isinstance(name, str) or not name.strip():
         raise ValueError("prefab name must be a non-blank string")
     if name not in prefabs:
         raise KeyError(f"no saved prefab {name!r}")
-    overridden: set[str] = set()
-    if keep_overrides:
-        overridden = {
-            str(group.get("instance"))
-            for group in prefab_override_document(scene, prefabs, registry)
-            if group.get("nodes")
-        }
     groups = [
         (link, roots)
         for link, roots in _instance_groups(scene).items()
@@ -1851,8 +2096,7 @@ def refresh_prefab_instances(
     ]
     if not groups:
         raise ValueError(f"no instances of prefab {name!r} in the scene")
-    refreshed = 0
-    skipped_overrides = 0
+    refreshable: list[tuple[PrefabLink, list[Node]]] = []
     skipped_nested = 0
     skipped_invalid = 0
     for link, roots in groups:
@@ -1870,15 +2114,28 @@ def refresh_prefab_instances(
         if nested:
             skipped_nested += 1
             continue
-        if link.instance in overridden:
-            skipped_overrides += 1
-            continue
-        revert_prefab_instance(scene, roots[0], prefabs)
+        refreshable.append((link, roots))
+    captured: dict[str, tuple[dict[str, object], dict[str, object]]] = {}
+    if keep_overrides:
+        _ensure_prefab_baselines(scene, prefabs, registry)
+        for _, roots in refreshable:
+            captured.update(_capture_instance_overrides(roots, registry))
+    refreshed = 0
+    preserved = 0
+    dropped = 0
+    for _, roots in refreshable:
+        revert_prefab_instance(scene, roots[0], prefabs, registry)
         refreshed += 1
+    if captured:
+        nodes_by_id = {node.id: node for node in scene.traverse()}
+        preserved, dropped = _apply_instance_overrides(
+            nodes_by_id, captured, registry
+        )
     list(scene.traverse())
     return {
         "refreshed": refreshed,
-        "skipped_overrides": skipped_overrides,
+        "preserved_overrides": preserved,
+        "dropped_overrides": dropped,
         "skipped_nested": skipped_nested,
         "skipped_invalid": skipped_invalid,
         "total": len(groups),
@@ -1940,8 +2197,15 @@ def _resolve_prefab_override(
     if pair is None:
         raise ValueError("node is not mapped to the prefab template")
     template, instance = pair
-    before = _node_override_values(template, registry)
+    before = (
+        copy.deepcopy(instance.prefab_base)
+        if instance.prefab_base is not None
+        else _node_override_values(template, registry)
+    )
     after = _node_override_values(instance, registry)
+    if registry is None:
+        for field_name in ("mesh", "material"):
+            before.pop(field_name, None)
     if field not in before and field not in after:
         raise ValueError(f"unknown override field {field!r}")
     if field in before and field in after and before[field] == after[field]:
@@ -2035,6 +2299,15 @@ def apply_prefab_override(
         _follow_path(updated.roots, path),
         field,  # type: ignore[arg-type]
     )
+    field_name = str(field)
+    after = _node_override_values(instance, registry)
+    _update_baseline_field(
+        scene,
+        prefab.name,
+        template.id,
+        field_name,
+        after.get(field_name, _MISSING),
+    )
     return updated
 
 
@@ -2050,6 +2323,11 @@ def _clone_scene_node(node: Node) -> Node:
         layer=node.layer,
         components=copy.deepcopy(node.components),
         prefab_link=node.prefab_link,
+        prefab_base=(
+            copy.deepcopy(node.prefab_base)
+            if node.prefab_base is not None
+            else None
+        ),
         scene_group=node.scene_group,
     )
     for child in node.children:

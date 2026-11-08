@@ -230,7 +230,7 @@ EDITOR_EXAMPLES = {
     "refresh_prefab_instances": {
         "action": "refresh_prefab_instances",
         "name": "cube",
-        "keep_overrides": False,
+        "keep_overrides": True,
     },
     "insert_prefab": {
         "action": "insert_prefab",
@@ -318,7 +318,8 @@ EDITOR_SCHEMA = {
         "refresh_prefab_instances": ["name", "keep_overrides"],
         "prefab_refresh": [
             "refreshed",
-            "skipped_overrides",
+            "preserved_overrides",
+            "dropped_overrides",
             "skipped_nested",
             "skipped_invalid",
             "total",

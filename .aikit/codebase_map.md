@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
-- **Total Top-Level Functions**: `403`
-- **Total Class Methods**: `1451`
-- **Total Source Lines**: `38378`
+- **Total Top-Level Functions**: `410`
+- **Total Class Methods**: `1457`
+- **Total Source Lines**: `39064`
 
 ---
 
@@ -1185,7 +1185,7 @@
 ### [`keystone/prefab.py`](keystone/prefab.py)
 > *Deterministic prefabs: capture, persist and instantiate reusable subtrees.*
 
-**Size**: `504` lines (`20457` bytes)
+**Size**: `505` lines (`20483` bytes)
 
 **Classes:**
 - `class Prefab` - *An immutable-name, detached template of one or more scene subtrees.*
@@ -1336,7 +1336,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `506` lines (`19788` bytes)
+**Size**: `511` lines (`20083` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -1397,7 +1397,7 @@
 ### [`keystone/scene_diff.py`](keystone/scene_diff.py)
 > *Structured diffs between versioned scene snapshot documents.*
 
-**Size**: `92` lines (`3432` bytes)
+**Size**: `93` lines (`3451` bytes)
 
 **Functions:**
 - `def _node_map(document)`
@@ -1440,7 +1440,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `457` lines (`19354` bytes)
+**Size**: `472` lines (`19934` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)`
@@ -1663,7 +1663,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `2694` lines (`95736` bytes)
+**Size**: `2972` lines (`105591` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1737,14 +1737,21 @@
 - `def save_prefab_nodes(nodes, name, prefabs)` - *Capture top-level selected roots as one multi-root prefab.*
 - `def _next_instance_prefix(scene, name)`
 - `def _prefab_instance_roots(scene, link)`
-- `def insert_prefab(scene, prefabs, name, parent, instance)`
-- `def revert_prefab_instance(scene, node, prefabs)` - *Replace the linked instance group with a fresh prefab template.*
-- `def apply_prefab_instance(scene, node, prefabs)` - *Capture the linked instance group as the new prefab definition.*
+- `def insert_prefab(scene, prefabs, name, parent, instance, registry)`
+- `def revert_prefab_instance(scene, node, prefabs, registry)` - *Replace the linked instance group with a fresh prefab template.*
+- `def apply_prefab_instance(scene, node, prefabs, registry)` - *Capture the linked instance group as the new prefab definition.*
 - `def rename_prefab_links(scene, old, new)` - *Point every instance link at a renamed prefab; return the updates made.*
 - `def _instance_groups(scene)`
 - `def _containing_instance_link(node)`
 - `def _map_prefab_nodes(prefab, roots)`
 - `def _node_override_values(node, registry)`
+- `def _seed_instance_baselines(roots, registry)` - *Record each instance node's current values as its override baseline.*
+- `def _instance_nodes(roots)` - *Return instance nodes without descending into nested prefab groups.*
+- `def _ensure_prefab_baselines(scene, prefabs, registry)` - *Seed missing baselines for legacy or hand-built prefab instances.*
+- `def _capture_instance_overrides(roots, registry)` - *Capture field values that differ from each node's stored baseline.*
+- `def _apply_override_value(node, field, value, component, registry)` - *Apply one captured override field to a freshly instantiated node.*
+- `def _apply_instance_overrides(nodes_by_id, captured, registry)` - *Reapply captured overrides after a refresh; return preserved/dropped.*
+- `def _update_baseline_field(scene, prefab_name, template_id, field, value)` - *Move affected instance baselines to the value just applied to a prefab.*
 - `def prefab_override_document(scene, prefabs, registry)` - *Return field-level diffs for every linked scene instance group.*
 - `def refresh_prefab_instances(scene, prefabs, name, registry, keep_overrides)` - *Replace top-level instance groups with the current template.*
 - `def _node_path(roots, target)`
@@ -1795,14 +1802,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `577` lines (`24726` bytes)
+**Size**: `578` lines (`24760` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2766` lines (`124233` bytes)
+**Size**: `2784` lines (`124680` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3111,7 +3118,7 @@
 ### [`tests/test_scene_snapshot.py`](tests/test_scene_snapshot.py)
 > *Unit tests for versioned scene snapshots.*
 
-**Size**: `320` lines (`13016` bytes)
+**Size**: `358` lines (`14228` bytes)
 
 **Classes:**
 - `class Health`
@@ -3119,6 +3126,7 @@
   - Method `._scene()`
   - Method `.test_round_trip_preserves_structure_and_transforms()`
   - Method `.test_prefab_links_round_trip_and_older_snapshots_default_to_none()`
+  - Method `.test_prefab_baselines_round_trip_and_older_snapshots_default_to_none()`
   - Method `.test_scene_groups_round_trip_and_older_snapshots_default_to_none()`
   - Method `.test_scene_group_source_settings_round_trip()`
   - Method `.test_round_trip_preserves_typed_components()`
@@ -3377,7 +3385,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `4901` lines (`202702` bytes)
+**Size**: `5230` lines (`215858` bytes)
 
 **Classes:**
 - `class Health`
@@ -3421,6 +3429,7 @@
   - Method `.test_editor_multi_root_prefab_instance_group()`
   - Method `.test_editor_multi_root_group_delete_and_reparent()`
   - Method `.test_editor_nested_prefab_capture_revert_and_apply()`
+  - Method `.test_editor_refresh_preserves_nested_instance_overrides()`
   - Method `.test_editor_prefab_override_revert_and_apply()`
   - Method `.test_editor_prefab_component_override_revert_and_apply()`
   - Method `.test_editor_prefab_mesh_override_revert_and_apply()`
@@ -3429,6 +3438,10 @@
   - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_prefab_edit_mode_round_trip()`
   - Method `.test_editor_refresh_prefab_instances()`
+  - Method `.test_editor_refresh_seeds_legacy_baselines_from_template()`
+  - Method `.test_editor_refresh_merges_field_overrides()`
+  - Method `.test_editor_refresh_drops_overrides_for_removed_template_nodes()`
+  - Method `.test_editor_prefab_overrides_survive_scene_round_trip()`
   - Method `.test_editor_multi_root_prefab_save_from_selection()`
   - Method `.test_editor_library_rename_and_delete()`
   - Method `.test_editor_library_trash_and_restore()`

@@ -120,6 +120,7 @@ const elements = {
   prefabRevert: document.getElementById("prefab-revert"),
   prefabApply: document.getElementById("prefab-apply"),
   prefabRefresh: document.getElementById("prefab-refresh"),
+  prefabRefreshKeep: document.getElementById("prefab-refresh-keep"),
   prefabLink: document.getElementById("prefab-link"),
   prefabOverrides: document.getElementById("prefab-overrides"),
   prefabRename: document.getElementById("prefab-rename"),
@@ -1829,7 +1830,11 @@ async function refreshPrefabInstances() {
     throw new Error("Enter the prefab name to refresh.");
   }
   const editor = await editorAction(
-    { action: "refresh_prefab_instances", name },
+    {
+      action: "refresh_prefab_instances",
+      name,
+      keep_overrides: elements.prefabRefreshKeep.checked,
+    },
     `refreshing ${name} instances`,
   );
   await refreshScene(false);

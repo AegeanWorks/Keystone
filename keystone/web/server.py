@@ -635,7 +635,14 @@ class GameSession:
         original_scene = self._scene_locked()
         isolated = Scene()
         _copy_scene_settings(original_scene, isolated)
-        roots = insert_prefab(isolated, self.prefabs, name, None, "edit")
+        roots = insert_prefab(
+            isolated,
+            self.prefabs,
+            name,
+            None,
+            "edit",
+            self._registry_locked(),
+        )
         if not roots:
             raise ValueError("prefab has no roots")
         self._scene_before_prefab = original_scene
@@ -668,7 +675,9 @@ class GameSession:
                 "prefab edit root is no longer linked to the edited prefab"
             )
         previous = self.prefabs.get(name)
-        prefab = apply_prefab_instance(scene, node, self.prefabs)
+        prefab = apply_prefab_instance(
+            scene, node, self.prefabs, self._registry_locked()
+        )
         try:
             if self.prefab_library is not None:
                 self.prefab_library.save(prefab.name, prefab)
@@ -1918,7 +1927,12 @@ class GameSession:
                     roots = self._apply_history(
                         scene,
                         lambda: insert_prefab(
-                            scene, self.prefabs, name, parent, payload.get("instance")
+                            scene,
+                            self.prefabs,
+                            name,
+                            parent,
+                            payload.get("instance"),
+                            self._registry_locked(),
                         ),
                     )
                     if roots:
@@ -1938,7 +1952,9 @@ class GameSession:
                         self._ensure_prefab_locked(link.name)
                     root = self._apply_history(
                         scene,
-                        lambda: revert_prefab_instance(scene, node, self.prefabs),
+                        lambda: revert_prefab_instance(
+                            scene, node, self.prefabs, self._registry_locked()
+                        ),
                     )
                     if root:
                         self.selected_id = root[0].id
@@ -1949,7 +1965,9 @@ class GameSession:
                     if link is None:
                         raise ValueError("node is not a prefab instance")
                     previous = self.prefabs.get(link.name)
-                    prefab = apply_prefab_instance(scene, node, self.prefabs)
+                    prefab = apply_prefab_instance(
+            scene, node, self.prefabs, self._registry_locked()
+        )
                     if self.prefab_library is not None:
                         try:
                             self.prefab_library.save(link.name, prefab)

@@ -87,6 +87,44 @@ class SceneSnapshotTest(unittest.TestCase):
         document["nodes"][0].pop("prefab_link")
         self.assertIsNone(scene_from_dict(document).find_by_id("hero").prefab_link)
 
+    def test_prefab_baselines_round_trip_and_older_snapshots_default_to_none(self):
+        scene = Scene()
+        scene.add(
+            Node(
+                "hero",
+                id="hero",
+                prefab_link=PrefabLink("hero-template", "copy"),
+                prefab_base={
+                    "name": "hero",
+                    "tags": ["base"],
+                    "transform.position": [1.0, 2.0, 3.0],
+                },
+            )
+        )
+        document = scene_to_dict(scene)
+        self.assertEqual(
+            document["nodes"][0]["prefab_base"],
+            {
+                "name": "hero",
+                "tags": ["base"],
+                "transform.position": [1.0, 2.0, 3.0],
+            },
+        )
+        restored = scene_from_dict(document)
+        self.assertEqual(
+            restored.find_by_id("hero").prefab_base,
+            {
+                "name": "hero",
+                "tags": ["base"],
+                "transform.position": [1.0, 2.0, 3.0],
+            },
+        )
+        document["schema"] = 5
+        document["nodes"][0].pop("prefab_base")
+        self.assertIsNone(
+            scene_from_dict(document).find_by_id("hero").prefab_base
+        )
+
     def test_scene_groups_round_trip_and_older_snapshots_default_to_none(self):
         scene = Scene()
         group = Node("level", id="level", scene_group=SceneGroup("level"))

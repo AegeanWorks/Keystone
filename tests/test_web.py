@@ -1124,6 +1124,70 @@ class WebServerTest(unittest.TestCase):
         )
         self.assertEqual(nested["transform"]["position"], [3.0, 1.0, 0.0])
 
+    def test_editor_refresh_preserves_nested_instance_overrides(self):
+        session = GameSession(CubeDemo())
+        session.prefabs["inner"] = Prefab(
+            "inner",
+            (
+                Node(
+                    "inner",
+                    id="inner",
+                    transform=Transform(position=Vec3(0.0, 1.0, 0.0)),
+                ),
+            ),
+        )
+        session.editor_action(
+            {"action": "create_node", "id": "outer", "name": "outer"}
+        )
+        session.editor_action(
+            {
+                "action": "insert_prefab",
+                "name": "inner",
+                "parent": "outer",
+                "instance": "inner-1",
+            }
+        )
+        session.editor_action(
+            {"action": "save_prefab", "id": "outer", "name": "outer"}
+        )
+        session.editor_action({"action": "delete_node", "id": "outer"})
+        session.editor_action(
+            {"action": "insert_prefab", "name": "outer", "instance": "outer-1"}
+        )
+        nested_id = "outer-1.inner-1:inner"
+        session.editor_action(
+            {
+                "action": "transform",
+                "id": nested_id,
+                "position": [3.0, 1.0, 0.0],
+            }
+        )
+        opened = session.editor_action({"action": "edit_prefab", "name": "outer"})
+        root_id = opened["prefab_edit"]["roots"][0]
+        session.editor_action(
+            {"action": "set_node", "id": root_id, "name": "outer-v2"}
+        )
+        session.editor_action({"action": "close_prefab_edit", "save": True})
+        refreshed = session.editor_action(
+            {
+                "action": "refresh_prefab_instances",
+                "name": "outer",
+                "keep_overrides": True,
+            }
+        )
+        self.assertEqual(refreshed["prefab_refresh"]["refreshed"], 1)
+        self.assertGreaterEqual(
+            refreshed["prefab_refresh"]["preserved_overrides"], 1
+        )
+        nodes = {node["id"]: node for node in refreshed["nodes"]}
+        self.assertEqual(nodes["outer-1:outer"]["name"], "outer-v2")
+        self.assertEqual(nodes[nested_id]["transform"]["position"], [3.0, 1.0, 0.0])
+        groups = {
+            group["instance"]: group
+            for group in refreshed["prefab_overrides"]
+        }
+        self.assertIn("outer-1.inner-1", groups)
+
     def test_editor_prefab_override_revert_and_apply(self):
         session = GameSession(CubeDemo())
         editor = session.editor()
@@ -1620,8 +1684,11 @@ class WebServerTest(unittest.TestCase):
                     "keep_overrides": True,
                 }
             )
-            self.assertEqual(refreshed["prefab_refresh"]["refreshed"], 1)
-            self.assertEqual(refreshed["prefab_refresh"]["skipped_overrides"], 1)
+            self.assertEqual(refreshed["prefab_refresh"]["refreshed"], 2)
+            self.assertEqual(
+                refreshed["prefab_refresh"]["preserved_overrides"], 1
+            )
+            self.assertEqual(refreshed["prefab_refresh"]["dropped_overrides"], 0)
             names = {node["id"]: node["name"] for node in refreshed["nodes"]}
             self.assertEqual(names["a:cube-0"], "custom")
             self.assertEqual(names["b:cube-0"], "hero-v2")
@@ -1630,6 +1697,7 @@ class WebServerTest(unittest.TestCase):
                 {"action": "refresh_prefab_instances", "name": "hero"}
             )
             self.assertEqual(forced["prefab_refresh"]["refreshed"], 2)
+            self.assertEqual(forced["prefab_refresh"]["preserved_overrides"], 0)
             names = {node["id"]: node["name"] for node in forced["nodes"]}
             self.assertEqual(names["a:cube-0"], "hero-v2")
             self.assertEqual(names["b:cube-0"], "hero-v2")
@@ -1657,6 +1725,263 @@ class WebServerTest(unittest.TestCase):
                 )
             self.assertEqual(caught.exception.status, 400)
             session.editor_action({"action": "close_prefab_edit", "save": False})
+
+    def test_editor_refresh_seeds_legacy_baselines_from_template(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        session.editor_action({"action": "select", "id": cube["id"]})
+        session.editor_action({"action": "save_prefab", "name": "hero"})
+        session.editor_action(
+            {"action": "insert_prefab", "name": "hero", "instance": "a"}
+        )
+        session.editor_action(
+            {"action": "set_node", "id": "a:cube-0", "name": "custom"}
+        )
+        legacy = session._scene_locked().find_by_id("a:cube-0")
+        legacy.prefab_base = None
+        refreshed = session.editor_action(
+            {
+                "action": "refresh_prefab_instances",
+                "name": "hero",
+                "keep_overrides": True,
+            }
+        )
+        self.assertEqual(refreshed["prefab_refresh"]["preserved_overrides"], 1)
+        node = next(
+            node for node in refreshed["nodes"] if node["id"] == "a:cube-0"
+        )
+        self.assertEqual(node["name"], "custom")
+
+    def test_editor_refresh_merges_field_overrides(self):
+        session = GameSession(ComponentDemo())
+        editor = session.editor()
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        cube_id = cube["id"]
+        session.editor_action({"action": "select", "id": cube_id})
+        session.editor_action(
+            {
+                "action": "set_component",
+                "id": cube_id,
+                "type": "Health",
+                "data": {"value": 10},
+            }
+        )
+        session.editor_action({"action": "save_prefab", "name": "hero"})
+        for instance in ("a", "b"):
+            session.editor_action(
+                {"action": "insert_prefab", "name": "hero", "instance": instance}
+            )
+        a_id = "a:cube-0"
+        b_id = "b:cube-0"
+        session.editor_action(
+            {"action": "transform", "id": a_id, "position": [1.0, 2.0, 3.0]}
+        )
+        session.editor_action(
+            {
+                "action": "set_node",
+                "id": a_id,
+                "name": "custom",
+                "visible": False,
+                "tags": ["elite"],
+                "layer": "enemy",
+            }
+        )
+        session.editor_action(
+            {"action": "assign_asset", "id": a_id, "mesh": "mesh.sphere"}
+        )
+        session.editor_action(
+            {
+                "action": "set_component",
+                "id": a_id,
+                "type": "Health",
+                "data": {"value": 99},
+            }
+        )
+        before = session.editor()
+        before_group = next(
+            item for item in before["prefab_overrides"] if item["instance"] == "a"
+        )
+        expected = sum(len(node["fields"]) for node in before_group["nodes"])
+        opened = session.editor_action({"action": "edit_prefab", "name": "hero"})
+        root_id = opened["prefab_edit"]["roots"][0]
+        session.editor_action(
+            {"action": "set_node", "id": root_id, "name": "hero-v2"}
+        )
+        session.editor_action(
+            {"action": "transform", "id": root_id, "position": [5.0, 0.0, 0.0]}
+        )
+        session.editor_action(
+            {
+                "action": "set_component",
+                "id": root_id,
+                "type": "Health",
+                "data": {"value": 20},
+            }
+        )
+        child = session.editor_action(
+            {"action": "create_node", "name": "marker", "parent": root_id}
+        )["selection"]["id"]
+        session.editor_action({"action": "close_prefab_edit", "save": True})
+
+        refreshed = session.editor_action(
+            {
+                "action": "refresh_prefab_instances",
+                "name": "hero",
+                "keep_overrides": True,
+            }
+        )
+        refresh = refreshed["prefab_refresh"]
+        self.assertEqual(refresh["refreshed"], 2)
+        self.assertEqual(refresh["preserved_overrides"], expected)
+        self.assertEqual(refresh["dropped_overrides"], 0)
+        nodes = {node["id"]: node for node in refreshed["nodes"]}
+        a = nodes[a_id]
+        b = nodes[b_id]
+        self.assertEqual(a["name"], "custom")
+        self.assertFalse(a["visible"])
+        self.assertEqual(a["tags"], ["elite"])
+        self.assertEqual(a["layer"], "enemy")
+        self.assertEqual(a["transform"]["position"], [1.0, 2.0, 3.0])
+        self.assertEqual(a["mesh"], "mesh.sphere")
+        health_a = next(
+            item for item in a["component_data"] if item["type"] == "Health"
+        )
+        self.assertEqual(health_a["data"], {"value": 99})
+        self.assertEqual(b["name"], "hero-v2")
+        self.assertEqual(b["transform"]["position"], [5.0, 0.0, 0.0])
+        self.assertEqual(b["mesh"], cube["mesh"])
+        health_b = next(
+            item for item in b["component_data"] if item["type"] == "Health"
+        )
+        self.assertEqual(health_b["data"], {"value": 20})
+        self.assertEqual(
+            sum(1 for node in refreshed["nodes"] if node["name"] == "marker"), 2
+        )
+        self.assertIn(f"a:{child}", nodes)
+        after_group = next(
+            item
+            for item in refreshed["prefab_overrides"]
+            if item["instance"] == "a"
+        )
+        self.assertEqual(
+            sum(len(node["fields"]) for node in after_group["nodes"]), expected
+        )
+        self.assertFalse(
+            any(
+                item["instance"] == "b"
+                for item in refreshed["prefab_overrides"]
+            )
+        )
+
+        undone = session.editor_action({"action": "undo"})
+        nodes = {node["id"]: node for node in undone["nodes"]}
+        self.assertEqual(nodes[a_id]["name"], "custom")
+        self.assertEqual(nodes[a_id]["transform"]["position"], [1.0, 2.0, 3.0])
+        self.assertEqual(nodes[b_id]["name"], "cube-0")
+        self.assertEqual(nodes[b_id]["transform"]["position"], cube["transform"]["position"])
+        self.assertEqual(
+            sum(1 for node in undone["nodes"] if node["name"] == "marker"), 0
+        )
+
+    def test_editor_refresh_drops_overrides_for_removed_template_nodes(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        parent = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        child = session.editor_action(
+            {
+                "action": "create_node",
+                "name": "arm",
+                "parent": parent["id"],
+            }
+        )["selection"]["id"]
+        session.editor_action({"action": "select", "id": parent["id"]})
+        session.editor_action({"action": "save_prefab", "name": "rig"})
+        session.editor_action(
+            {"action": "insert_prefab", "name": "rig", "instance": "a"}
+        )
+        child_id = f"a:{child}"
+        session.editor_action(
+            {"action": "set_node", "id": child_id, "name": "custom-arm"}
+        )
+        opened = session.editor_action({"action": "edit_prefab", "name": "rig"})
+        edit_child = next(
+            node["id"] for node in opened["nodes"] if node["name"] == "arm"
+        )
+        session.editor_action({"action": "delete_node", "id": edit_child})
+        session.editor_action({"action": "close_prefab_edit", "save": True})
+        refreshed = session.editor_action(
+            {
+                "action": "refresh_prefab_instances",
+                "name": "rig",
+                "keep_overrides": True,
+            }
+        )
+        self.assertEqual(refreshed["prefab_refresh"]["refreshed"], 1)
+        self.assertEqual(refreshed["prefab_refresh"]["dropped_overrides"], 1)
+        self.assertNotIn(child_id, {node["id"] for node in refreshed["nodes"]})
+        self.assertFalse(
+            any(node["name"] == "custom-arm" for node in refreshed["nodes"])
+        )
+
+    def test_editor_prefab_overrides_survive_scene_round_trip(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefab_dir = Path(directory) / "prefabs"
+            scene_dir = Path(directory) / "scenes"
+            session = GameSession(
+                CubeDemo(), prefab_dir=prefab_dir, scene_dir=scene_dir
+            )
+            editor = session.editor()
+            cube = next(
+                node for node in editor["nodes"] if node["name"] == "cube-0"
+            )
+            session.editor_action({"action": "select", "id": cube["id"]})
+            session.editor_action({"action": "save_prefab", "name": "hero"})
+            session.editor_action(
+                {"action": "insert_prefab", "name": "hero", "instance": "a"}
+            )
+            session.editor_action(
+                {"action": "set_node", "id": "a:cube-0", "name": "custom"}
+            )
+            session.editor_action({"action": "save_scene", "name": "level"})
+            loaded = session.editor_action(
+                {"action": "load_scene", "name": "level"}
+            )
+            group = next(
+                item
+                for item in loaded["prefab_overrides"]
+                if item["instance"] == "a"
+            )
+            fields = next(
+                item
+                for item in group["nodes"]
+                if item["id"] == "a:cube-0"
+            )["fields"]
+            self.assertEqual(fields["name"]["instance"], "custom")
+
+            opened = session.editor_action(
+                {"action": "edit_prefab", "name": "hero"}
+            )
+            root_id = opened["prefab_edit"]["roots"][0]
+            session.editor_action(
+                {"action": "set_node", "id": root_id, "name": "hero-v2"}
+            )
+            session.editor_action({"action": "close_prefab_edit", "save": True})
+            refreshed = session.editor_action(
+                {
+                    "action": "refresh_prefab_instances",
+                    "name": "hero",
+                    "keep_overrides": True,
+                }
+            )
+            self.assertEqual(refreshed["prefab_refresh"]["refreshed"], 1)
+            self.assertGreaterEqual(
+                refreshed["prefab_refresh"]["preserved_overrides"], 1
+            )
+            node = next(
+                node for node in refreshed["nodes"] if node["id"] == "a:cube-0"
+            )
+            self.assertEqual(node["name"], "custom")
 
     def test_editor_multi_root_prefab_save_from_selection(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -4499,6 +4824,7 @@ class WebServerTest(unittest.TestCase):
             "gizmo-space",
             "prefab-save",
             "prefab-insert",
+            "prefab-refresh-keep",
             "transform-apply",
         ):
             self.assertIn(f'id="{control}"', text)
@@ -4616,6 +4942,9 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("refresh_prefab_instances", script)
         self.assertIn("refreshPrefabInstances", script)
         self.assertIn("prefab_refresh", script)
+        self.assertIn("prefab-refresh-keep", text)
+        self.assertIn("prefabRefreshKeep", script)
+        self.assertIn("keep_overrides: elements.prefabRefreshKeep.checked", script)
         self.assertIn("payload.ids", script)
         self.assertIn("renderPrefabOverrides", script)
         self.assertIn("revert_prefab_override", script)
