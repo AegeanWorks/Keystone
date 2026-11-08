@@ -2127,6 +2127,45 @@ class WebServerTest(unittest.TestCase):
                 fields["name"], {"template": "cube-0", "instance": "custom"}
             )
 
+    def test_editor_override_report_survives_template_child_addition(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        parent = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        child = session.editor_action(
+            {
+                "action": "create_node",
+                "name": "arm",
+                "parent": parent["id"],
+            }
+        )["selection"]["id"]
+        session.editor_action({"action": "select", "id": parent["id"]})
+        session.editor_action({"action": "save_prefab", "name": "rig"})
+        session.editor_action(
+            {"action": "insert_prefab", "name": "rig", "instance": "a"}
+        )
+        child_id = f"a:{child}"
+        session.editor_action(
+            {"action": "set_node", "id": child_id, "name": "custom-arm"}
+        )
+        opened = session.editor_action({"action": "edit_prefab", "name": "rig"})
+        root_id = opened["prefab_edit"]["roots"][0]
+        session.editor_action(
+            {"action": "create_node", "name": "extra", "parent": root_id}
+        )
+        session.editor_action({"action": "close_prefab_edit", "save": True})
+
+        group = next(
+            item
+            for item in session.editor()["prefab_overrides"]
+            if item["instance"] == "a"
+        )
+        fields = next(
+            item for item in group["nodes"] if item["id"] == child_id
+        )["fields"]
+        self.assertEqual(
+            fields["name"], {"template": "arm", "instance": "custom-arm"}
+        )
+
     def test_editor_refresh_skips_locked_instance_groups(self):
         session = GameSession(CubeDemo())
         editor = session.editor()

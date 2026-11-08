@@ -59,6 +59,7 @@ from keystone.web.editor import (
     editor_document,
     find_node,
     insert_prefab,
+    normalize_prefab_edit_ids,
     refresh_prefab_instances,
     reload_scene_assets,
     remove_clip_key,
@@ -703,6 +704,7 @@ class GameSession:
             raise ValueError(
                 "prefab edit root is no longer linked to the edited prefab"
             )
+        normalize_prefab_edit_ids(scene, link)
         previous = self.prefabs.get(name)
         prefab = apply_prefab_instance(
             scene, node, self.prefabs, self._registry_locked()

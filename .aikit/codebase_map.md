@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
-- **Total Top-Level Functions**: `420`
-- **Total Class Methods**: `1477`
-- **Total Source Lines**: `40180`
+- **Total Top-Level Functions**: `421`
+- **Total Class Methods**: `1478`
+- **Total Source Lines**: `40241`
 
 ---
 
@@ -1666,7 +1666,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `3193` lines (`113278` bytes)
+**Size**: `3213` lines (`113934` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1756,11 +1756,12 @@
 - `def rename_prefab_links(scene, old, new)` - *Point every instance link at a renamed prefab; return the updates made.*
 - `def _instance_groups(scene)`
 - `def _containing_instance_link(node)`
-- `def _map_prefab_nodes(prefab, roots)`
 - `def _node_override_values(node, registry)`
 - `def _seed_node_baselines(nodes, registry)` - *Record each supplied node's current values as its override baseline.*
 - `def _seed_instance_baselines(roots, registry)` - *Record a fresh instance subtree, including nested groups, as its baseline.*
 - `def _instance_nodes(roots)` - *Return instance nodes without descending into nested prefab groups.*
+- `def _map_prefab_templates(prefab, roots, link)` - *Map template and instance nodes by their stable id suffix.*
+- `def normalize_prefab_edit_ids(scene, link)` - *Give edit-mode nodes unique ids that survive template normalization.*
 - `def _ensure_prefab_baselines(scene, prefabs, registry)` - *Seed missing baselines for legacy or hand-built prefab instances.*
 - `def _capture_instance_overrides(roots, registry)` - *Capture field values that differ from each node's stored baseline.*
 - `def _apply_override_value(node, field, value, component, registry)` - *Apply one captured override field to a freshly instantiated node.*
@@ -1823,7 +1824,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2893` lines (`129425` bytes)
+**Size**: `2895` lines (`129503` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3404,7 +3405,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `5760` lines (`237322` bytes)
+**Size**: `5799` lines (`238868` bytes)
 
 **Classes:**
 - `class Health`
@@ -3465,6 +3466,7 @@
   - Method `.test_editor_apply_outer_prefab_keeps_nested_override_baseline()`
   - Method `.test_editor_apply_prefab_failure_keeps_override_baseline()`
   - Method `.test_editor_apply_prefab_override_failure_keeps_baseline()`
+  - Method `.test_editor_override_report_survives_template_child_addition()`
   - Method `.test_editor_refresh_skips_locked_instance_groups()`
   - Method `.test_editor_prefab_overrides_survive_scene_round_trip()`
   - Method `.test_editor_multi_root_prefab_save_from_selection()`

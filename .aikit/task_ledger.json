@@ -1,75 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-commit-audit-v3-1to33",
+    "task_id": "keystone-commit-audit-v3-1to36",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794146708.5414863,
+    "updated_at": 1794147640.461402,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
     "continuations": [],
-    "completed_at": 1794146709.188889
+    "completed_at": 1794147640.8318765
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-commit-audit-v3-1to21",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: audit range 1->21 reload identity; rebind registry material payloads when their texture reloads",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794144877.2938871,
-      "timestamp_str": "2026-11-08 16:34:37",
-      "agent": "opencode:keystone",
-      "impact_assessment": {
-        "why": "Range 1->21 rebinds scene, history, prefab and clipboard payloads after reload, but registry material records keep old inline texture objects, so future material assignments can render stale data.",
-        "benefits": "Texture hot reload reaches every material owner, and the report exposes registry material rebinds.",
-        "risks": "contract: additive asset_reload field; dependency: Material replacement helper; concurrency: session lock unchanged; state: registry records and payload identities.",
-        "mitigation": "Rebind material records before scene payloads, add old-to-new material mappings, add a texture-file regression, and run the 6/6 gate."
-      },
-      "plan_digest": "10bff795486028e5f5aa642537b5e54ef4c613c4cbf9915387d58e31d67f6a5e"
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-1to21",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/3] Rebind registry material payloads to reloaded textures before scene rebinding; regression checks registry, node and texture identities",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794144883.7610977,
-      "timestamp_str": "2026-11-08 16:34:43",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "state": "registry rebind and regression green",
-        "next": "record the gate and push"
-      }
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-1to21",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Range 1->21 gate passes 6/6 with registry material rebinding; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794144884.3257222,
-      "timestamp_str": "2026-11-08 16:34:44",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "next": "commit and push range 1->21, then continue at 1->24",
-        "evidence": "full 6/6 gate green"
-      }
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-1to21",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-commit-audit-v3-1to21' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794144884.8831599,
-      "timestamp_str": "2026-11-08 16:34:44",
-      "agent": "opencode:keystone"
-    },
     {
       "task_id": "keystone-commit-audit-v3-1to24",
       "phase": "phase 2",
@@ -300,6 +242,64 @@
       "status": "completed",
       "timestamp": 1794146709.1888914,
       "timestamp_str": "2026-11-08 17:05:09",
+      "agent": "opencode:keystone"
+    },
+    {
+      "task_id": "keystone-commit-audit-v3-1to36",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: audit range 1->36 prefab baseline scoping/edit persistence; make prefab override mapping tolerant of structural template edits",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794146945.0711362,
+      "timestamp_str": "2026-11-08 17:09:05",
+      "agent": "opencode:keystone",
+      "impact_assessment": {
+        "why": "Override reports and revert/apply use structural child-count mapping. Adding a child to a prefab hides existing child overrides until a refresh, even though baseline merge preserves them.",
+        "benefits": "The override panel and per-field actions remain usable immediately after adding or removing template nodes.",
+        "risks": "contract: prefab override mapping only; dependency: node IDs and link prefixes; concurrency: session lock unchanged; state: report and revert/apply resolution.",
+        "mitigation": "Add ID-prefix mapping that skips nested groups, add a structural-edit regression, and run the 6/6 gate."
+      },
+      "plan_digest": "84fd4de74abee64bde57220b9d4ed7df2e80a12627bb6fbf1ddbf887355f8024"
+    },
+    {
+      "task_id": "keystone-commit-audit-v3-1to36",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/3] Normalize prefab edit node ids and map template/instance nodes by id suffix for override reports and actions; regression adds a template child and keeps a child override visible",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794147640.0473533,
+      "timestamp_str": "2026-11-08 17:20:40",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "state": "edit-id and structural override mapping green",
+        "next": "record the gate and push"
+      }
+    },
+    {
+      "task_id": "keystone-commit-audit-v3-1to36",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Range 1->36 gate passes 6/6 with unique prefab edit ids and structural-safe override mapping; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794147640.461402,
+      "timestamp_str": "2026-11-08 17:20:40",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "next": "commit and push range 1->36, then continue at 1->39",
+        "evidence": "full 6/6 gate green"
+      }
+    },
+    {
+      "task_id": "keystone-commit-audit-v3-1to36",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-commit-audit-v3-1to36' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794147640.831878,
+      "timestamp_str": "2026-11-08 17:20:40",
       "agent": "opencode:keystone"
     }
   ]

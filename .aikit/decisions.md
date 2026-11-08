@@ -1592,3 +1592,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->33 audit found that the prefab-last ordering fix still left new material-to-texture edges unresolved: both kinds are non-prefab, so a changed material that newly references a changed texture could load first by id.
 - **Decision**: Order ready sources by kind priority: mesh/texture first, materials next, prefabs last, then id. Existing dependency edges still win. Add a loader-based regression where a material starts with no texture, then starts referencing a changed texture file.
 - **Consequences**: New material-texture edges now resolve against fresh texture payloads. Prefab and material new-edge cases are covered; a prefab that newly depends on another prefab remains bounded by the old graph.
+
+### ADR-196: Commit audit keeps prefab edit ids unique and override mapping structural-safe
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->36 audit found two issues. New nodes created in prefab edit mode received bare `node-N` ids that could collide with template ids after the `edit:` prefix was stripped, so save failed. Override reports also stopped at any parent whose child count differed from the template, hiding existing child overrides after adding a template node.
+- **Decision**: Before capturing a prefab edit, normalize every outer edit node id under the `edit:` prefix with a collision-safe suffix. Map template and instance nodes by the stable id suffix for override reports, per-field revert/apply and baseline seeding, skipping nested groups. Add a regression that adds a node in edit mode and still sees an existing child override.
+- **Consequences**: Prefab edit save accepts newly created nodes even when allocator ids collide, and override reports survive structural template edits. Nested groups keep their separate mappings; nodes whose ids were externally renamed remain best-effort.

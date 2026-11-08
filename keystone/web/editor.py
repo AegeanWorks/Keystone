@@ -62,6 +62,7 @@ __all__ = [
     "editor_document",
     "find_node",
     "insert_prefab",
+    "normalize_prefab_edit_ids",
     "reload_scene_assets",
     "remove_clip_key",
     "remove_component",
@@ -1911,32 +1912,6 @@ def _containing_instance_link(node: Node) -> PrefabLink | None:
     return None
 
 
-def _map_prefab_nodes(
-    prefab: Prefab, roots: list[Node]
-) -> list[tuple[Node, Node]]:
-    pairs: list[tuple[Node, Node]] = []
-    if len(prefab.roots) != len(roots):
-        return pairs
-
-    def walk(template: Node, instance: Node) -> None:
-        pairs.append((template, instance))
-        if len(template.children) != len(instance.children):
-            return
-        for template_child, instance_child in zip(
-            template.children, instance.children
-        ):
-            if (
-                template_child.prefab_link is not None
-                or instance_child.prefab_link is not None
-            ):
-                continue
-            walk(template_child, instance_child)
-
-    for template_root, instance_root in zip(prefab.roots, roots):
-        walk(template_root, instance_root)
-    return pairs
-
-
 def _node_override_values(
     node: Node, registry: object | None
 ) -> dict[str, object]:
@@ -2008,6 +1983,51 @@ def _instance_nodes(roots: list[Node]) -> list[Node]:
     return nodes
 
 
+def _map_prefab_templates(
+    prefab: Prefab, roots: list[Node], link: PrefabLink
+) -> list[tuple[Node, Node]]:
+    """Map template and instance nodes by their stable id suffix."""
+    templates = {
+        node.id: node
+        for root in prefab.roots
+        for node in root.traverse()
+        if node.id
+    }
+    prefix = f"{link.instance}:"
+    pairs: list[tuple[Node, Node]] = []
+    for node in _instance_nodes(roots):
+        if not node.id.startswith(prefix):
+            continue
+        template = templates.get(node.id[len(prefix):])
+        if template is not None:
+            pairs.append((template, node))
+    return pairs
+
+
+def normalize_prefab_edit_ids(scene: Scene, link: PrefabLink) -> int:
+    """Give edit-mode nodes unique ids that survive template normalization."""
+    roots = _prefab_instance_roots(scene, link)
+    nodes = _instance_nodes(roots)
+    used = {item.id for item in scene.traverse() if item.id}
+    prefix = f"{link.instance}:"
+    changed = 0
+    for node in nodes:
+        if node.id.startswith(prefix):
+            continue
+        base = node.id or "node"
+        candidate = f"{prefix}{base}"
+        counter = 2
+        while candidate in used:
+            candidate = f"{prefix}{base}-{counter}"
+            counter += 1
+        if node.id:
+            used.discard(node.id)
+        node.id = candidate
+        used.add(candidate)
+        changed += 1
+    return changed
+
+
 def _ensure_prefab_baselines(
     scene: Scene,
     prefabs: Mapping[str, Prefab],
@@ -2019,7 +2039,7 @@ def _ensure_prefab_baselines(
         prefab = prefabs.get(link.name)
         template_values: dict[str, dict[str, object]] = {}
         if prefab is not None:
-            for template, instance in _map_prefab_nodes(prefab, roots):
+            for template, instance in _map_prefab_templates(prefab, roots, link):
                 template_values[instance.id] = _node_override_values(
                     template, registry
                 )
@@ -2247,7 +2267,7 @@ def prefab_override_document(
             reports.append(report)
             continue
         node_reports: list[dict[str, object]] = []
-        for template, instance in _map_prefab_nodes(prefab, roots):
+        for template, instance in _map_prefab_templates(prefab, roots, link):
             before = (
                 copy.deepcopy(instance.prefab_base)
                 if instance.prefab_base is not None
@@ -2406,7 +2426,7 @@ def _resolve_prefab_override(
     if prefab is None:
         raise KeyError(f"no saved prefab {link.name!r}")
     roots = _prefab_instance_roots(scene, link)
-    pairs = _map_prefab_nodes(prefab, roots)
+    pairs = _map_prefab_templates(prefab, roots, link)
     pair = next(
         (
             (template, instance)
