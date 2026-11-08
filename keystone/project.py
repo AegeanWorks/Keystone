@@ -20,7 +20,7 @@ from keystone.assets import AssetRecord, AssetRegistry
 from keystone.gltf_import import import_gltf_prefab, is_gltf_asset
 from keystone.plugin import GameModule, load_game
 from keystone.prefab import Prefab
-from keystone.prefab_library import PrefabLibrary
+from keystone.prefab_library import PrefabLibrary, validate_library_name
 from keystone.scene_library import SceneLibrary
 from keystone.serialization import read_json, write_json_atomic
 
@@ -37,6 +37,7 @@ __all__ = [
     "create_project",
     "import_project_asset",
     "import_project_assets",
+    "import_project_gltf",
     "load_project",
     "load_project_game",
     "project_asset_id",
@@ -288,6 +289,68 @@ def import_project_asset(
         "asset": record.id,
         "kind": record.kind,
         "duplicate": duplicate,
+        "count": len(manifest.assets),
+    }
+
+
+def import_project_gltf(
+    context: ProjectContext,
+    registry: AssetRegistry,
+    prefab_library: PrefabLibrary,
+    value: str | Path,
+    name: str | None = None,
+) -> dict[str, object]:
+    """Import a project glTF/GLB scene as a prefab and record its source."""
+    if not isinstance(context, ProjectContext):
+        raise TypeError("project context must be a ProjectContext")
+    if not isinstance(registry, AssetRegistry):
+        raise TypeError("glTF import needs an AssetRegistry")
+    if not isinstance(prefab_library, PrefabLibrary):
+        raise TypeError("glTF import needs a PrefabLibrary")
+    relative, target = resolve_project_asset(context, value)
+    if not is_gltf_asset(target):
+        raise ValueError(
+            f"not a glTF/GLB source: {relative.as_posix()}.\n"
+            "Fix: use import_asset for .obj, .png or .kprefab files."
+        )
+    selected = validate_library_name(name or target.stem)
+    normalized = relative.as_posix()
+    duplicate = normalized in {
+        Path(item).as_posix() for item in context.manifest.assets
+    }
+    replaced = prefab_library.path_for(selected).is_file()
+    manifest = context.manifest
+    if not duplicate:
+        manifest = ProjectManifest(
+            name=context.manifest.name,
+            game=context.manifest.game,
+            description=context.manifest.description,
+            assets=(*context.manifest.assets, normalized),
+        )
+        save_project(context.directory, manifest)
+    before = set(registry.ids())
+    try:
+        prefab = import_gltf_prefab(
+            target, registry, prefab_library, name=selected
+        )
+    except Exception:
+        if not duplicate:
+            save_project(context.directory, context.manifest)
+        for asset_id in tuple(set(registry.ids()) - before):
+            registry.remove(asset_id)
+        raise
+    assets = sorted(
+        asset_id
+        for asset_id in registry.ids()
+        if asset_id.startswith(f"gltf.{selected}.")
+    )
+    return {
+        "path": normalized,
+        "prefab": prefab.name,
+        "assets": assets,
+        "asset_count": len(assets),
+        "duplicate": duplicate,
+        "replaced_prefab": replaced,
         "count": len(manifest.assets),
     }
 

@@ -13,6 +13,8 @@ from keystone.prefab_library import PrefabLibrary
 from keystone.project import (
     ProjectManifest,
     attach_project_assets,
+    create_project,
+    import_project_gltf,
     load_project,
     save_project,
 )
@@ -104,6 +106,96 @@ class GltfPrefabImportTest(unittest.TestCase):
                 import_gltf_prefab(path, registry, object())
             with self.assertRaises(ValueError):
                 import_gltf_prefab(path, registry, library, name="bad name")
+
+
+class ProjectGltfEditorImportTest(unittest.TestCase):
+    def test_project_gltf_import_updates_manifest_and_prefab_library(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name="gltf-editor")
+            assets = root / "assets"
+            assets.mkdir()
+            (assets / "model.gltf").write_text(
+                json.dumps(_triangle_gltf()), encoding="utf-8"
+            )
+            registry = AssetRegistry()
+            library = PrefabLibrary(root / "prefabs", registry=registry)
+            report = import_project_gltf(
+                load_project(root), registry, library, "assets/model.gltf"
+            )
+            self.assertEqual(report["path"], "assets/model.gltf")
+            self.assertEqual(report["prefab"], "model")
+            self.assertEqual(
+                report["assets"],
+                ["gltf.model.material.0", "gltf.model.mesh.0"],
+            )
+            self.assertEqual(report["asset_count"], 2)
+            self.assertFalse(report["duplicate"])
+            self.assertFalse(report["replaced_prefab"])
+            self.assertEqual(report["count"], 1)
+            self.assertEqual(
+                load_project(root).manifest.assets, ("assets/model.gltf",)
+            )
+            self.assertTrue((root / "prefabs" / "model.kprefab").is_file())
+            loaded = library.load("model")
+            self.assertIs(
+                loaded.roots[0].mesh,
+                registry.require("gltf.model.mesh.0").payload,
+            )
+
+            again = import_project_gltf(
+                load_project(root), registry, library, "./assets/model.gltf"
+            )
+            self.assertTrue(again["duplicate"])
+            self.assertTrue(again["replaced_prefab"])
+            self.assertEqual(again["count"], 1)
+
+    def test_project_gltf_import_rejects_bad_sources_and_rolls_back(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name="gltf-editor")
+            assets = root / "assets"
+            assets.mkdir()
+            registry = AssetRegistry()
+            library = PrefabLibrary(root / "prefabs", registry=registry)
+            context = load_project(root)
+            (assets / "cube.obj").write_text("v 0 0 0", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "not a glTF"):
+                import_project_gltf(
+                    context, registry, library, "assets/cube.obj"
+                )
+            with self.assertRaises(ValueError):
+                import_project_gltf(
+                    context, registry, library, "../escape.gltf"
+                )
+            with self.assertRaises(FileNotFoundError):
+                import_project_gltf(
+                    context, registry, library, "assets/missing.glb"
+                )
+            bad = assets / "bad.gltf"
+            bad.write_text("{not json", encoding="utf-8")
+            with self.assertRaises((TypeError, ValueError)):
+                import_project_gltf(
+                    context, registry, library, "assets/bad.gltf"
+                )
+            self.assertEqual(load_project(root).manifest.assets, ())
+            self.assertFalse((root / "prefabs" / "bad.kprefab").exists())
+            self.assertEqual(registry.ids(), ())
+
+            (assets / "named.gltf").write_text(
+                json.dumps(_triangle_gltf()), encoding="utf-8"
+            )
+            named = import_project_gltf(
+                context,
+                registry,
+                library,
+                "assets/named.gltf",
+                "custom-name",
+            )
+            self.assertEqual(named["prefab"], "custom-name")
+            self.assertTrue(
+                (root / "prefabs" / "custom-name.kprefab").is_file()
+            )
 
 
 class ProjectGltfAttachmentTest(unittest.TestCase):

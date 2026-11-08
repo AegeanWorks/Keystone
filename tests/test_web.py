@@ -2,6 +2,7 @@
 
 import base64
 import json
+import struct
 import tempfile
 import threading
 import unittest
@@ -22,6 +23,41 @@ from keystone.schema import EDITOR_ACTIONS, EDITOR_SCHEMA_VERSION
 from keystone.web.scene import SCENE_SCHEMA, scene_document
 from keystone.web.schema import EDITOR_SCHEMA
 from keystone.web.server import GameSession, WebProblem, create_server
+
+
+def _triangle_gltf():
+    positions = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+    data = struct.pack("<9f", *positions)
+    uri = "data:application/octet-stream;base64," + base64.b64encode(data).decode()
+    return {
+        "asset": {"version": "2.0"},
+        "scene": 0,
+        "scenes": [{"nodes": [0]}],
+        "nodes": [{"name": "tri", "mesh": 0}],
+        "meshes": [
+            {"primitives": [{"attributes": {"POSITION": 0}, "material": 0}]}
+        ],
+        "accessors": [
+            {"bufferView": 0, "componentType": 5126, "count": 3, "type": "VEC3"}
+        ],
+        "bufferViews": [
+            {
+                "buffer": 0,
+                "byteOffset": 0,
+                "byteLength": len(data),
+                "target": 34962,
+            }
+        ],
+        "buffers": [{"uri": uri, "byteLength": len(data)}],
+        "materials": [
+            {
+                "pbrMetallicRoughness": {
+                    "baseColorFactor": [0.2, 0.4, 0.6, 1.0],
+                    "roughnessFactor": 0.25,
+                }
+            }
+        ],
+    }
 
 
 @dataclass(frozen=True)
@@ -2571,6 +2607,96 @@ class WebServerTest(unittest.TestCase):
             finally:
                 server.server_close()
 
+    def test_editor_import_gltf_generates_prefab(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name="gltf-web")
+            assets = root / "assets"
+            assets.mkdir()
+            (assets / "model.gltf").write_text(
+                json.dumps(_triangle_gltf()), encoding="utf-8"
+            )
+            prefab_dir = root / "prefabs"
+            session = GameSession(
+                CubeDemo(), project_dir=root, prefab_dir=prefab_dir
+            )
+            self.assertIsNone(session.editor()["imported_gltf"])
+            imported_editor = session.editor_action(
+                {"action": "import_gltf", "path": "assets/model.gltf"}
+            )
+            report = imported_editor["imported_gltf"]
+            self.assertIsNotNone(report)
+            self.assertEqual(report["prefab"], "model")
+            self.assertEqual(
+                report["assets"],
+                ["gltf.model.material.0", "gltf.model.mesh.0"],
+            )
+            self.assertEqual(report["asset_count"], 2)
+            self.assertFalse(report["duplicate"])
+            self.assertFalse(report["replaced_prefab"])
+            self.assertIn(
+                "model", {entry["name"] for entry in imported_editor["prefabs"]}
+            )
+            self.assertEqual(
+                load_project(root).manifest.assets, ("assets/model.gltf",)
+            )
+            self.assertIn(
+                "gltf.model.mesh.0",
+                {asset["id"] for asset in imported_editor["assets"]},
+            )
+
+            inserted = session.editor_action(
+                {
+                    "action": "insert_prefab",
+                    "name": "model",
+                    "instance": "gltf",
+                }
+            )
+            self.assertTrue(
+                any(
+                    node["prefab_link"] is not None
+                    for node in inserted["nodes"]
+                )
+            )
+
+            again = session.editor_action(
+                {"action": "import_gltf", "path": "./assets/model.gltf"}
+            )["imported_gltf"]
+            self.assertTrue(again["duplicate"])
+            self.assertTrue(again["replaced_prefab"])
+
+            (assets / "cube.obj").write_text("v 0 0 0", encoding="utf-8")
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "import_gltf", "path": "assets/cube.obj"}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("not a glTF", caught.exception.why)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "import_gltf", "path": "assets/missing.glb"}
+                )
+            self.assertIn("does not exist", caught.exception.why)
+            self.assertIsNone(
+                session.editor_action({"action": "select", "id": None})[
+                    "imported_gltf"
+                ]
+            )
+
+            bare = GameSession(CubeDemo())
+            with self.assertRaises(WebProblem) as caught:
+                bare.editor_action(
+                    {"action": "import_gltf", "path": "assets/model.gltf"}
+                )
+            self.assertIn("--project", caught.exception.fix)
+
+            no_library = GameSession(CubeDemo(), project_dir=root)
+            with self.assertRaises(WebProblem) as caught:
+                no_library.editor_action(
+                    {"action": "import_gltf", "path": "assets/model.gltf"}
+                )
+            self.assertIn("--prefab-dir", caught.exception.fix)
+
     def test_editor_reload_assets_rebinds_scene_and_history(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "project"
@@ -3270,6 +3396,8 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("import_asset", script)
         self.assertIn("imported_asset", script)
         self.assertIn("import-state", script)
+        self.assertIn("import_gltf", script)
+        self.assertIn("imported_gltf", script)
         self.assertIn("reloadAssets", script)
         self.assertIn("reload_assets", script)
         self.assertIn("asset_reload", script)

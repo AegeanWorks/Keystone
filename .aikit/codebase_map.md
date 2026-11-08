@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `141`
-- **Total Classes**: `223`
-- **Total Top-Level Functions**: `382`
-- **Total Class Methods**: `1384`
-- **Total Source Lines**: `34540`
+- **Total Classes**: `224`
+- **Total Top-Level Functions**: `384`
+- **Total Class Methods**: `1387`
+- **Total Source Lines**: `34904`
 
 ---
 
@@ -1224,7 +1224,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `621` lines (`23597` bytes)
+**Size**: `684` lines (`25881` bytes)
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -1244,6 +1244,7 @@
 - `def resolve_project_asset(context, value)` - *Resolve one asset path and prove it stays inside the project.*
 - `def import_project_assets(context, registry, component_types)` - *Load every manifest asset into an existing registry.*
 - `def import_project_asset(context, registry, value, component_types)` - *Import one editor-selected file and append it to the project manifest.*
+- `def import_project_gltf(context, registry, prefab_library, value, name)` - *Import a project glTF/GLB scene as a prefab and record its source.*
 - `def attach_project_assets(game, context, component_types, prefab_library)` - *Import manifest assets, including glTF scenes as prefab entries.*
 - `def validate_project(context, game)` - *Validate project assets, scenes and prefabs without writing project files.*
 - `def load_project_game(context)` - *Import and validate a project's game after adding its directory to sys.path.*
@@ -1423,7 +1424,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `70` lines (`1499` bytes)
+**Size**: `71` lines (`1518` bytes)
 
 ---
 
@@ -1725,14 +1726,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `395` lines (`17901` bytes)
+**Size**: `411` lines (`18432` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1869` lines (`82723` bytes)
+**Size**: `1933` lines (`85685` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2327,13 +2328,16 @@
 ### [`tests/test_gltf_import.py`](tests/test_gltf_import.py)
 > *Tests for glTF/GLB prefab import and project attachment.*
 
-**Size**: `138` lines (`5623` bytes)
+**Size**: `230` lines (`9553` bytes)
 
 **Classes:**
 - `class GltfPrefabImportTest`
   - Method `.test_import_registers_assets_and_saves_a_prefab()`
   - Method `.test_import_replaces_derived_assets_on_reimport()`
   - Method `.test_import_rejects_bad_inputs()`
+- `class ProjectGltfEditorImportTest`
+  - Method `.test_project_gltf_import_updates_manifest_and_prefab_library()`
+  - Method `.test_project_gltf_import_rejects_bad_sources_and_rolls_back()`
 - `class ProjectGltfAttachmentTest`
   - Method `.test_project_attachment_imports_gltf_prefab_and_assets()`
 
@@ -3255,7 +3259,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `3587` lines (`150539` bytes)
+**Size**: `3715` lines (`155417` bytes)
 
 **Classes:**
 - `class Health`
@@ -3326,6 +3330,7 @@
   - Method `.test_editor_play_state_reports_hook_errors()`
   - Method `.test_editor_validate_scene_reports_issues()`
   - Method `.test_editor_import_asset_updates_manifest_and_registry()`
+  - Method `.test_editor_import_gltf_generates_prefab()`
   - Method `.test_editor_reload_assets_rebinds_scene_and_history()`
   - Method `.test_editor_preview_animation_and_undo()`
   - Method `.test_editor_animation_library_round_trip()`
@@ -3341,5 +3346,8 @@
   - Method `.test_oversized_step_and_json_number_are_client_errors()`
   - Method `.test_simulate_infers_frames_from_actions()`
   - Method `.test_head_and_method_errors()`
+
+**Functions:**
+- `def _triangle_gltf()`
 
 ---

@@ -937,17 +937,24 @@ function showEditor(editor) {
       `${validation.warnings} warnings`
     : "Not validated.";
   const imported = editor.imported_asset;
+  const importedGltf = editor.imported_gltf;
   const projectDir = editor.workspace && editor.workspace.project_dir;
-  if (imported) {
+  if (importedGltf) {
+    elements.importState.textContent =
+      `${importedGltf.duplicate ? "Reimported" : "Imported"} glTF ` +
+      `${importedGltf.path} → prefab ${importedGltf.prefab} · ` +
+      `${importedGltf.asset_count} assets · ${importedGltf.count} project assets` +
+      `${importedGltf.replaced_prefab ? " · replaced prefab" : ""}`;
+  } else if (imported) {
     elements.importState.textContent =
       `${imported.duplicate ? "Refreshed" : "Imported"} ${imported.path} · ` +
       `${imported.asset} (${imported.kind}) · ${imported.count} project assets`;
   } else if (!projectDir) {
     elements.importState.textContent =
-      "Open a project with --project to import .obj, .png or .kprefab files.";
+      "Open a project with --project to import .obj, .png, .kprefab, .gltf or .glb files.";
   } else {
     elements.importState.textContent =
-      "Enter a project-relative .obj, .png or .kprefab path.";
+      "Enter a project-relative .obj, .png, .kprefab, .gltf or .glb path.";
   }
   elements.importAsset.disabled = !projectDir;
   const reload = editor.asset_reload;
@@ -1984,10 +1991,18 @@ async function importAsset() {
   if (!path) {
     throw new Error("Enter a project-relative asset path.");
   }
+  const gltf = /\.(gltf|glb)$/i.test(path);
   const editor = await editorAction(
-    { action: "import_asset", path },
+    { action: gltf ? "import_gltf" : "import_asset", path },
     `importing ${path}`,
   );
+  if (gltf) {
+    const imported = editor.imported_gltf;
+    if (imported) {
+      show({ ok: true, action: "import_gltf", imported_gltf: imported });
+    }
+    return;
+  }
   const imported = editor.imported_asset;
   if (imported) {
     show({ ok: true, action: "import_asset", imported_asset: imported });

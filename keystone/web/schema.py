@@ -195,6 +195,11 @@ EDITOR_EXAMPLES = {
     "diff_scene": {"action": "diff_scene", "name": "level"},
     "validate_scene": {"action": "validate_scene"},
     "import_asset": {"action": "import_asset", "path": "assets/crate.obj"},
+    "import_gltf": {
+        "action": "import_gltf",
+        "path": "assets/model.glb",
+        "name": "model",
+    },
     "reload_assets": {"action": "reload_assets"},
     "rename_scene": {"action": "rename_scene", "name": "level", "new_name": "level-alt"},
     "duplicate_scene": {
@@ -305,6 +310,16 @@ EDITOR_SCHEMA = {
         "validation_issue": ["severity", "node_id", "field", "message"],
         "import_asset": ["path"],
         "imported_asset": ["path", "asset", "kind", "duplicate", "count"],
+        "import_gltf": ["path", "name"],
+        "imported_gltf": [
+            "path",
+            "prefab",
+            "assets",
+            "asset_count",
+            "duplicate",
+            "replaced_prefab",
+            "count",
+        ],
         "asset_reload": [
             "schema",
             "ok",
@@ -369,6 +384,7 @@ EDITOR_SCHEMA = {
         "schema 42 adds validate_scene, returning structured errors/warnings for missing assets, dangling prefab links and naming issues",
         "schema 43 adds import_asset for project-relative .obj/.png/.kprefab files, appending them to keystone.json and registering project:<path>",
         "schema 44 adds reload_assets, which refreshes file-backed assets, rebinds scene and history payloads and reports reloaded/failed/missing/rebound counts",
+        "schema 45 adds import_gltf, which imports project .gltf/.glb scenes as prefabs, registers gltf.<name>.* assets and records the source in keystone.json",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

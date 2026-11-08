@@ -24,7 +24,11 @@ from keystone.material_library import MaterialLibrary, material_from_document
 from keystone.plugin import GameModule, describe_game
 from keystone.prefab import Prefab
 from keystone.prefab_library import PrefabLibrary
-from keystone.project import import_project_asset, load_project
+from keystone.project import (
+    import_project_asset,
+    import_project_gltf,
+    load_project,
+)
 from keystone.replay import FIXED_STEP
 from keystone.scene import Node, Scene
 from keystone.scene_diff import diff_scene_documents
@@ -81,6 +85,7 @@ PREFAB_EDIT_BLOCKED = frozenset(
         "play_resume",
         "play_stop",
         "save_prefab",
+        "import_gltf",
         "refresh_prefab_instances",
         "apply_prefab",
         "revert_prefab",
@@ -194,6 +199,7 @@ class GameSession:
         self.last_animation_preview: dict[str, object] | None = None
         self.last_validation: dict[str, object] | None = None
         self.last_import: dict[str, object] | None = None
+        self.last_gltf_import: dict[str, object] | None = None
         self.last_asset_reload: dict[str, object] | None = None
         self._prefab_edit_original_history: EditorHistory | None = None
         self._prefab_edit_original_selection: list[str] = []
@@ -599,6 +605,7 @@ class GameSession:
         document["animation_preview"] = self.last_animation_preview
         document["validation"] = self.last_validation
         document["imported_asset"] = self.last_import
+        document["imported_gltf"] = self.last_gltf_import
         document["asset_reload"] = self.last_asset_reload
         document["animations"] = (
             [entry.describe() for entry in self.animation_library.entries()]
@@ -666,6 +673,7 @@ class GameSession:
         self.last_animation_preview = None
         self.last_validation = None
         self.last_import = None
+        self.last_gltf_import = None
         self.last_asset_reload = None
         with self.lock:
             scene = self._scene_locked()
@@ -1402,6 +1410,62 @@ class GameSession:
                             str(exc),
                             "choose a file that exists inside the project directory",
                         ) from exc
+                elif action == "import_gltf":
+                    if self.project_dir is None:
+                        raise WebProblem(
+                            400,
+                            "glTF import needs a project directory",
+                            "start the console with python -m keystone --project <dir> --serve",
+                        )
+                    registry = self._registry_locked()
+                    if registry is None:
+                        raise WebProblem(
+                            400,
+                            "glTF import needs an AssetRegistry",
+                            "expose self.assets = AssetRegistry() in the game module",
+                        )
+                    if self.prefab_library is None:
+                        raise WebProblem(
+                            400,
+                            "glTF import needs a prefab library",
+                            "start with --project or pass --prefab-dir <dir>",
+                        )
+                    value = payload.get("path")
+                    if not isinstance(value, str) or not value.strip():
+                        raise ValueError(
+                            "glTF path must be a non-blank project-relative string"
+                        )
+                    name = payload.get("name")
+                    if name is not None and (
+                        not isinstance(name, str) or not name.strip()
+                    ):
+                        raise ValueError(
+                            "glTF prefab name must be a non-blank string or null"
+                        )
+                    try:
+                        context = load_project(self.project_dir)
+                    except (OSError, TypeError, ValueError) as exc:
+                        raise WebProblem(
+                            400,
+                            f"could not load the project manifest: {exc}",
+                            "check keystone.json and restore a valid manifest",
+                        ) from exc
+                    try:
+                        report = import_project_gltf(
+                            context,
+                            registry,
+                            self.prefab_library,
+                            value,
+                            name,
+                        )
+                    except FileNotFoundError as exc:
+                        raise WebProblem(
+                            400,
+                            str(exc),
+                            "choose a file that exists inside the project directory",
+                        ) from exc
+                    self.last_gltf_import = report
+                    self.prefabs.pop(str(report["prefab"]), None)
                 elif action == "reload_assets":
                     registry = self._registry_locked()
                     if registry is None:
