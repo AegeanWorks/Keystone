@@ -597,6 +597,11 @@ class GameSession:
             if self.animation_library is not None
             else []
         )
+        document["trash"]["materials"] = (
+            self.material_library.trash()
+            if self.material_library is not None
+            else []
+        )
         document["materials"] = (
             [entry.describe() for entry in self.material_library.entries()]
             if self.material_library is not None
@@ -969,6 +974,51 @@ class GameSession:
 
                     self._apply_history(scene, apply_material)
                     self.selected_id = node.id
+                elif action == "delete_material":
+                    if self.material_library is None:
+                        raise ValueError("no material library is configured")
+                    name = payload.get("name")
+                    if not isinstance(name, str) or not name.strip():
+                        raise ValueError(
+                            "material name must be a non-blank string"
+                        )
+                    asset_id = self.material_library.asset_id(name)
+                    registry = self._registry_locked()
+                    used_by: list[str] = []
+                    if registry is not None:
+                        record = registry.get(asset_id)
+                        if record is not None:
+                            used_by = [
+                                node.id
+                                for node in scene.traverse()
+                                if node.material is record.payload
+                            ]
+                    if used_by:
+                        raise ValueError(
+                            f"material {name!r} is used by nodes: "
+                            + ", ".join(used_by)
+                        )
+                    self.material_library.delete(name)
+                    if registry is not None:
+                        try:
+                            registry.remove(asset_id)
+                        # hygiene: allow registry may already be absent
+                        except KeyError:
+                            pass
+                elif action == "restore_material":
+                    if self.material_library is None:
+                        raise ValueError("no material library is configured")
+                    entry = self.material_library.restore(payload.get("trash"))
+                    registry = self._registry_locked()
+                    if registry is not None:
+                        material = self.material_library.load(entry.name)
+                        registry.register(
+                            self.material_library.asset_id(entry.name),
+                            material,
+                            kind="material",
+                            source=entry.path,
+                            replace=True,
+                        )
                 elif action == "set_component":
                     node = find_node(scene, payload.get("id"))
                     self._apply_history(

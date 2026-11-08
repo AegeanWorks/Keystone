@@ -2680,6 +2680,36 @@ class WebServerTest(unittest.TestCase):
             )
             self.assertIsNone(node["material"])
 
+            assigned_again = session.editor_action(
+                {"action": "assign_material", "id": cube["id"], "name": "gold"}
+            )
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "delete_material", "name": "gold"}
+                )
+            self.assertEqual(caught.exception.status, 400)
+
+            session.editor_action(
+                {"action": "assign_material", "id": cube["id"], "name": None}
+            )
+            deleted = session.editor_action(
+                {"action": "delete_material", "name": "gold"}
+            )
+            self.assertEqual(deleted["materials"], [])
+            self.assertEqual(deleted["trash"]["materials"][0]["name"], "gold")
+            self.assertIsNone(session.game.assets.get("material.gold"))
+            restored = session.editor_action(
+                {
+                    "action": "restore_material",
+                    "trash": deleted["trash"]["materials"][0]["trash"],
+                }
+            )
+            self.assertIn(
+                "gold", {item["name"] for item in restored["materials"]}
+            )
+            self.assertIsNotNone(session.game.assets.get("material.gold"))
+            self.assertIsNotNone(assigned_again["selection"])
+
             standalone = GameSession(CubeDemo())
             with self.assertRaises(WebProblem) as caught:
                 standalone.editor_action(
@@ -2931,6 +2961,8 @@ class WebServerTest(unittest.TestCase):
             "material-save",
             "material-assign",
             "material-clear",
+            "material-delete",
+            "material-restore",
             "material-state",
             "assign-asset",
             "asset-info",
@@ -2981,8 +3013,12 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("saveMaterial", script)
         self.assertIn("assignMaterial", script)
         self.assertIn("clearMaterial", script)
+        self.assertIn("deleteMaterial", script)
+        self.assertIn("restoreMaterial", script)
         self.assertIn("save_material", script)
         self.assertIn("assign_material", script)
+        self.assertIn("delete_material", script)
+        self.assertIn("restore_material", script)
         self.assertIn("fillMaterialForm", script)
         self.assertIn("fillDatalist", script)
         self.assertIn("setSelected", script)

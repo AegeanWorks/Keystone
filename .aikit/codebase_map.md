@@ -9,8 +9,8 @@
 - **Total Python Modules**: `141`
 - **Total Classes**: `223`
 - **Total Top-Level Functions**: `376`
-- **Total Class Methods**: `1373`
-- **Total Source Lines**: `33658`
+- **Total Class Methods**: `1377`
+- **Total Source Lines**: `33788`
 
 ---
 
@@ -902,7 +902,7 @@
 ### [`keystone/material_library.py`](keystone/material_library.py)
 > *File-backed material libraries for editors, tools and AI clients.*
 
-**Size**: `276` lines (`10318` bytes)
+**Size**: `296` lines (`11172` bytes)
 
 **Classes:**
 - `class MaterialEntry` - *One library file and its material summary, or why it could not load.*
@@ -914,6 +914,9 @@
   - Method `.save(name, material)` - *Write one material atomically.*
   - Method `.load(name)` - *Load one material or raise KeyError when the entry is absent.*
   - Method `.entry(name)` - *Load one entry's summary, capturing load failures as ``error``.*
+  - Method `.delete(name)` - *Move one entry to the library trash and return its former path.*
+  - Method `.trash()` - *Return recoverable deleted entries.*
+  - Method `.restore(trash_name)` - *Restore one trashed entry and return its summary.*
   - Method `.entries()` - *Return every ``.kmaterial`` file in stable name order.*
   - Method `.register_all(registry)` - *Register every loadable material; invalid entries stay reported.*
 
@@ -1419,7 +1422,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `65` lines (`1389` bytes)
+**Size**: `67` lines (`1436` bytes)
 
 ---
 
@@ -1715,14 +1718,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `358` lines (`16207` bytes)
+**Size**: `366` lines (`16563` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1731` lines (`76034` bytes)
+**Size**: `1781` lines (`78485` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2476,11 +2479,12 @@
 ### [`tests/test_material_library.py`](tests/test_material_library.py)
 > *Tests for file-backed material libraries.*
 
-**Size**: `55` lines (`2049` bytes)
+**Size**: `69` lines (`2708` bytes)
 
 **Classes:**
 - `class MaterialLibraryTest`
   - Method `.test_save_load_register_and_texture()`
+  - Method `.test_delete_trash_and_restore()`
   - Method `.test_invalid_names_and_missing_entries()`
 
 ---
@@ -3241,7 +3245,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `3263` lines (`137417` bytes)
+**Size**: `3299` lines (`138987` bytes)
 
 **Classes:**
 - `class Health`

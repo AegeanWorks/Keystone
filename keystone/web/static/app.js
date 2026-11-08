@@ -115,6 +115,8 @@ const elements = {
   materialSave: document.getElementById("material-save"),
   materialAssign: document.getElementById("material-assign"),
   materialClear: document.getElementById("material-clear"),
+  materialDelete: document.getElementById("material-delete"),
+  materialRestore: document.getElementById("material-restore"),
   materialState: document.getElementById("material-state"),
   assignAsset: document.getElementById("assign-asset"),
   assetInfo: document.getElementById("asset-info"),
@@ -210,6 +212,7 @@ function setBusy(value) {
     elements.sceneSettingsApply, elements.cameraSettingsApply,
     elements.environmentSettingsApply, elements.assignAsset,
     elements.materialSave, elements.materialAssign, elements.materialClear,
+    elements.materialDelete, elements.materialRestore,
     elements.playStart,
     elements.playPause, elements.playResume, elements.playStep, elements.playStop, elements.componentSet, elements.componentRemove,
     elements.animationPreview, elements.animationSample,
@@ -1785,6 +1788,30 @@ async function clearMaterial() {
   await refreshScene(false);
 }
 
+async function deleteMaterial() {
+  const name = elements.materialName.value.trim();
+  if (!name) {
+    throw new Error("Enter the material name to delete.");
+  }
+  await editorAction(
+    { action: "delete_material", name },
+    `deleting material ${name}`,
+  );
+}
+
+async function restoreMaterial() {
+  const entry = (
+    (editorState && editorState.trash && editorState.trash.materials) || []
+  )[0];
+  if (!entry) {
+    throw new Error("No trashed material is available.");
+  }
+  await editorAction(
+    { action: "restore_material", trash: entry.trash },
+    "restoring material",
+  );
+}
+
 async function setComponent() {
   if (!editorState || !editorState.selection) {
     throw new Error("Select a node before editing components.");
@@ -2302,6 +2329,8 @@ elements.assignAsset.addEventListener("click", () => run(assignAssets));
 elements.materialSave.addEventListener("click", () => run(saveMaterial));
 elements.materialAssign.addEventListener("click", () => run(assignMaterial));
 elements.materialClear.addEventListener("click", () => run(clearMaterial));
+elements.materialDelete.addEventListener("click", () => run(deleteMaterial));
+elements.materialRestore.addEventListener("click", () => run(restoreMaterial));
 elements.componentSet.addEventListener("click", () => run(setComponent));
 elements.componentRemove.addEventListener("click", () => run(removeComponent));
 elements.componentType.addEventListener("change", () => {

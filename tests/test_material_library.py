@@ -42,6 +42,20 @@ class MaterialLibraryTest(unittest.TestCase):
             self.assertEqual(record.kind, "material")
             self.assertEqual(record.payload.metallic, 1.0)
 
+    def test_delete_trash_and_restore(self):
+        with tempfile.TemporaryDirectory() as directory:
+            library = MaterialLibrary(directory)
+            material = Material(color=Vec3(1.0, 0.8, 0.2))
+            library.save("gold", material)
+            library.delete("gold")
+            self.assertEqual(library.entries(), ())
+            trash = library.trash()
+            self.assertEqual(len(trash), 1)
+            self.assertEqual(trash[0]["name"], "gold")
+            restored = library.restore(trash[0]["trash"])
+            self.assertEqual(restored.name, "gold")
+            self.assertEqual(library.load("gold").color, material.color)
+
     def test_invalid_names_and_missing_entries(self):
         with tempfile.TemporaryDirectory() as directory:
             library = MaterialLibrary(directory)

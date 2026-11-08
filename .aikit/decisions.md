@@ -1216,3 +1216,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The hierarchy was a flat multi-select list; reparenting required the separate parent dropdown and Reparent button, unlike Unity/Unreal tree drag-and-drop.
 - **Decision**: Replace the hierarchy `<select>` with a role-tree list of draggable rows showing indentation, prefab badges and selection state. Clicking selects, Ctrl/Cmd-click toggles, dragging a row onto another node calls `reparent_node` with that node as parent, and dropping on empty hierarchy space reparents to the scene root. Drag-over rows and the tree background get dashed feedback. The server remains authoritative for self/descendant/prefab-group validation. No API or schema change.
 - **Consequences**: 778 tests green; static coverage verifies tree semantics, draggable rows, drag/drop wiring and reparent routing. Drag/drop is not covered by a real-browser integration test, filtered views only show matching rows, and multi-select drag moves only the dragged node while prefab groups still move atomically through the server.
+
+### ADR-149: Material delete and restore lifecycle
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Saved materials could be created and assigned but never removed, so the material library grew without a lifecycle.
+- **Decision**: Add `MaterialLibrary.delete/trash/restore` using the shared recoverable trash helper. Add `delete_material` and `restore_material` actions. Deletion is refused while any node in the current scene references the registered material object; otherwise the file moves to `.trash`, the registry record is removed, and a later restore re-registers `material.<name>`. The console adds Delete material and Restore material controls. Bump the editor schema to 40.
+- **Consequences**: 779 tests green; library delete/restore, in-use protection, registry removal/re-registration, inventory/trash exposure and restore are covered. Deleting a material still referenced by an unsaved or unloaded scene is the user's responsibility, and scene/prefab asset writes remain outside scene undo.
