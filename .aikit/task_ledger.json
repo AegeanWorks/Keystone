@@ -5,30 +5,12 @@
     "last_phase": "in_progress",
     "active_phase": 4,
     "status": "in_progress",
-    "updated_at": 1794133102.482813,
+    "updated_at": 1794133579.6237984,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-copy-paste-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan copy/paste for the multi-node selection using a detached prefab clipboard",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794124843.1037974,
-      "timestamp_str": "2026-11-08 11:00:43",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Multi-selection can transform and delete nodes but cannot copy/paste them, and duplicate only handles one node at a time.",
-        "benefits": "copy_selection captures top-level selected nodes as a detached clipboard prefab; paste_nodes instantiates fresh IDs under a chosen parent in one undo entry; console Copy/Paste controls.",
-        "risks": "contract: editor schema 54 and two actions; dependency: Prefab capture/instantiate; concurrency: editor lock; state: empty selection/clipboard, nested selections, mixed parents, prefab-link rebasing, undo grouping.",
-        "mitigation": "Reuse save_prefab_nodes folding and shared-parent validation, keep the clipboard detached, instantiate with fresh IDs, wrap paste in one history entry and add copy/paste/undo/error tests."
-      },
-      "plan_digest": "873e4044fe293b302f41d6222fa0c909083078b9c2f3af56d045a3733a9742ff"
-    },
     {
       "task_id": "keystone-copy-paste-v1",
       "phase": "in_progress",
@@ -266,6 +248,17 @@
       "status": "in_progress",
       "timestamp": 1794133102.482813,
       "timestamp_str": "2026-11-08 13:18:22",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-commit-audit-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[run 5/6] Audited commits 1-15: found zero-speed targets could never finish crossfades because blend elapsed was speed-scaled; blend time now uses wall dt, with zero-speed and wall-duration regressions; full AIKit 6/6 passed; commit and publish next",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794133579.6237984,
+      "timestamp_str": "2026-11-08 13:26:19",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

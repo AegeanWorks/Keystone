@@ -368,7 +368,7 @@ class AnimationController:
             fired = clip.events_in_range(previous, moment)
         pose = clip.sample(moment)
         if self.blending:
-            self._blend_elapsed += dt * self.speed
+            self._blend_elapsed += dt
             factor = 1.0 if self._blend_duration <= 0.0 else min(1.0, self._blend_elapsed / self._blend_duration)
             if self._blend_from_pose:
                 pose = blend_poses(self._blend_from_pose, pose, factor)

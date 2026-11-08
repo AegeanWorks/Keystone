@@ -107,12 +107,30 @@ class AnimationStateMachineTest(unittest.TestCase):
         self.assertAlmostEqual(pose["node"].position.x, 10.0)
         self.assertEqual(machine.report()["clip"], "shared")
 
+    def test_zero_speed_target_still_completes_crossfade(self):
+        idle = AnimationState("idle", _clip("idle"))
+        frozen = AnimationState("frozen", _clip("frozen"), speed=0.0)
+        machine = AnimationStateMachine(
+            [idle, frozen],
+            [
+                AnimationTransition(
+                    "idle", "frozen", "go", "trigger", duration=1.0
+                )
+            ],
+            {"go": False},
+        )
+        machine.set_trigger("go")
+        machine.advance(0.5)
+        self.assertTrue(machine.controller.blending)
+        machine.advance(0.5)
+        self.assertFalse(machine.controller.blending)
+
     def test_crossfade_blending_finishes(self):
         machine = _machine(duration=1.0)
         machine.set_parameter("speed", 1.0)
         machine.advance(0.25)
         self.assertTrue(machine.controller.blending)
-        machine.advance(0.5)
+        machine.advance(0.75)
         self.assertFalse(machine.controller.blending)
 
     def test_serialization_round_trip_and_report(self):

@@ -9,8 +9,8 @@
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
 - **Total Top-Level Functions**: `402`
-- **Total Class Methods**: `1450`
-- **Total Source Lines**: `38324`
+- **Total Class Methods**: `1451`
+- **Total Source Lines**: `38342`
 
 ---
 
@@ -88,7 +88,7 @@
 ### [`keystone/animation.py`](keystone/animation.py)
 > *Deterministic, game-agnostic animation: keyframe clips, sampling and control.*
 
-**Size**: `432` lines (`19926` bytes)
+**Size**: `432` lines (`19913` bytes)
 
 **Classes:**
 - `class Track` - *One keyframed channel: sorted times with Vec3 or Quat values.*
@@ -2008,13 +2008,14 @@
 ### [`tests/test_animation_state.py`](tests/test_animation_state.py)
 > *Tests for deterministic parameter-driven animation state machines.*
 
-**Size**: `202` lines (`7423` bytes)
+**Size**: `220` lines (`8069` bytes)
 
 **Classes:**
 - `class AnimationStateMachineTest`
   - Method `.test_parameter_transition_and_state_settings()`
   - Method `.test_trigger_transition_and_events()`
   - Method `.test_states_with_same_clip_name_keep_distinct_payloads()`
+  - Method `.test_zero_speed_target_still_completes_crossfade()`
   - Method `.test_crossfade_blending_finishes()`
   - Method `.test_serialization_round_trip_and_report()`
   - Method `.test_validation_rejects_bad_shapes()`

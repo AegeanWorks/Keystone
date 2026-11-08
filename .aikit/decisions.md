@@ -1440,3 +1440,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1→12 audit found that `AnimationStateMachine` keyed its controller clips by `AnimationClip.name`. Two states with distinct clips sharing a clip name overwrote each other, so one state played the wrong animation.
 - **Decision**: Register a `replace(clip, name=state.name)` copy for each state in the controller, and play/crossfade by state name. Reports continue to expose the original clip name. Add a regression where states `a` and `b` both use a clip named `shared` with different positions and assert each pose is preserved.
 - **Consequences**: State-machine playback is isolated by state name even when source clips collide; controller `current` now names the active state rather than the clip. No schema or API change.
+
+### ADR-177: Commit audit decouples crossfade time from playback speed
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1→15 audit found that crossfade progress advanced by `dt * playback speed`. A state with speed 0 could therefore start a crossfade that never completed, leaving the controller permanently blending.
+- **Decision**: Advance `_blend_elapsed` by wall `dt` while playback speed continues to scale clip time. Add a zero-speed target transition test and adjust the existing non-unit-speed crossfade test to wall-clock duration.
+- **Consequences**: Crossfades now always take their declared wall-clock duration regardless of clip speed; non-unit-speed playback still changes sampled pose time. No schema or API change.
