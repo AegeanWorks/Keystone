@@ -4524,6 +4524,64 @@ class WebServerTest(unittest.TestCase):
                 )
             self.assertEqual(caught.exception.status, 400)
 
+    def test_editor_state_machine_rename_and_duplicate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            animation_dir = Path(directory) / "animations"
+            session = GameSession(CubeDemo(), animation_dir=animation_dir)
+            document = _state_machine_document()
+            session.editor_action(
+                {
+                    "action": "save_state_machine",
+                    "name": "walk",
+                    "machine": document,
+                }
+            )
+            renamed = session.editor_action(
+                {
+                    "action": "rename_state_machine",
+                    "name": "walk",
+                    "new_name": "run",
+                }
+            )
+            self.assertEqual(
+                [item["name"] for item in renamed["state_machines"]], ["run"]
+            )
+            self.assertFalse((animation_dir / "walk.kstate").exists())
+            self.assertTrue((animation_dir / "run.kstate").is_file())
+            duplicated = session.editor_action(
+                {
+                    "action": "duplicate_state_machine",
+                    "name": "run",
+                    "new_name": "run-copy",
+                }
+            )
+            self.assertEqual(
+                {item["name"] for item in duplicated["state_machines"]},
+                {"run", "run-copy"},
+            )
+            loaded = session.editor_action(
+                {"action": "load_state_machine", "name": "run-copy"}
+            )
+            self.assertEqual(loaded["state_machine_document"]["machine"], document)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "duplicate_state_machine",
+                        "name": "run",
+                        "new_name": "run-copy",
+                    }
+                )
+            self.assertIn("already exists", caught.exception.why)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "rename_state_machine",
+                        "name": "missing",
+                        "new_name": "other",
+                    }
+                )
+            self.assertEqual(caught.exception.status, 404)
+
     def test_editor_animation_key_authoring(self):
         with tempfile.TemporaryDirectory() as directory:
             animation_dir = Path(directory) / "animations"

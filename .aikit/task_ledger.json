@@ -1,78 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-commit-audit-v3-1to9",
+    "task_id": "keystone-commit-audit-v3-1to12",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794142921.453991,
+    "updated_at": 1794143606.3639936,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
     "continuations": [],
-    "completed_at": 1794142922.382943
+    "completed_at": 1794143606.8179634
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-commit-audit-v2",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/4] Range 1->24: restore saved_scene when startup-scene rename rollback fires; regression forces manifest failure; 6/6 gate passed; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794139274.2690852,
-      "timestamp_str": "2026-11-08 15:01:14",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "next": "commit and push range 1->24, then start range 1->27",
-        "evidence": "startup tests green, full 6/6 gate green"
-      }
-    },
-    {
-      "task_id": "keystone-commit-audit-v2",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/5] Re-plan: count the planning step as a milestone, so plan + ranges 1->21, 1->24, 1->27 and 1->30 total five; the first two ranges are already pushed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794139898.3322973,
-      "timestamp_str": "2026-11-08 15:11:38",
-      "agent": "opencode:keystone",
-      "plan_digest": "2adc23ced0fb2da8ba639e60060bd62e8d564480bed4cf5f4b9fe21041780326",
-      "handoff": {
-        "state": "1->21 and 1->24 pushed",
-        "next": "record range 1->27, commit and push, then run 1->30"
-      }
-    },
-    {
-      "task_id": "keystone-commit-audit-v2",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[4/5] Range 1->27: skip locked prefab groups during instance refresh; regression covers locked child and unlock; 6/6 gate passed; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794139899.1713135,
-      "timestamp_str": "2026-11-08 15:11:39",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "next": "commit and push range 1->27, then start range 1->30",
-        "evidence": "locked refresh test green, full 6/6 gate green"
-      }
-    },
-    {
-      "task_id": "keystone-commit-audit-v2",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[5/5] Range 1->30: preserve nested baselines on outer prefab apply and defer rebasing until the library write succeeds; two regressions; 6/6 gate passed; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794140487.4873438,
-      "timestamp_str": "2026-11-08 15:21:27",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "next": "commit and push range 1->30, then report cycle complete at start-of-cycle End 2bffdb6",
-        "evidence": "nested apply and failed-write tests green, full 6/6 gate green"
-      }
-    },
     {
       "task_id": "keystone-commit-audit-v2",
       "phase": "completed",
@@ -298,6 +237,64 @@
       "status": "completed",
       "timestamp": 1794142922.382945,
       "timestamp_str": "2026-11-08 16:02:02",
+      "agent": "opencode:keystone"
+    },
+    {
+      "task_id": "keystone-commit-audit-v3-1to12",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: audit range 1->12 state-machine authoring/loading; close the library lifecycle gap with rename and duplicate",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794143254.5399864,
+      "timestamp_str": "2026-11-08 16:07:34",
+      "agent": "opencode:keystone",
+      "impact_assessment": {
+        "why": "Prefab and scene libraries expose rename/duplicate, but the state-machine library added in this range only saves, loads, deletes and restores. AI and editor clients must duplicate or rename .kstate files by hand.",
+        "benefits": "State-machine assets gain the same safe lifecycle as other libraries, with collision checks and recoverable delete unchanged.",
+        "risks": "contract: two additive editor actions; dependency: existing .kstate JSON; concurrency: session lock unchanged; state: library files only.",
+        "mitigation": "Add library methods and web actions with failing-first tests for rename, duplicate, collisions and missing entries; run the 6/6 gate."
+      },
+      "plan_digest": "40d377bd6b2eabeb2d3e55bc7d8df2537ed97e75e7daee62310ad60b9a7587df"
+    },
+    {
+      "task_id": "keystone-commit-audit-v3-1to12",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/3] Add .kstate rename/duplicate library methods and editor actions with collision and missing-entry regressions; bump editor schema to 58",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794143605.921672,
+      "timestamp_str": "2026-11-08 16:13:25",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "state": "library lifecycle and actions green",
+        "next": "record the gate and push"
+      }
+    },
+    {
+      "task_id": "keystone-commit-audit-v3-1to12",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Range 1->12 gate passes 6/6 with complete .kstate lifecycle; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794143606.3639936,
+      "timestamp_str": "2026-11-08 16:13:26",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "next": "commit and push range 1->12, then continue at 1->15",
+        "evidence": "full 6/6 gate green"
+      }
+    },
+    {
+      "task_id": "keystone-commit-audit-v3-1to12",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-commit-audit-v3-1to12' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794143606.8179643,
+      "timestamp_str": "2026-11-08 16:13:26",
       "agent": "opencode:keystone"
     }
   ]

@@ -9,8 +9,8 @@
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
 - **Total Top-Level Functions**: `416`
-- **Total Class Methods**: `1465`
-- **Total Source Lines**: `39586`
+- **Total Class Methods**: `1469`
+- **Total Source Lines**: `39765`
 
 ---
 
@@ -1464,7 +1464,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `88` lines (`1935` bytes)
+**Size**: `90` lines (`1994` bytes)
 
 ---
 
@@ -1499,7 +1499,7 @@
 ### [`keystone/state_machine_library.py`](keystone/state_machine_library.py)
 > *File-backed animation state machine libraries for editors and AI clients.*
 
-**Size**: `140` lines (`5032` bytes)
+**Size**: `181` lines (`6719` bytes)
 
 **Classes:**
 - `class StateMachineEntry` - *One library file and its state summary, or why it could not load.*
@@ -1509,6 +1509,8 @@
   - Method `.path_for(name)` - *Return the safe file path for one library name.*
   - Method `.save(name, machine)` - *Write one state machine atomically.*
   - Method `.load(name)` - *Load one machine or raise KeyError when the entry is absent.*
+  - Method `.rename(old, new)` - *Rename one entry, rejecting collisions and updating the file.*
+  - Method `.duplicate(old, new)` - *Copy one entry to a new name, rejecting collisions.*
   - Method `.delete(name)` - *Move one entry to the library trash and return its former path.*
   - Method `.trash()` - *Return recoverable deleted entries.*
   - Method `.restore(trash_name)` - *Restore one trashed entry and return its summary.*
@@ -1810,14 +1812,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `588` lines (`25003` bytes)
+**Size**: `601` lines (`25517` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2810` lines (`125771` bytes)
+**Size**: `2842` lines (`127268` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3283,11 +3285,12 @@
 ### [`tests/test_state_machine_library.py`](tests/test_state_machine_library.py)
 > *Tests for file-backed animation state machine libraries.*
 
-**Size**: `104` lines (`3491` bytes)
+**Size**: `137` lines (`4903` bytes)
 
 **Classes:**
 - `class StateMachineLibraryTest`
   - Method `.test_save_load_entries_delete_and_restore()`
+  - Method `.test_rename_and_duplicate()`
   - Method `.test_bad_files_and_inputs()`
 
 **Functions:**
@@ -3394,7 +3397,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `5511` lines (`227133` bytes)
+**Size**: `5569` lines (`229473` bytes)
 
 **Classes:**
 - `class Health`
@@ -3491,6 +3494,7 @@
   - Method `.test_editor_preview_animation_and_undo()`
   - Method `.test_editor_animation_library_round_trip()`
   - Method `.test_editor_state_machine_library_and_preview()`
+  - Method `.test_editor_state_machine_rename_and_duplicate()`
   - Method `.test_editor_animation_key_authoring()`
   - Method `.test_editor_material_library_save_assign_and_reload()`
   - Method `.test_editor_component_lifecycle_play_mode()`

@@ -178,6 +178,16 @@ EDITOR_EXAMPLES = {
         "action": "load_state_machine",
         "name": "locomotion",
     },
+    "rename_state_machine": {
+        "action": "rename_state_machine",
+        "name": "locomotion",
+        "new_name": "locomotion-v2",
+    },
+    "duplicate_state_machine": {
+        "action": "duplicate_state_machine",
+        "name": "locomotion",
+        "new_name": "locomotion-copy",
+    },
     "restore_state_machine": {
         "action": "restore_state_machine",
         "trash": "locomotion.deadbeef.kstate",
@@ -378,6 +388,8 @@ EDITOR_SCHEMA = {
         ],
         "save_state_machine": ["name", "machine"],
         "load_state_machine": ["name"],
+        "rename_state_machine": ["name", "new_name"],
+        "duplicate_state_machine": ["name", "new_name"],
         "delete_state_machine": ["name"],
         "restore_state_machine": ["trash"],
         "preview_state_machine": [
@@ -562,6 +574,7 @@ EDITOR_SCHEMA = {
         "schema 55 adds set_animation_key/remove_animation_key for library clip track authoring at a time",
         "schema 56 adds a layer inventory plus set_layer_visible, with editor-only hidden layers filtered by the viewer",
         "schema 57 adds node lock state plus set_nodes_locked; locked nodes and descendants reject transforms, deletes, reparenting, asset/component edits and prefab revert/apply",
+        "schema 58 adds rename_state_machine and duplicate_state_machine for .kstate library entries",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

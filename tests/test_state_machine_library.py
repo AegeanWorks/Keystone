@@ -78,6 +78,39 @@ class StateMachineLibraryTest(unittest.TestCase):
             self.assertEqual(restored.name, "locomotion")
             self.assertTrue((root / "locomotion.kstate").is_file())
 
+    def test_rename_and_duplicate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "animations"
+            library = StateMachineLibrary(root)
+            original = _machine()
+            library.save("walk", original)
+
+            renamed = library.rename("walk", "run")
+            self.assertEqual(renamed.name, "run")
+            self.assertFalse((root / "walk.kstate").exists())
+            self.assertTrue((root / "run.kstate").is_file())
+            self.assertEqual(library.load("run").to_dict(), original.to_dict())
+
+            copied = library.duplicate("run", "run-copy")
+            self.assertEqual(copied.name, "run-copy")
+            self.assertTrue((root / "run-copy.kstate").is_file())
+            self.assertEqual(
+                library.load("run-copy").to_dict(), original.to_dict()
+            )
+            self.assertEqual(
+                {item.name for item in library.entries()},
+                {"run", "run-copy"},
+            )
+
+            with self.assertRaises(FileExistsError):
+                library.duplicate("run", "run-copy")
+            with self.assertRaises(ValueError):
+                library.duplicate("run", "run")
+            with self.assertRaises(KeyError):
+                library.rename("missing", "other")
+            with self.assertRaises(ValueError):
+                library.rename("run", "bad name")
+
     def test_bad_files_and_inputs(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "animations"

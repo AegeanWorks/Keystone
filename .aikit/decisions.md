@@ -1528,3 +1528,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->9 audit found that `asset_usages` scanned the live scene, registry, prefabs and saved scenes but not undo/redo snapshots. After a node using an asset was deleted, the usage report could say the payload was unused while history still held it.
 - **Decision**: Add `EditorHistory.count_payloads` and a `history_references` count to `asset_usage_report`. Count mesh, material and inline-material-texture identities in both stacks. Keep the count out of `references`/`found` because `forget_asset` now safely clears history instead of blocking on it. Add a regression that creates and deletes a node, then checks the count without changing authored references.
 - **Consequences**: AI and human clients can see pending history references before forgetting or reloading an asset. The report is additive; existing `references` semantics and the forget gate stay authored-content-only.
+
+### ADR-188: Commit audit completes state-machine library lifecycle
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->12 audit found that the `.kstate` library added in this range could save, load, delete and restore machines, but had no rename or duplicate operations. Prefab and scene libraries already expose both, so AI and editor clients had to edit `.kstate` files by hand to reorganise machines.
+- **Decision**: Add `StateMachineLibrary.rename` and `duplicate`, preserving the JSON body and rejecting source/target collisions, missing entries and same-name duplicates. Add `rename_state_machine` and `duplicate_state_machine` editor actions, mark them scene-neutral, bump the editor schema to 58, and map file collisions to a 400 with a name-choice fix. Add library and web regressions.
+- **Consequences**: State machines now share the library lifecycle shape of prefabs and scenes. The console has no rename/duplicate buttons yet; the actions are available to AI clients and scripts, and adding controls later needs only a UI delivery task.

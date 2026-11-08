@@ -140,6 +140,8 @@ SCENE_NEUTRAL_ACTIONS = frozenset(
         "remove_animation_key",
         "save_state_machine",
         "load_state_machine",
+        "rename_state_machine",
+        "duplicate_state_machine",
         "delete_state_machine",
         "restore_state_machine",
         "save_material",
@@ -1391,6 +1393,36 @@ class GameSession:
                         "name": name,
                         "machine": machine.to_dict(),
                     }
+                elif action == "rename_state_machine":
+                    if self.state_machine_library is None:
+                        raise ValueError(
+                            "no state machine library is configured"
+                        )
+                    try:
+                        self.state_machine_library.rename(
+                            payload.get("name"), payload.get("new_name")
+                        )
+                    except FileExistsError as exc:
+                        raise WebProblem(
+                            400,
+                            str(exc),
+                            "choose a state machine name that does not exist",
+                        ) from exc
+                elif action == "duplicate_state_machine":
+                    if self.state_machine_library is None:
+                        raise ValueError(
+                            "no state machine library is configured"
+                        )
+                    try:
+                        self.state_machine_library.duplicate(
+                            payload.get("name"), payload.get("new_name")
+                        )
+                    except FileExistsError as exc:
+                        raise WebProblem(
+                            400,
+                            str(exc),
+                            "choose a state machine name that does not exist",
+                        ) from exc
                 elif action == "delete_state_machine":
                     if self.state_machine_library is None:
                         raise ValueError(
