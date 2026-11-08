@@ -147,6 +147,10 @@ EDITOR_EXAMPLES = {
         "action": "delete_state_machine",
         "name": "locomotion",
     },
+    "load_state_machine": {
+        "action": "load_state_machine",
+        "name": "locomotion",
+    },
     "restore_state_machine": {
         "action": "restore_state_machine",
         "trash": "locomotion.deadbeef.kstate",
@@ -326,6 +330,7 @@ EDITOR_SCHEMA = {
         "animation": ["name", "duration", "track_count", "source", "error"],
         "animation_preview": ["name", "time", "updated", "track_count", "source", "record"],
         "save_state_machine": ["name", "machine"],
+        "load_state_machine": ["name"],
         "delete_state_machine": ["name"],
         "restore_state_machine": ["trash"],
         "preview_state_machine": [
@@ -355,6 +360,7 @@ EDITOR_SCHEMA = {
             "record",
             "report",
         ],
+        "state_machine_document": ["name", "machine"],
         "material_entry": [
             "name",
             "source",
@@ -492,6 +498,7 @@ EDITOR_SCHEMA = {
         "schema 49 adds build_project for project-relative runnable exports with BUILD.json summaries",
         "schema 50 adds asset_usages, which reports live-scene, registry, prefab and saved-scene references for one asset id or project path",
         "schema 51 adds the .kstate state machine library with save/delete/restore actions and fixed-step preview_state_machine pose application",
+        "schema 52 adds load_state_machine, returning the saved document for console JSON editing",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

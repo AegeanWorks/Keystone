@@ -42,6 +42,7 @@ const elements = {
   stateMachineTriggers: document.getElementById("state-machine-triggers"),
   stateMachineFrames: document.getElementById("state-machine-frames"),
   stateMachineSave: document.getElementById("state-machine-save"),
+  stateMachineLoad: document.getElementById("state-machine-load"),
   stateMachinePreview: document.getElementById("state-machine-preview"),
   stateMachineDelete: document.getElementById("state-machine-delete"),
   stateMachineRestore: document.getElementById("state-machine-restore"),
@@ -2061,6 +2062,27 @@ async function restoreAnimation() {
   );
 }
 
+async function loadStateMachine() {
+  const name = elements.stateMachineName.value.trim();
+  if (!name) {
+    throw new Error("Enter the saved state machine name to load.");
+  }
+  const editor = await editorAction(
+    { action: "load_state_machine", name },
+    `loading state machine ${name}`,
+  );
+  const document = editor.state_machine_document;
+  if (document) {
+    elements.stateMachineName.value = document.name;
+    elements.stateMachineJson.value = JSON.stringify(
+      document.machine,
+      null,
+      2,
+    );
+    show({ ok: true, action: "load_state_machine", name: document.name });
+  }
+}
+
 async function saveStateMachine() {
   const name = elements.stateMachineName.value.trim();
   if (!name) {
@@ -2916,6 +2938,7 @@ elements.animationPlay.addEventListener("click", () => run(toggleAnimationPlay))
 elements.animationSave.addEventListener("click", () => run(saveAnimation));
 elements.animationDelete.addEventListener("click", () => run(deleteAnimation));
 elements.animationRestore.addEventListener("click", () => run(restoreAnimation));
+elements.stateMachineLoad.addEventListener("click", () => run(loadStateMachine));
 elements.stateMachineSave.addEventListener("click", () => run(saveStateMachine));
 elements.stateMachinePreview.addEventListener("click", () =>
   run(previewStateMachine),

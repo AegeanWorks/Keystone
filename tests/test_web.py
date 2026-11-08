@@ -3452,6 +3452,13 @@ class WebServerTest(unittest.TestCase):
             self.assertEqual(entry["states"], 2)
             self.assertEqual(entry["transitions"], 1)
 
+            loaded = session.editor_action(
+                {"action": "load_state_machine", "name": "locomotion"}
+            )
+            loaded_document = loaded["state_machine_document"]
+            self.assertEqual(loaded_document["name"], "locomotion")
+            self.assertEqual(loaded_document["machine"], document)
+
             previewed = session.editor_action(
                 {
                     "action": "preview_state_machine",
@@ -3467,6 +3474,7 @@ class WebServerTest(unittest.TestCase):
             self.assertAlmostEqual(preview["step"], 0.1, places=4)
             self.assertIn("cube-0", preview["updated"])
             self.assertEqual(previewed["history"]["undo"], 1)
+            self.assertIsNone(previewed["state_machine_document"])
             moved = next(
                 node
                 for node in previewed["nodes"]
@@ -3527,6 +3535,11 @@ class WebServerTest(unittest.TestCase):
             self.assertEqual(caught.exception.status, 404)
             with self.assertRaises(WebProblem) as caught:
                 session.editor_action(
+                    {"action": "load_state_machine", "name": "missing"}
+                )
+            self.assertEqual(caught.exception.status, 404)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
                     {
                         "action": "preview_state_machine",
                         "name": "locomotion",
@@ -3543,6 +3556,11 @@ class WebServerTest(unittest.TestCase):
                         "name": "locomotion",
                         "machine": document,
                     }
+                )
+            self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                standalone.editor_action(
+                    {"action": "load_state_machine", "name": "locomotion"}
                 )
             self.assertEqual(caught.exception.status, 400)
 
@@ -3832,6 +3850,7 @@ class WebServerTest(unittest.TestCase):
             "state-machine-triggers",
             "state-machine-frames",
             "state-machine-save",
+            "state-machine-load",
             "state-machine-preview",
             "state-machine-delete",
             "state-machine-restore",
@@ -4123,6 +4142,9 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("previewStateMachine", script)
         self.assertIn("deleteStateMachine", script)
         self.assertIn("restoreStateMachine", script)
+        self.assertIn("loadStateMachine", script)
+        self.assertIn("load_state_machine", script)
+        self.assertIn("state_machine_document", script)
         self.assertIn("save_state_machine", script)
         self.assertIn("preview_state_machine", script)
         self.assertIn("delete_state_machine", script)

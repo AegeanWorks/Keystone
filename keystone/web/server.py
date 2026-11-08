@@ -130,6 +130,7 @@ SCENE_NEUTRAL_ACTIONS = frozenset(
         "delete_animation",
         "restore_animation",
         "save_state_machine",
+        "load_state_machine",
         "delete_state_machine",
         "restore_state_machine",
         "save_material",
@@ -265,6 +266,7 @@ class GameSession:
         self.last_revert: dict[str, object] | None = None
         self.last_build: dict[str, object] | None = None
         self.last_state_machine_preview: dict[str, object] | None = None
+        self.last_state_machine_document: dict[str, object] | None = None
         self.scene_dirty = False
         self.saved_scene = initial_scene
         self._prefab_edit_original_history: EditorHistory | None = None
@@ -815,6 +817,7 @@ class GameSession:
             else []
         )
         document["state_machine_preview"] = self.last_state_machine_preview
+        document["state_machine_document"] = self.last_state_machine_document
         document["trash"]["materials"] = (
             self.material_library.trash()
             if self.material_library is not None
@@ -878,6 +881,7 @@ class GameSession:
         self.last_revert = None
         self.last_build = None
         self.last_state_machine_preview = None
+        self.last_state_machine_document = None
         with self.lock:
             scene = self._scene_locked()
             try:
@@ -1175,6 +1179,21 @@ class GameSession:
                         )
                     machine = AnimationStateMachine.from_dict(data)
                     self.state_machine_library.save(name, machine)
+                elif action == "load_state_machine":
+                    if self.state_machine_library is None:
+                        raise ValueError(
+                            "no state machine library is configured"
+                        )
+                    name = payload.get("name")
+                    if not isinstance(name, str) or not name.strip():
+                        raise ValueError(
+                            "state machine name must be a non-blank string"
+                        )
+                    machine = self.state_machine_library.load(name)
+                    self.last_state_machine_document = {
+                        "name": name,
+                        "machine": machine.to_dict(),
+                    }
                 elif action == "delete_state_machine":
                     if self.state_machine_library is None:
                         raise ValueError(

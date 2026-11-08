@@ -1352,3 +1352,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The deterministic state machine core existed, but authors and AI clients could only use it from code; there was no library, console panel or scene preview.
 - **Decision**: Add a `.kstate` `StateMachineLibrary` in the animation directory with atomic save, load summaries, recoverable delete and restore. Add `save_state_machine`, `delete_state_machine`, `restore_state_machine` and `preview_state_machine`. Preview loads a machine by name, applies a `parameters` object and `triggers` list, advances `frames` by a positive `step`, applies the final pose to the scene, and reports current state, parameters, events, updated nodes, record flag and the machine report. Add a console JSON authoring panel with save/preview/delete/restore controls and a library datalist. Bump the editor schema to 51.
 - **Consequences**: Library and web tests cover save/load/delete/restore, preview transitions, pose application, record-free previews, malformed documents, missing names and missing libraries. Each preview starts from the saved machine state, so parameter changes and trigger consumption do not persist across requests; editing an existing machine still requires pasting its JSON because no load-to-editor action is included.
+
+### ADR-166: Load state machines into the editor
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Saved `.kstate` machines could be previewed but not loaded back into the console JSON panel, so editing one required opening its file outside the editor.
+- **Decision**: Add `load_state_machine`, which loads a saved machine and returns `state_machine_document` (`name`, `machine`) in the editor document. The console adds a Load state machine button that fills the name field and JSON textarea from the response. Reset the loaded document on every action and bump the editor schema to 52.
+- **Consequences**: Web and static tests cover loading, missing names, missing libraries and textarea wiring. The action reads the file through the validated state machine parser, but the returned document is transient and is not persisted until Save is pressed.
