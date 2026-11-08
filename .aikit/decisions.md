@@ -1480,3 +1480,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->24 audit found that a startup-scene rename updates `saved_scene` before writing the project manifest. If the manifest write fails, the file rename is rolled back but `saved_scene` still names the rolled-back file, so dirty/revert state points at a missing scene.
 - **Decision**: Capture the previous `saved_scene` before the library rename and restore it in the manifest-failure path before rolling the file back. Add a regression that forces `set_project_startup_scene` to fail and asserts the file, startup scene, saved scene and manifest all return to the original name.
 - **Consequences**: Failed startup renames are now atomic from the editor's point of view. Successful renames and renames unrelated to the startup scene are unchanged; the fix adds no API or schema surface.
+
+### ADR-182: Commit audit makes prefab refresh lock-aware
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->27 audit found that `refresh_prefab_instances` still replaced every top-level instance of a prefab, including groups with locked nodes. That bypassed the lock protection added for transforms, deletes, asset/component edits and prefab revert/apply.
+- **Decision**: Add an optional `is_locked` predicate to `refresh_prefab_instances`. A group whose root or any descendant is locked is skipped before override capture, and the report gains `skipped_locked`. The server passes its ancestor-aware lock check. Add a regression that locks only a child of one instance, renames the prefab, refreshes, and asserts one group is skipped and the other updated; unlocking makes both refresh.
+- **Consequences**: Locked prefab instances now survive a bulk refresh while unlocked siblings still receive template changes. The action reports the skipped count instead of failing, so a mixed scene remains usable. Direct calls without `is_locked` keep the previous behavior.

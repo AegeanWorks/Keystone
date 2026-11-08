@@ -9,8 +9,8 @@
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
 - **Total Top-Level Functions**: `411`
-- **Total Class Methods**: `1458`
-- **Total Source Lines**: `39153`
+- **Total Class Methods**: `1459`
+- **Total Source Lines**: `39235`
 
 ---
 
@@ -1663,7 +1663,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `3002` lines (`106678` bytes)
+**Size**: `3013` lines (`107168` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1754,7 +1754,7 @@
 - `def _apply_instance_overrides(nodes_by_id, captured, registry)` - *Reapply captured overrides after a refresh; return preserved/dropped.*
 - `def _update_baseline_field(scene, prefab_name, template_id, field, value)` - *Move affected instance baselines to the value just applied to a prefab.*
 - `def prefab_override_document(scene, prefabs, registry)` - *Return field-level diffs for every linked scene instance group.*
-- `def refresh_prefab_instances(scene, prefabs, name, registry, keep_overrides)` - *Replace top-level instance groups with the current template.*
+- `def refresh_prefab_instances(scene, prefabs, name, registry, keep_overrides, is_locked)` - *Replace top-level instance groups with the current template.*
 - `def _node_path(roots, target)`
 - `def _follow_path(roots, path)`
 - `def _resolve_prefab_override(scene, node_id, field, prefabs, registry)`
@@ -1803,14 +1803,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `580` lines (`24849` bytes)
+**Size**: `581` lines (`24879` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2790` lines (`124913` bytes)
+**Size**: `2791` lines (`124977` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3386,7 +3386,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `5281` lines (`218325` bytes)
+**Size**: `5350` lines (`220983` bytes)
 
 **Classes:**
 - `class Health`
@@ -3442,6 +3442,7 @@
   - Method `.test_editor_refresh_seeds_legacy_baselines_from_template()`
   - Method `.test_editor_refresh_merges_field_overrides()`
   - Method `.test_editor_refresh_drops_overrides_for_removed_template_nodes()`
+  - Method `.test_editor_refresh_skips_locked_instance_groups()`
   - Method `.test_editor_prefab_overrides_survive_scene_round_trip()`
   - Method `.test_editor_multi_root_prefab_save_from_selection()`
   - Method `.test_editor_library_rename_and_delete()`

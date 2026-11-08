@@ -1925,6 +1925,75 @@ class WebServerTest(unittest.TestCase):
             any(node["name"] == "custom-arm" for node in refreshed["nodes"])
         )
 
+    def test_editor_refresh_skips_locked_instance_groups(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        parent = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        child = session.editor_action(
+            {
+                "action": "create_node",
+                "name": "arm",
+                "parent": parent["id"],
+            }
+        )["selection"]["id"]
+        session.editor_action({"action": "select", "id": parent["id"]})
+        session.editor_action({"action": "save_prefab", "name": "rig"})
+        for instance in ("a", "b"):
+            session.editor_action(
+                {"action": "insert_prefab", "name": "rig", "instance": instance}
+            )
+        child_id = f"a:{child}"
+        session.editor_action(
+            {
+                "action": "set_nodes_locked",
+                "ids": [child_id],
+                "locked": True,
+            }
+        )
+        opened = session.editor_action({"action": "edit_prefab", "name": "rig"})
+        root_id = opened["prefab_edit"]["roots"][0]
+        session.editor_action(
+            {"action": "set_node", "id": root_id, "name": "rig-v2"}
+        )
+        session.editor_action({"action": "close_prefab_edit", "save": True})
+
+        refreshed = session.editor_action(
+            {
+                "action": "refresh_prefab_instances",
+                "name": "rig",
+                "keep_overrides": True,
+            }
+        )
+        refresh = refreshed["prefab_refresh"]
+        self.assertEqual(refresh["refreshed"], 1)
+        self.assertEqual(refresh["skipped_locked"], 1)
+        self.assertEqual(refresh["total"], 2)
+        nodes = {node["id"]: node for node in refreshed["nodes"]}
+        self.assertEqual(nodes["a:cube-0"]["name"], "cube-0")
+        self.assertEqual(nodes["b:cube-0"]["name"], "rig-v2")
+        self.assertIn(child_id, refreshed["locked_ids"])
+
+        session.editor_action(
+            {
+                "action": "set_nodes_locked",
+                "ids": [child_id],
+                "locked": False,
+            }
+        )
+        refreshed = session.editor_action(
+            {
+                "action": "refresh_prefab_instances",
+                "name": "rig",
+                "keep_overrides": True,
+            }
+        )
+        refresh = refreshed["prefab_refresh"]
+        self.assertEqual(refresh["refreshed"], 2)
+        self.assertEqual(refresh["skipped_locked"], 0)
+        nodes = {node["id"]: node for node in refreshed["nodes"]}
+        self.assertEqual(nodes["a:cube-0"]["name"], "rig-v2")
+        self.assertEqual(nodes["b:cube-0"]["name"], "rig-v2")
+
     def test_editor_prefab_overrides_survive_scene_round_trip(self):
         with tempfile.TemporaryDirectory() as directory:
             prefab_dir = Path(directory) / "prefabs"

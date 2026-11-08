@@ -5,33 +5,12 @@
     "last_phase": "phase 4",
     "active_phase": 4,
     "status": "in_progress",
-    "updated_at": 1794139274.2690852,
+    "updated_at": 1794139899.1713135,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
     "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-camera-bookmarks-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Camera view bookmarks implemented: viewer cameraBookmark/applyCameraBookmark with finite target/distance/yaw/pitch validation; console per-game localStorage bookmarks, sorted select, Save/Go/Delete controls and readout; no API/schema change; 813 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, describe schema 57, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794128071.0005548,
-      "timestamp_str": "2026-11-08 11:54:31",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-camera-bookmarks-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-camera-bookmarks-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794128071.9186702,
-      "timestamp_str": "2026-11-08 11:54:31",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-commit-audit-v1",
       "phase": "in_progress",
@@ -277,6 +256,37 @@
       "handoff": {
         "next": "commit and push range 1->24, then start range 1->27",
         "evidence": "startup tests green, full 6/6 gate green"
+      }
+    },
+    {
+      "task_id": "keystone-commit-audit-v2",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/5] Re-plan: count the planning step as a milestone, so plan + ranges 1->21, 1->24, 1->27 and 1->30 total five; the first two ranges are already pushed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794139898.3322973,
+      "timestamp_str": "2026-11-08 15:11:38",
+      "agent": "opencode:keystone",
+      "plan_digest": "2adc23ced0fb2da8ba639e60060bd62e8d564480bed4cf5f4b9fe21041780326",
+      "handoff": {
+        "state": "1->21 and 1->24 pushed",
+        "next": "record range 1->27, commit and push, then run 1->30"
+      }
+    },
+    {
+      "task_id": "keystone-commit-audit-v2",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[4/5] Range 1->27: skip locked prefab groups during instance refresh; regression covers locked child and unlock; 6/6 gate passed; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794139899.1713135,
+      "timestamp_str": "2026-11-08 15:11:39",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "next": "commit and push range 1->27, then start range 1->30",
+        "evidence": "locked refresh test green, full 6/6 gate green"
       }
     }
   ]

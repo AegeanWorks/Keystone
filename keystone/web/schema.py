@@ -322,6 +322,7 @@ EDITOR_SCHEMA = {
             "dropped_overrides",
             "skipped_nested",
             "skipped_invalid",
+            "skipped_locked",
             "total",
         ],
         "scene_group": ["id", "name", "parent_id", "node_count", "roots"],

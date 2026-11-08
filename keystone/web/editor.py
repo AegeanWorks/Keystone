@@ -2108,17 +2108,21 @@ def refresh_prefab_instances(
     name: str,
     registry: object | None = None,
     keep_overrides: bool = False,
+    is_locked: Callable[[Node], bool] | None = None,
 ) -> dict[str, int]:
     """Replace top-level instance groups with the current template.
 
     With ``keep_overrides`` set, field values that differ from each node's
     stored instance baseline are reapplied to the fresh template copy, so
     template-owned changes propagate while authored overrides survive.
+    ``is_locked`` skips groups whose nodes are protected by the editor.
     """
     if not isinstance(name, str) or not name.strip():
         raise ValueError("prefab name must be a non-blank string")
     if name not in prefabs:
         raise KeyError(f"no saved prefab {name!r}")
+    if is_locked is not None and not callable(is_locked):
+        raise TypeError("is_locked must be callable or None")
     groups = [
         (link, roots)
         for link, roots in _instance_groups(scene).items()
@@ -2129,6 +2133,7 @@ def refresh_prefab_instances(
     refreshable: list[tuple[PrefabLink, list[Node]]] = []
     skipped_nested = 0
     skipped_invalid = 0
+    skipped_locked = 0
     for link, roots in groups:
         parent = roots[0].parent
         if parent is None or any(root.parent is not parent for root in roots):
@@ -2143,6 +2148,11 @@ def refresh_prefab_instances(
             ancestor = ancestor.parent
         if nested:
             skipped_nested += 1
+            continue
+        if is_locked is not None and any(
+            is_locked(node) for root in roots for node in root.traverse()
+        ):
+            skipped_locked += 1
             continue
         refreshable.append((link, roots))
     captured: dict[str, tuple[dict[str, object], dict[str, object]]] = {}
@@ -2168,6 +2178,7 @@ def refresh_prefab_instances(
         "dropped_overrides": dropped,
         "skipped_nested": skipped_nested,
         "skipped_invalid": skipped_invalid,
+        "skipped_locked": skipped_locked,
         "total": len(groups),
     }
 

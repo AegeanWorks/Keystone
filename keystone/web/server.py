@@ -1842,6 +1842,7 @@ class GameSession:
                             name,
                             self._registry_locked(),
                             keep_overrides=keep_overrides,
+                            is_locked=self._node_locked_locked,
                         ),
                     )
                     self.last_prefab_refresh = result
