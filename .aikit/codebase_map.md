@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `141`
 - **Total Classes**: `223`
-- **Total Top-Level Functions**: `377`
-- **Total Class Methods**: `1378`
-- **Total Source Lines**: `34014`
+- **Total Top-Level Functions**: `378`
+- **Total Class Methods**: `1382`
+- **Total Source Lines**: `34312`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `663` lines (`35791` bytes)
+**Size**: `666` lines (`35927` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -1224,7 +1224,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `550` lines (`20887` bytes)
+**Size**: `621` lines (`23597` bytes)
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -1241,8 +1241,9 @@
 - `def save_project(path, manifest)` - *Write a manifest atomically; accepts a directory or a JSON path.*
 - `def _relative_asset_path(value)`
 - `def project_asset_id(value)` - *Return the deterministic registry id for one manifest asset path.*
-- `def _resolve_project_asset(context, value)`
+- `def resolve_project_asset(context, value)` - *Resolve one asset path and prove it stays inside the project.*
 - `def import_project_assets(context, registry, component_types)` - *Load every manifest asset into an existing registry.*
+- `def import_project_asset(context, registry, value, component_types)` - *Import one editor-selected file and append it to the project manifest.*
 - `def attach_project_assets(game, context, component_types, prefab_library)` - *Import manifest assets, including glTF scenes as prefab entries.*
 - `def validate_project(context, game)` - *Validate project assets, scenes and prefabs without writing project files.*
 - `def load_project_game(context)` - *Import and validate a project's game after adding its directory to sys.path.*
@@ -1422,7 +1423,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `68` lines (`1458` bytes)
+**Size**: `69` lines (`1478` bytes)
 
 ---
 
@@ -1719,20 +1720,20 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `378` lines (`17106` bytes)
+**Size**: `382` lines (`17440` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1799` lines (`79353` bytes)
+**Size**: `1854` lines (`81997` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
   - Method `.__init__(status, why, fix)`
 - `class GameSession` - *One in-memory game guarded by a lock for concurrent HTTP requests.*
-  - Method `.__init__(game, prefab_dir, scene_dir, animation_dir, material_dir, initial_scene)`
+  - Method `.__init__(game, prefab_dir, scene_dir, animation_dir, material_dir, initial_scene, project_dir)`
   - Property `.name`
   - Property `.selected_ids`
   - Method `.selected_ids(value)`
@@ -1786,8 +1787,8 @@
 **Functions:**
 - `def _copy_scene_settings(source, target)` - *Copy camera and environment settings without copying scene nodes.*
 - `def _enabled(value)`
-- `def create_server(game, host, port, prefab_dir, scene_dir, animation_dir, material_dir, initial_scene)` - *Create a bound server; port 0 asks the OS for a free port.*
-- `def serve(game, host, port, prefab_dir, scene_dir, animation_dir, material_dir, initial_scene)` - *Run the local console until interrupted.*
+- `def create_server(game, host, port, prefab_dir, scene_dir, animation_dir, material_dir, initial_scene, project_dir)` - *Create a bound server; port 0 asks the OS for a free port.*
+- `def serve(game, host, port, prefab_dir, scene_dir, animation_dir, material_dir, initial_scene, project_dir)` - *Run the local console until interrupted.*
 
 ---
 
@@ -2816,7 +2817,7 @@
 ### [`tests/test_project.py`](tests/test_project.py)
 > *Tests for project manifests, scaffolding and the --project CLI path.*
 
-**Size**: `435` lines (`17825` bytes)
+**Size**: `505` lines (`21224` bytes)
 
 **Classes:**
 - `class ProjectManifestTest`
@@ -2828,6 +2829,9 @@
   - Method `.test_create_project_loads_and_simulates()`
   - Method `._project_with_assets(root, name)`
   - Method `.test_project_assets_import_with_stable_ids()`
+  - Method `.test_editor_import_appends_manifest_and_registers()`
+  - Method `.test_editor_import_rejects_unsafe_and_unsupported_sources()`
+  - Method `.test_editor_import_rolls_back_manifest_on_registration_failure()`
   - Method `.test_project_assets_import_prefab_dependencies_first()`
   - Method `.test_project_game_imports_manifest_assets()`
   - Method `.test_project_assets_reject_unsafe_missing_and_unknown()`
@@ -3246,7 +3250,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `3397` lines (`142664` bytes)
+**Size**: `3491` lines (`146597` bytes)
 
 **Classes:**
 - `class Health`
@@ -3316,6 +3320,7 @@
   - Method `.test_editor_play_state_exposes_snapshot_and_status()`
   - Method `.test_editor_play_state_reports_hook_errors()`
   - Method `.test_editor_validate_scene_reports_issues()`
+  - Method `.test_editor_import_asset_updates_manifest_and_registry()`
   - Method `.test_editor_preview_animation_and_undo()`
   - Method `.test_editor_animation_library_round_trip()`
   - Method `.test_editor_material_library_save_assign_and_reload()`

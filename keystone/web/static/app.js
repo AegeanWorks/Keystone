@@ -125,6 +125,9 @@ const elements = {
   assignAsset: document.getElementById("assign-asset"),
   assetInfo: document.getElementById("asset-info"),
   assetPreview: document.getElementById("asset-preview"),
+  importPath: document.getElementById("import-path"),
+  importAsset: document.getElementById("import-asset"),
+  importState: document.getElementById("import-state"),
   componentType: document.getElementById("component-type"),
   componentFields: document.getElementById("component-fields"),
   componentHint: document.getElementById("component-hint"),
@@ -931,6 +934,20 @@ function showEditor(editor) {
     ? `${validation.ok ? "OK" : "Errors"} · ${validation.errors} errors · ` +
       `${validation.warnings} warnings`
     : "Not validated.";
+  const imported = editor.imported_asset;
+  const projectDir = editor.workspace && editor.workspace.project_dir;
+  if (imported) {
+    elements.importState.textContent =
+      `${imported.duplicate ? "Refreshed" : "Imported"} ${imported.path} · ` +
+      `${imported.asset} (${imported.kind}) · ${imported.count} project assets`;
+  } else if (!projectDir) {
+    elements.importState.textContent =
+      "Open a project with --project to import .obj, .png or .kprefab files.";
+  } else {
+    elements.importState.textContent =
+      "Enter a project-relative .obj, .png or .kprefab path.";
+  }
+  elements.importAsset.disabled = !projectDir;
   if (!busy) {
     elements.editorUndo.disabled = history.undo === 0;
     elements.editorRedo.disabled = history.redo === 0;
@@ -1954,6 +1971,21 @@ async function assignAssets() {
   await refreshScene(false);
 }
 
+async function importAsset() {
+  const path = elements.importPath.value.trim();
+  if (!path) {
+    throw new Error("Enter a project-relative asset path.");
+  }
+  const editor = await editorAction(
+    { action: "import_asset", path },
+    `importing ${path}`,
+  );
+  const imported = editor.imported_asset;
+  if (imported) {
+    show({ ok: true, action: "import_asset", imported_asset: imported });
+  }
+}
+
 async function saveMaterial() {
   const name = elements.materialName.value.trim();
   if (!name) {
@@ -2587,6 +2619,7 @@ elements.assetFilter.addEventListener("input", () => {
 elements.meshAsset.addEventListener("change", updateAssetInfo);
 elements.materialAsset.addEventListener("change", updateAssetInfo);
 elements.assignAsset.addEventListener("click", () => run(assignAssets));
+elements.importAsset.addEventListener("click", () => run(importAsset));
 elements.materialSave.addEventListener("click", () => run(saveMaterial));
 elements.materialAssign.addEventListener("click", () => run(assignMaterial));
 elements.materialClear.addEventListener("click", () => run(clearMaterial));

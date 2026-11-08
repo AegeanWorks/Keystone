@@ -218,6 +218,14 @@
         </div>
         <pre id="asset-info" class="hint">No registry assets selected.</pre>
         <img id="asset-preview" class="asset-preview" alt="Selected texture preview" hidden>
+        <label class="stack" for="import-path">Import project asset</label>
+        <div class="field-grid">
+          <label>Relative path <input id="import-path" type="text" placeholder="assets/crate.obj"></label>
+        </div>
+        <div class="buttons">
+          <button id="import-asset" type="button">Import asset</button>
+        </div>
+        <div id="import-state" class="hint">Open a project with --project to import assets.</div>
         <label class="stack">Material library</label>
         <div class="field-grid">
           <label>Name <input id="material-name" type="text" list="material-names"></label>

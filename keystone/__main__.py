@@ -432,6 +432,9 @@ def main(argv: list[str] | None = None) -> int:
                 animation_dir=animation_dir,
                 material_dir=material_dir,
                 initial_scene=args.scene,
+                project_dir=(
+                    project_context.directory if project_context is not None else None
+                ),
             )
         if args.describe:
             payload = describe_game(game)

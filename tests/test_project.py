@@ -19,6 +19,7 @@ from keystone.project import (
     PROJECT_FILE,
     ProjectManifest,
     create_project,
+    import_project_asset,
     import_project_assets,
     load_project,
     load_project_game,
@@ -147,6 +148,75 @@ class ProjectScaffoldTest(unittest.TestCase):
                 registry.require("project:assets/cube.obj").source,
                 (root / "assets" / "cube.obj").resolve(),
             )
+
+    def test_editor_import_appends_manifest_and_registers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name=self._name())
+            assets = root / "assets"
+            assets.mkdir()
+            (assets / "cube.obj").write_text(OBJ_TEXT, encoding="utf-8")
+            registry = AssetRegistry()
+            result = import_project_asset(
+                load_project(root), registry, "assets/cube.obj"
+            )
+            self.assertEqual(result["path"], "assets/cube.obj")
+            self.assertEqual(result["asset"], "project:assets/cube.obj")
+            self.assertEqual(result["kind"], "mesh")
+            self.assertFalse(result["duplicate"])
+            self.assertEqual(result["count"], 1)
+            self.assertEqual(
+                load_project(root).manifest.assets, ("assets/cube.obj",)
+            )
+            record = registry.require("project:assets/cube.obj")
+            self.assertEqual(record.kind, "mesh")
+            self.assertEqual(record.source, (assets / "cube.obj").resolve())
+
+            again = import_project_asset(
+                load_project(root), registry, "./assets/cube.obj"
+            )
+            self.assertTrue(again["duplicate"])
+            self.assertEqual(again["count"], 1)
+            self.assertEqual(
+                load_project(root).manifest.assets, ("assets/cube.obj",)
+            )
+
+    def test_editor_import_rejects_unsafe_and_unsupported_sources(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            context = create_project(root, name=self._name())
+            assets = root / "assets"
+            assets.mkdir()
+            registry = AssetRegistry()
+            for value in ("../outside.obj", str(assets / "cube.obj")):
+                with self.assertRaises(ValueError):
+                    import_project_asset(context, registry, value)
+            (assets / "scene.glb").write_bytes(b"glTF")
+            with self.assertRaisesRegex(ValueError, "glTF"):
+                import_project_asset(context, registry, "assets/scene.glb")
+            (assets / "data.bin").write_bytes(b"x")
+            with self.assertRaisesRegex(ValueError, "unsupported"):
+                import_project_asset(context, registry, "assets/data.bin")
+            with self.assertRaises(FileNotFoundError):
+                import_project_asset(context, registry, "assets/missing.obj")
+            self.assertEqual(load_project(root).manifest.assets, ())
+
+    def test_editor_import_rolls_back_manifest_on_registration_failure(self):
+        class BrokenRegistry(AssetRegistry):
+            def register_file(self, *args, **kwargs):
+                raise ValueError("loader exploded")
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name=self._name())
+            assets = root / "assets"
+            assets.mkdir()
+            (assets / "cube.obj").write_text(OBJ_TEXT, encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "loader exploded"):
+                import_project_asset(
+                    load_project(root), BrokenRegistry(), "assets/cube.obj"
+                )
+            self.assertEqual(load_project(root).manifest.assets, ())
 
     def test_project_assets_import_prefab_dependencies_first(self):
         with tempfile.TemporaryDirectory() as directory:

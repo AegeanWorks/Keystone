@@ -1264,3 +1264,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Snap rounding was hard-coded to 0.25 units, 15 degrees and 0.1 scale, so authors could not match a project grid or angle convention.
 - **Decision**: Store translate/rotate/scale snap increments on `SceneViewer`, validate them as finite positive numbers, and route translate, rotate and scale rounding through those values. The console adds Snap move/rotate/scale number inputs, persists increments in the workspace layout snapshot, restores validated values, and resets defaults (0.25, 15, 0.1) with Reset layout. No API or schema change.
 - **Consequences**: 780 tests green; static viewer/console coverage verifies editable increments, layout persistence and reset wiring. Extreme increments are allowed, snapping remains opt-in through the toggle or Ctrl/Cmd, and the nudge shortcuts keep their fixed 0.1/1.0 steps.
+
+### ADR-155: Project-relative asset import from the editor
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The editor could assign registry assets but could not import new mesh, texture or prefab files, so authors had to edit `keystone.json` and restart the server.
+- **Decision**: Add `import_asset` with a project-relative path. Require a `--project` directory, resolve and contain the path, accept only `.obj`, `.png` and `.kprefab`, append new paths to the manifest atomically, register `project:<path>` with replace semantics, and restore the previous manifest if registration fails. Re-importing a listed path refreshes its registry record without duplicating the manifest entry. glTF/GLB and other formats fail with guidance toward the CLI manifest pipeline. Expose `imported_asset` and `workspace.project_dir`; add a console path input, Import asset button and readout. Bump the editor schema to 43.
+- **Consequences**: Targeted project/web tests and the full suite cover new, duplicate, traversal, missing, unsupported, glTF and no-project cases plus manifest rollback. Editor import is synchronous under the editor lock and does not hot-reload changed files outside an explicit import; glTF/GLB still requires a restart.

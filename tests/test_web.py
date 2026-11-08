@@ -15,6 +15,7 @@ from keystone import web
 from keystone.math3d import Vec3
 from keystone.prefab import Prefab
 from keystone.primitives import cube
+from keystone.project import create_project, load_project
 from keystone.samples import CubeDemo
 from keystone.scene import Node, Scene, Transform
 from keystone.schema import EDITOR_ACTIONS, EDITOR_SCHEMA_VERSION
@@ -1110,6 +1111,7 @@ class WebServerTest(unittest.TestCase):
             self.assertEqual(
                 saved["workspace"],
                 {
+                    "project_dir": None,
                     "prefab_dir": prefab_dir.as_posix(),
                     "scene_dir": None,
                     "animation_dir": None,
@@ -2484,6 +2486,91 @@ class WebServerTest(unittest.TestCase):
             )
         )
 
+    def test_editor_import_asset_updates_manifest_and_registry(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name="import-demo")
+            assets = root / "assets"
+            assets.mkdir()
+            (assets / "crate.obj").write_text(
+                "v 0 0 0\nv 1 0 0\nv 0 1 0\nvn 0 0 1\nf 1//1 2//1 3//1\n",
+                encoding="utf-8",
+            )
+            session = GameSession(CubeDemo(), project_dir=root)
+            editor = session.editor()
+            self.assertEqual(
+                editor["workspace"]["project_dir"], root.resolve().as_posix()
+            )
+            self.assertIsNone(editor["imported_asset"])
+
+            imported_editor = session.editor_action(
+                {"action": "import_asset", "path": "assets/crate.obj"}
+            )
+            imported = imported_editor["imported_asset"]
+            self.assertEqual(imported["asset"], "project:assets/crate.obj")
+            self.assertEqual(imported["kind"], "mesh")
+            self.assertFalse(imported["duplicate"])
+            self.assertEqual(imported["count"], 1)
+            self.assertIn(
+                "project:assets/crate.obj",
+                {asset["id"] for asset in imported_editor["assets"]},
+            )
+            self.assertEqual(
+                load_project(root).manifest.assets,
+                ("assets/crate.obj",),
+            )
+
+            again = session.editor_action(
+                {"action": "import_asset", "path": "./assets/crate.obj"}
+            )["imported_asset"]
+            self.assertTrue(again["duplicate"])
+            self.assertEqual(again["count"], 1)
+            self.assertEqual(
+                load_project(root).manifest.assets,
+                ("assets/crate.obj",),
+            )
+
+            (assets / "unknown.bin").write_bytes(b"x")
+            for value, message in (
+                ("../escape.obj", "inside the project"),
+                ("assets/unknown.bin", "unsupported"),
+            ):
+                with self.assertRaises(WebProblem) as caught:
+                    session.editor_action(
+                        {"action": "import_asset", "path": value}
+                    )
+                self.assertEqual(caught.exception.status, 400)
+                self.assertIn(message, caught.exception.why)
+
+            (assets / "scene.glb").write_bytes(b"glTF")
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "import_asset", "path": "assets/scene.glb"}
+                )
+            self.assertIn("glTF", caught.exception.why)
+
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "import_asset", "path": "assets/missing.obj"}
+                )
+            self.assertIn("does not exist", caught.exception.why)
+
+            bare = GameSession(CubeDemo())
+            with self.assertRaises(WebProblem) as caught:
+                bare.editor_action(
+                    {"action": "import_asset", "path": "assets/crate.obj"}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("--project", caught.exception.fix)
+
+            server = create_server(
+                CubeDemo(), host="127.0.0.1", port=0, project_dir=root
+            )
+            try:
+                self.assertEqual(server.session.project_dir, root.resolve())
+            finally:
+                server.server_close()
+
     def test_editor_preview_animation_and_undo(self):
         session = GameSession(CubeDemo())
         editor = session.editor()
@@ -3045,6 +3132,9 @@ class WebServerTest(unittest.TestCase):
             "assign-asset",
             "asset-info",
             "asset-preview",
+            "import-path",
+            "import-asset",
+            "import-state",
             "component-type",
             "component-fields",
             "component-hint",
@@ -3084,6 +3174,10 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("validateScene", script)
         self.assertIn("validate_scene", script)
         self.assertIn("validationState", script)
+        self.assertIn("importAsset", script)
+        self.assertIn("import_asset", script)
+        self.assertIn("imported_asset", script)
+        self.assertIn("import-state", script)
         self.assertIn("fillSceneSettings", script)
         self.assertIn("applyCameraSettings", script)
         self.assertIn("applyEnvironmentSettings", script)

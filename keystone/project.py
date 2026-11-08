@@ -35,13 +35,17 @@ __all__ = [
     "ProjectManifest",
     "attach_project_assets",
     "create_project",
+    "import_project_asset",
     "import_project_assets",
     "load_project",
     "load_project_game",
     "project_asset_id",
+    "resolve_project_asset",
     "save_project",
     "validate_project",
 ]
+
+IMPORTABLE_SUFFIXES = (".obj", ".png", ".kprefab")
 
 
 def _module_name(name: str) -> str:
@@ -171,9 +175,12 @@ def project_asset_id(value: str | Path) -> str:
     return "project:" + _relative_asset_path(value).as_posix()
 
 
-def _resolve_project_asset(
+def resolve_project_asset(
     context: ProjectContext, value: str | Path
 ) -> tuple[Path, Path]:
+    """Resolve one asset path and prove it stays inside the project."""
+    if not isinstance(context, ProjectContext):
+        raise TypeError("project context must be a ProjectContext")
     root = context.directory.resolve()
     relative = _relative_asset_path(value)
     target = (root / relative).resolve()
@@ -198,7 +205,7 @@ def import_project_assets(
         raise TypeError("project assets need an AssetRegistry")
     pending: list[tuple[str, Path, Path, str]] = []
     for value in context.manifest.assets:
-        relative, target = _resolve_project_asset(context, value)
+        relative, target = resolve_project_asset(context, value)
         if is_gltf_asset(target):
             continue
         pending.append((value, relative, target, kind_from_suffix(target)))
@@ -219,6 +226,70 @@ def import_project_assets(
         for value in context.manifest.assets
         if not is_gltf_asset(value)
     )
+
+
+def import_project_asset(
+    context: ProjectContext,
+    registry: AssetRegistry,
+    value: str | Path,
+    component_types: Mapping[str, type] | None = None,
+) -> dict[str, object]:
+    """Import one editor-selected file and append it to the project manifest.
+
+    The manifest is saved before registration so a failed load restores the
+    previous asset list. Re-importing a listed path refreshes its registry
+    record without duplicating the manifest entry.
+    """
+    if not isinstance(context, ProjectContext):
+        raise TypeError("project context must be a ProjectContext")
+    if not isinstance(registry, AssetRegistry):
+        raise TypeError("project asset import needs an AssetRegistry")
+    relative, target = resolve_project_asset(context, value)
+    normalized = relative.as_posix()
+    if is_gltf_asset(target):
+        raise ValueError(
+            f"glTF/GLB import is not available in the editor: {normalized}.\n"
+            "Why: glTF scenes expand into generated prefabs and registry assets.\n"
+            "Fix: add the path to keystone.json assets and restart with --project."
+        )
+    if target.suffix.lower() not in IMPORTABLE_SUFFIXES:
+        raise ValueError(
+            f"unsupported asset format for editor import: {normalized}.\n"
+            "Fix: import a .obj mesh, .png texture or .kprefab prefab."
+        )
+    kind = kind_from_suffix(target)
+    identifier = project_asset_id(relative)
+    duplicate = normalized in {
+        Path(item).as_posix() for item in context.manifest.assets
+    }
+    manifest = context.manifest
+    if not duplicate:
+        manifest = ProjectManifest(
+            name=context.manifest.name,
+            game=context.manifest.game,
+            description=context.manifest.description,
+            assets=(*context.manifest.assets, normalized),
+        )
+        save_project(context.directory, manifest)
+    try:
+        record = registry.register_file(
+            identifier,
+            target,
+            kind=kind,
+            component_types=component_types if kind == "prefab" else None,
+            replace=True,
+        )
+    except Exception:
+        if not duplicate:
+            save_project(context.directory, context.manifest)
+        raise
+    return {
+        "path": normalized,
+        "asset": record.id,
+        "kind": record.kind,
+        "duplicate": duplicate,
+        "count": len(manifest.assets),
+    }
 
 
 def attach_project_assets(
@@ -251,7 +322,7 @@ def attach_project_assets(
         else:
             library.registry = registry
         for value in gltf_values:
-            _, target = _resolve_project_asset(context, value)
+            _, target = resolve_project_asset(context, value)
             import_gltf_prefab(target, registry, library)
     return records
 
@@ -316,7 +387,7 @@ def validate_project(
             if not is_gltf_asset(value):
                 continue
             try:
-                _, target = _resolve_project_asset(context, value)
+                _, target = resolve_project_asset(context, value)
                 import_gltf_prefab(target, registry, library)
             except Exception as exc:  # noqa: BLE001
                 errors.append(

@@ -24,6 +24,7 @@ from keystone.material_library import MaterialLibrary, material_from_document
 from keystone.plugin import GameModule, describe_game
 from keystone.prefab import Prefab
 from keystone.prefab_library import PrefabLibrary
+from keystone.project import import_project_asset, load_project
 from keystone.replay import FIXED_STEP
 from keystone.scene import Node, Scene
 from keystone.scene_diff import diff_scene_documents
@@ -167,6 +168,7 @@ class GameSession:
         animation_dir: str | Path | None = None,
         material_dir: str | Path | None = None,
         initial_scene: str | None = None,
+        project_dir: str | Path | None = None,
     ) -> None:
         self.game = game
         self.lock = threading.RLock()
@@ -179,6 +181,9 @@ class GameSession:
         self._history_label = "edit"
         component_types = validate_component_types(getattr(game, "component_types", None))
         self.component_types = component_types
+        self.project_dir = (
+            load_project(project_dir).directory if project_dir is not None else None
+        )
         self.playing = False
         self.play_frames = 0
         self.play_paused = False
@@ -187,6 +192,7 @@ class GameSession:
         self.last_prefab_refresh: dict[str, int] | None = None
         self.last_animation_preview: dict[str, object] | None = None
         self.last_validation: dict[str, object] | None = None
+        self.last_import: dict[str, object] | None = None
         self._prefab_edit_original_history: EditorHistory | None = None
         self._prefab_edit_original_selection: list[str] = []
         self._scene_override: Scene | None = None
@@ -590,6 +596,7 @@ class GameSession:
         document["prefab_refresh"] = self.last_prefab_refresh
         document["animation_preview"] = self.last_animation_preview
         document["validation"] = self.last_validation
+        document["imported_asset"] = self.last_import
         document["animations"] = (
             [entry.describe() for entry in self.animation_library.entries()]
             if self.animation_library is not None
@@ -611,6 +618,9 @@ class GameSession:
             else []
         )
         document["workspace"] = {
+            "project_dir": (
+                self.project_dir.as_posix() if self.project_dir is not None else None
+            ),
             "prefab_dir": (
                 self.prefab_library.directory.as_posix()
                 if self.prefab_library is not None
@@ -652,6 +662,7 @@ class GameSession:
         self.last_prefab_refresh = None
         self.last_animation_preview = None
         self.last_validation = None
+        self.last_import = None
         with self.lock:
             scene = self._scene_locked()
             try:
@@ -1347,6 +1358,46 @@ class GameSession:
                     self.last_validation = validate_scene(
                         scene, self.prefabs, self._registry_locked()
                     )
+                elif action == "import_asset":
+                    if self.project_dir is None:
+                        raise WebProblem(
+                            400,
+                            "asset import needs a project directory",
+                            "start the console with python -m keystone --project <dir> --serve",
+                        )
+                    registry = self._registry_locked()
+                    if registry is None:
+                        raise WebProblem(
+                            400,
+                            "asset import needs an AssetRegistry",
+                            "expose self.assets = AssetRegistry() in the game module",
+                        )
+                    value = payload.get("path")
+                    if not isinstance(value, str) or not value.strip():
+                        raise ValueError(
+                            "import path must be a non-blank project-relative string"
+                        )
+                    try:
+                        context = load_project(self.project_dir)
+                    except (OSError, TypeError, ValueError) as exc:
+                        raise WebProblem(
+                            400,
+                            f"could not load the project manifest: {exc}",
+                            "check keystone.json and restore a valid manifest",
+                        ) from exc
+                    try:
+                        self.last_import = import_project_asset(
+                            context,
+                            registry,
+                            value,
+                            self.component_types,
+                        )
+                    except FileNotFoundError as exc:
+                        raise WebProblem(
+                            400,
+                            str(exc),
+                            "choose a file that exists inside the project directory",
+                        ) from exc
                 elif action == "undo":
                     steps = payload.get("steps", 1)
                     if (
@@ -1739,6 +1790,7 @@ def create_server(
     animation_dir: str | Path | None = None,
     material_dir: str | Path | None = None,
     initial_scene: str | None = None,
+    project_dir: str | Path | None = None,
 ) -> KeystoneHTTPServer:
     """Create a bound server; port 0 asks the OS for a free port."""
     if not isinstance(port, int) or isinstance(port, bool) or not 0 <= port <= 65535:
@@ -1752,6 +1804,7 @@ def create_server(
             animation_dir=animation_dir,
             material_dir=material_dir,
             initial_scene=initial_scene,
+            project_dir=project_dir,
         ),
     )
 
@@ -1765,6 +1818,7 @@ def serve(
     animation_dir: str | Path | None = None,
     material_dir: str | Path | None = None,
     initial_scene: str | None = None,
+    project_dir: str | Path | None = None,
 ) -> int:
     """Run the local console until interrupted."""
     try:
@@ -1777,6 +1831,7 @@ def serve(
             animation_dir=animation_dir,
             material_dir=material_dir,
             initial_scene=initial_scene,
+            project_dir=project_dir,
         )
     except OSError as exc:
         raise ValueError(

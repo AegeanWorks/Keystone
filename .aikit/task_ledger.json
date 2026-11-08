@@ -1,28 +1,22 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-snap-steps-v1",
+    "task_id": "keystone-asset-import-v1",
     "last_phase": "in_progress",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1794117779.9018967,
+    "active_phase": 2,
+    "status": "in_progress",
+    "updated_at": 1794117823.5383534,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794117780.1192296
+    "impact_assessment": {
+      "why": "The editor can assign registry assets but cannot import new mesh, texture or prefab files, so authors must edit keystone.json and restart the server.",
+      "benefits": "An import_asset action validates a project-relative .obj/.png/.kprefab, registers project:<path>, updates the manifest atomically, and the console exposes a path input and imported-asset readout.",
+      "risks": "contract: editor schema 43 and one new action; dependency: project context; concurrency: editor lock; state: path traversal, unsupported/glTF formats, manifest rollback, replace semantics, registry load failures.",
+      "mitigation": "Require --project context, resolve and contain the path, reject unsupported/glTF formats with guidance, save the manifest atomically, roll back on register failure, and add import/idempotence/error regressions."
+    }
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-hierarchy-drag-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Draggable hierarchy tree implemented: role-tree rows with indentation/prefab badges/selected state, click and Ctrl/Cmd toggle selection, dragstart/dragover/drop feedback, drop-to-reparent through reparent_node, empty-area drop to root, server validation retained; 778 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 39, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794115258.466611,
-      "timestamp_str": "2026-11-08 08:20:58",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-hierarchy-drag-v1",
       "phase": "completed",
@@ -266,6 +260,24 @@
       "timestamp": 1794117780.119231,
       "timestamp_str": "2026-11-08 09:03:00",
       "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-asset-import-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan project-relative asset import into the manifest and registry",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794117823.5383534,
+      "timestamp_str": "2026-11-08 09:03:43",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "The editor can assign registry assets but cannot import new mesh, texture or prefab files, so authors must edit keystone.json and restart the server.",
+        "benefits": "An import_asset action validates a project-relative .obj/.png/.kprefab, registers project:<path>, updates the manifest atomically, and the console exposes a path input and imported-asset readout.",
+        "risks": "contract: editor schema 43 and one new action; dependency: project context; concurrency: editor lock; state: path traversal, unsupported/glTF formats, manifest rollback, replace semantics, registry load failures.",
+        "mitigation": "Require --project context, resolve and contain the path, reject unsupported/glTF formats with guidance, save the manifest atomically, roll back on register failure, and add import/idempotence/error regressions."
+      },
+      "plan_digest": "7178cc71cb318c161e01e626fcd2be101df041b3ad13bc079cd8e536191dd06b"
     }
   ]
 }
