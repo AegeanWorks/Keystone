@@ -2697,6 +2697,63 @@ class WebServerTest(unittest.TestCase):
                 )
             self.assertIn("--prefab-dir", caught.exception.fix)
 
+    def test_editor_startup_scene_persists_and_clears(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name="startup-demo")
+            scene_dir = root / "scenes"
+            session = GameSession(
+                CubeDemo(), project_dir=root, scene_dir=scene_dir
+            )
+            editor = session.editor()
+            self.assertEqual(editor["startup_scene"], "main")
+            saved = session.editor_action(
+                {"action": "save_scene", "name": "level"}
+            )
+            self.assertEqual(saved["startup_scene"], "main")
+
+            set_editor = session.editor_action(
+                {"action": "set_startup_scene", "name": "level"}
+            )
+            self.assertEqual(set_editor["startup_scene"], "level")
+            self.assertEqual(
+                load_project(root).manifest.startup_scene, "level"
+            )
+
+            cleared = session.editor_action(
+                {"action": "set_startup_scene", "name": None}
+            )
+            self.assertIsNone(cleared["startup_scene"])
+            self.assertIsNone(load_project(root).manifest.startup_scene)
+
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "set_startup_scene", "name": "missing"}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("not saved", caught.exception.why)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "set_startup_scene", "name": "../escape"}
+                )
+            self.assertEqual(caught.exception.status, 400)
+
+            bare = GameSession(CubeDemo(), scene_dir=scene_dir)
+            with self.assertRaises(WebProblem) as caught:
+                bare.editor_action(
+                    {"action": "set_startup_scene", "name": "main"}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("--project", caught.exception.fix)
+
+            no_library = GameSession(CubeDemo(), project_dir=root)
+            with self.assertRaises(WebProblem) as caught:
+                no_library.editor_action(
+                    {"action": "set_startup_scene", "name": "main"}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("--scene-dir", caught.exception.fix)
+
     def test_editor_reload_assets_rebinds_scene_and_history(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "project"
@@ -3294,6 +3351,9 @@ class WebServerTest(unittest.TestCase):
             "scene-settings-apply",
             "scene-validate",
             "validation-state",
+            "startup-set",
+            "startup-clear",
+            "startup-state",
             "camera-position",
             "camera-yaw",
             "camera-pitch",
@@ -3392,6 +3452,10 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("validateScene", script)
         self.assertIn("validate_scene", script)
         self.assertIn("validationState", script)
+        self.assertIn("setStartupScene", script)
+        self.assertIn("set_startup_scene", script)
+        self.assertIn("startup_scene", script)
+        self.assertIn("startup-state", script)
         self.assertIn("importAsset", script)
         self.assertIn("import_asset", script)
         self.assertIn("imported_asset", script)

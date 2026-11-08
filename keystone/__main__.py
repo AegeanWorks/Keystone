@@ -402,7 +402,10 @@ def main(argv: list[str] | None = None) -> int:
 
         prepared_scene = None
         scene_loader = None
-        if args.scene is not None and not args.serve:
+        selected_scene = args.scene
+        if selected_scene is None and project_context is not None:
+            selected_scene = project_context.manifest.startup_scene
+        if selected_scene is not None and not args.serve and not args.describe:
             from keystone.scene import Scene
             from keystone.scene_library import SceneLibrary
 
@@ -411,7 +414,7 @@ def main(argv: list[str] | None = None) -> int:
                     scene_dir,
                     registry=getattr(game_obj, "assets", None),
                     component_types=getattr(game_obj, "component_types", None),
-                ).load_into(args.scene, scene_obj)
+                ).load_into(selected_scene, scene_obj)
 
             if args.replay or args.playtest or args.verify_determinism:
                 scene_loader = load_scene
@@ -431,7 +434,7 @@ def main(argv: list[str] | None = None) -> int:
                 scene_dir=scene_dir,
                 animation_dir=animation_dir,
                 material_dir=material_dir,
-                initial_scene=args.scene,
+                initial_scene=selected_scene,
                 project_dir=(
                     project_context.directory if project_context is not None else None
                 ),

@@ -17,6 +17,7 @@ from keystone.prefab import Prefab
 from keystone.prefab_library import PrefabLibrary
 from keystone.project import (
     PROJECT_FILE,
+    PROJECT_SCHEMA_VERSION,
     ProjectManifest,
     create_project,
     import_project_asset,
@@ -25,6 +26,7 @@ from keystone.project import (
     load_project_game,
     project_asset_id,
     save_project,
+    set_project_startup_scene,
     validate_project,
 )
 from keystone.replay import CommandLog
@@ -47,8 +49,10 @@ class ProjectManifestTest(unittest.TestCase):
             game="demo:Game",
             description="a demo",
             assets=("assets/floor.png",),
+            startup_scene="main",
         )
         self.assertEqual(ProjectManifest.from_dict(manifest.to_dict()), manifest)
+        self.assertEqual(manifest.to_dict()["schema"], PROJECT_SCHEMA_VERSION)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "demo"
             root.mkdir()
@@ -56,6 +60,43 @@ class ProjectManifestTest(unittest.TestCase):
             self.assertEqual(path, root / PROJECT_FILE)
             self.assertEqual(load_project(root).manifest, manifest)
             self.assertEqual(load_project(path).manifest, manifest)
+
+    def test_schema_one_manifest_remains_compatible(self):
+        manifest = ProjectManifest.from_dict(
+            {"schema": 1, "name": "legacy", "game": "demo:Game"}
+        )
+        self.assertIsNone(manifest.startup_scene)
+        self.assertEqual(manifest.to_dict()["schema"], PROJECT_SCHEMA_VERSION)
+
+    def test_startup_scene_name_is_validated(self):
+        for value in ("", "  ", "../escape", "bad name", 3):
+            with self.assertRaises((TypeError, ValueError)):
+                ProjectManifest(
+                    name="demo", game="demo:Game", startup_scene=value
+                )
+        self.assertIsNone(
+            ProjectManifest(name="demo", game="demo:Game").startup_scene
+        )
+        self.assertEqual(
+            ProjectManifest(
+                name="demo", game="demo:Game", startup_scene="main"
+            ).startup_scene,
+            "main",
+        )
+
+    def test_set_project_startup_scene_persists_and_clears(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "demo"
+            context = create_project(root, name="demo")
+            manifest = set_project_startup_scene(context, "level")
+            self.assertEqual(manifest.startup_scene, "level")
+            self.assertEqual(
+                load_project(root).manifest.startup_scene, "level"
+            )
+            self.assertIsNone(
+                set_project_startup_scene(load_project(root), None).startup_scene
+            )
+            self.assertIsNone(load_project(root).manifest.startup_scene)
 
     def test_validation_rejects_bad_shapes(self):
         for data in (
@@ -112,6 +153,7 @@ class ProjectScaffoldTest(unittest.TestCase):
             ).load("cube")
             self.assertEqual(prefab.name, "cube")
             self.assertEqual(load_project(root).manifest.name, name)
+            self.assertEqual(load_project(root).manifest.startup_scene, "main")
             game = load_project_game(context)
             result = run_simulation(game, frames=3)
             self.assertEqual(result["frames"], 3)
@@ -337,6 +379,7 @@ class ProjectScaffoldTest(unittest.TestCase):
             payload = json.loads(out.getvalue())
             self.assertEqual(payload["game"], name)
             self.assertEqual(payload["project"]["manifest"]["name"], name)
+            self.assertEqual(payload["project"]["manifest"]["startup_scene"], "main")
             self.assertTrue(payload["capabilities"]["prefabs"])
 
             out = io.StringIO()

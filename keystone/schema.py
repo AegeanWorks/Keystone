@@ -4,7 +4,7 @@ from __future__ import annotations
 
 WEB_API_VERSION = 1
 SCENE_SCHEMA_VERSION = 2
-EDITOR_SCHEMA_VERSION = 45
+EDITOR_SCHEMA_VERSION = 46
 PREFAB_SCHEMA_VERSION = 2
 EDITOR_ACTIONS = (
     "select",
@@ -59,6 +59,7 @@ EDITOR_ACTIONS = (
     "save_scene_group",
     "diff_scene",
     "validate_scene",
+    "set_startup_scene",
     "import_asset",
     "import_gltf",
     "reload_assets",

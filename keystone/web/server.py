@@ -28,6 +28,7 @@ from keystone.project import (
     import_project_asset,
     import_project_gltf,
     load_project,
+    set_project_startup_scene,
 )
 from keystone.replay import FIXED_STEP
 from keystone.scene import Node, Scene
@@ -187,9 +188,12 @@ class GameSession:
         self._history_label = "edit"
         component_types = validate_component_types(getattr(game, "component_types", None))
         self.component_types = component_types
-        self.project_dir = (
-            load_project(project_dir).directory if project_dir is not None else None
-        )
+        self.project_dir = None
+        self.startup_scene: str | None = None
+        if project_dir is not None:
+            project_context = load_project(project_dir)
+            self.project_dir = project_context.directory
+            self.startup_scene = project_context.manifest.startup_scene
         self.playing = False
         self.play_frames = 0
         self.play_paused = False
@@ -607,6 +611,7 @@ class GameSession:
         document["imported_asset"] = self.last_import
         document["imported_gltf"] = self.last_gltf_import
         document["asset_reload"] = self.last_asset_reload
+        document["startup_scene"] = self.startup_scene
         document["animations"] = (
             [entry.describe() for entry in self.animation_library.entries()]
             if self.animation_library is not None
@@ -1370,6 +1375,51 @@ class GameSession:
                     self.last_validation = validate_scene(
                         scene, self.prefabs, self._registry_locked()
                     )
+                elif action == "set_startup_scene":
+                    if self.project_dir is None:
+                        raise WebProblem(
+                            400,
+                            "startup scene needs a project directory",
+                            "start the console with python -m keystone --project <dir> --serve",
+                        )
+                    name = payload.get("name")
+                    if name is not None and (
+                        not isinstance(name, str) or not name.strip()
+                    ):
+                        raise ValueError(
+                            "startup scene name must be a non-blank string or null"
+                        )
+                    if name is not None:
+                        if self.scene_library is None:
+                            raise WebProblem(
+                                400,
+                                "startup scene needs a scene library",
+                                "start with --project or pass --scene-dir <dir>",
+                            )
+                        try:
+                            path = self.scene_library.path_for(name)
+                        except ValueError as exc:
+                            raise WebProblem(
+                                400,
+                                str(exc),
+                                "use letters, digits, '.', '_' and '-' only",
+                            ) from exc
+                        if not path.is_file():
+                            raise WebProblem(
+                                400,
+                                f"scene {name!r} is not saved",
+                                "save the scene before setting it as startup",
+                            )
+                    try:
+                        context = load_project(self.project_dir)
+                    except (OSError, TypeError, ValueError) as exc:
+                        raise WebProblem(
+                            400,
+                            f"could not load the project manifest: {exc}",
+                            "check keystone.json and restore a valid manifest",
+                        ) from exc
+                    manifest = set_project_startup_scene(context, name)
+                    self.startup_scene = manifest.startup_scene
                 elif action == "import_asset":
                     if self.project_dir is None:
                         raise WebProblem(

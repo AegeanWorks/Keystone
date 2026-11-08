@@ -59,6 +59,9 @@ const elements = {
   sceneDuplicate: document.getElementById("scene-duplicate"),
   sceneDelete: document.getElementById("scene-delete"),
   sceneRestore: document.getElementById("scene-restore"),
+  startupSet: document.getElementById("startup-set"),
+  startupClear: document.getElementById("startup-clear"),
+  startupState: document.getElementById("startup-state"),
   sceneSettings: document.getElementById("scene-settings"),
   sceneSettingsApply: document.getElementById("scene-settings-apply"),
   sceneValidate: document.getElementById("scene-validate"),
@@ -963,6 +966,11 @@ function showEditor(editor) {
       `${reload.reloaded.length} reloaded · ${reload.rebound} rebound · ` +
       `${reload.failed.length} failed · ${reload.missing.length} missing`
     : "No assets reloaded.";
+  elements.startupState.textContent = editor.startup_scene
+    ? `Startup: ${editor.startup_scene}`
+    : "No startup scene.";
+  elements.startupSet.disabled = !projectDir;
+  elements.startupClear.disabled = !projectDir || !editor.startup_scene;
   if (!busy) {
     elements.editorUndo.disabled = history.undo === 0;
     elements.editorRedo.disabled = history.redo === 0;
@@ -2214,6 +2222,34 @@ async function saveScene() {
   await editorAction({ action: "save_scene", name }, "saving scene");
 }
 
+async function setStartupScene() {
+  const name = elements.sceneName.value.trim();
+  if (!name) {
+    throw new Error("Enter the saved scene name to make startup.");
+  }
+  const editor = await editorAction(
+    { action: "set_startup_scene", name },
+    `setting startup scene ${name}`,
+  );
+  show({
+    ok: true,
+    action: "set_startup_scene",
+    startup_scene: editor.startup_scene,
+  });
+}
+
+async function clearStartupScene() {
+  const editor = await editorAction(
+    { action: "set_startup_scene", name: null },
+    "clearing startup scene",
+  );
+  show({
+    ok: true,
+    action: "set_startup_scene",
+    startup_scene: editor.startup_scene,
+  });
+}
+
 async function diffScene() {
   const name = elements.sceneName.value.trim();
   if (!name) {
@@ -2676,6 +2712,8 @@ elements.editorUndo.addEventListener("click", () => run(undoEditor));
 elements.editorRedo.addEventListener("click", () => run(redoEditor));
 elements.sceneSave.addEventListener("click", () => run(saveScene));
 elements.sceneLoad.addEventListener("click", () => run(loadScene));
+elements.startupSet.addEventListener("click", () => run(setStartupScene));
+elements.startupClear.addEventListener("click", () => run(clearStartupScene));
 elements.sceneDiff.addEventListener("click", () => run(diffScene));
 elements.sceneRename.addEventListener("click", () => run(renameScene));
 elements.sceneDuplicate.addEventListener("click", () => run(duplicateScene));

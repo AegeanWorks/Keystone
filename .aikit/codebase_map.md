@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `141`
 - **Total Classes**: `224`
-- **Total Top-Level Functions**: `384`
-- **Total Class Methods**: `1387`
-- **Total Source Lines**: `34904`
+- **Total Top-Level Functions**: `385`
+- **Total Class Methods**: `1391`
+- **Total Source Lines**: `35108`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `666` lines (`35927` bytes)
+**Size**: `669` lines (`36132` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -1224,7 +1224,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `684` lines (`25881` bytes)
+**Size**: `724` lines (`27271` bytes)
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -1239,6 +1239,7 @@
 - `def _manifest_path(path)`
 - `def load_project(path)` - *Load ``keystone.json`` from a project directory or manifest file.*
 - `def save_project(path, manifest)` - *Write a manifest atomically; accepts a directory or a JSON path.*
+- `def set_project_startup_scene(context, name)` - *Persist one optional startup scene name and return the new manifest.*
 - `def _relative_asset_path(value)`
 - `def project_asset_id(value)` - *Return the deterministic registry id for one manifest asset path.*
 - `def resolve_project_asset(context, value)` - *Resolve one asset path and prove it stays inside the project.*
@@ -1424,7 +1425,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `71` lines (`1518` bytes)
+**Size**: `72` lines (`1543` bytes)
 
 ---
 
@@ -1726,14 +1727,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `411` lines (`18432` bytes)
+**Size**: `414` lines (`18669` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1933` lines (`85685` bytes)
+**Size**: `1983` lines (`88268` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2826,11 +2827,14 @@
 ### [`tests/test_project.py`](tests/test_project.py)
 > *Tests for project manifests, scaffolding and the --project CLI path.*
 
-**Size**: `505` lines (`21224` bytes)
+**Size**: `548` lines (`23125` bytes)
 
 **Classes:**
 - `class ProjectManifestTest`
   - Method `.test_round_trip_and_file_paths()`
+  - Method `.test_schema_one_manifest_remains_compatible()`
+  - Method `.test_startup_scene_name_is_validated()`
+  - Method `.test_set_project_startup_scene_persists_and_clears()`
   - Method `.test_validation_rejects_bad_shapes()`
   - Method `.test_missing_manifest_is_actionable()`
 - `class ProjectScaffoldTest`
@@ -3259,7 +3263,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `3715` lines (`155417` bytes)
+**Size**: `3779` lines (`158199` bytes)
 
 **Classes:**
 - `class Health`
@@ -3331,6 +3335,7 @@
   - Method `.test_editor_validate_scene_reports_issues()`
   - Method `.test_editor_import_asset_updates_manifest_and_registry()`
   - Method `.test_editor_import_gltf_generates_prefab()`
+  - Method `.test_editor_startup_scene_persists_and_clears()`
   - Method `.test_editor_reload_assets_rebinds_scene_and_history()`
   - Method `.test_editor_preview_animation_and_undo()`
   - Method `.test_editor_animation_library_round_trip()`

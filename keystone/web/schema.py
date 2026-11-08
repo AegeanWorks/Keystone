@@ -194,6 +194,7 @@ EDITOR_EXAMPLES = {
     },
     "diff_scene": {"action": "diff_scene", "name": "level"},
     "validate_scene": {"action": "validate_scene"},
+    "set_startup_scene": {"action": "set_startup_scene", "name": "main"},
     "import_asset": {"action": "import_asset", "path": "assets/crate.obj"},
     "import_gltf": {
         "action": "import_gltf",
@@ -308,6 +309,7 @@ EDITOR_SCHEMA = {
             "node_count",
         ],
         "validation_issue": ["severity", "node_id", "field", "message"],
+        "set_startup_scene": ["name"],
         "import_asset": ["path"],
         "imported_asset": ["path", "asset", "kind", "duplicate", "count"],
         "import_gltf": ["path", "name"],
@@ -385,6 +387,7 @@ EDITOR_SCHEMA = {
         "schema 43 adds import_asset for project-relative .obj/.png/.kprefab files, appending them to keystone.json and registering project:<path>",
         "schema 44 adds reload_assets, which refreshes file-backed assets, rebinds scene and history payloads and reports reloaded/failed/missing/rebound counts",
         "schema 45 adds import_gltf, which imports project .gltf/.glb scenes as prefabs, registers gltf.<name>.* assets and records the source in keystone.json",
+        "schema 46 adds set_startup_scene and a startup_scene document field for project-relative default scene selection",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }
