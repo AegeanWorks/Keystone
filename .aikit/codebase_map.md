@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
-- **Total Top-Level Functions**: `416`
-- **Total Class Methods**: `1469`
-- **Total Source Lines**: `39765`
+- **Total Top-Level Functions**: `420`
+- **Total Class Methods**: `1470`
+- **Total Source Lines**: `39910`
 
 ---
 
@@ -1666,7 +1666,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `3106` lines (`110533` bytes)
+**Size**: `3173` lines (`112629` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1710,6 +1710,10 @@
 - `def _rebind_payload(payload, replacements)` - *Return a reloaded payload (or a material with a reloaded texture).*
 - `def _rebind_node_assets(node, replacements)`
 - `def _rebind_prefab_assets(prefab, replacements)` - *Swap reloaded payloads inside one cached prefab template.*
+- `def _clear_node_payloads(node, payload_ids)`
+- `def clear_clipboard_payloads(clipboard, payload_ids)` - *Remove forgotten payloads from the selection clipboard.*
+- `def _count_node_payloads(node, payload_ids)`
+- `def count_prefab_payloads(prefab, payload_ids)` - *Count matching payload references in one detached prefab or clipboard.*
 - `def _rebind_snapshot_nodes(nodes, replacements)`
 - `def _count_snapshot_payloads(nodes, payload_ids)`
 - `def _clear_snapshot_payloads(nodes, payload_ids)`
@@ -1812,14 +1816,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `601` lines (`25517` bytes)
+**Size**: `603` lines (`25586` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2842` lines (`127268` bytes)
+**Size**: `2857` lines (`127856` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3397,7 +3401,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `5569` lines (`229473` bytes)
+**Size**: `5630` lines (`231937` bytes)
 
 **Classes:**
 - `class Health`
@@ -3487,6 +3491,7 @@
   - Method `.test_editor_startup_rename_failure_restores_saved_scene()`
   - Method `.test_editor_forget_asset_and_project_inventory()`
   - Method `.test_editor_forget_asset_clears_undo_payloads()`
+  - Method `.test_editor_forget_asset_clears_clipboard_payloads()`
   - Method `.test_editor_asset_usages_and_saved_references()`
   - Method `.test_editor_build_project()`
   - Method `.test_editor_reload_assets_rebinds_scene_and_history()`

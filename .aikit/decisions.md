@@ -1536,3 +1536,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->12 audit found that the `.kstate` library added in this range could save, load, delete and restore machines, but had no rename or duplicate operations. Prefab and scene libraries already expose both, so AI and editor clients had to edit `.kstate` files by hand to reorganise machines.
 - **Decision**: Add `StateMachineLibrary.rename` and `duplicate`, preserving the JSON body and rejecting source/target collisions, missing entries and same-name duplicates. Add `rename_state_machine` and `duplicate_state_machine` editor actions, mark them scene-neutral, bump the editor schema to 58, and map file collisions to a 400 with a name-choice fix. Add library and web regressions.
 - **Consequences**: State machines now share the library lifecycle shape of prefabs and scenes. The console has no rename/duplicate buttons yet; the actions are available to AI clients and scripts, and adding controls later needs only a UI delivery task.
+
+### ADR-189: Commit audit clears forgotten assets from the clipboard
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->15 audit found that the selection clipboard, added in this range, was not covered by `forget_asset`. After copying a selection and deleting its source node, an asset could be forgotten while the clipboard still held the payload; pasting then reintroduced an unregistered mesh/material/texture.
+- **Decision**: Add `clear_clipboard_payloads` and `count_prefab_payloads`. `forget_asset` clears matching clipboard payloads after registry removal and reports `clipboard_cleared`; `asset_usages` reports `clipboard_references` separately, without raising `references` or blocking forget. Add a copy-delete-forget-paste regression that asserts the pasted node has no mesh.
+- **Consequences**: Forgotten assets no longer survive in the clipboard, and clients can see pending clipboard references before forgetting. Existing clipboard content and references semantics are otherwise unchanged.

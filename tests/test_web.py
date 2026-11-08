@@ -3849,6 +3849,67 @@ class WebServerTest(unittest.TestCase):
                 {asset["id"] for asset in undone["assets"]},
             )
 
+    def test_editor_forget_asset_clears_clipboard_payloads(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name="forget-clipboard")
+            assets = root / "assets"
+            assets.mkdir()
+            source = assets / "crate.obj"
+            source.write_text(
+                "v 0 0 0\nv 1 0 0\nv 0 1 0\nvn 0 0 1\nf 1//1 2//1 3//1\n",
+                encoding="utf-8",
+            )
+            session = GameSession(CubeDemo(), project_dir=root)
+            session.editor_action(
+                {"action": "import_asset", "path": "assets/crate.obj"}
+            )
+            created = session.editor_action(
+                {
+                    "action": "create_node",
+                    "name": "crate",
+                    "mesh": "project:assets/crate.obj",
+                }
+            )
+            crate_id = next(
+                node["id"]
+                for node in created["nodes"]
+                if node["name"] == "crate"
+            )
+            session.editor_action({"action": "copy_selection"})
+            self.assertIsNotNone(session.clipboard.roots[0].mesh)
+            session.editor_action({"action": "delete_node", "id": crate_id})
+            session.editor_action({"action": "select", "id": None})
+
+            before = session.editor_action(
+                {
+                    "action": "asset_usages",
+                    "asset": "project:assets/crate.obj",
+                }
+            )["asset_usages"]
+            self.assertGreaterEqual(before["clipboard_references"], 1)
+
+            forgotten = session.editor_action(
+                {"action": "forget_asset", "path": "assets/crate.obj"}
+            )["forgotten_asset"]
+            self.assertTrue(forgotten["removed"])
+            self.assertGreaterEqual(forgotten["clipboard_cleared"], 1)
+            self.assertIsNone(session.clipboard.roots[0].mesh)
+
+            after = session.editor_action(
+                {
+                    "action": "asset_usages",
+                    "asset": "project:assets/crate.obj",
+                }
+            )["asset_usages"]
+            self.assertEqual(after["clipboard_references"], 0)
+
+            pasted = session.editor_action({"action": "paste_nodes"})
+            pasted_id = pasted["selection"]["id"]
+            self.assertIsNone(
+                session.game.scene.find_by_id(pasted_id).mesh
+            )
+
     def test_editor_asset_usages_and_saved_references(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "project"

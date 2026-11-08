@@ -48,8 +48,10 @@ from keystone.web.editor import (
     apply_prefab_override,
     asset_entries,
     assign_assets,
+    clear_clipboard_payloads,
     clip_key_count,
     component_schemas,
+    count_prefab_payloads,
     create_node,
     delete_node,
     delete_selection,
@@ -534,6 +536,11 @@ class GameSession:
             if payload is not None
             else 0
         )
+        clipboard_references = (
+            count_prefab_payloads(self.clipboard, {id(payload)})
+            if payload is not None
+            else 0
+        )
         references = (
             len(scene_nodes) + len(registry_refs) + len(prefabs) + len(scenes)
         )
@@ -547,6 +554,7 @@ class GameSession:
             "prefabs": sorted(prefabs),
             "scenes": sorted(scenes),
             "history_references": history_references,
+            "clipboard_references": clipboard_references,
             "project_asset": project_asset,
             "references": references,
             "found": references > 0,
@@ -2282,6 +2290,13 @@ class GameSession:
                     )
                     self.last_forgotten_asset["history_cleared"] = (
                         self.history.clear_payloads({id(record.payload)})
+                        if record is not None
+                        else 0
+                    )
+                    self.last_forgotten_asset["clipboard_cleared"] = (
+                        clear_clipboard_payloads(
+                            self.clipboard, {id(record.payload)}
+                        )
                         if record is not None
                         else 0
                     )

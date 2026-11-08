@@ -52,8 +52,10 @@ __all__ = [
     "EditorHistory",
     "asset_entries",
     "assign_assets",
+    "clear_clipboard_payloads",
     "clip_key_count",
     "component_schemas",
+    "count_prefab_payloads",
     "create_node",
     "delete_node",
     "duplicate_node",
@@ -704,6 +706,71 @@ def _rebind_prefab_assets(prefab: Prefab, replacements: Mapping[int, object]) ->
         _rebind_node_assets(node, replacements)
         for root in prefab.roots
         for node in root.traverse()
+    )
+
+
+def _clear_node_payloads(node: Node, payload_ids: set[int]) -> int:
+    cleared = 0
+    if node.mesh is not None and id(node.mesh) in payload_ids:
+        node.mesh = None
+        cleared += 1
+    material = node.material
+    if material is not None and id(material) in payload_ids:
+        node.material = None
+        cleared += 1
+    elif (
+        isinstance(material, Material)
+        and material.texture is not None
+        and id(material.texture) in payload_ids
+    ):
+        node.material = replace(material, texture=None)
+        cleared += 1
+    for child in node.children:
+        cleared += _clear_node_payloads(child, payload_ids)
+    return cleared
+
+
+def clear_clipboard_payloads(
+    clipboard: Prefab | None, payload_ids: set[int]
+) -> int:
+    """Remove forgotten payloads from the selection clipboard."""
+    if clipboard is None:
+        return 0
+    if not isinstance(payload_ids, (set, frozenset)):
+        raise TypeError("payload ids must be a set")
+    return sum(
+        _clear_node_payloads(root, set(payload_ids))
+        for root in clipboard.roots
+    )
+
+
+def _count_node_payloads(node: Node, payload_ids: set[int]) -> int:
+    count = 0
+    if node.mesh is not None and id(node.mesh) in payload_ids:
+        count += 1
+    material = node.material
+    if material is not None and id(material) in payload_ids or (
+        isinstance(material, Material)
+        and material.texture is not None
+        and id(material.texture) in payload_ids
+    ):
+        count += 1
+    for child in node.children:
+        count += _count_node_payloads(child, payload_ids)
+    return count
+
+
+def count_prefab_payloads(
+    prefab: Prefab | None, payload_ids: set[int]
+) -> int:
+    """Count matching payload references in one detached prefab or clipboard."""
+    if prefab is None:
+        return 0
+    if not isinstance(payload_ids, (set, frozenset)):
+        raise TypeError("payload ids must be a set")
+    return sum(
+        _count_node_payloads(root, set(payload_ids))
+        for root in prefab.roots
     )
 
 
