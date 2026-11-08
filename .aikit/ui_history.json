@@ -1,0 +1,16 @@
+[
+  {
+    "schema": 1,
+    "surface": "web",
+    "baseline_commit": "38c05b6890ca280a63d55c4a299f49605cce72a4",
+    "contract_hash": "3a546ec6c38368b241e33bcb645e3e37095307e6a89c5c44678d752a3526399c",
+    "started_at": 1794128880.1470382,
+    "finished_at": 1794129012.5849042,
+    "strikes": 0,
+    "reviewer": "opencode:deepseek-v4.1-flash",
+    "allowed_removals": [],
+    "final_snapshot_digest": "",
+    "final_snapshot_entries": 0,
+    "surface_digest": "2628a886fc7d933dcacf44b836c5fc8e8365db6d70b9d78be429c154c25712dc"
+  }
+]

@@ -113,8 +113,8 @@
           <button id="node-duplicate" type="button">Duplicate</button>
           <button id="selection-copy" type="button">Copy</button>
           <button id="selection-paste" type="button">Paste</button>
-          <button id="selection-lock" type="button">Lock</button>
-          <button id="selection-unlock" type="button">Unlock</button>
+          <button id="selection-lock" type="button" title="Lock selected nodes and descendants against edits">Lock</button>
+          <button id="selection-unlock" type="button" title="Unlock selected nodes">Unlock</button>
           <button id="node-delete" type="button">Delete</button>
           <button id="selection-toggle-visible" type="button">Toggle selected</button>
           <button id="box-select" type="button">Box select: off</button>
@@ -209,7 +209,7 @@
           <button id="view-bookmark-apply" type="button">Go to view</button>
           <button id="view-bookmark-delete" type="button">Delete view</button>
         </div>
-        <div id="view-bookmark-state" class="hint">No view bookmarks.</div>
+        <div id="view-bookmark-state" class="hint">No view bookmarks (stored locally per game).</div>
         <div class="field-grid">
           <label>Prefab name <input id="prefab-name" type="text" value="hero" list="prefab-names"></label>
           <label>New prefab name <input id="prefab-new-name" type="text" placeholder="renamed-prefab"></label>
