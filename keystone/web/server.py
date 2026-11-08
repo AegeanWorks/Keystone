@@ -48,6 +48,7 @@ from keystone.web.editor import (
     apply_prefab_override,
     asset_entries,
     assign_assets,
+    clip_key_count,
     component_schemas,
     create_node,
     delete_node,
@@ -58,6 +59,7 @@ from keystone.web.editor import (
     insert_prefab,
     refresh_prefab_instances,
     reload_scene_assets,
+    remove_clip_key,
     remove_component,
     rename_prefab_links,
     reparent_node,
@@ -66,6 +68,7 @@ from keystone.web.editor import (
     save_prefab,
     save_prefab_nodes,
     save_scene_group,
+    set_clip_key,
     set_component,
     set_node_properties,
     set_scene,
@@ -130,6 +133,8 @@ SCENE_NEUTRAL_ACTIONS = frozenset(
         "save_animation",
         "delete_animation",
         "restore_animation",
+        "set_animation_key",
+        "remove_animation_key",
         "save_state_machine",
         "load_state_machine",
         "delete_state_machine",
@@ -259,6 +264,7 @@ class GameSession:
         self._prefab_edit_dirty = False
         self.last_prefab_refresh: dict[str, int] | None = None
         self.last_animation_preview: dict[str, object] | None = None
+        self.last_animation_key: dict[str, object] | None = None
         self.last_validation: dict[str, object] | None = None
         self.last_import: dict[str, object] | None = None
         self.last_gltf_import: dict[str, object] | None = None
@@ -783,6 +789,7 @@ class GameSession:
         document["game"] = self.name
         document["prefab_refresh"] = self.last_prefab_refresh
         document["animation_preview"] = self.last_animation_preview
+        document["animation_key"] = self.last_animation_key
         document["validation"] = self.last_validation
         document["imported_asset"] = self.last_import
         document["imported_gltf"] = self.last_gltf_import
@@ -882,6 +889,7 @@ class GameSession:
         self._history_label = self._history_label_for(action, payload)
         self.last_prefab_refresh = None
         self.last_animation_preview = None
+        self.last_animation_key = None
         self.last_validation = None
         self.last_import = None
         self.last_gltf_import = None
@@ -1189,6 +1197,58 @@ class GameSession:
                     if self.animation_library is None:
                         raise ValueError("no animation library is configured")
                     self.animation_library.restore(payload.get("trash"))
+                elif action in ("set_animation_key", "remove_animation_key"):
+                    if self.animation_library is None:
+                        raise ValueError("no animation library is configured")
+                    name = payload.get("name")
+                    if not isinstance(name, str) or not name.strip():
+                        raise ValueError(
+                            "animation name must be a non-blank string"
+                        )
+                    node_id = payload.get("id") or self.selected_id
+                    if node_id is None:
+                        raise ValueError(
+                            "select a node before editing animation keys"
+                        )
+                    node = find_node(scene, node_id)
+                    channel = payload.get("channel")
+                    if channel not in ("position", "rotation", "scale"):
+                        raise ValueError(
+                            "animation channel must be position, rotation or scale"
+                        )
+                    time = payload.get("time")
+                    if (
+                        isinstance(time, bool)
+                        or not isinstance(time, (int, float))
+                        or not math.isfinite(time)
+                        or time < 0.0
+                    ):
+                        raise ValueError(
+                            "animation key time must be a finite non-negative number"
+                        )
+                    clip = self.animation_library.load(name)
+                    if action == "set_animation_key":
+                        value = payload.get("value")
+                        if value is None:
+                            value = getattr(node.transform, channel)
+                        updated = set_clip_key(
+                            clip, node.id, channel, float(time), value
+                        )
+                        removed = 0
+                    else:
+                        updated, removed = remove_clip_key(
+                            clip, node.id, channel, float(time)
+                        )
+                    self.animation_library.save(name, updated)
+                    self.last_animation_key = {
+                        "action": action,
+                        "name": name,
+                        "node": node.id,
+                        "channel": channel,
+                        "time": round(float(time), 6),
+                        "keys": clip_key_count(updated, node.id, channel),
+                        "removed": removed,
+                    }
                 elif action == "save_state_machine":
                     if self.state_machine_library is None:
                         raise ValueError(

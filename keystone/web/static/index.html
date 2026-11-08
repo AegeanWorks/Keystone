@@ -69,6 +69,17 @@
           <button id="animation-delete" type="button">Delete clip</button>
           <button id="animation-restore" type="button">Restore clip</button>
         </div>
+        <div class="field-grid">
+          <label>Key channel <select id="animation-channel">
+            <option value="position">Position</option>
+            <option value="rotation">Rotation</option>
+            <option value="scale">Scale</option>
+          </select></label>
+        </div>
+        <div class="buttons">
+          <button id="animation-key-set" type="button">Set key</button>
+          <button id="animation-key-remove" type="button">Remove key</button>
+        </div>
         <div id="animation-state" class="hint">No animation preview.</div>
         <label class="stack" for="state-machine-json">Animation state machine JSON</label>
         <textarea id="state-machine-json" spellcheck="false" rows="6">{}</textarea>

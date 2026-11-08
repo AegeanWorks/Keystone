@@ -1376,3 +1376,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Multi-selection could transform and delete nodes but not copy or paste them; duplicate handled only one node at a time.
 - **Decision**: Add `copy_selection`, which captures the top-level selected nodes as a detached clipboard `Prefab` (folding nested selections and requiring a shared parent), and `paste_nodes`, which instantiates fresh IDs under the selected node or an explicit `parent` in one undo entry. Expose a `clipboard` report (`count`, `names`) and console Copy/Paste buttons. Bump the editor schema to 54.
 - **Consequences**: Web tests cover two-node copy/paste, fresh IDs, shared mesh values, one-step undo, parent paste and empty selection/clipboard errors. The clipboard holds payload references for the session, persists across scene edits, and is not written to disk.
+
+### ADR-169: Library animation keyframe authoring
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Clips could be previewed, sampled, scrubbed and saved, but the editor could not add or remove keyframes, so animation authoring stopped at external JSON.
+- **Decision**: Add `set_animation_key`/`remove_animation_key` for library `.kanim` clips. They target the selected node and one position/rotation/scale channel at a non-negative time; values default to the node's current transform. Set replaces a key within `1e-6` or inserts it sorted, remove drops the key and empty tracks, and both save the clip atomically and return an `animation_key` report. Add console channel selector and Set key/Remove key controls. Bump the editor schema to 55.
+- **Consequences**: Web tests cover insert/replace/sorted times, current-transform defaults, explicit values, preview, removal, empty-track cleanup and error cases. Key edits write library assets and are not scene-undoable; the browser must preview separately to see the authored pose.

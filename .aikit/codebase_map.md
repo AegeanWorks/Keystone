@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
-- **Total Top-Level Functions**: `394`
-- **Total Class Methods**: `1440`
-- **Total Source Lines**: `37435`
+- **Total Top-Level Functions**: `402`
+- **Total Class Methods**: `1441`
+- **Total Source Lines**: `37825`
 
 ---
 
@@ -1462,7 +1462,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `84` lines (`1833` bytes)
+**Size**: `86` lines (`1886` bytes)
 
 ---
 
@@ -1662,7 +1662,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `2533` lines (`90224` bytes)
+**Size**: `2679` lines (`95146` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1707,6 +1707,14 @@
 - `def _scene_snapshot(scene)`
 - `def _restore_scene_state(scene, snapshot)`
 - `def reload_scene_assets(scene, registry, history)` - *Reload changed file-backed assets and rebind scene plus history payloads.*
+- `def _key_time(value)`
+- `def _key_value(channel, value)`
+- `def _channel_tracks(clip, channel)`
+- `def _replace_channel(clip, channel, tracks)`
+- `def _validate_clip_key(clip, node_id, channel, time)`
+- `def set_clip_key(clip, node_id, channel, time, value)` - *Insert or replace one keyframe in a clip and return the new clip.*
+- `def remove_clip_key(clip, node_id, channel, time)` - *Remove one keyframe within epsilon and return the clip and removal count.*
+- `def clip_key_count(clip, node_id, channel)` - *Return the number of keys on one node/channel track.*
 - `def _history_label(label)`
 - `def _history_steps(steps)`
 - `def _component_documents(node)`
@@ -1785,14 +1793,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `537` lines (`23246` bytes)
+**Size**: `561` lines (`23982` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2566` lines (`114796` bytes)
+**Size**: `2626` lines (`117685` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3362,7 +3370,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `4481` lines (`187027` bytes)
+**Size**: `4639` lines (`193204` bytes)
 
 **Classes:**
 - `class Health`
@@ -3445,6 +3453,7 @@
   - Method `.test_editor_preview_animation_and_undo()`
   - Method `.test_editor_animation_library_round_trip()`
   - Method `.test_editor_state_machine_library_and_preview()`
+  - Method `.test_editor_animation_key_authoring()`
   - Method `.test_editor_material_library_save_assign_and_reload()`
   - Method `.test_editor_component_lifecycle_play_mode()`
   - Method `.test_editor_component_authoring_and_scene_round_trip()`

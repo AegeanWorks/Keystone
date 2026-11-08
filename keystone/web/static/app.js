@@ -34,6 +34,9 @@ const elements = {
   animationSave: document.getElementById("animation-save"),
   animationDelete: document.getElementById("animation-delete"),
   animationRestore: document.getElementById("animation-restore"),
+  animationChannel: document.getElementById("animation-channel"),
+  animationKeySet: document.getElementById("animation-key-set"),
+  animationKeyRemove: document.getElementById("animation-key-remove"),
   animationState: document.getElementById("animation-state"),
   stateMachineJson: document.getElementById("state-machine-json"),
   stateMachineName: document.getElementById("state-machine-name"),
@@ -977,10 +980,15 @@ function showEditor(editor) {
     ? JSON.stringify(playDocument, null, 2)
     : "No play snapshot.";
   const animationPreview = editor.animation_preview;
-  elements.animationState.textContent = animationPreview
-    ? `Previewed ${animationPreview.name} at ${animationPreview.time}s · ` +
-      `${animationPreview.updated.length} nodes`
-    : "No animation preview.";
+  const animationKey = editor.animation_key;
+  elements.animationState.textContent = animationKey
+    ? `${animationKey.action === "set_animation_key" ? "Set" : "Removed"} ` +
+      `${animationKey.channel} key @ ${animationKey.time}s · ` +
+      `${animationKey.keys} keys`
+    : animationPreview
+      ? `Previewed ${animationPreview.name} at ${animationPreview.time}s · ` +
+        `${animationPreview.updated.length} nodes`
+      : "No animation preview.";
   const statePreview = editor.state_machine_preview;
   elements.stateMachineState.textContent = statePreview
     ? `Previewed ${statePreview.name} · ${statePreview.current} · ` +
@@ -2065,6 +2073,48 @@ async function restoreAnimation() {
   );
 }
 
+async function setAnimationKey() {
+  const name = elements.animationName.value.trim();
+  if (!name) {
+    throw new Error("Enter a saved clip name before setting a key.");
+  }
+  const time = Number(elements.animationTime.value);
+  if (!Number.isFinite(time) || time < 0) {
+    throw new Error("Key time must be a finite non-negative number.");
+  }
+  const channel = elements.animationChannel.value;
+  const editor = await editorAction(
+    { action: "set_animation_key", name, channel, time },
+    `setting ${channel} key`,
+  );
+  show({
+    ok: true,
+    action: "set_animation_key",
+    animation_key: editor.animation_key,
+  });
+}
+
+async function removeAnimationKey() {
+  const name = elements.animationName.value.trim();
+  if (!name) {
+    throw new Error("Enter a saved clip name before removing a key.");
+  }
+  const time = Number(elements.animationTime.value);
+  if (!Number.isFinite(time) || time < 0) {
+    throw new Error("Key time must be a finite non-negative number.");
+  }
+  const channel = elements.animationChannel.value;
+  const editor = await editorAction(
+    { action: "remove_animation_key", name, channel, time },
+    `removing ${channel} key`,
+  );
+  show({
+    ok: true,
+    action: "remove_animation_key",
+    animation_key: editor.animation_key,
+  });
+}
+
 async function loadStateMachine() {
   const name = elements.stateMachineName.value.trim();
   if (!name) {
@@ -2988,6 +3038,10 @@ elements.animationPlay.addEventListener("click", () => run(toggleAnimationPlay))
 elements.animationSave.addEventListener("click", () => run(saveAnimation));
 elements.animationDelete.addEventListener("click", () => run(deleteAnimation));
 elements.animationRestore.addEventListener("click", () => run(restoreAnimation));
+elements.animationKeySet.addEventListener("click", () => run(setAnimationKey));
+elements.animationKeyRemove.addEventListener("click", () =>
+  run(removeAnimationKey),
+);
 elements.stateMachineLoad.addEventListener("click", () => run(loadStateMachine));
 elements.stateMachineSave.addEventListener("click", () => run(saveStateMachine));
 elements.stateMachinePreview.addEventListener("click", () =>

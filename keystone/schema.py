@@ -4,7 +4,7 @@ from __future__ import annotations
 
 WEB_API_VERSION = 1
 SCENE_SCHEMA_VERSION = 2
-EDITOR_SCHEMA_VERSION = 54
+EDITOR_SCHEMA_VERSION = 55
 PREFAB_SCHEMA_VERSION = 2
 EDITOR_ACTIONS = (
     "select",
@@ -31,6 +31,8 @@ EDITOR_ACTIONS = (
     "save_animation",
     "delete_animation",
     "restore_animation",
+    "set_animation_key",
+    "remove_animation_key",
     "save_state_machine",
     "load_state_machine",
     "delete_state_machine",

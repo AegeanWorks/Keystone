@@ -260,7 +260,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 - **Fixed-step runtime**: `FixedStepClock` releases whole steps with a bounded catch-up budget; the headless path advances one step per frame for deterministic tests.
 - **Action input**: rebindable `InputMap` bindings expose `forward`, `right`, `up`, `look_yaw`, `look_pitch`, `pressed` and `held` across action contexts; no direct GLFW access.
 - **Audio core**: synth (`sine`, `square`, `noise`), named-bus `Mixer` with deterministic mixdown, mono 16-bit WAV IO and `audio_report()`; no hardware.
-- **Animation**: keyframe `Track`/`AnimationClip`, looping, crossfades, events, `apply_pose()`, CPU/GPU linear-blend skinning, JSON round trips, reports and parameter-driven state machines.
+- **Animation**: keyframe `Track`/`AnimationClip`, looping, crossfades, events, `apply_pose()`, CPU/GPU linear-blend skinning, JSON round trips, reports, keyframe authoring and state machines.
 - **Replay runner**: `run_log()`/`verify_log()` replay a `CommandLog`, and `--replay` audits logs.
 - **Particles**: seeded CPU emitters with forces, swept collision, bursts, culling and JSON reports; HUD/inspector counts; one GPU billboard each.
 - **Physics**: ray/AABB/sphere queries, sphere pushout, spatial-grid broadphase, AABB movement with gravity/ground, trigger tracking and filtered raycasts.

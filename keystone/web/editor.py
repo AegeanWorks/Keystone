@@ -14,6 +14,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import MISSING, fields, is_dataclass, replace
 from typing import NamedTuple, TypeVar
 
+from keystone.animation import AnimationClip, Track
 from keystone.assets import AssetRegistry
 from keystone.camera import MAX_PITCH
 from keystone.component_codec import (
@@ -51,6 +52,7 @@ __all__ = [
     "EditorHistory",
     "asset_entries",
     "assign_assets",
+    "clip_key_count",
     "component_schemas",
     "create_node",
     "delete_node",
@@ -59,11 +61,13 @@ __all__ = [
     "find_node",
     "insert_prefab",
     "reload_scene_assets",
+    "remove_clip_key",
     "remove_component",
     "reparent_node",
     "save_prefab",
     "save_prefab_nodes",
     "scene_settings_document",
+    "set_clip_key",
     "set_component",
     "set_node_properties",
     "set_scene",
@@ -888,6 +892,148 @@ def reload_scene_assets(
         "rebound": rebound,
         "history_rebound": history_rebound,
     }
+
+
+_ANIMATION_CHANNELS = ("position", "rotation", "scale")
+_KEY_EPSILON = 1e-6
+
+
+def _key_time(value: object) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise TypeError("animation key time must be a number")
+    number = float(value)
+    if not math.isfinite(number) or number < 0.0:
+        raise ValueError("animation key time must be a finite non-negative number")
+    return number
+
+
+def _key_value(channel: str, value: object) -> Vec3 | Quat:
+    if channel == "rotation":
+        if isinstance(value, Quat):
+            return value
+        x, y, z, w = _finite_array(value, 4, "rotation key")
+        return Quat(w, x, y, z)
+    if isinstance(value, Vec3):
+        return value
+    return Vec3(*_finite_array(value, 3, f"{channel} key"))
+
+
+def _channel_tracks(clip: AnimationClip, channel: str):
+    return getattr(clip, f"{channel}_tracks")
+
+
+def _replace_channel(
+    clip: AnimationClip, channel: str, tracks: object
+) -> AnimationClip:
+    values = {
+        "position_tracks": clip.position_tracks,
+        "rotation_tracks": clip.rotation_tracks,
+        "scale_tracks": clip.scale_tracks,
+    }
+    values[f"{channel}_tracks"] = tuple(tracks)  # type: ignore[arg-type]
+    return AnimationClip(name=clip.name, events=clip.events, **values)
+
+
+def _validate_clip_key(
+    clip: AnimationClip, node_id: str, channel: str, time: object
+) -> float:
+    if not isinstance(clip, AnimationClip):
+        raise TypeError("animation key target must be an AnimationClip")
+    if not isinstance(node_id, str) or not node_id.strip():
+        raise ValueError("animation key node id must be a non-blank string")
+    if channel not in _ANIMATION_CHANNELS:
+        raise ValueError(
+            "animation channel must be position, rotation or scale"
+        )
+    return _key_time(time)
+
+
+def set_clip_key(
+    clip: AnimationClip,
+    node_id: str,
+    channel: str,
+    time: object,
+    value: object,
+) -> AnimationClip:
+    """Insert or replace one keyframe in a clip and return the new clip."""
+    moment = _validate_clip_key(clip, node_id, channel, time)
+    key_value = _key_value(channel, value)
+    tracks = list(_channel_tracks(clip, channel))
+    for index, (track_node, track) in enumerate(tracks):
+        if track_node != node_id:
+            continue
+        times = list(track.times)
+        values = list(track.values)
+        for key_index, existing in enumerate(times):
+            if abs(existing - moment) <= _KEY_EPSILON:
+                values[key_index] = key_value
+                break
+        else:
+            times.append(moment)
+            values.append(key_value)
+        order = sorted(range(len(times)), key=lambda item: times[item])
+        tracks[index] = (
+            track_node,
+            Track(
+                times=tuple(times[item] for item in order),
+                values=tuple(values[item] for item in order),
+                interpolation=track.interpolation,
+            ),
+        )
+        break
+    else:
+        tracks.append((node_id, Track(times=(moment,), values=(key_value,))))
+    return _replace_channel(clip, channel, tracks)
+
+
+def remove_clip_key(
+    clip: AnimationClip,
+    node_id: str,
+    channel: str,
+    time: object,
+) -> tuple[AnimationClip, int]:
+    """Remove one keyframe within epsilon and return the clip and removal count."""
+    moment = _validate_clip_key(clip, node_id, channel, time)
+    tracks = list(_channel_tracks(clip, channel))
+    removed = 0
+    for index, (track_node, track) in enumerate(tracks):
+        if track_node != node_id:
+            continue
+        keep = [
+            (key_time, key_value)
+            for key_time, key_value in zip(track.times, track.values)
+            if abs(key_time - moment) > _KEY_EPSILON
+        ]
+        removed = len(track.times) - len(keep)
+        if not keep:
+            tracks.pop(index)
+        else:
+            tracks[index] = (
+                track_node,
+                Track(
+                    times=tuple(item[0] for item in keep),
+                    values=tuple(item[1] for item in keep),
+                    interpolation=track.interpolation,
+                ),
+            )
+        break
+    return _replace_channel(clip, channel, tracks), removed
+
+
+def clip_key_count(
+    clip: AnimationClip, node_id: str, channel: str
+) -> int:
+    """Return the number of keys on one node/channel track."""
+    if not isinstance(clip, AnimationClip):
+        raise TypeError("animation key target must be an AnimationClip")
+    if channel not in _ANIMATION_CHANNELS:
+        raise ValueError(
+            "animation channel must be position, rotation or scale"
+        )
+    for track_node, track in _channel_tracks(clip, channel):
+        if track_node == node_id:
+            return len(track.times)
+    return 0
 
 
 def _history_label(label: object) -> str:

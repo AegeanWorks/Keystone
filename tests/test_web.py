@@ -3679,6 +3679,156 @@ class WebServerTest(unittest.TestCase):
                 )
             self.assertEqual(caught.exception.status, 400)
 
+    def test_editor_animation_key_authoring(self):
+        with tempfile.TemporaryDirectory() as directory:
+            animation_dir = Path(directory) / "animations"
+            session = GameSession(CubeDemo(), animation_dir=animation_dir)
+            editor = session.editor()
+            cube = next(
+                node for node in editor["nodes"] if node["name"] == "cube-0"
+            )
+            original = cube["transform"]["position"]
+            clip = {
+                "schema": 1,
+                "name": "bob",
+                "position": {},
+                "rotation": {},
+                "scale": {},
+                "events": [],
+            }
+            session.editor_action(
+                {"action": "save_animation", "name": "bob", "clip": clip}
+            )
+            session.editor_action({"action": "select", "id": cube["id"]})
+
+            first = session.editor_action(
+                {
+                    "action": "set_animation_key",
+                    "name": "bob",
+                    "channel": "position",
+                    "time": 0.0,
+                }
+            )
+            self.assertEqual(first["animation_key"]["keys"], 1)
+            loaded = session.animation_library.load("bob")
+            track = dict(loaded.position_tracks)[cube["id"]]
+            self.assertEqual(track.times, (0.0,))
+            self.assertAlmostEqual(track.values[0].y, original[1])
+
+            value = [original[0], original[1] + 2.0, original[2]]
+            second = session.editor_action(
+                {
+                    "action": "set_animation_key",
+                    "name": "bob",
+                    "channel": "position",
+                    "time": 1.0,
+                    "value": value,
+                }
+            )
+            self.assertEqual(second["animation_key"]["keys"], 2)
+            replaced = session.editor_action(
+                {
+                    "action": "set_animation_key",
+                    "name": "bob",
+                    "channel": "position",
+                    "time": 1.0,
+                    "value": [original[0], original[1] + 3.0, original[2]],
+                }
+            )
+            self.assertEqual(replaced["animation_key"]["keys"], 2)
+            loaded = session.animation_library.load("bob")
+            track = dict(loaded.position_tracks)[cube["id"]]
+            self.assertEqual(track.times, (0.0, 1.0))
+            self.assertAlmostEqual(track.values[1].y, original[1] + 3.0)
+
+            previewed = session.editor_action(
+                {"action": "preview_animation", "name": "bob", "time": 1.0}
+            )
+            moved = next(
+                node for node in previewed["nodes"] if node["id"] == cube["id"]
+            )
+            self.assertAlmostEqual(
+                moved["transform"]["position"][1],
+                original[1] + 3.0,
+                places=4,
+            )
+            session.editor_action({"action": "undo"})
+
+            removed = session.editor_action(
+                {
+                    "action": "remove_animation_key",
+                    "name": "bob",
+                    "channel": "position",
+                    "time": 1.0,
+                }
+            )
+            self.assertEqual(removed["animation_key"]["removed"], 1)
+            self.assertEqual(removed["animation_key"]["keys"], 1)
+            removed_zero = session.editor_action(
+                {
+                    "action": "remove_animation_key",
+                    "name": "bob",
+                    "channel": "position",
+                    "time": 0.0,
+                }
+            )
+            self.assertEqual(removed_zero["animation_key"]["keys"], 0)
+            self.assertEqual(
+                session.animation_library.load("bob").position_tracks, ()
+            )
+
+            session.editor_action({"action": "select", "id": None})
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "set_animation_key",
+                        "name": "bob",
+                        "channel": "position",
+                        "time": 0.0,
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+            session.editor_action({"action": "select", "id": cube["id"]})
+            for payload in (
+                {
+                    "action": "set_animation_key",
+                    "name": "bob",
+                    "channel": "position",
+                    "time": -1.0,
+                },
+                {
+                    "action": "set_animation_key",
+                    "name": "bob",
+                    "channel": "color",
+                    "time": 0.0,
+                },
+            ):
+                with self.assertRaises(WebProblem) as caught:
+                    session.editor_action(payload)
+                self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "set_animation_key",
+                        "name": "missing",
+                        "channel": "position",
+                        "time": 0.0,
+                    }
+                )
+            self.assertEqual(caught.exception.status, 404)
+
+            standalone = GameSession(CubeDemo())
+            with self.assertRaises(WebProblem) as caught:
+                standalone.editor_action(
+                    {
+                        "action": "set_animation_key",
+                        "name": "bob",
+                        "channel": "position",
+                        "time": 0.0,
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+
     def test_editor_material_library_save_assign_and_reload(self):
         with tempfile.TemporaryDirectory() as directory:
             material_dir = Path(directory) / "materials"
@@ -3957,6 +4107,9 @@ class WebServerTest(unittest.TestCase):
             "animation-save",
             "animation-delete",
             "animation-restore",
+            "animation-channel",
+            "animation-key-set",
+            "animation-key-remove",
             "animation-state",
             "state-machine-json",
             "state-machine-name",
@@ -4262,6 +4415,11 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("save_animation", script)
         self.assertIn("delete_animation", script)
         self.assertIn("restore_animation", script)
+        self.assertIn("setAnimationKey", script)
+        self.assertIn("removeAnimationKey", script)
+        self.assertIn("set_animation_key", script)
+        self.assertIn("remove_animation_key", script)
+        self.assertIn("animation_key", script)
         self.assertIn("saveStateMachine", script)
         self.assertIn("previewStateMachine", script)
         self.assertIn("deleteStateMachine", script)
