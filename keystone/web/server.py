@@ -121,6 +121,7 @@ SCENE_NEUTRAL_ACTIONS = frozenset(
     {
         "select",
         "select_many",
+        "copy_selection",
         "play_start",
         "play_step",
         "play_pause",
@@ -238,6 +239,7 @@ class GameSession:
         self.selected_id: str | None = None
         self.selected_ids: list[str] = []
         self.prefabs: dict[str, Prefab] = {}
+        self.clipboard: Prefab | None = None
         self.history = EditorHistory()
         self._history_label = "edit"
         component_types = validate_component_types(getattr(game, "component_types", None))
@@ -788,6 +790,14 @@ class GameSession:
         document["asset_usages"] = self.last_asset_usages
         document["asset_reload"] = self.last_asset_reload
         document["startup_scene"] = self.startup_scene
+        document["clipboard"] = (
+            {
+                "count": len(self.clipboard.roots),
+                "names": [root.name for root in self.clipboard.roots],
+            }
+            if self.clipboard is not None
+            else None
+        )
         document["project_assets"] = list(self.project_assets)
         document["saved_scene"] = self.saved_scene
         document["scene_dirty"] = self.scene_dirty
@@ -1442,6 +1452,39 @@ class GameSession:
                         scene, lambda: duplicate_node(scene, node, payload.get("name"))
                     )
                     self.selected_id = clone.id
+                elif action == "copy_selection":
+                    if not self.selected_ids:
+                        raise ValueError(
+                            "select at least one node before copying"
+                        )
+                    nodes = [
+                        find_node(scene, node_id)
+                        for node_id in self.selected_ids
+                    ]
+                    clipboard, _ = save_prefab_nodes(
+                        nodes, "clipboard", {}
+                    )
+                    self.clipboard = clipboard
+                elif action == "paste_nodes":
+                    if self.clipboard is None:
+                        raise ValueError(
+                            "clipboard is empty; copy a selection first"
+                        )
+                    if "parent" in payload:
+                        parent = self._parent_locked(
+                            scene, payload.get("parent")
+                        )
+                    elif len(self.selected_ids) == 1:
+                        parent = find_node(scene, self.selected_ids[0])
+                    else:
+                        parent = None
+                    clipboard = self.clipboard
+                    roots = self._apply_history(
+                        scene,
+                        lambda: clipboard.instantiate(scene, parent=parent),
+                    )
+                    list(scene.traverse())
+                    self._set_selected_ids([root.id for root in roots])
                 elif action == "reparent_node":
                     node = find_node(scene, payload.get("id"))
                     parent = self._parent_locked(scene, payload.get("parent"))

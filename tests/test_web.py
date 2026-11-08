@@ -645,6 +645,65 @@ class WebServerTest(unittest.TestCase):
         self.assertEqual(caught.exception.status, 400)
         self.assertEqual(session.editor()["history"]["undo"], 0)
 
+    def test_editor_copy_paste_selection(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        cubes = [
+            node for node in editor["nodes"] if node["mesh"] == "mesh.cube"
+        ][:2]
+        ids = [node["id"] for node in cubes]
+        session.editor_action(
+            {"action": "select_many", "ids": ids, "mode": "replace"}
+        )
+        copied = session.editor_action({"action": "copy_selection"})
+        self.assertEqual(copied["clipboard"]["count"], 2)
+
+        session.editor_action({"action": "select", "id": None})
+        pasted = session.editor_action({"action": "paste_nodes"})
+        self.assertEqual(pasted["selection_count"], 2)
+        pasted_ids = pasted["selected_ids"]
+        self.assertTrue(set(pasted_ids).isdisjoint(ids))
+        originals = {node["id"]: node for node in editor["nodes"]}
+        pasted_nodes = [
+            node for node in pasted["nodes"] if node["id"] in pasted_ids
+        ]
+        self.assertEqual(
+            {node["name"] for node in pasted_nodes},
+            {originals[node_id]["name"] for node_id in ids},
+        )
+        self.assertEqual(
+            {node["mesh"] for node in pasted_nodes}, {"mesh.cube"}
+        )
+        self.assertEqual(pasted["history"]["undo"], 1)
+
+        undone = session.editor_action({"action": "undo"})
+        self.assertTrue(
+            set(pasted_ids).isdisjoint(
+                {node["id"] for node in undone["nodes"]}
+            )
+        )
+
+        parent = next(
+            node for node in undone["nodes"] if node["name"] == "cube-0"
+        )
+        session.editor_action({"action": "select", "id": parent["id"]})
+        child_paste = session.editor_action(
+            {"action": "paste_nodes", "parent": parent["id"]}
+        )
+        child_id = child_paste["selected_ids"][0]
+        child = next(
+            node for node in child_paste["nodes"] if node["id"] == child_id
+        )
+        self.assertEqual(child["parent_id"], parent["id"])
+
+        bare = GameSession(CubeDemo())
+        with self.assertRaises(WebProblem) as caught:
+            bare.editor_action({"action": "copy_selection"})
+        self.assertEqual(caught.exception.status, 400)
+        with self.assertRaises(WebProblem) as caught:
+            bare.editor_action({"action": "paste_nodes"})
+        self.assertEqual(caught.exception.status, 400)
+
     def test_editor_prefab_capture_and_insert(self):
         _, _, editor = self._json("/api/editor")
         cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
@@ -3914,6 +3973,8 @@ class WebServerTest(unittest.TestCase):
             "node-parent",
             "node-create",
             "node-duplicate",
+            "selection-copy",
+            "selection-paste",
             "node-delete",
             "selection-toggle-visible",
             "box-select",
@@ -4046,6 +4107,10 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("/api/editor", script)
         self.assertIn("create_node", script)
         self.assertIn("duplicate_node", script)
+        self.assertIn("copySelection", script)
+        self.assertIn("pasteNodes", script)
+        self.assertIn("copy_selection", script)
+        self.assertIn("paste_nodes", script)
         self.assertIn("save_scene", script)
         self.assertIn("rename_scene", script)
         self.assertIn("duplicate_scene", script)

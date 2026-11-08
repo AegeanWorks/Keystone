@@ -49,6 +49,8 @@ const elements = {
   stateMachineState: document.getElementById("state-machine-state"),
   nodeCreate: document.getElementById("node-create"),
   nodeDuplicate: document.getElementById("node-duplicate"),
+  selectionCopy: document.getElementById("selection-copy"),
+  selectionPaste: document.getElementById("selection-paste"),
   nodeDelete: document.getElementById("node-delete"),
   selectionToggleVisible: document.getElementById("selection-toggle-visible"),
   boxSelect: document.getElementById("box-select"),
@@ -2639,6 +2641,30 @@ async function duplicateNode() {
   await refreshScene(false);
 }
 
+async function copySelection() {
+  if (!editorState || !editorState.selection_count) {
+    throw new Error("Select at least one node before copying.");
+  }
+  await editorAction({ action: "copy_selection" }, "copying selection");
+}
+
+async function pasteNodes() {
+  const parent =
+    editorState && editorState.selection
+      ? editorState.selection.id
+      : null;
+  const editor = await editorAction(
+    { action: "paste_nodes", parent },
+    "pasting nodes",
+  );
+  await refreshScene(false);
+  show({
+    ok: true,
+    action: "paste_nodes",
+    pasted: editor.selected_ids.length,
+  });
+}
+
 async function deleteSelection() {
   if (!editorState || !(editorState.selected_ids || []).length) {
     throw new Error("Select at least one node before deleting.");
@@ -3025,6 +3051,8 @@ elements.componentType.addEventListener("change", () => {
 });
 elements.nodeCreate.addEventListener("click", () => run(createNode));
 elements.nodeDuplicate.addEventListener("click", () => run(duplicateNode));
+elements.selectionCopy.addEventListener("click", () => run(copySelection));
+elements.selectionPaste.addEventListener("click", () => run(pasteNodes));
 elements.nodeDelete.addEventListener("click", () => run(deleteSelection));
 elements.selectionToggleVisible.addEventListener("click", () =>
   run(toggleSelectionVisible),

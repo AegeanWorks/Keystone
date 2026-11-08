@@ -1368,3 +1368,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: `assign_asset` edited one node, so a multi-selection could not share or replace a mesh/material in one operation.
 - **Decision**: Add `assign_asset_selection`, which resolves every selected node under the editor lock and runs the existing `assign_assets` validation for each node inside one history entry. The console adds an Assign to selection button that sends only non-empty mesh/material fields; single-node clearing stays on `assign_asset`. Bump the editor schema to 53.
 - **Consequences**: Web tests cover two-node assignment, one-step undo, empty selection and invalid asset errors. Nested selections receive the assignment on every selected node, and the console cannot clear both fields across a selection.
+
+### ADR-168: Copy/paste selection
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Multi-selection could transform and delete nodes but not copy or paste them; duplicate handled only one node at a time.
+- **Decision**: Add `copy_selection`, which captures the top-level selected nodes as a detached clipboard `Prefab` (folding nested selections and requiring a shared parent), and `paste_nodes`, which instantiates fresh IDs under the selected node or an explicit `parent` in one undo entry. Expose a `clipboard` report (`count`, `names`) and console Copy/Paste buttons. Bump the editor schema to 54.
+- **Consequences**: Web tests cover two-node copy/paste, fresh IDs, shared mesh values, one-step undo, parent paste and empty selection/clipboard errors. The clipboard holds payload references for the session, persists across scene edits, and is not written to disk.

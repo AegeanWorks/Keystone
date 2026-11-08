@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-selection-assets-v1",
+    "task_id": "keystone-copy-paste-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794124776.24301,
+    "updated_at": 1794125229.132179,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794124776.6436026
+    "completed_at": 1794125229.5238984
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-editor-build-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Editor project build implemented: build_project resolves a project-relative target (default build), runs the validated export pipeline, returns schema/target/BUILD.json/summary only, rejects traversal/absolute/root targets with 400, refuses non-empty targets with force guidance, console target/force controls and files/bytes readout, schema 49; 797 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, describe schema 49, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794122137.5496385,
-      "timestamp_str": "2026-11-08 10:15:37",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-editor-build-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-editor-build-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794122137.8793492,
-      "timestamp_str": "2026-11-08 10:15:37",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-asset-usage-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan asset usage reporting across the live scene, registry, prefabs and saved scenes",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794122184.3185146,
-      "timestamp_str": "2026-11-08 10:16:24",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "The editor can forget assets but only checks live scene/registry/prefab references; authors and AI clients cannot ask where an asset is used before removing or replacing it.",
-        "benefits": "asset_usages returns structured scene-node, registry, prefab and saved-scene references for an asset id or project path, and forget_asset reuses the report to protect saved content.",
-        "risks": "contract: editor schema 50 and one action; dependency: scene/prefab libraries; concurrency: editor lock; state: malformed library entries, large libraries, unknown ids, project path conversion, scanning cost.",
-        "mitigation": "Accept an exact asset id or project-relative path, skip unreadable entries, deduplicate references, expose counts, reuse the report in forget_asset, and add usage/path/saved-scene/forget tests."
-      },
-      "plan_digest": "57873793284cb2389085c7a1755dfb7f1c05a5a828b4f356a916b30837d0516f"
-    },
     {
       "task_id": "keystone-asset-usage-v1",
       "phase": "in_progress",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794124776.643605,
       "timestamp_str": "2026-11-08 10:59:36",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-copy-paste-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan copy/paste for the multi-node selection using a detached prefab clipboard",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794124843.1037974,
+      "timestamp_str": "2026-11-08 11:00:43",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "Multi-selection can transform and delete nodes but cannot copy/paste them, and duplicate only handles one node at a time.",
+        "benefits": "copy_selection captures top-level selected nodes as a detached clipboard prefab; paste_nodes instantiates fresh IDs under a chosen parent in one undo entry; console Copy/Paste controls.",
+        "risks": "contract: editor schema 54 and two actions; dependency: Prefab capture/instantiate; concurrency: editor lock; state: empty selection/clipboard, nested selections, mixed parents, prefab-link rebasing, undo grouping.",
+        "mitigation": "Reuse save_prefab_nodes folding and shared-parent validation, keep the clipboard detached, instantiate with fresh IDs, wrap paste in one history entry and add copy/paste/undo/error tests."
+      },
+      "plan_digest": "873e4044fe293b302f41d6222fa0c909083078b9c2f3af56d045a3733a9742ff"
+    },
+    {
+      "task_id": "keystone-copy-paste-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Multi-selection copy/paste implemented: copy_selection captures top-level selected nodes as a detached clipboard prefab with folding/shared-parent validation; paste_nodes instantiates fresh IDs under the selected node or explicit parent in one undo entry and selects the roots; clipboard report and console Copy/Paste controls; schema 54; 810 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, describe schema 54, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794125229.132179,
+      "timestamp_str": "2026-11-08 11:07:09",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-copy-paste-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-copy-paste-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794125229.5239003,
+      "timestamp_str": "2026-11-08 11:07:09",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]
