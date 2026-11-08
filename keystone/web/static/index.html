@@ -81,6 +81,10 @@
           <button id="editor-redo" type="button">Redo</button>
         </div>
         <div class="field-grid">
+          <label>History steps <input id="history-steps" type="number" min="1" max="100" step="1" value="1"></label>
+        </div>
+        <div id="history-state" class="hint">No history</div>
+        <div class="field-grid">
           <label>Scene name <input id="scene-name" type="text" value="scene" list="scene-names"></label>
           <label>New scene name <input id="scene-new-name" type="text" placeholder="renamed-scene"></label>
         </div>

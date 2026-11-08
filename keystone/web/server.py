@@ -123,6 +123,7 @@ class GameSession:
         self.selected_ids: list[str] = []
         self.prefabs: dict[str, Prefab] = {}
         self.history = EditorHistory()
+        self._history_label = "edit"
         component_types = validate_component_types(getattr(game, "component_types", None))
         self.component_types = component_types
         self.playing = False
@@ -261,11 +262,19 @@ class GameSession:
         entries.sort(key=lambda entry: str(entry["name"]))
         return entries
 
+    def _history_label_for(self, action: str, payload: dict) -> str:
+        target = payload.get("id") or payload.get("name")
+        if isinstance(target, str) and target.strip():
+            return f"{action} {target.strip()}"[:120]
+        return action
+
     def _apply_history(self, scene: Scene, operation: Callable[[], object]) -> object:
         if self._batch_depth:
             result = operation()
         else:
-            result = self.history.apply(scene, operation)
+            result = self.history.apply(
+                scene, operation, label=self._history_label
+            )
         self.last_diff = None
         return result
 
@@ -290,6 +299,7 @@ class GameSession:
             self.history.apply(
                 scene,
                 lambda: [self.editor_action(item) for item in actions],
+                label=f"batch {len(actions)} actions",
             )
         except Exception:
             self._set_selected_ids(before)
@@ -396,6 +406,7 @@ class GameSession:
                 "editor action must be a non-blank string",
                 "use " + ", ".join(EDITOR_ACTIONS),
             )
+        self._history_label = self._history_label_for(action, payload)
         with self.lock:
             scene = self._scene_locked()
             try:
@@ -830,10 +841,28 @@ class GameSession:
                     self.prefabs[updated.name] = updated
                     self.selected_id = node.id
                 elif action == "undo":
-                    self.history.undo(scene)
+                    steps = payload.get("steps", 1)
+                    if (
+                        isinstance(steps, bool)
+                        or not isinstance(steps, int)
+                        or not 1 <= steps <= 100
+                    ):
+                        raise ValueError(
+                            "undo steps must be an integer between 1 and 100"
+                        )
+                    self.history.undo(scene, steps)
                     self.last_diff = None
                 elif action == "redo":
-                    self.history.redo(scene)
+                    steps = payload.get("steps", 1)
+                    if (
+                        isinstance(steps, bool)
+                        or not isinstance(steps, int)
+                        or not 1 <= steps <= 100
+                    ):
+                        raise ValueError(
+                            "redo steps must be an integer between 1 and 100"
+                        )
+                    self.history.redo(scene, steps)
                     self.last_diff = None
                 else:
                     raise ValueError(f"unknown editor action {action!r}")

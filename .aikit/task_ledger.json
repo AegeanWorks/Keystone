@@ -1,48 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-box-proxies-v1",
+    "task_id": "keystone-history-navigation-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794103469.2044895,
+    "updated_at": 1794104396.5185542,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794103474.6248622
+    "completed_at": 1794104405.1423855
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-multi-selection-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-multi-selection-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794100404.8919966,
-      "timestamp_str": "2026-11-08 04:13:24",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-group-transform-v1",
-      "phase": "verification",
-      "phase_num": 4,
-      "description": "[2/3] Group rotate/uniform-scale implemented: centroid pivot group_rotation/group_scale, parent-relative local decomposition, world ring/scale gizmo previews, one transform_selection undo, regression tests; 756 tests green, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 27, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794100852.7252152,
-      "timestamp_str": "2026-11-08 04:20:52",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-group-transform-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-group-transform-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794100853.0649421,
-      "timestamp_str": "2026-11-08 04:20:53",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-group-transform-v1",
       "phase": "planning",
@@ -264,6 +233,45 @@
       "status": "completed",
       "timestamp": 1794103474.6248646,
       "timestamp_str": "2026-11-08 05:04:34",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-history-navigation-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan named editor transaction history with multi-step undo/redo and AI-readable stack labels",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794103664.894564,
+      "timestamp_str": "2026-11-08 05:07:44",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "Undo/redo only moves one step and the editor exposes only stack depths, so an AI client cannot see or roll back a named sequence of authoring actions.",
+        "benefits": "History entries carry action labels, undo/redo accept a 1..100 step count, /api/editor exposes newest-first undo and redo labels, and the console shows the stacks with a step count.",
+        "risks": "contract: editor schema 31 and undo/redo payload shape; dependency: none; concurrency: editor lock unchanged; state: label ordering, bounds, selection restoration, batch single entry, redo invalidation.",
+        "mitigation": "Keep snapshots, wrap each entry with a label, validate steps, preserve redo labels while looping, update exact history assertions, and add multi-step/label/batch regressions."
+      },
+      "plan_digest": "28bc9511071b8fd9b7d12bf4d4dd2ebfe06437612a71c0daf89e59ef028d6fa2"
+    },
+    {
+      "task_id": "keystone-history-navigation-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Named transaction history implemented: labeled EditorHistory entries, newest-first undo/redo stack labels, multi-step undo/redo (1-100), redo preservation, action/batch labels, history steps UI and readout, schema 31; 761 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 31, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794104396.5185542,
+      "timestamp_str": "2026-11-08 05:19:56",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-history-navigation-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-history-navigation-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794104405.1423872,
+      "timestamp_str": "2026-11-08 05:20:05",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

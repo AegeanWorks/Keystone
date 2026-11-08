@@ -136,8 +136,8 @@ EDITOR_EXAMPLES = {
     },
     "delete_scene": {"action": "delete_scene", "name": "level"},
     "restore_scene": {"action": "restore_scene", "trash": "level.deadbeef.kscene"},
-    "undo": {"action": "undo"},
-    "redo": {"action": "redo"},
+    "undo": {"action": "undo", "steps": 1},
+    "redo": {"action": "redo", "steps": 1},
 }
 
 EDITOR_SCHEMA = {
@@ -190,7 +190,7 @@ EDITOR_SCHEMA = {
         "component_schema": ["fields"],
         "component_field": ["name", "type", "required", "default"],
         "reparent_node": ["id", "parent"],
-        "history": ["undo", "redo", "limit"],
+        "history": ["undo", "redo", "limit", "undo_stack", "redo_stack"],
         "scene": ["name", "node_count", "source", "error"],
     },
     "notes": [
@@ -224,6 +224,7 @@ EDITOR_SCHEMA = {
         "schema 28 adds shared set_selection_properties/set_selection_transform actions and selection_summary mixed/shared fields",
         "schema 29 accepts scalar or three-axis group_scale for centroid group scaling",
         "schema 30 adds source camera/environment and container-transform scene group metadata plus save_scene_group save-as",
+        "schema 31 adds named undo/redo history entries, newest-first undo_stack/redo_stack labels and multi-step undo/redo",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

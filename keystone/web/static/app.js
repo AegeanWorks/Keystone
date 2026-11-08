@@ -32,6 +32,8 @@ const elements = {
   nodeProperties: document.getElementById("node-properties"),
   editorUndo: document.getElementById("editor-undo"),
   editorRedo: document.getElementById("editor-redo"),
+  historySteps: document.getElementById("history-steps"),
+  historyState: document.getElementById("history-state"),
   sceneName: document.getElementById("scene-name"),
   sceneNames: document.getElementById("scene-names"),
   sceneNewName: document.getElementById("scene-new-name"),
@@ -559,6 +561,18 @@ function fillTransform(selection) {
   elements.scale.value = selection.transform.scale.join(", ");
 }
 
+function renderHistory(history) {
+  const undoLabels = (history.undo_stack || []).slice(0, 4);
+  const redoLabels = (history.redo_stack || []).slice(0, 4);
+  const undo = undoLabels.length
+    ? `Undo: ${undoLabels.join(" \u2190 ")}`
+    : "Undo: none";
+  const redo = redoLabels.length
+    ? `Redo: ${redoLabels.join(" \u2192 ")}`
+    : "Redo: none";
+  elements.historyState.textContent = `${undo} \u00b7 ${redo}`;
+}
+
 function showEditor(editor) {
   editorState = editor;
   if (viewer) {
@@ -586,7 +600,13 @@ function showEditor(editor) {
   updateAssetInfo();
   fillComponentData(editor.selection);
   renderComponentFields(editor, editor.selection);
-  const history = editor.history || { undo: 0, redo: 0 };
+  const history = editor.history || {
+    undo: 0,
+    redo: 0,
+    undo_stack: [],
+    redo_stack: [],
+  };
+  renderHistory(history);
   const play = editor.play || { active: false, frames: 0 };
   const lifecycle = play.lifecycle || { started: 0 };
   if (viewer) {
@@ -1225,13 +1245,29 @@ async function reparentNode() {
   await refreshScene(false);
 }
 
+function historyStepCount() {
+  const steps = Number.parseInt(elements.historySteps.value, 10);
+  if (!Number.isInteger(steps) || steps < 1 || steps > 100) {
+    throw new Error("History steps must be an integer between 1 and 100.");
+  }
+  return steps;
+}
+
 async function undoEditor() {
-  await editorAction({ action: "undo" }, "undoing editor action");
+  const steps = historyStepCount();
+  await editorAction(
+    { action: "undo", steps },
+    `undoing ${steps} editor action${steps === 1 ? "" : "s"}`,
+  );
   await refreshScene(false);
 }
 
 async function redoEditor() {
-  await editorAction({ action: "redo" }, "redoing editor action");
+  const steps = historyStepCount();
+  await editorAction(
+    { action: "redo", steps },
+    `redoing ${steps} editor action${steps === 1 ? "" : "s"}`,
+  );
   await refreshScene(false);
 }
 

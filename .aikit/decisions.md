@@ -1072,3 +1072,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Marquee selection ignored hidden and meshless nodes and dropped AABBs whose corners crossed the camera near plane.
 - **Decision**: Keep click-picking on visible mesh bounds, but build separate box-selection bounds for every mesh node regardless of visibility and world-position proxies for meshless/hidden nodes. Clip each world AABB's six faces against the camera near plane in view space, project the clipped polygon vertices, and marquee-test the resulting screen AABB; include the node if the camera lies inside its bounds. Proxies use an 8px screen tolerance. No API or schema change.
 - **Consequences**: 760 tests green; hidden/meshless nodes and near-plane-crossing bounds are selectable, with static viewer coverage. Proxies can produce false positives for coincident empty nodes, click-picking remains visible-mesh-only, and box selection intentionally has no occlusion test.
+
+### ADR-131: Named multi-step editor transaction history
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Undo/redo moved one step at a time and `/api/editor` exposed only stack depths, so an AI client could not see which authoring actions were undoable or roll back a named sequence in one request.
+- **Decision**: Store a label with every `EditorHistory` entry. `apply(..., label=...)` records the action plus its `id`/`name` target, and atomic batches record one `batch N actions` entry. `undo` and `redo` accept a 1-100 `steps` count, return the number applied, preserve the remaining redo entries during multi-redo, and `describe()` exposes counts, the limit and newest-first `undo_stack`/`redo_stack` labels. The server validates step counts, derives labels from the action payload, and bumps the editor schema to 31. The console adds a History steps input and an undo/redo label readout.
+- **Consequences**: 761 tests green; multi-step undo/redo, newest-first labels, batch labels, redo preservation and invalid-step rejection are covered. History labels are in-memory only (loading a scene or starting play clears them), and selection changes are intentionally not history entries.

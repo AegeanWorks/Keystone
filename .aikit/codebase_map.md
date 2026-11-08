@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `135`
-- **Total Classes**: `215`
-- **Total Top-Level Functions**: `360`
-- **Total Class Methods**: `1328`
-- **Total Source Lines**: `31115`
+- **Total Classes**: `216`
+- **Total Top-Level Functions**: `362`
+- **Total Class Methods**: `1331`
+- **Total Source Lines**: `31261`
 
 ---
 
@@ -1535,17 +1535,19 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `2190` lines (`78054` bytes)
+**Size**: `2227` lines (`79393` bytes)
 
 **Classes:**
-- `class EditorHistory` - *Bounded in-memory undo/redo for scene and environment edits.*
+- `class _HistoryEntry`
+- `class EditorHistory` - *Bounded, named in-memory undo/redo for scene and environment edits.*
   - Method `.__init__(limit)`
   - Method `.describe()`
-  - Method `.apply(scene, operation)` - *Run one scene mutation and push its pre-edit snapshot.*
-  - Method `.undo(scene)`
-  - Method `.redo(scene)`
+  - Method `.apply(scene, operation, label)` - *Run one scene mutation and push its labeled pre-edit snapshot.*
+  - Method `.undo(scene, steps)` - *Restore up to `steps` earlier states and return how many were undone.*
+  - Method `.redo(scene, steps)` - *Restore up to `steps` redone states and return how many were redone.*
   - Method `.clear()`
-  - Method `._push(snapshot)`
+  - Method `._push(entry)`
+  - Method `._append_undo(entry)`
 
 **Functions:**
 - `def _finite_array(value, length, label)`
@@ -1573,6 +1575,8 @@
 - `def _restore_nodes(scene, snapshot)`
 - `def _scene_snapshot(scene)`
 - `def _restore_scene_state(scene, snapshot)`
+- `def _history_label(label)`
+- `def _history_steps(steps)`
 - `def _component_documents(node)`
 - `def node_document(node, selected_id, registry, selected_ids)`
 - `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, component_schema_documents, play_state, diff, trash, selected_ids)`
@@ -1646,14 +1650,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `250` lines (`12042` bytes)
+**Size**: `251` lines (`12220` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1255` lines (`55017` bytes)
+**Size**: `1284` lines (`56304` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1673,6 +1677,7 @@
   - Method `._registry_locked()`
   - Method `._parent_locked(scene, value)`
   - Method `._prefab_entries_locked()`
+  - Method `._history_label_for(action, payload)`
   - Method `._apply_history(scene, operation)`
   - Method `._batch_locked(scene, payload)`
   - Method `._ensure_prefab_locked(name)`
@@ -3126,7 +3131,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `2416` lines (`101233` bytes)
+**Size**: `2495` lines (`104834` bytes)
 
 **Classes:**
 - `class Health`
@@ -3158,6 +3163,7 @@
   - Method `.test_simulate_endpoint_returns_a_deterministic_result()`
   - Method `.test_editor_hierarchy_selection_and_transform()`
   - Method `.test_editor_node_authoring_and_undo_redo()`
+  - Method `.test_editor_named_history_and_multi_step_undo()`
   - Method `.test_editor_asset_metadata()`
   - Method `.test_editor_asset_inventory_and_assignment()`
   - Method `.test_editor_prefab_capture_and_insert()`

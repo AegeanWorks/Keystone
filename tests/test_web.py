@@ -212,7 +212,7 @@ class WebServerTest(unittest.TestCase):
         self.assertEqual(editor["schema"], EDITOR_SCHEMA_VERSION)
         self.assertIsNone(editor["selection"])
         self.assertIn("select", editor["actions"])
-        self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
+        self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50, "undo_stack": [], "redo_stack": []})
         cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
         self.assertEqual(cube["mesh"], "mesh.cube")
         self.assertEqual(cube["material"], "material.cube.0")
@@ -347,6 +347,80 @@ class WebServerTest(unittest.TestCase):
         _, _, editor = self._json("/api/editor")
         cube_now = next(node for node in editor["nodes"] if node["id"] == cube["id"])
         self.assertEqual(cube_now["parent_id"], "root")
+
+    def test_editor_named_history_and_multi_step_undo(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        cube_id = cube["id"]
+        session.editor_action(
+            {"action": "transform", "id": cube_id, "position": [1.0, 0.0, 0.0]}
+        )
+        session.editor_action(
+            {"action": "set_node", "id": cube_id, "name": "hero"}
+        )
+        created = session.editor_action(
+            {"action": "create_node", "name": "marker", "position": [2.0, 0.0, 0.0]}
+        )
+        history = created["history"]
+        self.assertEqual(history["undo"], 3)
+        self.assertEqual(
+            history["undo_stack"],
+            [
+                "create_node marker",
+                f"set_node {cube_id}",
+                f"transform {cube_id}",
+            ],
+        )
+        self.assertEqual(history["redo_stack"], [])
+
+        undone = session.editor_action({"action": "undo", "steps": 2})
+        self.assertEqual(undone["history"]["undo"], 1)
+        self.assertEqual(undone["history"]["undo_stack"], [f"transform {cube_id}"])
+        self.assertEqual(
+            undone["history"]["redo_stack"],
+            [f"set_node {cube_id}", "create_node marker"],
+        )
+        nodes = {node["id"]: node for node in undone["nodes"]}
+        self.assertEqual(nodes[cube_id]["name"], "cube-0")
+        self.assertEqual(nodes[cube_id]["transform"]["position"], [1.0, 0.0, 0.0])
+        self.assertNotIn("marker", {node["name"] for node in undone["nodes"]})
+
+        redone = session.editor_action({"action": "redo"})
+        self.assertEqual(redone["history"]["undo"], 2)
+        self.assertEqual(redone["history"]["redo"], 1)
+        self.assertEqual(redone["history"]["redo_stack"], ["create_node marker"])
+        replayed_cube = next(
+            node for node in redone["nodes"] if node["id"] == cube_id
+        )
+        self.assertEqual(replayed_cube["name"], "hero")
+        redone = session.editor_action({"action": "redo", "steps": 1})
+        self.assertEqual(redone["history"]["redo"], 0)
+        self.assertIn("marker", {node["name"] for node in redone["nodes"]})
+
+        rewound = session.editor_action({"action": "undo", "steps": 5})
+        self.assertEqual(rewound["history"]["undo"], 0)
+        self.assertEqual(rewound["history"]["redo"], 3)
+        replayed = session.editor_action({"action": "redo", "steps": 5})
+        self.assertEqual(replayed["history"]["undo"], 3)
+        self.assertEqual(replayed["history"]["redo"], 0)
+
+        for steps in (0, 101, True, "2"):
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action({"action": "undo", "steps": steps})
+            self.assertEqual(caught.exception.status, 400)
+
+        batched = session.editor_action(
+            {
+                "action": "batch",
+                "actions": [
+                    {"action": "create_node", "name": "batch-one"},
+                    {"action": "create_node", "name": "batch-two"},
+                ],
+            }
+        )
+        self.assertEqual(batched["history"]["undo"], 4)
+        self.assertEqual(batched["history"]["undo_stack"][0], "batch 2 actions")
 
     def test_editor_asset_metadata(self):
         session = GameSession(CubeDemo())
@@ -1247,7 +1321,7 @@ class WebServerTest(unittest.TestCase):
             )
             self.assertEqual(restored["transform"]["position"], [4.0, 5.0, 6.0])
             self.assertIsNone(editor["selection"])
-            self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50})
+            self.assertEqual(editor["history"], {"undo": 0, "redo": 0, "limit": 50, "undo_stack": [], "redo_stack": []})
 
             with self.assertRaises(KeyError):
                 GameSession(CubeDemo(), scene_dir=scene_dir, initial_scene="missing")
@@ -1284,7 +1358,7 @@ class WebServerTest(unittest.TestCase):
             )
             loaded = session.editor_action({"action": "load_scene", "name": "level"})
             self.assertIsNone(loaded["selection"])
-            self.assertEqual(loaded["history"], {"undo": 0, "redo": 0, "limit": 50})
+            self.assertEqual(loaded["history"], {"undo": 0, "redo": 0, "limit": 50, "undo_stack": [], "redo_stack": []})
             restored = next(node for node in loaded["nodes"] if node["id"] == cube["id"])
             self.assertEqual(restored["transform"]["position"], [1.0, 2.0, 3.0])
 
@@ -1982,7 +2056,7 @@ class WebServerTest(unittest.TestCase):
         self.assertFalse(stopped["play"]["active"])
         restored = next(node for node in stopped["nodes"] if node["id"] == cube["id"])
         self.assertEqual(restored["transform"]["rotation"], original)
-        self.assertEqual(stopped["history"], {"undo": 0, "redo": 0, "limit": 50})
+        self.assertEqual(stopped["history"], {"undo": 0, "redo": 0, "limit": 50, "undo_stack": [], "redo_stack": []})
         with self.assertRaises(WebProblem) as caught:
             session.editor_action({"action": "play_step", "frames": 1})
         self.assertEqual(caught.exception.status, 400)
@@ -2142,6 +2216,8 @@ class WebServerTest(unittest.TestCase):
             "node-properties",
             "editor-undo",
             "editor-redo",
+            "history-steps",
+            "history-state",
             "scene-name",
             "scene-names",
             "scene-new-name",
@@ -2210,6 +2286,9 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("toggle_selection_visible", script)
         self.assertIn("delete_selection", script)
         self.assertIn("selectionToggleVisible", script)
+        self.assertIn("historyStepCount", script)
+        self.assertIn("undo_stack", script)
+        self.assertIn("redo_stack", script)
         self.assertIn("applyGizmoSelectionTransform", script)
         self.assertIn("applyGizmoSelectionRotation", script)
         self.assertIn("applyGizmoSelectionScale", script)

@@ -12,7 +12,7 @@ import copy
 import math
 from collections.abc import Callable, Mapping
 from dataclasses import MISSING, fields, is_dataclass
-from typing import TypeVar
+from typing import NamedTuple, TypeVar
 
 from keystone.camera import MAX_PITCH
 from keystone.component_codec import (
@@ -707,55 +707,92 @@ def _restore_scene_state(scene: Scene, snapshot: dict[str, object]) -> None:
     scene.fog_density = snapshot["fog_density"]  # type: ignore[assignment]
 
 
+class _HistoryEntry(NamedTuple):
+    label: str
+    snapshot: dict[str, object]
+
+
 class EditorHistory:
-    """Bounded in-memory undo/redo for scene and environment edits."""
+    """Bounded, named in-memory undo/redo for scene and environment edits."""
 
     def __init__(self, limit: int = 50) -> None:
         if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
             raise ValueError("history limit must be a positive integer")
         self._limit = limit
-        self._undo: list[dict[str, object]] = []
-        self._redo: list[dict[str, object]] = []
+        self._undo: list[_HistoryEntry] = []
+        self._redo: list[_HistoryEntry] = []
 
-    def describe(self) -> dict[str, int]:
-        return {"undo": len(self._undo), "redo": len(self._redo), "limit": self._limit}
+    def describe(self) -> dict[str, object]:
+        return {
+            "undo": len(self._undo),
+            "redo": len(self._redo),
+            "limit": self._limit,
+            "undo_stack": [entry.label for entry in reversed(self._undo)],
+            "redo_stack": [entry.label for entry in reversed(self._redo)],
+        }
 
-    def apply(self, scene: Scene, operation: Callable[[], T]) -> T:
-        """Run one scene mutation and push its pre-edit snapshot."""
+    def apply(
+        self,
+        scene: Scene,
+        operation: Callable[[], T],
+        label: str = "edit",
+    ) -> T:
+        """Run one scene mutation and push its labeled pre-edit snapshot."""
         before = _scene_snapshot(scene)
         try:
             result = operation()
         except Exception:
             _restore_scene_state(scene, before)
             raise
-        self._push(before)
+        self._push(_HistoryEntry(_history_label(label), before))
         return result
 
-    def undo(self, scene: Scene) -> bool:
-        if not self._undo:
-            return False
+    def undo(self, scene: Scene, steps: int = 1) -> int:
+        """Restore up to `steps` earlier states and return how many were undone."""
+        count = min(_history_steps(steps), len(self._undo))
         current = _scene_snapshot(scene)
-        _restore_scene_state(scene, self._undo.pop())
-        self._redo.append(current)
-        return True
+        for _ in range(count):
+            entry = self._undo.pop()
+            self._redo.append(_HistoryEntry(entry.label, current))
+            _restore_scene_state(scene, entry.snapshot)
+            current = entry.snapshot
+        return count
 
-    def redo(self, scene: Scene) -> bool:
-        if not self._redo:
-            return False
+    def redo(self, scene: Scene, steps: int = 1) -> int:
+        """Restore up to `steps` redone states and return how many were redone."""
+        count = min(_history_steps(steps), len(self._redo))
         current = _scene_snapshot(scene)
-        _restore_scene_state(scene, self._redo.pop())
-        self._push(current)
-        return True
+        for _ in range(count):
+            entry = self._redo.pop()
+            self._append_undo(_HistoryEntry(entry.label, current))
+            _restore_scene_state(scene, entry.snapshot)
+            current = entry.snapshot
+        return count
 
     def clear(self) -> None:
         self._undo.clear()
         self._redo.clear()
 
-    def _push(self, snapshot: dict[str, object]) -> None:
-        self._undo.append(snapshot)
+    def _push(self, entry: _HistoryEntry) -> None:
+        self._append_undo(entry)
+        self._redo.clear()
+
+    def _append_undo(self, entry: _HistoryEntry) -> None:
+        self._undo.append(entry)
         if len(self._undo) > self._limit:
             self._undo.pop(0)
-        self._redo.clear()
+
+
+def _history_label(label: object) -> str:
+    if not isinstance(label, str) or not label.strip():
+        return "edit"
+    return label.strip()[:120]
+
+
+def _history_steps(steps: object) -> int:
+    if isinstance(steps, bool) or not isinstance(steps, int) or steps < 1:
+        raise ValueError("history steps must be a positive integer")
+    return steps
 
 
 def _component_documents(node: Node) -> list[dict[str, object]]:
