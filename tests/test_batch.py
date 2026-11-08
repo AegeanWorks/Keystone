@@ -15,6 +15,21 @@ from keystone.web.server import create_server
 
 
 class BatchTest(unittest.TestCase):
+    def test_plan_metrics_name_what_they_count(self):
+        """`draw_calls` in a plan is a node count, so it must say so."""
+        scene = Scene()
+        mesh = cube(1.0)
+        material = Material()
+        for index in range(4):
+            scene.add(Node(f"box-{index}", id=f"box-{index}", mesh=mesh, material=material))
+        plan = plan_batches(scene)
+        self.assertEqual(plan["node_draws"], 4)
+        self.assertEqual(plan["node_draws"], plan["draw_calls"])
+        self.assertEqual(plan["groups"], 1)
+        self.assertEqual(plan["instanced_calls"], 1)
+        # Renderer-issued draw calls are a different fact and are not claimed here.
+        self.assertNotIn("renderer_draw_calls", plan)
+
     def test_shared_meshes_batch_into_few_groups(self):
         scene = Scene()
         mesh = cube(1.0)

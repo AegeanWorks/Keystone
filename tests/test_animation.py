@@ -75,6 +75,58 @@ class ClipControllerTest(unittest.TestCase):
         self.assertEqual(restored.name, "bob")
         self.assertAlmostEqual(restored.duration(), 1.0)
 
+    def test_apply_pose_mask_keeps_simulation_owned_channels(self):
+        """A game that simulates position must be able to animate rotation only."""
+        scene = Scene()
+        node = scene.add(Node("enemy", id="enemy"))
+        simulated = Vec3(5.0, 5.0, 5.0)
+        node.transform = Transform(
+            position=simulated,
+            rotation=Quat(),
+            scale=Vec3(2.0, 2.0, 2.0),
+        )
+
+        pose = {
+            "enemy": Transform(
+                position=Vec3(0.0, 0.0, 0.0),
+                rotation=Quat(0.0, 0.0, 0.0, 1.0),
+                scale=Vec3(1.0, 1.0, 1.0),
+            )
+        }
+
+        # Default behaviour is unchanged: the whole transform is written.
+        self.assertEqual(apply_pose(scene, pose), ["enemy"])
+        self.assertEqual(node.transform, pose["enemy"])
+
+        # A mask keeps the channels the simulation owns.
+        node.transform = Transform(
+            position=simulated,
+            rotation=Quat(),
+            scale=Vec3(2.0, 2.0, 2.0),
+        )
+        apply_pose(scene, pose, mask={"rotation"})
+        self.assertEqual(node.transform.position, simulated)
+        self.assertEqual(node.transform.scale, Vec3(2.0, 2.0, 2.0))
+        self.assertEqual(node.transform.rotation, pose["enemy"].rotation)
+
+        # Multiple channels.
+        node.transform = Transform(
+            position=simulated,
+            rotation=Quat(),
+            scale=Vec3(2.0, 2.0, 2.0),
+        )
+        apply_pose(scene, pose, mask={"rotation", "scale"})
+        self.assertEqual(node.transform.position, simulated)
+        self.assertEqual(node.transform.scale, Vec3(1.0, 1.0, 1.0))
+
+    def test_apply_pose_mask_rejects_bad_input(self):
+        scene = Scene()
+        scene.add(Node("cube", id="cube"))
+        pose = {"cube": Transform()}
+        for bad in ({"position", "colour"}, {"pos"}, "rotation", 5):
+            with self.subTest(mask=bad), self.assertRaises((ValueError, TypeError)):
+                apply_pose(scene, pose, mask=bad)
+
     def test_controller_loops_and_applies(self):
         controller = AnimationController()
         controller.add(self._clip())

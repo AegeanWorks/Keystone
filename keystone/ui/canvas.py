@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from keystone.ui.font import glyph, line_height, text_width
+from keystone.ui.font import glyph, line_height, text_width, truncate_text
 
 Color = tuple[float, float, float, float]
 Quad = tuple[float, float, float, float, Color]
@@ -92,6 +92,44 @@ class Canvas:
                         color,
                     )
             cursor += text_width(character, scale) + scale
+
+    def text_width(self, text: str, scale: int = 2) -> int:
+        """Pixel width of a text run at this canvas scale (shared font metric)."""
+        return text_width(text, scale)
+
+    def line_height(self, scale: int = 2) -> int:
+        """Pixel height of one text line at this canvas scale."""
+        return line_height(scale)
+
+    def fit_text(self, text: str, width: float, scale: int = 2) -> str:
+        """Trim text so it fits ``width`` pixels at this scale.
+
+        Widgets and HUD rows use this instead of guessing: a label that cannot
+        fit is cut at a glyph boundary rather than clipped mid-pixel.
+        """
+        return truncate_text(text, int(width), scale)
+
+    def text_right(
+        self,
+        right: float,
+        y: float,
+        text: str,
+        color: Color,
+        scale: int = 2,
+    ) -> None:
+        """Append text whose right edge sits at ``right``."""
+        self.text(right - text_width(text, scale), y, text, color, scale)
+
+    def text_center(
+        self,
+        center: float,
+        y: float,
+        text: str,
+        color: Color,
+        scale: int = 2,
+    ) -> None:
+        """Append text horizontally centred on ``center``."""
+        self.text(center - text_width(text, scale) / 2, y, text, color, scale)
 
     def add_button(
         self,

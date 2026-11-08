@@ -60,3 +60,15 @@ changes that do not bump the release number yet.
   single-sourced through `keystone/_version.py`.
 - `--frames` rejects 0 instead of silently running 1 or 120 frames.
 - Component documents reject unknown keys and unknown dataclass fields.
+- `apply_pose(scene, pose, mask={...})` writes only the named channels, so a
+  game can animate rotation/scale while its simulation owns position.
+- `PerspectiveCamera.up()` and `basis()` expose the camera frame for viewmodel
+  and billboard work instead of hand-derived cross products.
+- `plan_batches` reports `node_draws` and `instanced_calls` beside the
+  compatibility `draw_calls`, so a plan metric states what it counts.
+- `Canvas` measures and aligns text: `text_width`, `line_height`, `fit_text`,
+  `text_right` and `text_center`, matching the shared font metrics.
+- `TextureData.pattern("cell"|"grid"|"panel"|"rivets"|"noise")` builds
+  deterministic procedural textures with a seed.
+- `keystone.testing.scene_fingerprint` and `assert_scene_budget` let a testbed
+  pin content and coarse budgets instead of exact node counts.

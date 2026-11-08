@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `151`
-- **Total Classes**: `240`
-- **Total Top-Level Functions**: `426`
-- **Total Class Methods**: `1558`
-- **Total Source Lines**: `42098`
+- **Total Classes**: `241`
+- **Total Top-Level Functions**: `438`
+- **Total Class Methods**: `1585`
+- **Total Source Lines**: `42656`
 
 ---
 
@@ -95,7 +95,7 @@
 ### [`keystone/animation.py`](keystone/animation.py)
 > *Deterministic, game-agnostic animation: keyframe clips, sampling and control.*
 
-**Size**: `459` lines (`21111` bytes)
+**Size**: `513` lines (`22885` bytes)
 
 **Classes:**
 - `class Track` - *One keyframed channel: sorted times with Vec3 or Quat values.*
@@ -126,7 +126,8 @@
 **Functions:**
 - `def _check_times(times)`
 - `def blend_poses(first, second, factor)` - *Blend two sampled poses; factor 0 returns first, 1 returns second.*
-- `def apply_pose(scene, pose)` - *Write sampled Transforms onto nodes by id or name; return updated ids.*
+- `def apply_pose(scene, pose, mask)` - *Write sampled Transforms onto nodes by id or name; return updated ids.*
+- `def _pose_channels(mask)` - *Normalize a channel mask, rejecting names that are not pose channels.*
 - `def animation_report(controller)`
 
 ---
@@ -340,7 +341,7 @@
 ### [`keystone/batch.py`](keystone/batch.py)
 > *Static batch planner: group draw nodes to cut draw calls without new deps.*
 
-**Size**: `155` lines (`6602` bytes)
+**Size**: `162` lines (`7047` bytes)
 
 **Functions:**
 - `def _skinned(mesh)` - *Whether a mesh deforms at render time and must never bake or merge.*
@@ -375,13 +376,15 @@
 ### [`keystone/camera.py`](keystone/camera.py)
 > *Perspective camera with yaw/pitch orientation and fly-style movement.*
 
-**Size**: `65` lines (`2153` bytes)
+**Size**: `80` lines (`2815` bytes)
 
 **Classes:**
 - `class PerspectiveCamera` - *A right-handed camera looking down -Z when yaw and pitch are zero.*
   - Method `.__post_init__()`
   - Method `.forward()`
   - Method `.right()`
+  - Method `.up()` - *The camera-local up vector, perpendicular to forward and right.*
+  - Method `.basis()` - *Return ``(forward, right, up)`` as one right-handed camera frame.*
   - Method `.view_matrix()`
   - Method `.projection_matrix(aspect)`
   - Method `.view_projection(aspect)`
@@ -1566,19 +1569,23 @@
 ### [`keystone/testing.py`](keystone/testing.py)
 > *Deterministic scenario helpers for AI and CI tests.*
 
-**Size**: `75` lines (`2287` bytes)
+**Size**: `176` lines (`5792` bytes)
 
 **Functions:**
 - `def run_script(game, actions, frames, step, trace, scene_loader)`
 - `def verify_determinism(factory, actions, frames, step, scene_loader)` - *Run one scenario twice from a factory and compare final hashes.*
 - `def assert_deterministic(factory, actions, frames, step, scene_loader)`
+- `def scene_fingerprint(scene)` - *Return a stable digest of a scene's structure for snapshot assertions.*
+- `def assert_scene_budget(scene, max_nodes, max_triangles, max_draw_calls)` - *Assert a scene stays within coarse budgets and return what was measured.*
+- `def _vec(value)`
+- `def _quat(value)`
 
 ---
 
 ### [`keystone/texture.py`](keystone/texture.py)
 > *Immutable RGBA texture data and dependency-free texture sources.*
 
-**Size**: `89` lines (`3475` bytes)
+**Size**: `214` lines (`7897` bytes)
 
 **Classes:**
 - `class TextureData` - *Top-down RGBA8 pixels with a stable name for reports and debugging.*
@@ -1586,7 +1593,17 @@
   - Method `.sha256()` - *Return a stable digest of the shape plus the pixel payload.*
   - Method `.from_png(path, name)` - *Load an 8-bit RGBA non-interlaced PNG through the dependency-free reader.*
   - Method `.from_png_bytes(data, name)` - *Load an 8-bit RGBA non-interlaced PNG from bytes.*
+  - Method `.pattern(preset, size, dark, light, seed, name)` - *Build a deterministic procedural texture without an image file.*
   - Method `.checker(size, dark, light, cell, name)` - *Build a deterministic RGBA checker texture without an image file.*
+
+**Functions:**
+- `def _rgba(color, label)` - *Clamp three linear floats to one opaque RGBA8 tuple.*
+- `def _blend(first, second, amount)` - *Mix two opaque RGBA8 tuples by ``amount`` (0 = first, 1 = second).*
+- `def _cell(size, base, accent, seed)` - *One flat color for every pixel.*
+- `def _grid(size, base, accent, seed)` - *Thin lattice of accent lines every eighth of the texture.*
+- `def _panel(size, base, accent, seed)` - *Recessed plate: brighter bevel near the edges, darker centre.*
+- `def _rivets(size, base, accent, seed)` - *A panel with four corner studs.*
+- `def _noise(size, base, accent, seed)` - *Seeded speckle; the same seed always yields the same pixels.*
 
 ---
 
@@ -1616,7 +1633,7 @@
 ### [`keystone/ui/canvas.py`](keystone/ui/canvas.py)
 > *Screen-space 2D canvas built from clipped color quads and bitmap text.*
 
-**Size**: `124` lines (`4413` bytes)
+**Size**: `162` lines (`5704` bytes)
 
 **Classes:**
 - `class TextElement` - *One text draw call recorded for AI/UI reports.*
@@ -1627,6 +1644,11 @@
   - Method `._add(x, y, width, height, color)`
   - Method `.rect(x, y, width, height, color)` - *Append an axis-aligned filled rectangle, clipped to the canvas.*
   - Method `.text(x, y, text, color, scale)` - *Append bitmap text; lowercase is drawn as uppercase.*
+  - Method `.text_width(text, scale)` - *Pixel width of a text run at this canvas scale (shared font metric).*
+  - Method `.line_height(scale)` - *Pixel height of one text line at this canvas scale.*
+  - Method `.fit_text(text, width, scale)` - *Trim text so it fits ``width`` pixels at this scale.*
+  - Method `.text_right(right, y, text, color, scale)` - *Append text whose right edge sits at ``right``.*
+  - Method `.text_center(center, y, text, color, scale)` - *Append text horizontally centred on ``center``.*
   - Method `.add_button(x, y, width, height, label, action, selected, hovered)` - *Record button metadata; drawing stays with the widgets module.*
   - Method `.vertices()` - *Return interleaved x, y, r, g, b, a vertices for six triangles per quad.*
   - Method `.measured_height(scale)` - *Return the line height matching a text call at the same scale.*
@@ -2019,7 +2041,7 @@
 ### [`tests/test_animation.py`](tests/test_animation.py)
 > *Tests for deterministic animation clips, controllers and pose application.*
 
-**Size**: `303` lines (`12709` bytes)
+**Size**: `355` lines (`14716` bytes)
 
 **Classes:**
 - `class TrackTest`
@@ -2031,6 +2053,8 @@
 - `class ClipControllerTest`
   - Method `._clip()`
   - Method `.test_clip_sample_and_duration()`
+  - Method `.test_apply_pose_mask_keeps_simulation_owned_channels()` - *A game that simulates position must be able to animate rotation only.*
+  - Method `.test_apply_pose_mask_rejects_bad_input()`
   - Method `.test_controller_loops_and_applies()`
   - Method `.test_zero_time_event_fires_on_first_advance_only()`
   - Method `.test_crossfade_from_empty_clip_completes()`
@@ -2276,10 +2300,11 @@
 ### [`tests/test_batch.py`](tests/test_batch.py)
 > *Tests for the static batch planner and inspector endpoint.*
 
-**Size**: `79` lines (`3333` bytes)
+**Size**: `94` lines (`4047` bytes)
 
 **Classes:**
 - `class BatchTest`
+  - Method `.test_plan_metrics_name_what_they_count()` - *`draw_calls` in a plan is a node count, so it must say so.*
   - Method `.test_shared_meshes_batch_into_few_groups()`
   - Method `.test_cube_demo_plan_reports_savings()`
   - Method `.test_merge_savings_respect_exclude()`
@@ -3177,7 +3202,7 @@
 ### [`tests/test_scene.py`](tests/test_scene.py)
 > *Unit tests for the Keystone scene graph and perspective camera.*
 
-**Size**: `330` lines (`12587` bytes)
+**Size**: `360` lines (`13989` bytes)
 
 **Classes:**
 - `class Health`
@@ -3204,6 +3229,9 @@
   - Method `.test_component_access_and_removal()`
   - Method `.test_invalid_identity_fields_are_rejected()`
 - `class CameraTest`
+  - Method `.test_up_is_orthonormal_to_forward_and_right()`
+  - Method `.test_basis_is_a_right_handed_frame()`
+  - Method `.test_up_stays_level_when_pitch_is_zero()`
   - Method `.test_forward_yaw_zero_is_minus_z()`
   - Method `.test_forward_yaw_90_points_positive_x()`
   - Method `.test_view_puts_camera_origin_at_world_position()`
@@ -3457,9 +3485,16 @@
 ### [`tests/test_testing.py`](tests/test_testing.py)
 > *Tests for deterministic AI/CI scenario helpers.*
 
-**Size**: `49` lines (`1729` bytes)
+**Size**: `103` lines (`3682` bytes)
 
 **Classes:**
+- `class SceneBudgetTest`
+  - Method `._scene(count)`
+  - Method `.test_fingerprint_is_stable_and_name_independent()`
+  - Method `.test_fingerprint_changes_when_a_transform_changes()`
+  - Method `.test_budget_passes_under_the_limits()`
+  - Method `.test_budget_fails_over_the_limit_with_a_clear_message()`
+  - Method `.test_budget_rejects_bad_limits()`
 - `class TestingHelpersTest`
   - Method `.test_run_script_uses_action_count_by_default()`
   - Method `.test_verify_determinism_passes_for_the_sample()`
@@ -3472,10 +3507,13 @@
 ### [`tests/test_texture.py`](tests/test_texture.py)
 > *Tests for immutable texture data and texture sources.*
 
-**Size**: `66` lines (`2420` bytes)
+**Size**: `102` lines (`4006` bytes)
 
 **Classes:**
 - `class TextureDataTest`
+  - Method `.test_pattern_presets_are_deterministic_and_distinct()`
+  - Method `.test_pattern_seed_changes_noise_but_not_grid()`
+  - Method `.test_pattern_rejects_bad_input()`
   - Method `.test_checker_is_deterministic_and_has_expected_shape()`
   - Method `.test_png_round_trip_keeps_pixels()`
   - Method `.test_bad_texture_data_is_rejected()`
@@ -3501,7 +3539,7 @@
 ### [`tests/test_ui.py`](tests/test_ui.py)
 > *Tests for the dependency-free human UI primitives and overlay.*
 
-**Size**: `182` lines (`7379` bytes)
+**Size**: `213` lines (`8829` bytes)
 
 **Classes:**
 - `class FontTest`
@@ -3509,6 +3547,10 @@
   - Method `.test_lowercase_and_unknown_characters_are_supported()`
   - Method `.test_truncate_returns_maximal_prefix()`
 - `class CanvasTest`
+  - Method `.test_canvas_measures_text_through_the_shared_font()`
+  - Method `.test_text_right_aligns_to_the_given_edge()`
+  - Method `.test_text_center_centres_the_run()`
+  - Method `.test_fit_text_never_exceeds_the_requested_width()`
   - Method `.test_rect_is_clipped_to_canvas_bounds()`
   - Method `.test_text_records_labels_and_stays_inside_the_canvas()`
   - Method `.test_invalid_geometry_is_rejected()`

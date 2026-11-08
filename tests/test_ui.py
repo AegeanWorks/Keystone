@@ -36,6 +36,37 @@ class FontTest(unittest.TestCase):
 
 
 class CanvasTest(unittest.TestCase):
+    def test_canvas_measures_text_through_the_shared_font(self):
+        canvas = Canvas(960, 540)
+        self.assertEqual(canvas.text_width("AB", 2), text_width("AB", 2))
+        # Canvas.text defaults to scale 2, so its metric must match.
+        self.assertEqual(canvas.text_width("AB"), text_width("AB", 2))
+        self.assertEqual(canvas.line_height(2), line_height(2))
+
+    def test_text_right_aligns_to_the_given_edge(self):
+        canvas = Canvas(960, 540)
+        canvas.text_right(400, 10, "CULL 23 OFFSCREEN", (1.0, 1.0, 1.0, 1.0), 2)
+        label = canvas.text_elements[-1]
+        width = text_width("CULL 23 OFFSCREEN", 2)
+        self.assertAlmostEqual(label.x, 400 - width)
+        self.assertLessEqual(label.x + width, 400)
+
+    def test_text_center_centres_the_run(self):
+        canvas = Canvas(960, 540)
+        canvas.text_center(480, 10, "SCORE", (1.0, 1.0, 1.0, 1.0), 2)
+        label = canvas.text_elements[-1]
+        width = text_width("SCORE", 2)
+        self.assertAlmostEqual(label.x + width / 2, 480)
+
+    def test_fit_text_never_exceeds_the_requested_width(self):
+        canvas = Canvas(960, 540)
+        long_label = "CULL 23 OFFSCREEN"
+        fitted = canvas.fit_text(long_label, 60, 2)
+        self.assertLessEqual(canvas.text_width(fitted, 2), 60)
+        self.assertLess(len(fitted), len(long_label))
+        # Short text is returned unchanged.
+        self.assertEqual(canvas.fit_text("OK", 400, 2), "OK")
+
     def test_rect_is_clipped_to_canvas_bounds(self):
         canvas = Canvas(10, 8)
         canvas.rect(-4, -4, 20, 20, (1.0, 0.0, 0.0, 1.0))

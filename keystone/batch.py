@@ -62,9 +62,16 @@ def plan_batches(scene: Scene) -> dict:
     nodes_total = sum(entry["count"] for entry in batches)
     return {
         "schema": 1,
-        "groups": len(batches),
+        # `draw_calls` predates the honest names and counts visible mesh nodes,
+        # not renderer-issued calls; consumers pinned to it keep working.
+        # `node_draws` is the same fact under a name that says what it counts,
+        # `instanced_calls` is how many groups the renderer can issue as one
+        # instanced draw, and `groups` is the batch count.
         "draw_calls": nodes_total,
+        "node_draws": nodes_total,
+        "groups": len(batches),
         "batched_calls": len(batches),
+        "instanced_calls": len(batches),
         "saved_calls": max(0, nodes_total - len(batches)),
         "triangles": total_triangles,
         "batches": batches,

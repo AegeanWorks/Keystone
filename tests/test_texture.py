@@ -9,6 +9,42 @@ from keystone.texture import TextureData
 
 
 class TextureDataTest(unittest.TestCase):
+    def test_pattern_presets_are_deterministic_and_distinct(self):
+        for preset in ("grid", "panel", "rivets", "noise"):
+            with self.subTest(preset=preset):
+                first = TextureData.pattern(preset, size=32)
+                second = TextureData.pattern(preset, size=32)
+                self.assertEqual(first, second, f"{preset} is not deterministic")
+                self.assertEqual((first.width, first.height), (32, 32))
+                self.assertEqual(len(first.rgba), 32 * 32 * 4)
+                self.assertEqual(min(first.rgba[3::4]), 255)
+
+        digests = {
+            preset: TextureData.pattern(preset, size=32).sha256()
+            for preset in ("grid", "panel", "rivets", "noise")
+        }
+        self.assertEqual(
+            len(set(digests.values())), 4, f"presets collide: {digests}"
+        )
+
+    def test_pattern_seed_changes_noise_but_not_grid(self):
+        self.assertNotEqual(
+            TextureData.pattern("noise", size=16, seed=1).sha256(),
+            TextureData.pattern("noise", size=16, seed=2).sha256(),
+        )
+        self.assertEqual(
+            TextureData.pattern("grid", size=16, seed=1).sha256(),
+            TextureData.pattern("grid", size=16, seed=2).sha256(),
+        )
+
+    def test_pattern_rejects_bad_input(self):
+        with self.assertRaises(ValueError):
+            TextureData.pattern("sparkles")
+        with self.assertRaises(ValueError):
+            TextureData.pattern("grid", size=0)
+        with self.assertRaises(TypeError):
+            TextureData.pattern("grid", size=16, dark=(0.1, 0.2))
+
     def test_checker_is_deterministic_and_has_expected_shape(self):
         first = TextureData.checker(8, cell=4, name="grid")
         second = TextureData.checker(8, cell=4, name="grid")

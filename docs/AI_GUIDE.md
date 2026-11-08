@@ -205,10 +205,20 @@ from keystone.agents import AuditTrail, observe, parse_actions, summarize_report
 from keystone.analysis import compare_reports
 from keystone.input import ActionState, InputMap
 from keystone.samples import CubeDemo
-from keystone.testing import assert_deterministic, run_script
+from keystone.testing import (
+    assert_deterministic,
+    assert_scene_budget,
+    run_script,
+    scene_fingerprint,
+)
 
 result = run_script(CubeDemo(), [ActionState(forward=1.0)], frames=60)
 assert_deterministic(lambda: CubeDemo(), [ActionState(forward=1.0)], frames=60)
+
+# Pin scene content, or assert coarse budgets, instead of exact node counts.
+scene = CubeDemo().build_scene()
+fingerprint = scene_fingerprint(scene)         # 64-hex digest; content, not order
+assert_scene_budget(scene, max_nodes=50, max_triangles=5000)
 
 # Bot playtesting: seeded policies, transcript reports, fairness verdicts.
 from keystone.playtest import RandomPolicy, make_report, run_bot, validate_fairness
@@ -280,6 +290,11 @@ controller = AnimationController()
 controller.add(clip)
 controller.play("bob")
 apply_pose(CubeDemo().build_scene(), controller.advance(0.016))
+
+# Layer animation on a node whose position the simulation owns: the mask keeps
+# the channels you name and leaves every other channel untouched.
+scene = CubeDemo().build_scene()
+apply_pose(scene, controller.advance(0.016), mask={"rotation", "scale"})
 
 # Timed events, crossfade blending and file-based replay for audit trails.
 from keystone.animation import blend_poses

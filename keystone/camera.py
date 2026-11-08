@@ -36,6 +36,21 @@ class PerspectiveCamera:
     def right(self) -> Vec3:
         return self.forward().cross(Vec3.UP).normalized()
 
+    def up(self) -> Vec3:
+        """The camera-local up vector, perpendicular to forward and right.
+
+        Pitch tilts it with the camera, so it differs from the world up except
+        at zero pitch. Viewmodel and billboard code needs this rather than
+        ``Vec3.UP`` to stay aligned with the lens.
+        """
+        return self.right().cross(self.forward()).normalized()
+
+    def basis(self) -> tuple[Vec3, Vec3, Vec3]:
+        """Return ``(forward, right, up)`` as one right-handed camera frame."""
+        forward = self.forward()
+        right = forward.cross(Vec3.UP).normalized()
+        return forward, right, right.cross(forward).normalized()
+
     def view_matrix(self) -> Mat4:
         return Mat4.look_at(self.position, self.position + self.forward(), Vec3.UP)
 

@@ -188,6 +188,36 @@ class NodeIdentityTest(unittest.TestCase):
 
 
 class CameraTest(unittest.TestCase):
+    def test_up_is_orthonormal_to_forward_and_right(self):
+        camera = PerspectiveCamera(yaw=0.4, pitch=0.3)
+        forward = camera.forward()
+        right = camera.right()
+        up = camera.up()
+        for vector in (forward, right, up):
+            self.assertAlmostEqual(vector.length(), 1.0, places=6)
+        self.assertAlmostEqual(forward.dot(right), 0.0, places=6)
+        self.assertAlmostEqual(forward.dot(up), 0.0, places=6)
+        self.assertAlmostEqual(right.dot(up), 0.0, places=6)
+        # Right-handed with Y-up and forward down -Z: up x right == forward.
+        cross = up.cross(right)
+        self.assertAlmostEqual(cross.x, forward.x, places=6)
+        self.assertAlmostEqual(cross.y, forward.y, places=6)
+        self.assertAlmostEqual(cross.z, forward.z, places=6)
+
+    def test_basis_is_a_right_handed_frame(self):
+        camera = PerspectiveCamera(yaw=1.1, pitch=-0.2)
+        forward, right, up = camera.basis()
+        self.assertEqual(forward, camera.forward())
+        self.assertEqual(right, camera.right())
+        self.assertEqual(up, camera.up())
+        self.assertAlmostEqual(right.dot(up), 0.0, places=6)
+
+    def test_up_stays_level_when_pitch_is_zero(self):
+        up = PerspectiveCamera().up()
+        self.assertAlmostEqual(up.x, 0.0, places=6)
+        self.assertAlmostEqual(up.y, 1.0, places=6)
+        self.assertAlmostEqual(up.z, 0.0, places=6)
+
     def test_forward_yaw_zero_is_minus_z(self):
         forward = PerspectiveCamera().forward()
         self.assertAlmostEqual(forward.x, 0.0)

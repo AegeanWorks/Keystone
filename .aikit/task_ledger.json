@@ -1,28 +1,22 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-report-fixes-v1",
+    "task_id": "keystone-report-rest-v1",
     "last_phase": "in_progress",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1794174920.2090604,
+    "active_phase": 2,
+    "status": "in_progress",
+    "updated_at": 1794175448.0513654,
     "owner": "commandcode:keystone-console",
     "started_by": "commandcode:keystone-console",
     "continuations": [],
-    "completed_at": 1794174927.7745523
+    "impact_assessment": {
+      "why": "Every remaining claim reproduced: apply_pose zeroed a simulated position, the camera has no up/basis, two content-identical meshes produce 2 instancing groups, plan_batches hides instanced_calls while plan_instanced exposes it, Canvas cannot measure text although keystone.ui.font.text_width exists, TextureData has only checker/from_png, keystone.testing has no budget helper, and History has no production consumer.",
+      "benefits": "Animation can layer on simulation-owned nodes, viewmodel code stops re-deriving the camera basis, render metrics mean one thing each, HUD labels can be measured and clamped instead of clipping, procedural textures stop being hand-rolled per game, and testbeds can assert budgets instead of brittle exact counts.",
+      "risks": "contract: additive parameters and helpers only; dependency: none new; concurrency: none; state: no persisted format change.",
+      "mitigation": "Keep every default path byte-identical, prove each fix failing-first, verify pixels and the canonical simulate hash are unchanged, and run the full 6/6 gate."
+    }
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-blend-state-console-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[3/3] Project gate passes 6/6 (test, lint, mechanics, hygiene, guidelines, secrets) with the finished console blend-space panel; node --check clean; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794156784.81231,
-      "timestamp_str": "2026-11-08 19:53:04",
-      "agent": "commandcode:keystone-console"
-    },
     {
       "task_id": "keystone-blend-state-console-v1",
       "phase": "completed",
@@ -253,6 +247,24 @@
       "timestamp": 1794174927.7745538,
       "timestamp_str": "2026-11-09 00:55:27",
       "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-report-rest-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/6] Plan: verified all remaining report findings F3,F4,F5,F6,F8,F9,F10,F11,F12,F14 TRUE by execution; fix the six additive ones - F3 apply_pose channel mask, F4 camera up()/basis(), F6 honest batch metrics plus content-keyed grouping, F8 Canvas text measuring and a clamped label row, F9 deterministic texture patterns, F12 scene budget/fingerprint test helpers; defer F5 light list, F10 sprite nodes, F11 versioned store and F14 History removal as they need shader/schema work or break the public API",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794175448.0513654,
+      "timestamp_str": "2026-11-09 01:04:08",
+      "agent": "commandcode:keystone-console",
+      "impact_assessment": {
+        "why": "Every remaining claim reproduced: apply_pose zeroed a simulated position, the camera has no up/basis, two content-identical meshes produce 2 instancing groups, plan_batches hides instanced_calls while plan_instanced exposes it, Canvas cannot measure text although keystone.ui.font.text_width exists, TextureData has only checker/from_png, keystone.testing has no budget helper, and History has no production consumer.",
+        "benefits": "Animation can layer on simulation-owned nodes, viewmodel code stops re-deriving the camera basis, render metrics mean one thing each, HUD labels can be measured and clamped instead of clipping, procedural textures stop being hand-rolled per game, and testbeds can assert budgets instead of brittle exact counts.",
+        "risks": "contract: additive parameters and helpers only; dependency: none new; concurrency: none; state: no persisted format change.",
+        "mitigation": "Keep every default path byte-identical, prove each fix failing-first, verify pixels and the canonical simulate hash are unchanged, and run the full 6/6 gate."
+      },
+      "plan_digest": "c7fd0ea5892c3ecc6a9f93b68c17b219b1d466f0e7b5412e0758f8fc967d74b3"
     }
   ]
 }

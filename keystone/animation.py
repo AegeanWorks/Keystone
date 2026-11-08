@@ -421,10 +421,24 @@ def blend_poses(first: dict[str, Transform], second: dict[str, Transform], facto
     return pose
 
 
-def apply_pose(scene: Scene, pose: dict[str, Transform]) -> list[str]:
-    """Write sampled Transforms onto nodes by id or name; return updated ids."""
+POSE_CHANNELS = ("position", "rotation", "scale")
+
+
+def apply_pose(
+    scene: Scene,
+    pose: dict[str, Transform],
+    mask: object = None,
+) -> list[str]:
+    """Write sampled Transforms onto nodes by id or name; return updated ids.
+
+    ``mask`` restricts which channels are written. A game that simulates node
+    position can therefore animate only ``{"rotation", "scale"}`` without
+    clobbering its own movement. ``None`` (the default) writes the whole
+    transform, so existing callers are unaffected.
+    """
     if not isinstance(pose, dict):
         raise TypeError("pose must be a mapping of node ids to Transforms")
+    channels = _pose_channels(mask)
     index: dict[str, Node] = {}
     for node in scene.traverse():
         if node.id:
@@ -439,9 +453,49 @@ def apply_pose(scene: Scene, pose: dict[str, Transform]) -> list[str]:
         node = index.get(key)
         if node is None:
             continue
-        node.transform = transform
+        if channels is None:
+            node.transform = transform
+        else:
+            current = node.transform
+            node.transform = Transform(
+                position=(
+                    transform.position if "position" in channels
+                    else current.position
+                ),
+                rotation=(
+                    transform.rotation if "rotation" in channels
+                    else current.rotation
+                ),
+                scale=(
+                    transform.scale if "scale" in channels
+                    else current.scale
+                ),
+            )
         updated.add(node.id or node.name)
     return sorted(updated)
+
+
+def _pose_channels(mask: object) -> frozenset[str] | None:
+    """Normalize a channel mask, rejecting names that are not pose channels."""
+    if mask is None:
+        return None
+    if isinstance(mask, (str, bytes)) or not isinstance(
+        mask, (set, frozenset, list, tuple)
+    ):
+        raise TypeError("pose mask must be a set of channel names or None")
+    names = frozenset(mask)
+    unknown = sorted(
+        name for name in names if not isinstance(name, str)
+    )
+    if unknown:
+        raise TypeError("pose mask channel names must be strings")
+    surplus = sorted(names - set(POSE_CHANNELS))
+    if surplus:
+        raise ValueError(
+            f"pose mask has unknown channels: {surplus}; "
+            f"use {list(POSE_CHANNELS)}"
+        )
+    return names
 
 
 def animation_report(controller: AnimationController) -> dict:
