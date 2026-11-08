@@ -1200,3 +1200,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Materials are core PBR assets, but the editor could only assign materials created in game code; it could not author, save or reuse material assets.
 - **Decision**: Add `MaterialLibrary` over `.kmaterial` JSON documents with save/load/entries/register-all and texture-id resolution. Add `--material-dir`, default it to `DIR/materials`, and expose the inventory in `/api/editor`. Register saved materials as `material.<name>` after the game scene builds but before scene/prefab libraries load. Add `save_material` (writes and registers) and `assign_material` (applies or clears a node material under one undo entry). The console edits color, metallic, roughness, emissive, specular, shininess, checker and texture id and can save, assign or clear. Bump the editor schema to 39.
 - **Consequences**: 778 tests green; library round trips, texture resolution, registry registration, assignment/undo, cross-session reload, missing-library errors and missing-material errors are covered. Delete/restore and material graphs remain future work, saving is an asset write rather than scene undo, and material registration depends on the game exposing an AssetRegistry.
+
+### ADR-147: Scene-view pivot icons for meshless nodes
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Meshless nodes (empties, group containers and other scene markers) were selectable through box proxies but invisible in the Scene view, making them hard to find and author.
+- **Decision**: Draw a small amber three-axis pivot cross at every meshless node's world position using the existing gizmo line shader and the `boxProxies` positions. Selected pivots tint green, the icon scales with camera distance through `gizmoScale`, and the pass is skipped in Game view. No API or schema change.
+- **Consequences**: 778 tests green; static viewer coverage verifies the pivot geometry and render pass. Icons are scene-view presentation only, depth-tested against geometry, and do not replace click selection or box-proxy hit testing.

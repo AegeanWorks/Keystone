@@ -1,46 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-material-editor-v1",
+    "task_id": "keystone-pivot-icons-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794114015.1053104,
+    "updated_at": 1794114412.782329,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794114015.2894766
+    "completed_at": 1794114413.5854037
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-scene-settings-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan structured camera, environment and render-toggle controls beside the advanced scene JSON",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794108799.5729327,
-      "timestamp_str": "2026-11-08 06:33:19",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Camera and lighting authoring currently requires hand-editing a raw JSON textarea, which is slow and error-prone for people and AI clients.",
-        "benefits": "Camera position/yaw/pitch/fov, light direction/color/intensity, ambient, fog and render toggles become labeled controls that submit the existing validated set_scene action, while the JSON remains for advanced fields.",
-        "risks": "contract: UI-only, no API/schema change; dependency: none; concurrency: editor lock; state: value sync after undo/reload, partial environment payloads, numeric validation, toggle defaults.",
-        "mitigation": "Fill controls from scene_settings on every refresh, submit only edited fields, reuse readVector and add a finite-number reader, keep JSON fallback, and add static console regressions."
-      },
-      "plan_digest": "5ce59f6f1fe86cebbb7ce77b3549af02443f7f0184efaf1d1af3cc6ebf57f74a"
-    },
-    {
-      "task_id": "keystone-scene-settings-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Structured scene settings implemented: camera position/yaw/pitch/fov, light direction/color/intensity, ambient, fog and six render toggles sync from scene_settings, submit partial set_scene payloads, advanced JSON remains; 765 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 35, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794109229.924871,
-      "timestamp_str": "2026-11-08 06:40:29",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-scene-settings-v1",
       "phase": "completed",
@@ -265,6 +236,27 @@
       "status": "completed",
       "timestamp": 1794114015.2894778,
       "timestamp_str": "2026-11-08 08:00:15",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-pivot-icons-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Meshless pivot icons implemented: small amber three-axis crosses at every box-proxy world position, selected pivots tinted green, distance-scaled through gizmoScale, depth-tested and skipped in Game view; 778 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 39, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794114412.782329,
+      "timestamp_str": "2026-11-08 08:06:52",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-pivot-icons-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-pivot-icons-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794114413.585406,
+      "timestamp_str": "2026-11-08 08:06:53",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

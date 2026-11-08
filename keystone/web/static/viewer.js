@@ -481,6 +481,14 @@ export class SceneViewer {
     this.gridEnabled = true;
     this.snapEnabled = false;
     this.grid = this.buildGridVaos();
+    this.pivotIcon = this.buildGizmoVao({
+      positions: new Float32Array([
+        -0.35, 0, 0, 0.35, 0, 0,
+        0, -0.35, 0, 0, 0.35, 0,
+        0, 0, -0.35, 0, 0, 0.35,
+      ]),
+      count: 6,
+    });
     this.uniforms = {};
     for (const name of [
       "world", "view_proj", "normal", "color", "texture", "has_texture", "specular",
@@ -2069,8 +2077,43 @@ export class SceneViewer {
       gl.drawElements(gl.TRIANGLES, mesh.count, gl.UNSIGNED_INT, 0);
     }
     gl.bindVertexArray(null);
+    this.renderPivots(viewProjection);
     this.renderGrid(viewProjection);
     this.renderGizmo(viewProjection);
+  }
+
+  renderPivots(viewProjection) {
+    if (this.viewMode !== "scene" || !this.boxProxies.size) {
+      return;
+    }
+    const gl = this.gl;
+    gl.useProgram(this.gizmoProgram);
+    gl.disable(gl.CULL_FACE);
+    for (const [nodeId, proxy] of this.boxProxies.entries()) {
+      const position = proxy.position;
+      const scale = Math.max(0.05, this.gizmoScale(position) * 0.45);
+      const model = new Float32Array([
+        scale, 0, 0, 0,
+        0, scale, 0, 0,
+        0, 0, scale, 0,
+        position[0], position[1], position[2], 1,
+      ]);
+      gl.uniformMatrix4fv(
+        this.gizmoUniforms.mvp,
+        false,
+        multiply(viewProjection, model),
+      );
+      gl.uniform3fv(
+        this.gizmoUniforms.color,
+        this.selectedIds.has(nodeId)
+          ? [0.46, 0.84, 0.77]
+          : [0.95, 0.72, 0.42],
+      );
+      gl.bindVertexArray(this.pivotIcon.vao);
+      gl.drawArrays(gl.LINES, 0, this.pivotIcon.count);
+    }
+    gl.bindVertexArray(null);
+    gl.enable(gl.CULL_FACE);
   }
 
   renderGrid(viewProjection) {

@@ -3093,6 +3093,8 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("layoutSnapshot", viewer_script)
         self.assertIn("applyLayout", viewer_script)
         self.assertIn("notifyLayoutChange", viewer_script)
+        self.assertIn("renderPivots", viewer_script)
+        self.assertIn("pivotIcon", viewer_script)
         self.assertIn("focusNode", viewer_script)
         self.assertIn("setSelected", viewer_script)
         self.assertIn("setSelectedIds", viewer_script)
