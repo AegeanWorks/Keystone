@@ -9,8 +9,8 @@
 - **Total Python Modules**: `141`
 - **Total Classes**: `224`
 - **Total Top-Level Functions**: `387`
-- **Total Class Methods**: `1397`
-- **Total Source Lines**: `35786`
+- **Total Class Methods**: `1400`
+- **Total Source Lines**: `36027`
 
 ---
 
@@ -1427,7 +1427,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `75` lines (`1604` bytes)
+**Size**: `76` lines (`1624` bytes)
 
 ---
 
@@ -1729,14 +1729,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `426` lines (`19614` bytes)
+**Size**: `445` lines (`20212` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2238` lines (`99256` bytes)
+**Size**: `2359` lines (`104984` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1754,7 +1754,9 @@
   - Method `._scene_locked()`
   - Method `.scene()`
   - Method `._registry_locked()`
-  - Method `._asset_usage_locked(scene, registry, asset_id)` - *Return human-readable references that block removing one asset.*
+  - Method `._document_asset_ids(value, ids)` - *Collect mesh/material/texture ids from one scene document.*
+  - Method `._format_asset_usage(report)`
+  - Method `._asset_usage_report_locked(scene, registry, asset_id)` - *Return structured references to one asset across live and saved content.*
   - Method `._parent_locked(scene, value)`
   - Method `._prefab_entries_locked()`
   - Method `._history_label_for(action, payload)`
@@ -3268,7 +3270,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `4044` lines (`169861` bytes)
+**Size**: `4144` lines (`174094` bytes)
 
 **Classes:**
 - `class Health`
@@ -3343,6 +3345,7 @@
   - Method `.test_editor_scene_dirty_and_revert()`
   - Method `.test_editor_startup_scene_persists_and_clears()`
   - Method `.test_editor_forget_asset_and_project_inventory()`
+  - Method `.test_editor_asset_usages_and_saved_references()`
   - Method `.test_editor_build_project()`
   - Method `.test_editor_reload_assets_rebinds_scene_and_history()`
   - Method `.test_editor_preview_animation_and_undo()`

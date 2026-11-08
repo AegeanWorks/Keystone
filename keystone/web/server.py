@@ -146,6 +146,7 @@ SCENE_NEUTRAL_ACTIONS = frozenset(
         "import_gltf",
         "reload_assets",
         "forget_asset",
+        "asset_usages",
         "build_project",
         "rename_scene",
         "duplicate_scene",
@@ -255,6 +256,7 @@ class GameSession:
         self.last_gltf_import: dict[str, object] | None = None
         self.last_asset_reload: dict[str, object] | None = None
         self.last_forgotten_asset: dict[str, object] | None = None
+        self.last_asset_usages: dict[str, object] | None = None
         self.last_revert: dict[str, object] | None = None
         self.last_build: dict[str, object] | None = None
         self.scene_dirty = False
@@ -393,40 +395,112 @@ class GameSession:
         registry = getattr(self.game, "assets", None)
         return registry if isinstance(registry, AssetRegistry) else None
 
-    def _asset_usage_locked(
+    @staticmethod
+    def _document_asset_ids(value: object, ids: set[str]) -> None:
+        """Collect mesh/material/texture ids from one scene document."""
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if key in ("mesh", "material", "texture") and isinstance(item, str):
+                    ids.add(item)
+                else:
+                    GameSession._document_asset_ids(item, ids)
+        elif isinstance(value, list):
+            for item in value:
+                GameSession._document_asset_ids(item, ids)
+
+    @staticmethod
+    def _format_asset_usage(report: dict[str, object]) -> str:
+        parts: list[str] = []
+        for item in report.get("scene_nodes", []):
+            parts.append(f"node {item.get('node')!r} {item.get('field')}")
+        for item in report.get("registry", []):
+            parts.append(f"asset {item.get('asset')!r} {item.get('field')}")
+        for name in report.get("prefabs", []):
+            parts.append(f"prefab {name!r}")
+        for name in report.get("scenes", []):
+            parts.append(f"scene file {name!r}")
+        return ", ".join(parts)
+
+    def _asset_usage_report_locked(
         self,
         scene: Scene,
         registry: AssetRegistry,
         asset_id: str,
-    ) -> list[str]:
-        """Return human-readable references that block removing one asset."""
+    ) -> dict[str, object]:
+        """Return structured references to one asset across live and saved content."""
         record = registry.get(asset_id)
-        if record is None:
-            return []
-        payload = record.payload
-        usage: list[str] = []
-        for node in scene.traverse():
-            if node.mesh is payload:
-                usage.append(f"node {node.id!r} mesh")
-            if node.material is payload:
-                usage.append(f"node {node.id!r} material")
-            if getattr(node.material, "texture", None) is payload:
-                usage.append(f"node {node.id!r} material texture")
+        payload = record.payload if record is not None else None
+        scene_nodes: list[dict[str, str]] = []
+        if payload is not None:
+            for node in scene.traverse():
+                if node.mesh is payload:
+                    scene_nodes.append({"node": node.id, "field": "mesh"})
+                if node.material is payload:
+                    scene_nodes.append({"node": node.id, "field": "material"})
+                if getattr(node.material, "texture", None) is payload:
+                    scene_nodes.append({"node": node.id, "field": "texture"})
+        registry_refs: list[dict[str, str]] = []
         for item in registry:
             if item.id == asset_id:
                 continue
             if asset_id in item.dependencies:
-                usage.append(f"asset {item.id!r} dependency")
-            if getattr(item.payload, "texture", None) is payload:
-                usage.append(f"asset {item.id!r} texture")
+                registry_refs.append({"asset": item.id, "field": "dependency"})
+            if payload is not None and getattr(item.payload, "texture", None) is payload:
+                registry_refs.append({"asset": item.id, "field": "texture"})
+        prefabs: set[str] = set()
         for prefab in self.prefabs.values():
             try:
                 references = prefab.asset_ids(registry)
             except (KeyError, TypeError, ValueError):
                 continue
             if asset_id in references:
-                usage.append(f"prefab {prefab.name!r}")
-        return usage
+                prefabs.add(prefab.name)
+        if self.prefab_library is not None:
+            for entry in self.prefab_library.entries():
+                if entry.error is not None:
+                    continue
+                try:
+                    prefab = self.prefab_library.load(entry.name)
+                    references = prefab.asset_ids(registry)
+                except (KeyError, TypeError, ValueError):
+                    continue
+                if asset_id in references:
+                    prefabs.add(entry.name)
+        scenes: set[str] = set()
+        if self.scene_library is not None:
+            for entry in self.scene_library.entries():
+                if entry.error is not None:
+                    continue
+                try:
+                    document = self.scene_library.document(entry.name)
+                except (KeyError, TypeError, ValueError):
+                    continue
+                ids: set[str] = set()
+                self._document_asset_ids(document, ids)
+                if asset_id in ids:
+                    scenes.add(entry.name)
+        project_asset = None
+        if asset_id.startswith("project:") and self.project_dir is not None:
+            path = asset_id.removeprefix("project:")
+            project_asset = path in {
+                Path(item).as_posix() for item in self.project_assets
+            }
+        references = (
+            len(scene_nodes) + len(registry_refs) + len(prefabs) + len(scenes)
+        )
+        return {
+            "schema": 1,
+            "asset": asset_id,
+            "registered": record is not None,
+            "kind": record.kind if record is not None else None,
+            "scene_nodes": scene_nodes,
+            "registry": registry_refs,
+            "prefabs": sorted(prefabs),
+            "scenes": sorted(scenes),
+            "project_asset": project_asset,
+            "references": references,
+            "found": references > 0,
+        }
 
     def _parent_locked(self, scene: Scene, value: object) -> Node | None:
         if value in (None, "", "root"):
@@ -700,6 +774,7 @@ class GameSession:
         document["imported_asset"] = self.last_import
         document["imported_gltf"] = self.last_gltf_import
         document["forgotten_asset"] = self.last_forgotten_asset
+        document["asset_usages"] = self.last_asset_usages
         document["asset_reload"] = self.last_asset_reload
         document["startup_scene"] = self.startup_scene
         document["project_assets"] = list(self.project_assets)
@@ -776,6 +851,7 @@ class GameSession:
         self.last_gltf_import = None
         self.last_asset_reload = None
         self.last_forgotten_asset = None
+        self.last_asset_usages = None
         self.last_revert = None
         self.last_build = None
         with self.lock:
@@ -1704,12 +1780,15 @@ class GameSession:
                             str(exc),
                             "use a project-relative asset path",
                         ) from exc
-                    usage = self._asset_usage_locked(scene, registry, identifier)
+                    usage = self._format_asset_usage(
+                        self._asset_usage_report_locked(
+                            scene, registry, identifier
+                        )
+                    )
                     if usage:
                         raise WebProblem(
                             400,
-                            "asset is still used by: "
-                            + ", ".join(sorted(set(usage))),
+                            "asset is still used by: " + usage,
                             "remove or reassign those references before forgetting the asset",
                         )
                     try:
@@ -1726,6 +1805,48 @@ class GameSession:
                     updated = load_project(self.project_dir)
                     self.project_assets = updated.manifest.assets
                     self.startup_scene = updated.manifest.startup_scene
+                elif action == "asset_usages":
+                    registry = self._registry_locked()
+                    if registry is None:
+                        raise WebProblem(
+                            400,
+                            "asset usages need an AssetRegistry",
+                            "expose self.assets = AssetRegistry() in the game module",
+                        )
+                    asset = payload.get("asset")
+                    path = payload.get("path")
+                    if (asset is None) == (path is None):
+                        raise ValueError(
+                            "asset_usages needs exactly one of asset or path"
+                        )
+                    if asset is not None:
+                        if not isinstance(asset, str) or not asset.strip():
+                            raise ValueError(
+                                "asset_usages asset must be a non-blank string"
+                            )
+                        asset_id = asset
+                    else:
+                        if self.project_dir is None:
+                            raise WebProblem(
+                                400,
+                                "asset path lookup needs a project directory",
+                                "start the console with python -m keystone --project <dir> --serve",
+                            )
+                        if not isinstance(path, str) or not path.strip():
+                            raise ValueError(
+                                "asset_usages path must be a non-blank project-relative string"
+                            )
+                        try:
+                            asset_id = project_asset_id(path)
+                        except (TypeError, ValueError) as exc:
+                            raise WebProblem(
+                                400,
+                                str(exc),
+                                "use a project-relative asset path",
+                            ) from exc
+                    self.last_asset_usages = self._asset_usage_report_locked(
+                        scene, registry, asset_id
+                    )
                 elif action == "build_project":
                     if self.project_dir is None:
                         raise WebProblem(

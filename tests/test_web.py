@@ -2953,6 +2953,101 @@ class WebServerTest(unittest.TestCase):
             self.assertEqual(caught.exception.status, 400)
             self.assertIn("--project", caught.exception.fix)
 
+    def test_editor_asset_usages_and_saved_references(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name="usage-demo")
+            assets = root / "assets"
+            assets.mkdir()
+            (assets / "cube.obj").write_text(
+                "v 0 0 0\nv 1 0 0\nv 0 1 0\nvn 0 0 1\nf 1//1 2//1 3//1\n",
+                encoding="utf-8",
+            )
+            session = GameSession(
+                CubeDemo(),
+                project_dir=root,
+                scene_dir=root / "scenes",
+                prefab_dir=root / "prefabs",
+            )
+            session.editor_action(
+                {"action": "import_asset", "path": "assets/cube.obj"}
+            )
+            created = session.editor_action(
+                {
+                    "action": "create_node",
+                    "name": "crate",
+                    "mesh": "project:assets/cube.obj",
+                }
+            )
+            crate_id = next(
+                node["id"]
+                for node in created["nodes"]
+                if node["name"] == "crate"
+            )
+            session.editor_action({"action": "save_scene", "name": "level"})
+            session.editor_action({"action": "select", "id": crate_id})
+            session.editor_action({"action": "save_prefab", "name": "crate"})
+
+            report = session.editor_action(
+                {
+                    "action": "asset_usages",
+                    "asset": "project:assets/cube.obj",
+                }
+            )["asset_usages"]
+            self.assertEqual(report["asset"], "project:assets/cube.obj")
+            self.assertTrue(report["registered"])
+            self.assertEqual(report["kind"], "mesh")
+            self.assertTrue(report["found"])
+            self.assertGreaterEqual(report["references"], 3)
+            self.assertIn(
+                {"node": crate_id, "field": "mesh"}, report["scene_nodes"]
+            )
+            self.assertIn("crate", report["prefabs"])
+            self.assertIn("level", report["scenes"])
+            self.assertIs(report["project_asset"], True)
+
+            by_path = session.editor_action(
+                {"action": "asset_usages", "path": "assets/cube.obj"}
+            )["asset_usages"]
+            self.assertEqual(by_path, report)
+
+            unknown = session.editor_action(
+                {"action": "asset_usages", "asset": "mesh.missing"}
+            )["asset_usages"]
+            self.assertFalse(unknown["registered"])
+            self.assertFalse(unknown["found"])
+            self.assertEqual(unknown["references"], 0)
+
+            for payload in (
+                {"action": "asset_usages"},
+                {
+                    "action": "asset_usages",
+                    "asset": "project:assets/cube.obj",
+                    "path": "assets/cube.obj",
+                },
+            ):
+                with self.assertRaises(WebProblem) as caught:
+                    session.editor_action(payload)
+                self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "asset_usages", "path": "../escape.obj"}
+                )
+            self.assertEqual(caught.exception.status, 400)
+
+            session.editor_action({"action": "delete_node", "id": crate_id})
+            session.editor_action({"action": "delete_prefab", "name": "crate"})
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "forget_asset", "path": "assets/cube.obj"}
+                )
+            self.assertIn("scene file 'level'", caught.exception.why)
+            session.editor_action({"action": "delete_scene", "name": "level"})
+            forgotten = session.editor_action(
+                {"action": "forget_asset", "path": "assets/cube.obj"}
+            )["forgotten_asset"]
+            self.assertTrue(forgotten["removed"])
+
     def test_editor_build_project(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "project"
@@ -3658,6 +3753,8 @@ class WebServerTest(unittest.TestCase):
             "import-asset",
             "import-state",
             "project-assets",
+            "find-usages",
+            "usage-state",
             "forget-asset",
             "reload-assets",
             "reload-state",
@@ -3724,6 +3821,9 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("forgotten_asset", script)
         self.assertIn("project_assets", script)
         self.assertIn("project-assets", script)
+        self.assertIn("findUsages", script)
+        self.assertIn("asset_usages", script)
+        self.assertIn("usage-state", script)
         self.assertIn("buildProject", script)
         self.assertIn("build_project", script)
         self.assertIn("build-state", script)

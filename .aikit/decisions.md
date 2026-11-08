@@ -1320,3 +1320,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The validated project export existed only as a CLI command, so the console could edit and preview a project but could not produce a runnable build.
 - **Decision**: Add `build_project` with a project-relative target (default `build`) and `force`. Resolve the target inside the project, run the existing validated export pipeline, and return only build metadata (`schema`, relative `target`, `BUILD.json` path, file/byte summary). Non-empty targets fail with force guidance; traversal, absolute paths, root targets and validation failures return 400. Add target/force console controls and a build readout. Bump the editor schema to 49.
 - **Consequences**: Web tests cover a first build, BUILD.json/run.py creation, non-empty refusal, forced rebuild, traversal/absolute targets and missing project context. Builds are synchronous under the editor lock and can take seconds while the engine and project files are copied; the in-memory editor scene is not exported, only on-disk project files.
+
+### ADR-162: Asset usage reports across live and saved content
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Forgetting an asset only checked the live scene, registry dependencies and cached prefabs; authors and AI clients could not ask where an asset was used before removing or replacing it, and saved scenes or prefab files could keep dangling references.
+- **Decision**: Add `asset_usages` with exactly one of an exact asset id or a project-relative path. Return structured references from scene nodes (mesh/material/texture), registry dependencies/textures, in-memory and saved prefabs, saved scenes, plus project-manifest membership, registered/kind, reference count and `found`. Reuse the same report in `forget_asset`, which now blocks saved scene and prefab file references. Add a console Find usages button and readout. Bump the editor schema to 50.
+- **Consequences**: Web tests cover live nodes, saved scenes, prefabs, project-path lookup, unknown ids, mutual-exclusion errors, traversal errors and saved-reference forget blocking. Saved-content scans load library entries on each request, so very large libraries make the action slower; unreadable entries are skipped rather than failing the report.

@@ -135,6 +135,8 @@ const elements = {
   importState: document.getElementById("import-state"),
   projectAssets: document.getElementById("project-assets"),
   forgetAsset: document.getElementById("forget-asset"),
+  findUsages: document.getElementById("find-usages"),
+  usageState: document.getElementById("usage-state"),
   reloadAssets: document.getElementById("reload-assets"),
   reloadState: document.getElementById("reload-state"),
   buildTarget: document.getElementById("build-target"),
@@ -987,6 +989,12 @@ function showEditor(editor) {
   }
   elements.importAsset.disabled = !projectDir;
   elements.forgetAsset.disabled = !projectDir;
+  const usages = editor.asset_usages;
+  elements.usageState.textContent = usages
+    ? `${usages.found ? "Used" : "Unused"} · ${usages.references} refs · ` +
+      `${usages.scene_nodes.length} nodes · ${usages.prefabs.length} prefabs · ` +
+      `${usages.scenes.length} scenes`
+    : "Select a path or asset id to find usages.";
   const reload = editor.asset_reload;
   elements.reloadState.textContent = reload
     ? `${reload.ok ? "OK" : "Attention"} · ${reload.checked} checked · ` +
@@ -2078,6 +2086,25 @@ async function forgetAsset() {
   }
 }
 
+async function findUsages() {
+  const value = elements.importPath.value.trim();
+  if (!value) {
+    throw new Error("Enter a project-relative path or asset id.");
+  }
+  const known =
+    editorState &&
+    (editorState.assets || []).some((asset) => asset.id === value);
+  const payload =
+    known || value.includes(":")
+      ? { action: "asset_usages", asset: value }
+      : { action: "asset_usages", path: value };
+  const editor = await editorAction(payload, `finding usages for ${value}`);
+  const usages = editor.asset_usages;
+  if (usages) {
+    show({ ok: true, action: "asset_usages", asset_usages: usages });
+  }
+}
+
 async function buildProject() {
   const target = elements.buildTarget.value.trim() || "build";
   const force = elements.buildForce.checked;
@@ -2764,6 +2791,7 @@ elements.assignAsset.addEventListener("click", () => run(assignAssets));
 elements.importAsset.addEventListener("click", () => run(importAsset));
 elements.reloadAssets.addEventListener("click", () => run(reloadAssets));
 elements.forgetAsset.addEventListener("click", () => run(forgetAsset));
+elements.findUsages.addEventListener("click", () => run(findUsages));
 elements.buildProject.addEventListener("click", () => run(buildProject));
 elements.materialSave.addEventListener("click", () => run(saveMaterial));
 elements.materialAssign.addEventListener("click", () => run(assignMaterial));
