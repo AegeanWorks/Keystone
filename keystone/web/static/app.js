@@ -23,6 +23,11 @@ const elements = {
   playActions: document.getElementById("play-actions"),
   playState: document.getElementById("play-state"),
   playSnapshot: document.getElementById("play-snapshot"),
+  animationClip: document.getElementById("animation-clip"),
+  animationTime: document.getElementById("animation-time"),
+  animationPreview: document.getElementById("animation-preview"),
+  animationSample: document.getElementById("animation-sample"),
+  animationState: document.getElementById("animation-state"),
   nodeCreate: document.getElementById("node-create"),
   nodeDuplicate: document.getElementById("node-duplicate"),
   nodeDelete: document.getElementById("node-delete"),
@@ -183,6 +188,7 @@ function setBusy(value) {
     elements.sceneSettingsApply, elements.cameraSettingsApply,
     elements.environmentSettingsApply, elements.assignAsset, elements.playStart,
     elements.playPause, elements.playResume, elements.playStep, elements.playStop, elements.componentSet, elements.componentRemove,
+    elements.animationPreview, elements.animationSample,
     elements.prefabSave, elements.prefabInsert, elements.prefabRename,
     elements.prefabRevert, elements.prefabApply, elements.prefabRefresh,
     elements.prefabDuplicate, elements.prefabDelete, elements.prefabRestore,
@@ -717,6 +723,11 @@ function showEditor(editor) {
   elements.playSnapshot.textContent = playDocument
     ? JSON.stringify(playDocument, null, 2)
     : "No play snapshot.";
+  const animationPreview = editor.animation_preview;
+  elements.animationState.textContent = animationPreview
+    ? `Previewed ${animationPreview.name} at ${animationPreview.time}s · ` +
+      `${animationPreview.updated.length} nodes`
+    : "No animation preview.";
   if (!busy) {
     updatePlayButtons(play);
   }
@@ -1407,6 +1418,58 @@ async function playStop() {
   await refreshScene(false);
 }
 
+function sampleAnimationClip() {
+  if (!editorState || !editorState.selection) {
+    throw new Error("Select a node before sampling an animation clip.");
+  }
+  const node = editorState.selection;
+  const position = node.transform.position;
+  const clip = {
+    schema: 1,
+    name: `${node.name || node.id}-preview`,
+    position: {
+      [node.id]: {
+        interpolation: "linear",
+        keys: [
+          { t: 0.0, v: position },
+          { t: 1.0, v: [position[0], position[1] + 1.0, position[2]] },
+        ],
+      },
+    },
+    rotation: {},
+    scale: {},
+    events: [],
+  };
+  elements.animationClip.value = JSON.stringify(clip, null, 2);
+  elements.animationState.textContent = `Sample clip for ${node.id}.`;
+}
+
+async function previewAnimation() {
+  let clip;
+  try {
+    clip = JSON.parse(elements.animationClip.value || "{}");
+  } catch (error) {
+    throw new Error(`Animation clip JSON: ${error.message}`);
+  }
+  if (!clip || typeof clip !== "object" || Array.isArray(clip)) {
+    throw new Error("Animation clip JSON must be an object.");
+  }
+  const time = Number(elements.animationTime.value);
+  if (!Number.isFinite(time) || time < 0) {
+    throw new Error("Preview time must be a non-negative number.");
+  }
+  const editor = await editorAction(
+    { action: "preview_animation", clip, time },
+    "previewing animation",
+  );
+  await refreshScene(false);
+  show({
+    ok: true,
+    action: "preview_animation",
+    preview: editor.animation_preview,
+  });
+}
+
 async function applyNodeProperties() {
   if (!editorState || !editorState.selection) {
     throw new Error("Select a node before editing its properties.");
@@ -1913,6 +1976,8 @@ elements.playPause.addEventListener("click", () => run(playPause));
 elements.playResume.addEventListener("click", () => run(playResume));
 elements.playStep.addEventListener("click", () => run(playStep));
 elements.playStop.addEventListener("click", () => run(playStop));
+elements.animationPreview.addEventListener("click", () => run(previewAnimation));
+elements.animationSample.addEventListener("click", () => run(sampleAnimationClip));
 elements.hierarchyFilter.addEventListener("input", () => {
   if (editorState) {
     renderHierarchy(editorState);

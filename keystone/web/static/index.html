@@ -52,6 +52,16 @@
         <textarea id="play-actions" spellcheck="false" rows="3">[]</textarea>
         <div id="play-state" class="hint">Stopped</div>
         <pre id="play-snapshot" class="hint">No play snapshot.</pre>
+        <label class="stack" for="animation-clip">Animation clip JSON</label>
+        <textarea id="animation-clip" spellcheck="false" rows="6">{}</textarea>
+        <div class="field-grid">
+          <label>Preview time <input id="animation-time" type="number" min="0" step="0.05" value="0"></label>
+        </div>
+        <div class="buttons">
+          <button id="animation-preview" type="button">Preview animation</button>
+          <button id="animation-sample" type="button">Sample selected node</button>
+        </div>
+        <div id="animation-state" class="hint">No animation preview.</div>
         <div class="field-grid">
           <label>Node name <input id="node-name" type="text" value="node"></label>
           <label>Parent

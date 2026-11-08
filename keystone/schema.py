@@ -4,7 +4,7 @@ from __future__ import annotations
 
 WEB_API_VERSION = 1
 SCENE_SCHEMA_VERSION = 2
-EDITOR_SCHEMA_VERSION = 36
+EDITOR_SCHEMA_VERSION = 37
 PREFAB_SCHEMA_VERSION = 2
 EDITOR_ACTIONS = (
     "select",
@@ -26,6 +26,7 @@ EDITOR_ACTIONS = (
     "play_pause",
     "play_resume",
     "play_stop",
+    "preview_animation",
     "create_node",
     "delete_node",
     "duplicate_node",

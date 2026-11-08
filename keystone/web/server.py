@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import ClassVar
 from urllib.parse import urlparse
 
+from keystone.animation import AnimationClip, apply_pose
 from keystone.assets import AssetRegistry
 from keystone.component_codec import validate_component_types
 from keystone.headless import run_simulation
@@ -179,6 +180,7 @@ class GameSession:
         self.prefab_edit: dict[str, object] | None = None
         self._prefab_edit_dirty = False
         self.last_prefab_refresh: dict[str, int] | None = None
+        self.last_animation_preview: dict[str, object] | None = None
         self._prefab_edit_original_history: EditorHistory | None = None
         self._prefab_edit_original_selection: list[str] = []
         self._scene_override: Scene | None = None
@@ -566,6 +568,7 @@ class GameSession:
         )
         document["game"] = self.name
         document["prefab_refresh"] = self.last_prefab_refresh
+        document["animation_preview"] = self.last_animation_preview
         document["workspace"] = {
             "prefab_dir": (
                 self.prefab_library.directory.as_posix()
@@ -596,6 +599,7 @@ class GameSession:
             )
         self._history_label = self._history_label_for(action, payload)
         self.last_prefab_refresh = None
+        self.last_animation_preview = None
         with self.lock:
             scene = self._scene_locked()
             try:
@@ -794,6 +798,40 @@ class GameSession:
                         self._play_snapshot = None
                         self.history.clear()
                         self.selected_id = None
+                elif action == "preview_animation":
+                    clip_payload = payload.get("clip")
+                    if not isinstance(clip_payload, dict):
+                        raise TypeError(
+                            "preview_animation clip must be a JSON object"
+                        )
+                    time = payload.get("time", 0.0)
+                    if (
+                        isinstance(time, bool)
+                        or not isinstance(time, (int, float))
+                        or not math.isfinite(time)
+                    ):
+                        raise ValueError(
+                            "preview_animation time must be a finite number"
+                        )
+                    if time < 0.0:
+                        raise ValueError(
+                            "preview_animation time must be non-negative"
+                        )
+                    clip = AnimationClip.from_dict(clip_payload)
+                    updated = self._apply_history(
+                        scene,
+                        lambda: apply_pose(
+                            scene, clip.sample(float(time))
+                        ),
+                    )
+                    self.last_animation_preview = {
+                        "name": clip.name,
+                        "time": round(float(time), 6),
+                        "updated": list(updated),
+                        "track_count": len(clip.position_tracks)
+                        + len(clip.rotation_tracks)
+                        + len(clip.scale_tracks),
+                    }
                 elif action == "set_component":
                     node = find_node(scene, payload.get("id"))
                     self._apply_history(

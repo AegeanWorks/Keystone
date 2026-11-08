@@ -81,6 +81,26 @@ EDITOR_EXAMPLES = {
     "play_pause": {"action": "play_pause"},
     "play_resume": {"action": "play_resume"},
     "play_stop": {"action": "play_stop"},
+    "preview_animation": {
+        "action": "preview_animation",
+        "clip": {
+            "schema": 1,
+            "name": "preview",
+            "position": {
+                "cube-0": {
+                    "interpolation": "linear",
+                    "keys": [
+                        {"t": 0.0, "v": [0.0, 0.0, 0.0]},
+                        {"t": 1.0, "v": [0.0, 2.0, 0.0]},
+                    ],
+                }
+            },
+            "rotation": {},
+            "scale": {},
+            "events": [],
+        },
+        "time": 0.5,
+    },
     "create_node": {
         "action": "create_node",
         "name": "prop",
@@ -206,6 +226,8 @@ EDITOR_SCHEMA = {
         "remove_component": ["id", "type"],
         "play_step": ["frames", "actions"],
         "play": ["active", "paused", "frames", "step", "status", "snapshot"],
+        "preview_animation": ["clip", "time"],
+        "animation_preview": ["name", "time", "updated", "track_count"],
         "asset": ["id", "kind", "sha256", "source", "dependencies", "metadata"],
         "component_types": ["name"],
         "component_schema": ["fields"],
@@ -251,6 +273,7 @@ EDITOR_SCHEMA = {
         "schema 34 adds refresh_prefab_instances, which replaces safe authored instance groups and reports refreshed/skipped counts",
         "schema 35 lets save_prefab accept an ordered ids list for multi-root capture from a multi-selection",
         "schema 36 exposes the live game status and snapshot in the play document while play mode is active",
+        "schema 37 adds preview_animation, which samples an inline clip and applies its pose in one undo entry",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

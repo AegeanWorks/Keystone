@@ -2430,6 +2430,78 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("status failed", started["play"]["status_error"])
         session.editor_action({"action": "play_stop"})
 
+    def test_editor_preview_animation_and_undo(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        original = cube["transform"]["position"]
+        clip = {
+            "schema": 1,
+            "name": "bob",
+            "position": {
+                cube["id"]: {
+                    "interpolation": "linear",
+                    "keys": [
+                        {"t": 0.0, "v": original},
+                        {
+                            "t": 1.0,
+                            "v": [
+                                original[0],
+                                original[1] + 2.0,
+                                original[2],
+                            ],
+                        },
+                    ],
+                }
+            },
+            "rotation": {},
+            "scale": {},
+            "events": [],
+        }
+
+        previewed = session.editor_action(
+            {"action": "preview_animation", "clip": clip, "time": 0.5}
+        )
+        self.assertEqual(previewed["animation_preview"]["name"], "bob")
+        self.assertEqual(previewed["animation_preview"]["time"], 0.5)
+        self.assertEqual(previewed["animation_preview"]["track_count"], 1)
+        self.assertIn(cube["id"], previewed["animation_preview"]["updated"])
+        self.assertEqual(previewed["history"]["undo"], 1)
+        moved = next(
+            node for node in previewed["nodes"] if node["id"] == cube["id"]
+        )
+        self.assertAlmostEqual(
+            moved["transform"]["position"][1], original[1] + 1.0, places=4
+        )
+
+        undone = session.editor_action({"action": "undo"})
+        restored = next(
+            node for node in undone["nodes"] if node["id"] == cube["id"]
+        )
+        self.assertEqual(restored["transform"]["position"], original)
+
+        for payload in (
+            {"action": "preview_animation", "clip": clip, "time": -1.0},
+            {"action": "preview_animation", "clip": clip, "time": True},
+            {"action": "preview_animation", "clip": [], "time": 0.0},
+            {
+                "action": "preview_animation",
+                "clip": {**clip, "schema": 2},
+                "time": 0.0,
+            },
+        ):
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(payload)
+            self.assertEqual(caught.exception.status, 400)
+
+        session.editor_action({"action": "play_start"})
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action(
+                {"action": "preview_animation", "clip": clip, "time": 0.0}
+            )
+        self.assertEqual(caught.exception.status, 400)
+        session.editor_action({"action": "play_stop"})
+
     def test_editor_component_lifecycle_play_mode(self):
         session = GameSession(LifecycleDemo())
         editor = session.editor()
@@ -2574,6 +2646,11 @@ class WebServerTest(unittest.TestCase):
             "play-actions",
             "play-state",
             "play-snapshot",
+            "animation-clip",
+            "animation-time",
+            "animation-preview",
+            "animation-sample",
+            "animation-state",
             "node-parent",
             "node-create",
             "node-duplicate",
@@ -2736,6 +2813,10 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("startPlayLoop", script)
         self.assertIn("readPlayActions", script)
         self.assertIn("playSnapshot", script)
+        self.assertIn("previewAnimation", script)
+        self.assertIn("sampleAnimationClip", script)
+        self.assertIn("preview_animation", script)
+        self.assertIn("animation_preview", script)
         self.assertIn("playFrames", script)
         self.assertIn("set_node", script)
         self.assertIn("onTransform", script)

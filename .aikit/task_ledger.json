@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-project-export-v1",
+    "task_id": "keystone-animation-preview-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794110887.752729,
+    "updated_at": 1794111341.2799156,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794110888.0912719
+    "completed_at": 1794111341.5822635
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-grid-snap-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Scene grid and persistent snap implemented: minor/major ground lines with colored X/Z axes rendered under depth in Scene view, Grid and Snap toggles plus G/S shortcuts, one snapActive predicate for translate/rotate/scale rounding, Game-view suppression; 764 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 34, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794106965.2369254,
-      "timestamp_str": "2026-11-08 06:02:45",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-grid-snap-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-grid-snap-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794106965.5281887,
-      "timestamp_str": "2026-11-08 06:02:45",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-multiroot-prefab-save-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan saving the multi-selection as a multi-root prefab",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794107060.066667,
-      "timestamp_str": "2026-11-08 06:04:20",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "The editor can insert and manage multi-root prefabs, but save_prefab only captures one node, so a multi-selection cannot become a prefab.",
-        "benefits": "save_prefab accepts an ordered ids list, filters selected descendants, requires one parent, captures a multi-root template, and the console uses the whole selection automatically.",
-        "risks": "contract: editor schema 35 and save_prefab payload extension; dependency: none; concurrency: editor lock; state: duplicate/descendant selection, mixed parents, name fallback, library rollback, selection restore.",
-        "mitigation": "Deduplicate ids in selection order, drop descendants of selected roots, require a shared parent, reuse Prefab.from_nodes, keep single-id behavior, and add multi-root save/insert/error regressions."
-      },
-      "plan_digest": "85c995511367fddd16519cd8d75cc16685f94b07fc53eb0c639119b1075d77ca"
-    },
     {
       "task_id": "keystone-multiroot-prefab-save-v1",
       "phase": "in_progress",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794110888.0912743,
       "timestamp_str": "2026-11-08 07:08:08",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-animation-preview-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan inline animation-clip preview with time scrubbing and undo",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794110924.5291348,
+      "timestamp_str": "2026-11-08 07:08:44",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "The engine has deterministic clips, sampling and pose application, but the editor cannot preview animation, so authored clips are invisible until gameplay runs.",
+        "benefits": "preview_animation samples an inline clip at a chosen time, applies it to the scene in one undo entry, and the console can generate a sample clip from the selected node and scrub it.",
+        "risks": "contract: editor schema 37 and one new action; dependency: none; concurrency: editor lock; state: clip validation, finite time, unknown node ids, pose overwrite semantics, undo, play-mode blocking.",
+        "mitigation": "Parse through AnimationClip.from_dict, validate time, use apply_pose, wrap the mutation in history, expose updated ids/time, and add preview/undo/error regressions."
+      },
+      "plan_digest": "ac0f684a59ae9f322728fc9af2ecb550cc5a1c07a738c3d0c10e3edf2d173704"
+    },
+    {
+      "task_id": "keystone-animation-preview-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Inline animation preview implemented: preview_animation parses schema-1 clips, samples at a non-negative time, applies poses in one undo entry, exposes animation_preview name/time/updated/track_count, console clip editor with sample-selected and preview actions, play-mode blocking, schema 37; 772 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 37, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794111341.2799156,
+      "timestamp_str": "2026-11-08 07:15:41",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-animation-preview-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-animation-preview-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794111341.5822654,
+      "timestamp_str": "2026-11-08 07:15:41",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

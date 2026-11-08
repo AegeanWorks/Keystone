@@ -1168,3 +1168,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Projects could be created and opened, but shipping a game still required manual file copying and no build artifact recorded what was packaged.
 - **Decision**: Add `--export DIR` for `--project`. Export loads and validates the project game, assets, scenes and prefabs, then copies runtime project files while excluding caches, tests, docs and a local engine source tree. It vendors the installed `keystone` package under `vendor/keystone`, writes `run.py`, `requirements.txt` and `EXPORT.md`, and finishes with a schema-1 `BUILD.json` containing sorted relative paths, sizes and SHA-256 hashes plus scene/prefab/file totals. A non-empty destination is refused unless `--force` is passed; the destination may sit inside the project because its subtree is excluded from the copy.
 - **Consequences**: 771 tests green; bundle structure, hashes, launcher execution, force behavior, CLI output, validation failures and development-file exclusion are covered. The bundle still needs the pinned runtime dependencies, game modules with same-named imports can share `sys.modules` during validation, and export is a copy operation rather than a standalone executable build.
+
+### ADR-143: Inline animation clip preview and scrubber
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The engine had deterministic clips, sampling and pose application, but the editor could not preview an authored clip, so animation remained a code-only feature.
+- **Decision**: Add `preview_animation` with an inline schema-1 clip document and a non-negative preview time. The action parses through `AnimationClip.from_dict`, samples the pose, applies it with `apply_pose` in one undo entry, and exposes `animation_preview` with name, time, updated node ids and track count. The console adds a clip JSON editor, preview time, Preview animation and Sample selected node actions. Bump the editor schema to 37.
+- **Consequences**: 772 tests green; pose application, undo, invalid time/clip rejection, play-mode blocking and sample generation are covered. Clips are inline and non-persistent for now, unknown node ids are ignored by `apply_pose`, and previews overwrite scene transforms until undo or another preview.
