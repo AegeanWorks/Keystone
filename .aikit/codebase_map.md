@@ -9,8 +9,8 @@
 - **Total Python Modules**: `135`
 - **Total Classes**: `216`
 - **Total Top-Level Functions**: `362`
-- **Total Class Methods**: `1331`
-- **Total Source Lines**: `31261`
+- **Total Class Methods**: `1332`
+- **Total Source Lines**: `31333`
 
 ---
 
@@ -1356,7 +1356,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `53` lines (`1112` bytes)
+**Size**: `55` lines (`1149` bytes)
 
 ---
 
@@ -1535,7 +1535,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `2227` lines (`79393` bytes)
+**Size**: `2227` lines (`79410` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1650,14 +1650,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `251` lines (`12220` bytes)
+**Size**: `254` lines (`12411` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1284` lines (`56304` bytes)
+**Size**: `1298` lines (`56942` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3131,7 +3131,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `2495` lines (`104834` bytes)
+**Size**: `2548` lines (`107207` bytes)
 
 **Classes:**
 - `class Health`
@@ -3194,6 +3194,7 @@
   - Method `.test_editor_batch_authoring_is_atomic()`
   - Method `.test_editor_node_property_editing()`
   - Method `.test_editor_play_mode_restores_authored_scene()`
+  - Method `.test_editor_play_pause_resume_and_paused_step()`
   - Method `.test_editor_component_lifecycle_play_mode()`
   - Method `.test_editor_component_authoring_and_scene_round_trip()`
   - Method `.test_editor_static_controls_and_index()`

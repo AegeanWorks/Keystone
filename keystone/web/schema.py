@@ -78,6 +78,8 @@ EDITOR_EXAMPLES = {
     "remove_component": {"action": "remove_component", "id": "cube-0", "type": "Health"},
     "play_start": {"action": "play_start"},
     "play_step": {"action": "play_step", "frames": 1, "actions": [{"forward": 1.0}]},
+    "play_pause": {"action": "play_pause"},
+    "play_resume": {"action": "play_resume"},
     "play_stop": {"action": "play_stop"},
     "create_node": {
         "action": "create_node",
@@ -184,7 +186,7 @@ EDITOR_SCHEMA = {
         "set_component": ["id", "type", "data"],
         "remove_component": ["id", "type"],
         "play_step": ["frames", "actions"],
-        "play": ["active", "frames", "step"],
+        "play": ["active", "paused", "frames", "step"],
         "asset": ["id", "kind", "sha256", "source", "dependencies", "metadata"],
         "component_types": ["name"],
         "component_schema": ["fields"],
@@ -225,6 +227,7 @@ EDITOR_SCHEMA = {
         "schema 29 accepts scalar or three-axis group_scale for centroid group scaling",
         "schema 30 adds source camera/environment and container-transform scene group metadata plus save_scene_group save-as",
         "schema 31 adds named undo/redo history entries, newest-first undo_stack/redo_stack labels and multi-step undo/redo",
+        "schema 32 adds play_pause/play_resume and a paused flag for real-time play mode",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

@@ -1080,3 +1080,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Undo/redo moved one step at a time and `/api/editor` exposed only stack depths, so an AI client could not see which authoring actions were undoable or roll back a named sequence in one request.
 - **Decision**: Store a label with every `EditorHistory` entry. `apply(..., label=...)` records the action plus its `id`/`name` target, and atomic batches record one `batch N actions` entry. `undo` and `redo` accept a 1-100 `steps` count, return the number applied, preserve the remaining redo entries during multi-redo, and `describe()` exposes counts, the limit and newest-first `undo_stack`/`redo_stack` labels. The server validates step counts, derives labels from the action payload, and bumps the editor schema to 31. The console adds a History steps input and an undo/redo label readout.
 - **Consequences**: 761 tests green; multi-step undo/redo, newest-first labels, batch labels, redo preservation and invalid-step rejection are covered. History labels are in-memory only (loading a scene or starting play clears them), and selection changes are intentionally not history entries.
+
+### ADR-132: Real-time play mode with pause and resume
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The editor advanced play only when Step was pressed and had no paused state, so it could not behave like a Unity/Unreal game view.
+- **Decision**: Add `play_pause` and `play_resume` editor actions, a `paused` flag in the play document, and editor schema 32. Pause/resume require an active play session and remain valid while paused. Step still advances the fixed frame count and keeps the paused flag. The console Play button starts a guarded real-time loop that batches elapsed frames into `play_step` requests at the fixed step, refreshes the scene, and stops on Pause, Stop, or an error; Pause/Resume buttons and a paused play-state label expose the loop, and Step pauses a running loop before advancing.
+- **Consequences**: 762 tests green; pause/resume validation, paused stepping, edit blocking and stop restoration are covered. Browser refresh cannot pause the loop, labels remain in-memory, and the loop advances at wall-clock rate with a 0.25s catch-up cap, so deterministic verification still uses `--simulate` or explicit play_step calls.

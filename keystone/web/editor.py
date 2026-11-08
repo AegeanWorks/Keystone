@@ -931,7 +931,7 @@ def editor_document(
         "play": (
             play_state
             if play_state is not None
-            else {"active": False, "frames": 0, "step": 0.0}
+            else {"active": False, "paused": False, "frames": 0, "step": 0.0}
         ),
         "diff": diff,
         "trash": trash if trash is not None else {"prefabs": [], "scenes": []},

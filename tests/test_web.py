@@ -2061,6 +2061,52 @@ class WebServerTest(unittest.TestCase):
             session.editor_action({"action": "play_step", "frames": 1})
         self.assertEqual(caught.exception.status, 400)
 
+    def test_editor_play_pause_resume_and_paused_step(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+        started = session.editor_action({"action": "play_start"})
+        self.assertTrue(started["play"]["active"])
+        self.assertFalse(started["play"]["paused"])
+
+        paused = session.editor_action({"action": "play_pause"})
+        self.assertTrue(paused["play"]["paused"])
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action(
+                {"action": "set_node", "id": cube["id"], "name": "blocked"}
+            )
+        self.assertEqual(caught.exception.status, 400)
+
+        stepped = session.editor_action({"action": "play_step", "frames": 2})
+        self.assertEqual(stepped["play"]["frames"], 2)
+        self.assertTrue(stepped["play"]["paused"])
+
+        resumed = session.editor_action({"action": "play_resume"})
+        self.assertFalse(resumed["play"]["paused"])
+        self.assertEqual(resumed["play"]["frames"], 2)
+
+        stopped = session.editor_action({"action": "play_stop"})
+        self.assertFalse(stopped["play"]["active"])
+        self.assertFalse(stopped["play"]["paused"])
+        self.assertEqual(stopped["play"]["frames"], 0)
+
+        for payload in ({"action": "play_pause"}, {"action": "play_resume"}):
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(payload)
+            self.assertEqual(caught.exception.status, 400)
+
+        session.editor_action({"action": "play_start"})
+        self.assertTrue(
+            session.editor_action({"action": "play_pause"})["play"]["paused"]
+        )
+        self.assertTrue(
+            session.editor_action({"action": "play_pause"})["play"]["paused"]
+        )
+        session.editor_action({"action": "play_resume"})
+        resumed_again = session.editor_action({"action": "play_resume"})
+        self.assertFalse(resumed_again["play"]["paused"])
+        session.editor_action({"action": "play_stop"})
+
     def test_editor_component_lifecycle_play_mode(self):
         session = GameSession(LifecycleDemo())
         editor = session.editor()
@@ -2197,6 +2243,8 @@ class WebServerTest(unittest.TestCase):
             "hierarchy-filter",
             "asset-filter",
             "play-start",
+            "play-pause",
+            "play-resume",
             "play-step",
             "play-stop",
             "play-frames",
@@ -2308,6 +2356,11 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("updateAssetInfo", script)
         self.assertIn("assetPreview", script)
         self.assertIn("play_start", script)
+        self.assertIn("play_pause", script)
+        self.assertIn("play_resume", script)
+        self.assertIn("playTick", script)
+        self.assertIn("startPlayLoop", script)
+        self.assertIn("readPlayActions", script)
         self.assertIn("playFrames", script)
         self.assertIn("set_node", script)
         self.assertIn("onTransform", script)

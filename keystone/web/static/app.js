@@ -15,6 +15,8 @@ const elements = {
   nodeName: document.getElementById("node-name"),
   nodeParent: document.getElementById("node-parent"),
   playStart: document.getElementById("play-start"),
+  playPause: document.getElementById("play-pause"),
+  playResume: document.getElementById("play-resume"),
   playStep: document.getElementById("play-step"),
   playStop: document.getElementById("play-stop"),
   playFrames: document.getElementById("play-frames"),
@@ -93,6 +95,10 @@ const elements = {
 let viewer = null;
 let busy = false;
 let editorState = null;
+let playLoopActive = false;
+let playLoopTimer = null;
+let playLoopBusy = false;
+let playLoopLast = 0;
 let gizmoSpace = "world";
 let boxSelect = false;
 
@@ -141,7 +147,7 @@ function setBusy(value) {
     elements.sceneSave, elements.sceneLoad, elements.sceneDiff, elements.sceneRename,
     elements.sceneDuplicate, elements.sceneDelete, elements.sceneRestore,
     elements.sceneSettingsApply, elements.assignAsset, elements.playStart,
-    elements.playStep, elements.playStop, elements.componentSet, elements.componentRemove,
+    elements.playPause, elements.playResume, elements.playStep, elements.playStop, elements.componentSet, elements.componentRemove,
     elements.prefabSave, elements.prefabInsert, elements.prefabRename,
     elements.prefabRevert, elements.prefabApply,
     elements.prefabDuplicate, elements.prefabDelete, elements.prefabRestore,
@@ -156,7 +162,15 @@ function setBusy(value) {
     const history = (editorState && editorState.history) || { undo: 0, redo: 0 };
     elements.editorUndo.disabled = history.undo === 0;
     elements.editorRedo.disabled = history.redo === 0;
+    updatePlayButtons(editorState && editorState.play);
   }
+}
+
+function updatePlayButtons(play) {
+  const active = Boolean(play && play.active);
+  const paused = Boolean(play && play.paused);
+  elements.playPause.disabled = !active || paused;
+  elements.playResume.disabled = !active || !paused;
 }
 
 async function api(path, options = {}) {
@@ -607,14 +621,17 @@ function showEditor(editor) {
     redo_stack: [],
   };
   renderHistory(history);
-  const play = editor.play || { active: false, frames: 0 };
+  const play = editor.play || { active: false, paused: false, frames: 0 };
   const lifecycle = play.lifecycle || { started: 0 };
   if (viewer) {
     viewer.setEditable(!play.active);
   }
   elements.playState.textContent = play.active
-    ? `Playing · ${play.frames} frames · ${lifecycle.started ?? 0} behaviors`
+    ? `${play.paused ? "Paused" : "Playing"} · ${play.frames} frames · ${lifecycle.started ?? 0} behaviors`
     : "Stopped";
+  if (!busy) {
+    updatePlayButtons(play);
+  }
   const selectionSummary = editor.selection_summary || {
     count: 0,
     mixed: [],
@@ -995,15 +1012,7 @@ async function applyPrefabInstance() {
   );
 }
 
-async function playStart() {
-  await editorAction({ action: "play_start" }, "starting play");
-}
-
-async function playStep() {
-  const frames = Number.parseInt(elements.playFrames.value, 10);
-  if (!Number.isInteger(frames) || frames < 1 || frames > 10000) {
-    throw new Error("Play frames must be an integer between 1 and 10000.");
-  }
+function readPlayActions() {
   let actions;
   try {
     actions = JSON.parse(elements.playActions.value || "[]");
@@ -1013,6 +1022,95 @@ async function playStep() {
   if (!Array.isArray(actions)) {
     throw new Error("Play actions JSON must be a list.");
   }
+  return actions;
+}
+
+function stopPlayLoop() {
+  playLoopActive = false;
+  if (playLoopTimer !== null) {
+    window.clearTimeout(playLoopTimer);
+    playLoopTimer = null;
+  }
+}
+
+function startPlayLoop() {
+  stopPlayLoop();
+  playLoopActive = true;
+  playLoopLast = performance.now();
+  playLoopTimer = window.setTimeout(playTick, 0);
+}
+
+async function playTick() {
+  playLoopTimer = null;
+  if (!playLoopActive || playLoopBusy) {
+    if (playLoopActive) {
+      playLoopTimer = window.setTimeout(playTick, 16);
+    }
+    return;
+  }
+  playLoopBusy = true;
+  const now = performance.now();
+  const elapsed = Math.min(0.25, Math.max(0, (now - playLoopLast) / 1000));
+  playLoopLast = now;
+  const frames = Math.max(1, Math.round(elapsed / 0.016666666666666666));
+  try {
+    const editor = await api("/api/editor", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "play_step",
+        frames,
+        actions: readPlayActions(),
+      }),
+    });
+    showEditor(editor);
+    await refreshScene(false);
+  } catch (error) {
+    stopPlayLoop();
+    setStatus(error.message, "error");
+    show({ ok: false, error: error.message });
+    await refreshEditor(false).catch(() => {});
+  } finally {
+    playLoopBusy = false;
+    if (playLoopActive) {
+      playLoopTimer = window.setTimeout(playTick, 16);
+    }
+  }
+}
+
+async function playStart() {
+  stopPlayLoop();
+  const editor = await editorAction({ action: "play_start" }, "starting play");
+  await refreshScene(false);
+  if (editor.play && editor.play.active && !editor.play.paused) {
+    startPlayLoop();
+  }
+}
+
+async function playPause() {
+  stopPlayLoop();
+  await editorAction({ action: "play_pause" }, "pausing play");
+}
+
+async function playResume() {
+  await editorAction({ action: "play_resume" }, "resuming play");
+  startPlayLoop();
+}
+
+async function playStep() {
+  const play = (editorState && editorState.play) || {
+    active: false,
+    paused: true,
+  };
+  if (play.active && !play.paused) {
+    stopPlayLoop();
+    await editorAction({ action: "play_pause" }, "pausing play");
+  }
+  const frames = Number.parseInt(elements.playFrames.value, 10);
+  if (!Number.isInteger(frames) || frames < 1 || frames > 10000) {
+    throw new Error("Play frames must be an integer between 1 and 10000.");
+  }
+  const actions = readPlayActions();
   await editorAction(
     { action: "play_step", frames, actions },
     "stepping play",
@@ -1021,6 +1119,7 @@ async function playStep() {
 }
 
 async function playStop() {
+  stopPlayLoop();
   await editorAction({ action: "play_stop" }, "stopping play");
   await refreshScene(false);
 }
@@ -1470,6 +1569,8 @@ elements.hierarchy.addEventListener("change", () => {
 });
 elements.transformApply.addEventListener("click", () => run(applyTransform));
 elements.playStart.addEventListener("click", () => run(playStart));
+elements.playPause.addEventListener("click", () => run(playPause));
+elements.playResume.addEventListener("click", () => run(playResume));
 elements.playStep.addEventListener("click", () => run(playStep));
 elements.playStop.addEventListener("click", () => run(playStop));
 elements.hierarchyFilter.addEventListener("input", () => {

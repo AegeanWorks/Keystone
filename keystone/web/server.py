@@ -128,6 +128,7 @@ class GameSession:
         self.component_types = component_types
         self.playing = False
         self.play_frames = 0
+        self.play_paused = False
         self.lifecycle: ComponentRuntime | None = None
         self._play_snapshot: dict | None = None
         self.last_diff: dict[str, object] | None = None
@@ -358,6 +359,7 @@ class GameSession:
             component_schema_documents=component_schemas(self.component_types),
             play_state={
                 "active": self.playing,
+                "paused": self.play_paused,
                 "frames": self.play_frames,
                 "step": FIXED_STEP,
                 "lifecycle": self._lifecycle_state(),
@@ -414,6 +416,8 @@ class GameSession:
                     "select",
                     "select_many",
                     "play_step",
+                    "play_pause",
+                    "play_resume",
                     "play_stop",
                 ):
                     raise ValueError("play mode is active; stop it before editing")
@@ -538,6 +542,7 @@ class GameSession:
                     self.lifecycle = lifecycle
                     self.playing = True
                     self.play_frames = 0
+                    self.play_paused = False
                     self.history.clear()
                 elif action == "play_step":
                     if not self.playing:
@@ -567,6 +572,14 @@ class GameSession:
                             self.lifecycle.update(FIXED_STEP)
                         self.game.update(FIXED_STEP, state)
                     self.play_frames += frames
+                elif action == "play_pause":
+                    if not self.playing:
+                        raise ValueError("play mode is not active")
+                    self.play_paused = True
+                elif action == "play_resume":
+                    if not self.playing:
+                        raise ValueError("play mode is not active")
+                    self.play_paused = False
                 elif action == "play_stop":
                     if not self.playing:
                         raise ValueError("play mode is not active")
@@ -585,6 +598,7 @@ class GameSession:
                             )
                         self.playing = False
                         self.play_frames = 0
+                        self.play_paused = False
                         self._play_snapshot = None
                         self.history.clear()
                         self.selected_id = None
