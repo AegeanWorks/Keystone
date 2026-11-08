@@ -5,23 +5,12 @@
     "last_phase": "phase 4",
     "active_phase": 4,
     "status": "in_progress",
-    "updated_at": 1794137375.019923,
+    "updated_at": 1794137767.5687563,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
     "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-layer-visibility-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Layer visibility implemented: editor document layers inventory (name,count) and session hidden_layers; set_layer_visible toggles without scene/history edits; viewer filters hidden layers from scene render, picking, marquee bounds and pivots while game view stays unclipped; console checkbox toggles; schema 56; 812 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, describe schema 56, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794126389.1554976,
-      "timestamp_str": "2026-11-08 11:26:29",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-layer-visibility-v1",
       "phase": "completed",
@@ -267,6 +256,21 @@
       "handoff": {
         "next": "finish UI delivery evidence, commit and publish",
         "evidence": "6/6 gate green after README size repair and codebase-map refresh"
+      }
+    },
+    {
+      "task_id": "keystone-prefab-propagation-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[4/5] UI delivery task finished with reviewed snapshot; checklists: passed; UI history matches app.js and index.html",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794137767.5687563,
+      "timestamp_str": "2026-11-08 14:36:07",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "next": "rerun the 6/6 gate, commit UI evidence, then publish",
+        "evidence": "ui verify/finish OK"
       }
     }
   ]
