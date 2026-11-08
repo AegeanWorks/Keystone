@@ -180,13 +180,33 @@ class AssetRegistry:
         self._sources[asset_id] = AssetSource(source_path, kind, selected, mark)
         return record
 
+    def _refresh_order(self) -> tuple[str, ...]:
+        """Order sources so current dependencies reload before their dependants."""
+        pending = set(self._sources)
+        order: list[str] = []
+        while pending:
+            ready = [
+                asset_id
+                for asset_id in sorted(pending)
+                if not any(
+                    dependency in pending
+                    for dependency in self._records[asset_id].dependencies
+                )
+            ]
+            if not ready:
+                order.extend(sorted(pending))
+                break
+            order.extend(ready)
+            pending.difference_update(ready)
+        return tuple(order)
+
     def refresh(self) -> ReloadReport:
         """Re-read every changed source and report reloaded, unchanged, failed and missing ids."""
         reloaded: list[str] = []
         unchanged: list[str] = []
         failed: list[tuple[str, str]] = []
         missing: list[str] = []
-        for asset_id in sorted(self._sources):
+        for asset_id in self._refresh_order():
             source = self._sources[asset_id]
             mark = fingerprint(source.path)
             if mark is None:
@@ -221,10 +241,10 @@ class AssetRegistry:
                 reloaded.append(asset_id)
         return ReloadReport(
             checked=len(self._sources),
-            reloaded=tuple(reloaded),
-            unchanged=tuple(unchanged),
-            failed=tuple(failed),
-            missing=tuple(missing),
+            reloaded=tuple(sorted(reloaded)),
+            unchanged=tuple(sorted(unchanged)),
+            failed=tuple(sorted(failed)),
+            missing=tuple(sorted(missing)),
         )
 
     def get(self, asset_id: str) -> AssetRecord | None:

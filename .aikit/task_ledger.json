@@ -5,23 +5,12 @@
     "last_phase": "in_progress",
     "active_phase": 4,
     "status": "in_progress",
-    "updated_at": 1794131784.0527139,
+    "updated_at": 1794132548.841291,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-selection-assets-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Multi-selection asset assignment implemented: assign_asset_selection applies validated mesh/material ids to every selected node inside one undo entry; console Assign to selection sends only non-empty fields; empty selection and invalid assets return 400; schema 53; 809 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, describe schema 53, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794124776.24301,
-      "timestamp_str": "2026-11-08 10:59:36",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-selection-assets-v1",
       "phase": "completed",
@@ -265,6 +254,17 @@
       "status": "in_progress",
       "timestamp": 1794131784.0527139,
       "timestamp_str": "2026-11-08 12:56:24",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-commit-audit-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[run 3/6] Audited commits 1-9: found refresh order could load dependent prefabs before changed mesh assets; refresh now uses dependency-first ordering with sorted reports and a prefab-before-mesh regression; full AIKit 6/6 passed; commit and publish next",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794132548.841291,
+      "timestamp_str": "2026-11-08 13:09:08",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

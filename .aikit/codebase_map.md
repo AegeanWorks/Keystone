@@ -9,8 +9,8 @@
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
 - **Total Top-Level Functions**: `402`
-- **Total Class Methods**: `1447`
-- **Total Source Lines**: `38224`
+- **Total Class Methods**: `1449`
+- **Total Source Lines**: `38293`
 
 ---
 
@@ -225,7 +225,7 @@
 ### [`keystone/assets.py`](keystone/assets.py)
 > *Game-agnostic asset registry with stable ids, content hashes and dependencies.*
 
-**Size**: `409` lines (`15852` bytes)
+**Size**: `429` lines (`16579` bytes)
 
 **Classes:**
 - `class AssetRecord` - *One registered asset: a stable id, kind, immutable payload and content digest.*
@@ -238,6 +238,7 @@
   - Method `.__iter__()`
   - Method `.register(asset_id, payload, *, kind, source, dependencies, replace)` - *Register one asset, inferring its kind from the payload when omitted.*
   - Method `.register_file(asset_id, path, *, kind, loader, dependencies, component_types, replace)` - *Load a .obj, .png or .kprefab file and bind it for hot reload.*
+  - Method `._refresh_order()` - *Order sources so current dependencies reload before their dependants.*
   - Method `.refresh()` - *Re-read every changed source and report reloaded, unchanged, failed and missing ids.*
   - Method `.get(asset_id)` - *Return one record, or None when the id is not registered.*
   - Method `.require(asset_id)` - *Return one record or raise a KeyError naming the missing asset.*
@@ -2098,7 +2099,7 @@
 ### [`tests/test_assets.py`](tests/test_assets.py)
 > *Unit tests for the asset registry: identity, digests and dependencies.*
 
-**Size**: `487` lines (`22416` bytes)
+**Size**: `536` lines (`24254` bytes)
 
 **Classes:**
 - `class PrefabHealth`
@@ -2128,6 +2129,7 @@
   - Method `.test_dependencies_survive_refresh()`
   - Method `.test_prefab_suffix_and_default_loader()`
   - Method `.test_register_prefab_file_and_refresh()`
+  - Method `.test_refresh_reloads_dependencies_before_dependants()`
   - Method `.test_register_prefab_file_with_component_types()`
   - Method `.test_prefab_file_requires_registered_assets()`
   - Method `.test_clear_and_remove_drop_sources()`

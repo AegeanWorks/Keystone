@@ -1424,3 +1424,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1→6 audit found that renaming or deleting a saved scene updated `saved_scene` but not the project manifest's `startup_scene`. A restart could open a missing startup scene.
 - **Decision**: When the renamed/deleted scene is the startup scene and a project is configured, rewrite the manifest atomically through `set_project_startup_scene`. Rename rolls the file name back if the manifest write fails; delete clears the manifest before moving the file and restores the old startup value if the delete fails.
 - **Consequences**: A new web test covers startup rename and delete persistence. Scene library operations are slightly heavier when they touch the startup scene; scenes without a project manifest behave as before.
+
+### ADR-175: Commit audit orders asset refresh by dependencies
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1→9 audit found that `AssetRegistry.refresh()` walked source ids alphabetically. A changed prefab whose id sorted before its changed mesh dependency could load the old mesh payload and then keep it after the mesh reloaded.
+- **Decision**: Compute a dependency-first refresh order from each record's current dependency edges, falling back to sorted order if a cycle or incomplete graph blocks progress. Keep report lists sorted for stable AI output. Add a regression where `aaa.prefab` depends on `zzz.mesh`; after changing both, the reloaded prefab must reference the reloaded mesh payload.
+- **Consequences**: The new registry test and full AIKit gate cover the fix. New dependencies introduced only by a changed prefab file are still unknown until that prefab loads, so an exotic dependency-changing edit can retain the old order.
