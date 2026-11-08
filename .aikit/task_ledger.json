@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-box-selection-v1",
+    "task_id": "keystone-multi-inspector-v1",
     "last_phase": "verification",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794101239.8846185,
+    "updated_at": 1794101684.3550658,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794101240.1898053
+    "completed_at": 1794101684.7460847
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-nested-prefabs-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-nested-prefabs-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794096150.0631025,
-      "timestamp_str": "2026-11-08 03:02:30",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-prefab-overrides-v1",
-      "phase": "planning",
-      "phase_num": 2,
-      "description": "[1/3] Plan per-property prefab override detection, editor exposure, and per-field revert/apply actions",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794096423.9604316,
-      "timestamp_str": "2026-11-08 03:07:03",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Instances can diverge from their prefab templates, but the editor exposes only whole-instance revert/apply, so AI and human users cannot see or resolve individual overrides.",
-        "benefits": "A deterministic prefab_overrides report lists template/instance field differences, and revert_prefab_override/apply_prefab_override resolve one field with undo for scene edits and library-safe prefab writes for applies.",
-        "risks": "contract: editor schema 23 and two new actions; dependency: none; concurrency: existing editor lock; state: field mapping across roots/children, nested group boundaries, component presence, and atomic library writes.",
-        "mitigation": "Map template and instance trees structurally, skip nested boundaries, compare stable field values, validate the field against the live report, clone templates for applies, and add override/revert/apply/undo/library tests."
-      },
-      "plan_digest": "4db8afb7b4ca772a804b8b4b0d49dddd55b1774db2c3467d82373a003bf0dadb"
-    },
-    {
-      "task_id": "keystone-prefab-overrides-v1",
-      "phase": "verification",
-      "phase_num": 4,
-      "description": "[2/3] Per-field prefab overrides implemented: structural template/instance mapping, nested-boundary isolation, prefab_overrides report and count, per-field revert with undo, clone-and-save apply, asset/component/library coverage; 744 tests green, node check clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 23, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794097388.0104587,
-      "timestamp_str": "2026-11-08 03:23:08",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-prefab-overrides-v1",
       "phase": "completed",
@@ -264,6 +225,45 @@
       "status": "completed",
       "timestamp": 1794101240.1898074,
       "timestamp_str": "2026-11-08 04:27:20",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-multi-inspector-v1",
+      "phase": "planning",
+      "phase_num": 2,
+      "description": "[1/3] Plan multi-node shared property/transform editing and shared/mixed selection summary",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794101288.5530338,
+      "timestamp_str": "2026-11-08 04:28:08",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "The inspector edits only the primary node; multi-selection cannot batch-edit name, visibility, tags, layer or absolute transforms.",
+        "benefits": "set_selection_properties/set_selection_transform edit the ordered selection in one undo, /api/editor exposes shared vs mixed fields, and the console routes inspector apply buttons to the batch actions.",
+        "risks": "contract: editor schema 28 and two new actions; dependency: none; concurrency: editor lock; state: mixed values, root/empty selection, parent/child transform semantics, undo.",
+        "mitigation": "Validate all selected nodes through existing single-node validators, apply under one history entry, expose shared/mixed summaries, and add property/transform/undo tests."
+      },
+      "plan_digest": "81d70536f93baf94480a8ff5c9b7ee259e8ef7cf465e93db36d638ae67d0d19a"
+    },
+    {
+      "task_id": "keystone-multi-inspector-v1",
+      "phase": "verification",
+      "phase_num": 4,
+      "description": "[2/3] Multi-node inspector implemented: shared/mixed selection_summary, set_selection_properties, set_selection_transform, one-undo batch edits, console routing and property/transform/undo regressions; 758 tests green, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 28, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794101684.3550658,
+      "timestamp_str": "2026-11-08 04:34:44",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-multi-inspector-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-multi-inspector-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794101684.7460864,
+      "timestamp_str": "2026-11-08 04:34:44",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

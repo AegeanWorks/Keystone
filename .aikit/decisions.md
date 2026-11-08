@@ -1040,3 +1040,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Viewport selection required individual clicks; multi-selection needed a marquee gesture without disrupting camera orbit and gizmo drags.
 - **Decision**: Add an explicit box-select mode (`B` or the console button). In that mode, left-drag draws an overlay rectangle, projects each visible node's eight world-AABB corners, and selects nodes whose screen AABB intersects the marquee. No modifier replaces the selection, Shift adds, and Ctrl/Cmd toggles; hits are submitted through the existing `select_many` action, so highlighting and the batch centroid gizmo work unchanged. Gizmo handles keep pointer priority; pointercancel, mode changes and play-mode editing disable cancel the marquee. No API or schema change.
 - **Consequences**: 756 tests green; marquee selection reuses the selection-set contract and static console/viewer coverage verifies the wiring. Hidden/meshless nodes and nodes with bounds crossing the camera plane are not box-selected; box mode suppresses orbit until toggled off, and multi-node inspector fields remain future work.
+
+### ADR-127: Multi-node shared inspector editing
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The inspector edited only the primary node; multi-selection could not batch-edit shared name, visibility, tags, layer or absolute transforms.
+- **Decision**: Add `set_selection_properties` (name/visible/tags/layer) and `set_selection_transform` (absolute local position/rotation/scale), each applying the same validated values to every ordered selected node under one undo entry. Expose `selection_summary` with per-field `shared`/`value` entries and a `mixed` list; the console shows mixed fields and routes Apply transform/Apply node properties through the batch actions when more than one node is selected. Bump the editor schema to 28.
+- **Consequences**: 758 tests green; multi-node property/transform editing, shared/mixed summaries and undo are covered. Absolute transform edits intentionally collapse selected nodes to the same value, mixed fields show the primary inspector value until overwritten, and per-field mixed-value entry remains future work.

@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `135`
 - **Total Classes**: `215`
-- **Total Top-Level Functions**: `355`
-- **Total Class Methods**: `1324`
-- **Total Source Lines**: `30589`
+- **Total Top-Level Functions**: `360`
+- **Total Class Methods**: `1326`
+- **Total Source Lines**: `30877`
 
 ---
 
@@ -1356,7 +1356,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `51` lines (`1049` bytes)
+**Size**: `53` lines (`1112` bytes)
 
 ---
 
@@ -1535,7 +1535,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `1997` lines (`71333` bytes)
+**Size**: `2122` lines (`75536` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene and environment edits.*
@@ -1621,6 +1621,11 @@
 - `def transform_selection(scene, ids, payload)` - *Apply world position delta, local deltas, or a centroid group transform.*
 - `def toggle_selection_visible(scene, ids)` - *Flip the visibility of every selected node in one operation.*
 - `def delete_selection(scene, ids)` - *Delete all top-level selected nodes and return a surviving parent.*
+- `def _selected_nodes(scene, ids)`
+- `def set_selection_properties(scene, ids, payload)` - *Apply the same name/visible/tags/layer values to every selected node.*
+- `def set_selection_transform(scene, ids, payload)` - *Apply the same absolute local transform values to every selected node.*
+- `def _shared_field(values)`
+- `def selection_summary(scene, ids)` - *Return shared versus mixed inspector values for the selection set.*
 
 ---
 
@@ -1641,14 +1646,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `227` lines (`11000` bytes)
+**Size**: `244` lines (`11765` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1224` lines (`53693` bytes)
+**Size**: `1240` lines (`54350` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3120,7 +3125,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `2186` lines (`91865` bytes)
+**Size**: `2314` lines (`96933` bytes)
 
 **Classes:**
 - `class Health`
@@ -3174,6 +3179,8 @@
   - Method `.test_editor_add_save_unload_scene_group()`
   - Method `.test_editor_multi_selection_and_batch_actions()`
   - Method `.test_editor_multi_selection_skips_selected_descendants()`
+  - Method `.test_editor_multi_selection_shared_properties_and_summary()`
+  - Method `.test_editor_multi_selection_absolute_transform()`
   - Method `.test_editor_group_rotation_and_scale_around_selection_pivot()`
   - Method `.test_editor_scene_settings_and_undo()`
   - Method `.test_editor_batch_authoring_is_atomic()`

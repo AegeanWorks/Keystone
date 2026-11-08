@@ -835,6 +835,7 @@ def editor_document(
         )
     )
     selected_set = set(ordered_ids)
+    selection_details = selection_summary(scene, ordered_ids)
     nodes = [
         node_document(node, selected_id, registry, selected_set)
         for node in scene.traverse()
@@ -866,6 +867,7 @@ def editor_document(
         "selection": selection,
         "selected_ids": ordered_ids,
         "selection_count": len(ordered_ids),
+        "selection_summary": selection_details,
         "nodes": nodes,
         "prefab_instances": prefab_instances,
         "prefab_instance_count": prefab_instance_count,
@@ -1995,3 +1997,126 @@ def delete_selection(scene: Scene, ids: list[str]) -> Node:
             seen_links.add(link)
         deleted_parent = delete_node(scene, node)
     return deleted_parent if deleted_parent is not None else scene.root
+
+
+def _selected_nodes(scene: Scene, ids: list[str]) -> list[Node]:
+    if not ids:
+        raise ValueError("select at least one node")
+    nodes: list[Node] = []
+    seen: set[str] = set()
+    for node_id in ids:
+        if node_id in seen:
+            continue
+        seen.add(node_id)
+        node = scene.find_by_id(node_id)
+        if node is None:
+            raise KeyError(f"no node {node_id!r}")
+        if node is scene.root:
+            raise ValueError("cannot edit the scene root")
+        nodes.append(node)
+    return nodes
+
+
+def set_selection_properties(
+    scene: Scene,
+    ids: list[str],
+    payload: Mapping[str, object],
+) -> list[Node]:
+    """Apply the same name/visible/tags/layer values to every selected node."""
+    if not isinstance(scene, Scene):
+        raise TypeError("set_selection_properties target must be a Scene")
+    nodes = _selected_nodes(scene, ids)
+    for node in nodes:
+        set_node_properties(node, payload)
+    return nodes
+
+
+def set_selection_transform(
+    scene: Scene,
+    ids: list[str],
+    payload: Mapping[str, object],
+) -> list[Node]:
+    """Apply the same absolute local transform values to every selected node."""
+    if not isinstance(scene, Scene):
+        raise TypeError("set_selection_transform target must be a Scene")
+    nodes = _selected_nodes(scene, ids)
+    for node in nodes:
+        node.transform = transform_from_payload(node, dict(payload))
+    return nodes
+
+
+def _shared_field(values: list[object]) -> dict[str, object]:
+    shared = bool(values) and all(value == values[0] for value in values[1:])
+    return {"shared": shared, "value": values[0] if shared else None}
+
+
+def selection_summary(scene: Scene, ids: list[str]) -> dict[str, object]:
+    """Return shared versus mixed inspector values for the selection set."""
+    nodes: list[Node] = []
+    for node_id in ids:
+        node = scene.find_by_id(node_id)
+        if node is not None and node is not scene.root:
+            nodes.append(node)
+    if not nodes:
+        empty = {"shared": False, "value": None}
+        return {
+            "count": 0,
+            "mixed": [],
+            "name": dict(empty),
+            "visible": dict(empty),
+            "tags": dict(empty),
+            "layer": dict(empty),
+            "transform": {
+                "position": dict(empty),
+                "rotation": dict(empty),
+                "scale": dict(empty),
+            },
+        }
+    fields = {
+        "name": _shared_field([node.name for node in nodes]),
+        "visible": _shared_field([node.visible for node in nodes]),
+        "tags": _shared_field([sorted(node.tags) for node in nodes]),
+        "layer": _shared_field([node.layer for node in nodes]),
+        "transform": {
+            "position": _shared_field(
+                [
+                    [
+                        node.transform.position.x,
+                        node.transform.position.y,
+                        node.transform.position.z,
+                    ]
+                    for node in nodes
+                ]
+            ),
+            "rotation": _shared_field(
+                [
+                    [
+                        node.transform.rotation.x,
+                        node.transform.rotation.y,
+                        node.transform.rotation.z,
+                        node.transform.rotation.w,
+                    ]
+                    for node in nodes
+                ]
+            ),
+            "scale": _shared_field(
+                [
+                    [
+                        node.transform.scale.x,
+                        node.transform.scale.y,
+                        node.transform.scale.z,
+                    ]
+                    for node in nodes
+                ]
+            ),
+        },
+    }
+    mixed = [
+        name
+        for name in ("name", "visible", "tags", "layer")
+        if not fields[name]["shared"]
+    ]
+    for name in ("position", "rotation", "scale"):
+        if not fields["transform"][name]["shared"]:
+            mixed.append(f"transform.{name}")
+    return {"count": len(nodes), "mixed": mixed, **fields}

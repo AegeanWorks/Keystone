@@ -39,6 +39,19 @@ EDITOR_EXAMPLES = {
         "tags": ["player"],
         "layer": "actors",
     },
+    "set_selection_properties": {
+        "action": "set_selection_properties",
+        "name": "selected",
+        "visible": True,
+        "tags": ["batch"],
+        "layer": "props",
+    },
+    "set_selection_transform": {
+        "action": "set_selection_transform",
+        "position": [0.0, 0.0, 0.0],
+        "rotation": [0.0, 0.0, 0.0, 1.0],
+        "scale": [1.0, 1.0, 1.0],
+    },
     "set_scene": {
         "action": "set_scene",
         "camera": {"position": [0.0, 2.0, 5.0], "fov_y": 55.0},
@@ -132,6 +145,9 @@ EDITOR_SCHEMA = {
         "selection": ["selected_ids", "selection_count"],
         "select_many": ["ids", "mode"],
         "transform_selection": ["position", "rotation", "scale", "pivot", "group_rotation", "group_scale"],
+        "set_selection_properties": ["name", "visible", "tags", "layer"],
+        "set_selection_transform": ["position", "rotation", "scale"],
+        "selection_summary": ["count", "mixed", "name", "visible", "tags", "layer", "transform"],
         "prefab_instance": ["id", "name", "instance"],
         "scene_group": ["id", "name", "parent_id", "node_count", "roots"],
         "transform": ["position", "rotation", "scale"],
@@ -201,6 +217,7 @@ EDITOR_SCHEMA = {
         "schema 25 adds additive scene groups with add_scene/unload_scene/save_scene_group and editor scene_groups inventory",
         "schema 26 adds selection sets and batch transform/toggle/delete actions; selected_ids and selection_count expose the set",
         "schema 27 adds centroid group_rotation/group_scale to transform_selection for multi-selection",
+        "schema 28 adds shared set_selection_properties/set_selection_transform actions and selection_summary mixed/shared fields",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

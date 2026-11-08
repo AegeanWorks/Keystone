@@ -51,6 +51,8 @@ from keystone.web.editor import (
     set_component,
     set_node_properties,
     set_scene,
+    set_selection_properties,
+    set_selection_transform,
     toggle_selection_visible,
     transform_from_payload,
     transform_selection,
@@ -485,6 +487,20 @@ class GameSession:
                         scene, lambda: set_node_properties(node, payload)
                     )
                     self.selected_id = node.id
+                elif action == "set_selection_properties":
+                    self._apply_history(
+                        scene,
+                        lambda: set_selection_properties(
+                            scene, self.selected_ids, payload
+                        ),
+                    )
+                elif action == "set_selection_transform":
+                    self._apply_history(
+                        scene,
+                        lambda: set_selection_transform(
+                            scene, self.selected_ids, payload
+                        ),
+                    )
                 elif action == "set_scene":
                     self._apply_history(scene, lambda: set_scene(scene, payload))
                 elif action == "assign_asset":

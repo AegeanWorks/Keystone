@@ -74,6 +74,7 @@ const elements = {
   componentRemove: document.getElementById("component-remove"),
   editorRefresh: document.getElementById("editor-refresh"),
   editorState: document.getElementById("editor-state"),
+  selectionSummary: document.getElementById("selection-summary"),
   summary: document.getElementById("summary"),
   output: document.getElementById("output"),
   canvas: document.getElementById("canvas"),
@@ -594,6 +595,19 @@ function showEditor(editor) {
   elements.playState.textContent = play.active
     ? `Playing · ${play.frames} frames · ${lifecycle.started ?? 0} behaviors`
     : "Stopped";
+  const selectionSummary = editor.selection_summary || {
+    count: 0,
+    mixed: [],
+  };
+  if (selectionSummary.count > 1) {
+    elements.selectionSummary.textContent =
+      `Editing ${selectionSummary.count} nodes · mixed: ` +
+      `${selectionSummary.mixed.join(", ") || "none"}`;
+  } else if (selectionSummary.count === 1) {
+    elements.selectionSummary.textContent = "Editing 1 node";
+  } else {
+    elements.selectionSummary.textContent = "No selection";
+  }
   elements.editorState.textContent =
     `${editor.nodes.length} nodes · ${editor.prefabs.length} prefabs · ` +
     `${editor.prefab_instance_count ?? (editor.prefab_instances || []).length} instances · ` +
@@ -857,13 +871,16 @@ async function applyTransform() {
   if (!editorState || !editorState.selection) {
     throw new Error("Select a node before editing its transform.");
   }
+  const multi = (editorState.selection_count || 0) > 1;
   const payload = {
-    action: "transform",
-    id: editorState.selection.id,
+    action: multi ? "set_selection_transform" : "transform",
     position: readVector("position", 3, "Position"),
     rotation: readVector("rotation", 4, "Rotation"),
     scale: readVector("scale", 3, "Scale"),
   };
+  if (!multi) {
+    payload.id = editorState.selection.id;
+  }
   await editorAction(payload, "applying transform");
   await refreshScene(false);
 }
@@ -995,17 +1012,18 @@ async function applyNodeProperties() {
     .map((tag) => tag.trim())
     .filter(Boolean);
   const layer = elements.nodeLayer.value.trim() || "default";
-  await editorAction(
-    {
-      action: "set_node",
-      id: editorState.selection.id,
-      name,
-      visible: elements.nodeVisible.checked,
-      tags,
-      layer,
-    },
-    "applying node properties",
-  );
+  const multi = (editorState.selection_count || 0) > 1;
+  const payload = {
+    action: multi ? "set_selection_properties" : "set_node",
+    name,
+    visible: elements.nodeVisible.checked,
+    tags,
+    layer,
+  };
+  if (!multi) {
+    payload.id = editorState.selection.id;
+  }
+  await editorAction(payload, "applying node properties");
   await refreshScene(false);
 }
 

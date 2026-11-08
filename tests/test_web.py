@@ -1470,6 +1470,130 @@ class WebServerTest(unittest.TestCase):
         )
         self.assertEqual(parent["transform"]["position"], [0.0, 0.0, 0.0])
 
+    def test_editor_multi_selection_shared_properties_and_summary(self):
+        session = GameSession(CubeDemo())
+        session.editor_action(
+            {
+                "action": "create_node",
+                "id": "shared-a",
+                "name": "A",
+                "position": [0.0, 0.0, 0.0],
+            }
+        )
+        session.editor_action(
+            {
+                "action": "create_node",
+                "id": "shared-b",
+                "name": "B",
+                "position": [1.0, 0.0, 0.0],
+            }
+        )
+        session.editor_action(
+            {
+                "action": "select_many",
+                "ids": ["shared-a", "shared-b"],
+                "mode": "replace",
+            }
+        )
+        editor = session.editor()
+        summary = editor["selection_summary"]
+        self.assertEqual(summary["count"], 2)
+        self.assertFalse(summary["name"]["shared"])
+        self.assertIsNone(summary["name"]["value"])
+        self.assertTrue(summary["visible"]["shared"])
+        self.assertTrue(summary["visible"]["value"])
+        self.assertFalse(summary["transform"]["position"]["shared"])
+        self.assertIn("name", summary["mixed"])
+        self.assertIn("transform.position", summary["mixed"])
+        updated = session.editor_action(
+            {
+                "action": "set_selection_properties",
+                "name": "bulk",
+                "visible": False,
+                "tags": ["batch"],
+                "layer": "props",
+            }
+        )
+        summary = updated["selection_summary"]
+        self.assertTrue(summary["name"]["shared"])
+        self.assertEqual(summary["name"]["value"], "bulk")
+        self.assertTrue(summary["visible"]["shared"])
+        self.assertFalse(summary["visible"]["value"])
+        self.assertTrue(summary["tags"]["shared"])
+        self.assertEqual(summary["tags"]["value"], ["batch"])
+        self.assertTrue(summary["layer"]["shared"])
+        self.assertEqual(summary["layer"]["value"], "props")
+        for node_id in ("shared-a", "shared-b"):
+            node = next(
+                item for item in updated["nodes"] if item["id"] == node_id
+            )
+            self.assertEqual(node["name"], "bulk")
+            self.assertFalse(node["visible"])
+            self.assertEqual(node["tags"], ["batch"])
+            self.assertEqual(node["layer"], "props")
+        undone = session.editor_action({"action": "undo"})
+        summary = undone["selection_summary"]
+        self.assertFalse(summary["name"]["shared"])
+        self.assertTrue(summary["visible"]["shared"])
+        self.assertIn("transform.position", summary["mixed"])
+
+    def test_editor_multi_selection_absolute_transform(self):
+        session = GameSession(CubeDemo())
+        session.editor_action(
+            {
+                "action": "create_node",
+                "id": "transform-a",
+                "name": "A",
+                "position": [0.0, 0.0, 0.0],
+            }
+        )
+        session.editor_action(
+            {
+                "action": "create_node",
+                "id": "transform-b",
+                "name": "B",
+                "position": [1.0, 0.0, 0.0],
+            }
+        )
+        session.editor_action(
+            {
+                "action": "select_many",
+                "ids": ["transform-a", "transform-b"],
+                "mode": "replace",
+            }
+        )
+        updated = session.editor_action(
+            {
+                "action": "set_selection_transform",
+                "position": [2.0, 3.0, 4.0],
+                "rotation": [0.0, 0.0, 0.0, 1.0],
+                "scale": [2.0, 2.0, 2.0],
+            }
+        )
+        summary = updated["selection_summary"]
+        self.assertTrue(summary["transform"]["position"]["shared"])
+        self.assertEqual(
+            summary["transform"]["position"]["value"], [2.0, 3.0, 4.0]
+        )
+        self.assertTrue(summary["transform"]["rotation"]["shared"])
+        self.assertTrue(summary["transform"]["scale"]["shared"])
+        for node_id in ("transform-a", "transform-b"):
+            node = next(
+                item for item in updated["nodes"] if item["id"] == node_id
+            )
+            self.assertEqual(node["transform"]["position"], [2.0, 3.0, 4.0])
+            self.assertEqual(node["transform"]["rotation"], [0.0, 0.0, 0.0, 1.0])
+            self.assertEqual(node["transform"]["scale"], [2.0, 2.0, 2.0])
+        undone = session.editor_action({"action": "undo"})
+        summary = undone["selection_summary"]
+        self.assertFalse(summary["transform"]["position"]["shared"])
+        positions = {
+            node["id"]: node["transform"]["position"]
+            for node in undone["nodes"]
+        }
+        self.assertEqual(positions["transform-a"], [0.0, 0.0, 0.0])
+        self.assertEqual(positions["transform-b"], [1.0, 0.0, 0.0])
+
     def test_editor_group_rotation_and_scale_around_selection_pivot(self):
         session = GameSession(CubeDemo())
         for node_id, x in (("group-left", -1.0), ("group-right", 1.0)):
@@ -1913,6 +2037,7 @@ class WebServerTest(unittest.TestCase):
             "node-delete",
             "selection-toggle-visible",
             "box-select",
+            "selection-summary",
             "node-reparent",
             "node-visible",
             "node-tags",
@@ -1996,6 +2121,9 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("onBoxSelect", script)
         self.assertIn("toggleBoxSelect", script)
         self.assertIn("boxSelect", script)
+        self.assertIn("set_selection_properties", script)
+        self.assertIn("set_selection_transform", script)
+        self.assertIn("selectionSummary", script)
         self.assertIn("onSelect", script)
         self.assertIn("isEditingTarget", script)
         self.assertIn("keydown", script)
