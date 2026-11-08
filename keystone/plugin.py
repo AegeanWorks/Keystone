@@ -27,6 +27,10 @@ class GameModule(Protocol):
     def actions(self) -> dict[str, object]: ...
     def status(self) -> str: ...
 
+    # Optional: extend the engine's default bindings with the game's own
+    # actions. The engine calls it once, after building its InputMap.
+    # def bind_input(self, mapping: InputMap) -> None: ...
+
 
 def describe_game(game: GameModule) -> dict[str, object]:
     """Return a machine-readable capability/action/snapshot description."""
@@ -55,6 +59,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "profiler": True,
             "input_bindings": True,
             "input_contexts": True,
+            "input_bind_hook": callable(getattr(game, "bind_input", None)),
             "audio": True,
             "batching": True,
             "prefabs": True,

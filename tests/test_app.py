@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 from typing import ClassVar
 
+import keystone
 from keystone.__main__ import main
 from keystone.app import Engine
 from keystone.headless import run_simulation
@@ -21,7 +22,53 @@ class HudCube(CubeDemo):
         canvas.rect(70, 70, 30, 20, (1.0, 0.0, 0.0, 1.0))
 
 
+class BindCube(CubeDemo):
+    name = "bind-cube"
+
+    def __init__(self):
+        super().__init__()
+        self.bound = None
+
+    def bind_input(self, mapping):
+        self.bound = mapping
+        mapping.bind("fire", "mouse_left")
+        mapping.bind("reload", "r")
+        mapping.bind("jump", "space")
+
+
+class BadBindCube(CubeDemo):
+    name = "bad-bind-cube"
+
+    def bind_input(self, mapping):
+        raise RuntimeError("binding hook exploded")
+
+
 class EngineTest(unittest.TestCase):
+    def test_engine_lets_the_game_bind_its_own_controls(self):
+        game = BindCube()
+        engine = Engine(game, 48, 32, visible=False)
+        self.addCleanup(engine.close)
+
+        self.assertIs(game.bound, engine.input)
+        bindings = engine.input.list_actions()
+        self.assertEqual(bindings["fire"], "mouse_left")
+        self.assertEqual(bindings["reload"], "r")
+        self.assertEqual(bindings["jump"], "space")
+        # Defaults survive the game's bindings.
+        self.assertEqual(bindings["forward"], "w")
+        self.assertEqual(bindings["pause"], "p")
+
+    def test_a_failing_bind_hook_does_not_leave_the_engine_half_open(self):
+        with self.assertRaises(RuntimeError):
+            Engine(BadBindCube(), 48, 32, visible=False)
+
+    def test_a_game_without_the_bind_hook_keeps_the_defaults(self):
+        engine = Engine(CubeDemo(), 48, 32, visible=False)
+        self.addCleanup(engine.close)
+        bindings = engine.input.list_actions()
+        self.assertEqual(bindings["forward"], "w")
+        self.assertNotIn("fire", bindings)
+
     def test_headless_engine_runs_fixed_steps_and_saves_a_png(self):
         game = CubeDemo()
         engine = Engine(game, 48, 32, visible=False)
@@ -364,6 +411,22 @@ class CleanupAndCliTest(unittest.TestCase):
             engine.close()
         self.assertTrue(engine.context.closed)
         self.assertTrue(engine._closed)
+
+    def test_version_flag_prints_the_release_and_is_standalone(self):
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(main(["--version"]), 0)
+        self.assertIn(keystone.__version__, out.getvalue())
+        for combined in (
+            ["--version", "--simulate"],
+            ["--version", "--headless"],
+            ["--version", "--serve"],
+        ):
+            with self.subTest(combined=combined):
+                with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(
+                    SystemExit
+                ) as caught:
+                    main(combined)
+                self.assertEqual(caught.exception.code, 2)
 
     def test_standalone_commands_reject_irrelevant_flags(self):
         for argv in (

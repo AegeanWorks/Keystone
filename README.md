@@ -8,9 +8,9 @@
 
 ![Keystone engine sample](assets/engine.png)
 
-A game-agnostic 3D engine core in Python: OpenGL 3.3 PBR rendering, scene graph, meshes/OBJ, fixed-step loop, rebindable input, animation, particles, audio, collision, replay, atomic saves, batch planning/merging, and a HUD/profiler overlay.
+A game-agnostic 3D engine core in Python: OpenGL 3.3 PBR rendering, scene graph, meshes/OBJ, fixed-step loop, rebindable input, animation, particles, audio, collision, replay, atomic saves, batch merging and a HUD/profiler overlay.
 
-Games plug in through one five-operation contract. Keystone ships a **cube demo** only as a smoke test; it contains no combat, puzzles, procedural worlds or other genre rules. External game modules live outside this package and load with `--game package.module:Factory`. Games may also add an optional `draw_ui(canvas, state)` HUD hook.
+Games plug in through one five-operation contract. Keystone ships a **cube demo** only as a smoke test; it contains no combat, puzzles, procedural worlds or other genre rules. External games live outside this package and load with `--game package.module:Factory`. Games may add optional `draw_ui` and `bind_input` hooks.
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
@@ -126,7 +126,7 @@ assert scene.query(tag="player", layer="actors") == [hero]
 assert scene.query(component=Health) == [hero]
 ```
 
-IDs are allocated per scene (`node-1`, `node-2`, ...) on attach or first traversal. An explicit `id` is kept, a duplicate is rejected, and reparenting preserves the ID. `tags` are a set of strings, `layer` is one string, and each node holds one component per type. Queries are linear scans over the scene; an index can be added when a real workload needs it.
+IDs are allocated per scene (`node-1`, `node-2`, ...) on attach or first traversal. An explicit `id` is kept, a duplicate is rejected, and reparenting preserves the ID. `tags` are a set of strings, `layer` is one string, and each node holds one component per type. Queries are linear scans; an index can be added when a real workload needs it.
 
 ### Physics: broadphase, characters and triggers
 
@@ -152,7 +152,7 @@ events = TriggerTracker().update(body.box(), [TriggerVolume("door", AABB(Vec3(0,
 hit = raycast(Ray(Vec3(), Vec3(0, 0, 1)), [("wall", wall)])
 ```
 
-`SpatialGrid` keeps a uniform grid of AABB proxies with exact overlaps in insertion order; `cell_size` trades speed, not correctness. `CharacterController` moves an AABB body with wish velocity, gravity, wall/floor response, stair step-up, slope-limited climb and platform carry; capsules and solvers are excluded. `TriggerTracker` reports sorted `entered`/`exited` tuples and an immutable `active` set; `raycast()` returns the nearest filtered hit.
+`SpatialGrid` keeps a uniform grid of AABB proxies with exact overlaps in insertion order; `cell_size` trades speed, not correctness. `CharacterController` moves an AABB body with wish velocity, gravity, wall/floor response, stair step-up, slope-limited climb and platform carry; capsules and solvers are excluded. `TriggerTracker` reports sorted `entered`/`exited` tuples and an immutable `active` set; `raycast()` returns the nearest hit.
 
 ### Optional game UI
 
@@ -167,7 +167,7 @@ def draw_ui(self, canvas: Canvas, state: HudState) -> None:
     canvas.text(28, 108, f"OBJECTS {len(self.objects)}", (0.92, 0.94, 0.97, 1.0))
 ```
 
-The hook runs before the engine HUD and pause menu, so engine UI stays on top. It receives the current `Canvas` and `HudState`, so games use the same embedded font, clipping and pause state as the engine. Hiding the overlay (`H`) hides game UI too.
+The hook runs before the engine HUD and pause menu, so engine UI stays on top. It receives the current `Canvas` and `HudState`, so games share the embedded font, clipping and pause state. Hiding the overlay (`H`) hides game UI too.
 
 ### Textures
 
@@ -182,7 +182,7 @@ material = Material(
 )
 ```
 
-`TextureData.from_png()` accepts the same 8-bit RGBA PNGs as the reader. `TextureData.checker(size, dark, light, cell)` builds a deterministic texture without a file. Textures use repeat wrapping, mipmaps and the mesh UVs; the renderer caches one GPU texture per immutable payload.
+`TextureData.from_png()` accepts the same 8-bit RGBA PNGs as the reader. `TextureData.checker(size, dark, light, cell)` builds a deterministic texture without a file. Textures use repeat wrapping, mipmaps and mesh UVs; the renderer caches one GPU texture per immutable payload.
 
 ## 🕹️ Sample Controls
 
@@ -202,7 +202,7 @@ The bundled `CubeDemo` uses the generic action map; the overlay shows it at runt
 | `F1` | Release / recapture the mouse |
 | `Esc` | Quit |
 
-Pausing stops `GameModule.update()` while the window, renderer and overlay stay responsive. The pause menu offers `Resume`, `Hide HUD` and `Quit`; the cursor is released while it is open so items can be clicked, and recaptured on resume. The overlay is presentation-only: it never mutates game state.
+Pausing stops `GameModule.update()` while the window, renderer and overlay stay responsive. The pause menu offers `Resume`, `Hide HUD` and `Quit`; the cursor is released while it is open and recaptured on resume. The overlay never mutates game state.
 
 ## 🖥️ Human UI
 
@@ -224,7 +224,7 @@ The overlay contains:
 - an interactive pause menu with `Resume`, `Hide HUD` and `Quit`, navigable by keyboard or mouse;
 - a centered pause banner.
 
-`keystone.ui` splits into an embedded 5×7 font, a clipped screen-space `Canvas`, panel/button widgets, a pure `PauseMenu` state machine and `HumanOverlay`; `keystone.gpu.ui_renderer` uploads the canvas as one alpha-blended draw call. A game's optional `draw_ui(canvas, state)` hook draws into the same canvas, so a headless `--ui` report measures the pixels a person sees.
+`keystone.ui` splits into an embedded 5×7 font, a clipped screen-space `Canvas`, panel/button widgets, a pure `PauseMenu` state machine and `HumanOverlay`; `keystone.gpu.ui_renderer` uploads the canvas as one alpha-blended draw call. A game's optional `draw_ui(canvas, state)` hook draws into the same canvas, so a headless `--ui` report measures what a person sees.
 
 ## 🌐 Web Console, JSON API and WebGL Viewer
 
@@ -233,9 +233,9 @@ python -m keystone --serve
 python -m keystone --serve --port 8899 --game package.module:Factory
 ```
 
-The console binds to `127.0.0.1:8000` by default and serves a browser dashboard plus the same AI-facing JSON used by the CLI. It uses only the Python standard library and vanilla JavaScript; there is no npm build, CDN or extra runtime dependency.
+The console binds to `127.0.0.1:8000` by default and serves a browser dashboard plus the same AI-facing JSON as the CLI. It uses only the Python standard library and vanilla JavaScript; there is no npm build, CDN or extra runtime dependency.
 
-The dashboard can inspect the game contract, run the same action scripts as `--simulate`, refresh the live scene, and preview it in a WebGL2 viewer with textures, vertex colors, lights and fog. The browser viewer is an inspection approximation; the OpenGL renderer remains the pixel authority.
+The dashboard can inspect the game contract, run the same action scripts as `--simulate`, refresh the live scene, and preview it in a WebGL2 viewer with textures, vertex colors, lights and fog. The browser viewer is an approximation; the OpenGL renderer remains the pixel authority.
 
 | Endpoint | Method | Purpose |
 |---|---|---|
@@ -271,8 +271,8 @@ The API sends CORS headers so local AI clients can call it directly. Keep the de
 - **Visual regression gate**: `--compare-baseline baseline.json` re-renders, compares hashes, stats and nodes, and exits non-zero on change. `--diff-out diff.png` writes a changed-pixel diff.
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip loading, changed-pixel counts, bbox and visual diff.
 - **Frame reports for AI analysis**: `--report` writes schema-11 JSON with image hashes, pixel stats, content box, palette, camera, projected content, FX counts and UI metadata.
-- **Human overlay**: game-agnostic HUD with status, FPS, frame, time and profiler lines, plus help/pause menu; 5×7 font, no asset. Games add HUD via `draw_ui(canvas, state)`.
-- **Web console and WebGL viewer**: `--serve` exposes a stdlib JSON API (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/editor`, `/api/simulate`) and a scene editor for hierarchy, node/asset/component authoring, transforms, undo, prefabs, play/snapshot, views, grid, animation/materials, drag-drop/copy-paste/locking, assets, validation, layers, layout and build.
+- **Human overlay**: game-agnostic HUD with status, FPS, frame, time and profiler lines, plus help/pause menu; 5×7 font, no asset. Games add HUD via `draw_ui`.
+- **Web console and WebGL viewer**: `--serve` exposes a stdlib JSON API (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/editor`, `/api/simulate`) and a scene editor for hierarchy, node/asset/component authoring, transforms, undo, prefabs, play/snapshot, views, grid, animation/materials, drag-drop/copy-paste/locking, assets, validation, layers and layout.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code.
 
 ## 🤖 AI Testing & Frame Analysis
@@ -293,7 +293,7 @@ python -m keystone --headless --frames 1 --size 1280x720 \
   --out frame.png --report current.json --compare-baseline baseline.json
 ```
 
-The first command runs the scenario twice and exits 0 only when both hashes match. The second renders, writes the current report, compares it with the baseline and exits non-zero when the image changed. The diff includes luminance/content deltas and changed/added/removed nodes. `--diff-out diff.png` adds a visual pixel diff. `--expect-hash <32-hex>` pins a known final hash for either simulation mode.
+The first command runs the scenario twice and exits 0 only when both hashes match. The second renders, writes the current report, compares it with the baseline and exits non-zero when the image changed. The diff covers luminance/content deltas and changed/added/removed nodes. `--diff-out diff.png` adds a visual pixel diff. `--expect-hash <32-hex>` pins a known final hash for either simulation mode.
 
 See [`docs/AI_GUIDE.md`](docs/AI_GUIDE.md) for the complete workflow.
 
@@ -361,6 +361,7 @@ AI clients diff frames/scenes/sim/UI via `compare_reports(before, after)` (image
 keystone/
 ├── keystone/
 │   ├── __init__.py           <- public API and version
+│   ├── _version.py           <- single-source release version
 │   ├── __main__.py           <- CLI: --game, headless frames, PNG
 │   ├── agents.py             <- AI adapters and audit trail
 │   ├── animation.py          <- clips, controller and pose reports
@@ -520,6 +521,7 @@ keystone/
 │   ├── test_serialization.py <- atomic JSON persistence
 │   ├── test_component_codec.py <- typed component JSON codec
 │   ├── test_library_trash.py <- recoverable library deletes
+│   ├── test_version.py       <- version single-source drift guard
 │   ├── test_headless.py      <- no-GL simulation and action scripts
 │   ├── test_analysis.py      <- frame stats, projection, report diff
 │   ├── test_testing.py       <- deterministic helpers
@@ -537,6 +539,7 @@ keystone/
 ├── COMMERCIAL.md             <- Commercial licensing terms
 ├── LICENSES/                 <- REUSE license texts
 ├── REUSE.toml                <- Machine-readable SPDX metadata
+├── CHANGELOG.md              <- release history
 ├── README.md
 └── .aikit/                   <- this project's memory: record, ledger, decisions
 ```

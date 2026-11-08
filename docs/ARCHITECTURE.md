@@ -189,7 +189,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 6. **AI adapters** — implemented in v0.27.0; validated actions, fused observations, report summaries and hash-chained audit trail.
 6. **Animation** — deterministic keyframe clips, looping controller, pose application and JSON round trips in v0.29.0; crossfade blending and timed events in v0.30.0; skinning (LBS-4, CPU + GPU, glTF) in v0.41.0; deterministic CPU particles with HUD/inspector/AI reports in v0.31.0, swept AABB collision in v0.40.0, GPU point sprites in v0.42.0, bounce/friction/contact-kill in v0.43.0.
 6. **Serialization/replay** — versioned scene snapshot format and undo/redo in v0.25.0; deterministic replay runner with `--replay` in v0.30.0; seeded bot playtester with transcript diffing and fairness validation in v0.33.0.
-7. **Tooling** — the v0.20.0 web console covers discovery, simulation and scene preview; `/api/inspector` with batch plan and audio state in v0.28.0 plus merge summary and animation state in v0.29.0 plus asset inventory in v0.30.0; the v0.46.0 scene editor adds hierarchy, selection, transforms and prefabs; richer HUD widgets and editor hooks remain.
+7. **Tooling** — the v0.20.0 web console covers discovery, simulation and scene preview; `/api/inspector` with batch plan and audio state in v0.28.0 plus merge summary and animation state in v0.29.0 plus asset inventory in v0.30.0; the v0.45.0 scene editor adds hierarchy, selection, transforms and prefabs; richer HUD widgets and editor hooks remain.
 
 Each core system must have a game-agnostic test and must not introduce genre vocabulary.
 

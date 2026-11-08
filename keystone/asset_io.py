@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from keystone.geometry import Material, MeshData
@@ -56,6 +56,8 @@ class ReloadReport:
     unchanged: tuple[str, ...] = ()
     failed: tuple[tuple[str, str], ...] = ()
     missing: tuple[str, ...] = ()
+    rebound: int = 0
+    registry_rebound: int = 0
 
     @property
     def ok(self) -> bool:
@@ -70,6 +72,8 @@ class ReloadReport:
             "unchanged": list(self.unchanged),
             "failed": [{"id": asset_id, "error": error} for asset_id, error in self.failed],
             "missing": list(self.missing),
+            "rebound": self.rebound,
+            "registry_rebound": self.registry_rebound,
             "ok": self.ok,
         }
 
@@ -82,6 +86,57 @@ def default_loader(kind: str) -> AssetLoader:
     if loader is None:
         raise ValueError(f"no default loader for {kind} assets; pass loader=...")
     return loader
+
+
+def rebind_payload(
+    payload: object, replacements: Mapping[int, object]
+) -> tuple[object, bool]:
+    """Return a reloaded payload (or a material with a reloaded texture).
+
+    ``replacements`` maps ``id(old_payload)`` to the new payload. Materials are
+    also rebound through their texture, because a reloaded texture changes the
+    material immutably rather than in place.
+    """
+    if not isinstance(replacements, Mapping):
+        raise TypeError("asset replacements must be a mapping")
+    replacement = replacements.get(id(payload))
+    if replacement is not None:
+        return replacement, replacement is not payload
+    if isinstance(payload, Material) and payload.texture is not None:
+        texture = replacements.get(id(payload.texture))
+        if texture is not None:
+            return replace(payload, texture=texture), True
+    return payload, False
+
+
+def rebind_node_assets(
+    node: object, replacements: Mapping[int, object]
+) -> int:
+    """Point one node's mesh and material at reloaded payloads; return changes."""
+    rebound = 0
+    mesh, changed = rebind_payload(getattr(node, "mesh", None), replacements)
+    if changed:
+        node.mesh = mesh
+        rebound += 1
+    material, changed = rebind_payload(
+        getattr(node, "material", None), replacements
+    )
+    if changed:
+        node.material = material
+        rebound += 1
+    return rebound
+
+
+def rebind_prefab_assets(
+    prefab: object, replacements: Mapping[int, object]
+) -> int:
+    """Swap reloaded payloads inside one cached prefab template."""
+    roots = getattr(prefab, "roots", ())
+    return sum(
+        rebind_node_assets(node, replacements)
+        for root in roots
+        for node in root.traverse()
+    )
 
 
 def kind_from_suffix(path: str | Path) -> str:

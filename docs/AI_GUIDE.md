@@ -15,6 +15,37 @@ The JSON response contains:
 - `snapshot`: the current state shape;
 - `capabilities`: `simulate`, `render`, `human_ui`, `game_ui`, `web` and the versioned `report_schema`/`scene_schema`.
 
+`capabilities.input_bind_hook` is `true` when the game implements
+`bind_input(mapping)`, which is how a game binds its own live controls:
+
+```python
+class MyGame:
+    name = "my-game"
+
+    def bind_input(self, mapping):          # optional sixth capability
+        mapping.bind("fire", "mouse_left")  # merged over the engine defaults
+        mapping.bind("reload", "r")
+        mapping.bind("slot1", "1")
+```
+
+The engine calls the hook once after building its `InputMap`, so the game's
+bindings sit on top of the default movement, look, pause and quit keys. The
+hook runs once per engine, its defaults survive, and a game without the hook
+keeps the defaults unchanged. To catch a misleading contract, compare what the
+game advertises with what can actually arrive:
+
+```python
+from keystone.input import InputMap
+
+mapping = InputMap()
+mapping.bind("fire", "mouse_left")
+unreachable = mapping.unbound_buttons(["fire", "sprint", "reload"])
+# ["reload"] -> declared in actions() but no binding can produce it
+```
+
+`--version` prints the release and is a standalone query; combining it with a
+run mode is rejected with exit 2, like every other standalone flag.
+
 ## 1b. Create or open a project
 
 ```bash
@@ -150,6 +181,7 @@ python -m keystone --serve --port 8899
 - `import_asset` requires `--project`, accepts a non-blank project-relative `.obj`, `.png` or `.kprefab` path, appends it to `keystone.json` atomically, registers it as `project:<path>` with `replace=True`, and returns an `imported_asset` report (`path`, `asset`, `kind`, `duplicate`, `count`); re-importing a listed path refreshes the registry record without duplicating the manifest entry, traversal/missing files and unsupported formats fail with actionable guidance, and the console exposes a path input, Import asset button and readout (`workspace.project_dir` shows whether import is available).
 - `import_gltf` requires `--project` and a prefab library, accepts a project-relative `.gltf`/`.glb` path plus an optional prefab `name`, imports the scene into `<prefabs>/<name>.kprefab`, registers `gltf.<name>.texture.*`, `.material.*` and `.mesh.*` assets, appends the source to `keystone.json`, and returns an `imported_gltf` report (`path`, `prefab`, `assets`, `asset_count`, `duplicate`, `replaced_prefab`, `count`); re-import refreshes the derived prefab/assets, failures restore the manifest, previously registered derived records and removed newly added assets, and the console routes `.gltf`/`.glb` paths through this action automatically.
 - `reload_assets` calls `AssetRegistry.refresh()` with meshes/textures ahead of materials and prefabs last, rebinds scene mesh/material payloads and inline material textures plus undo/redo snapshots, cached prefab templates, the clipboard and registry material payloads to changed records, keeps last-good payloads when a file fails or disappears, and returns an `asset_reload` report (`ok`, `checked`, `reloaded`, `unchanged`, `failed`, `missing`, `rebound`, `history_rebound`, `prefab_rebound`, `clipboard_rebound`, `registry_rebound`); the console Reload assets button shows the counts.
+- Plain (non-editor) consumers use the core rule directly: `AssetRegistry.reload(scene)` refreshes sources and then rebinds that scene's nodes, registered materials and inline textures, returning `rebound` and `registry_rebound` on the `ReloadReport`. `refresh()` alone still only replaces records, so a live scene keeps stale payloads until either call. The web editor delegates to the same core helpers, so there is one rebinding rule rather than two.
 - `forget_asset` requires `--project` and an AssetRegistry, accepts a project-relative `.obj`, `.png` or `.kprefab` path, rejects glTF/GLB and unsupported paths, blocks while scene nodes, material textures, registry dependencies, in-memory/saved prefabs or saved scenes reference the payload, clears forgotten payloads from undo/redo snapshots and the clipboard, then removes the manifest entry atomically and unregisters the record while keeping the source file; the document exposes `project_assets` and a `forgotten_asset` report (`path`, `asset`, `removed`, `history_cleared`, `clipboard_cleared`, `count`), and the console lists project paths with a Forget asset control.
 - `asset_usages` accepts exactly one of `asset` (exact id) or `path` (project-relative) and returns `registered`, `kind`, `scene_nodes`, `registry`, `prefabs`, `scenes`, `history_references`, `clipboard_references`, `project_asset`, `references` and `found`; it scans the live scene, registry dependencies/textures, in-memory and saved prefabs, saved scenes, undo/redo snapshots and the clipboard; `history_references` and `clipboard_references` are reported separately and do not raise `references` or block forgetting. The console Find usages button accepts a path or asset id.
 - `assign_asset_selection` applies validated `mesh`/`material` ids to every selected node in one undo entry; the console Assign to selection button sends only non-empty fields. Single-node `assign_asset` remains available for per-node replacement or clearing.

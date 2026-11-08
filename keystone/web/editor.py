@@ -15,6 +15,11 @@ from dataclasses import MISSING, fields, is_dataclass, replace
 from typing import NamedTuple, TypeVar
 
 from keystone.animation import AnimationClip, Track
+from keystone.asset_io import (
+    rebind_node_assets,
+    rebind_payload,
+    rebind_prefab_assets,
+)
 from keystone.assets import AssetRegistry
 from keystone.camera import MAX_PITCH
 from keystone.component_codec import (
@@ -674,42 +679,6 @@ def _restore_nodes(scene: Scene, snapshot: list[dict[str, object]]) -> None:
     list(scene.traverse())
 
 
-def _rebind_payload(
-    payload: object, replacements: Mapping[int, object]
-) -> tuple[object, bool]:
-    """Return a reloaded payload (or a material with a reloaded texture)."""
-    replacement = replacements.get(id(payload))
-    if replacement is not None:
-        return replacement, replacement is not payload
-    if isinstance(payload, Material) and payload.texture is not None:
-        texture = replacements.get(id(payload.texture))
-        if texture is not None:
-            return replace(payload, texture=texture), True
-    return payload, False
-
-
-def _rebind_node_assets(node: Node, replacements: Mapping[int, object]) -> int:
-    rebound = 0
-    mesh, changed = _rebind_payload(node.mesh, replacements)
-    if changed:
-        node.mesh = mesh
-        rebound += 1
-    material, changed = _rebind_payload(node.material, replacements)
-    if changed:
-        node.material = material
-        rebound += 1
-    return rebound
-
-
-def _rebind_prefab_assets(prefab: Prefab, replacements: Mapping[int, object]) -> int:
-    """Swap reloaded payloads inside one cached prefab template."""
-    return sum(
-        _rebind_node_assets(node, replacements)
-        for root in prefab.roots
-        for node in root.traverse()
-    )
-
-
 def _clear_node_payloads(node: Node, payload_ids: set[int]) -> int:
     cleared = 0
     if node.mesh is not None and id(node.mesh) in payload_ids:
@@ -782,11 +751,11 @@ def _rebind_snapshot_nodes(
     for data in nodes:
         if not isinstance(data, dict):
             continue
-        mesh, changed = _rebind_payload(data.get("mesh"), replacements)
+        mesh, changed = rebind_payload(data.get("mesh"), replacements)
         if changed:
             data["mesh"] = mesh
             rebound += 1
-        material, changed = _rebind_payload(data.get("material"), replacements)
+        material, changed = rebind_payload(data.get("material"), replacements)
         if changed:
             data["material"] = material
             rebound += 1
@@ -1038,7 +1007,7 @@ def reload_scene_assets(
             record.payload, Material
         ):
             continue
-        material, changed = _rebind_payload(record.payload, replacements)
+        material, changed = rebind_payload(record.payload, replacements)
         if not changed:
             continue
         registry.register(
@@ -1052,21 +1021,21 @@ def reload_scene_assets(
         replacements[id(record.payload)] = material
         registry_rebound += 1
     rebound = sum(
-        _rebind_node_assets(node, replacements) for node in scene.traverse()
+        rebind_node_assets(node, replacements) for node in scene.traverse()
     )
     history_rebound = (
         history.rebind_assets(replacements) if history is not None else 0
     )
     prefab_rebound = (
         sum(
-            _rebind_prefab_assets(prefab, replacements)
+            rebind_prefab_assets(prefab, replacements)
             for prefab in prefabs.values()
         )
         if prefabs is not None
         else 0
     )
     clipboard_rebound = (
-        _rebind_prefab_assets(clipboard, replacements)
+        rebind_prefab_assets(clipboard, replacements)
         if clipboard is not None
         else 0
     )

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from keystone._version import __version__
 from keystone.agents import AuditTrail, observe, parse_actions, summarize_report
 from keystone.animation import (
     AnimationClip,
@@ -83,7 +84,6 @@ from keystone.scene_snapshot import scene_from_dict, scene_to_dict
 from keystone.skin import bone_matrices, skin_mesh, skin_point
 from keystone.texture import TextureData
 
-__version__ = "0.45.0"
 __all__ = [
     "PLAYTEST_REPORT_SCHEMA",
     "SAMPLE_RATE",
@@ -134,6 +134,7 @@ __all__ = [
     "Track",
     "Transform",
     "Vec3",
+    "__version__",
     "aabb_visible",
     "animation_report",
     "apply_pose",

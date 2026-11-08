@@ -68,6 +68,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--name", default=None, help="project name for --new (default: directory name)")
     parser.add_argument("--force", action="store_true", help="allow --new to write into a non-empty directory")
     parser.add_argument("--describe", action="store_true", help="print the game capability/action/snapshot schema")
+    parser.add_argument(
+        "--version",
+        action="store_true",
+        help="print the Keystone version and exit",
+    )
     parser.add_argument("--headless", action="store_true", help="render without opening a window")
     parser.add_argument("--simulate", action="store_true", help="advance the game without OpenGL")
     parser.add_argument("--verify-determinism", action="store_true", help="run a scenario twice and compare hashes")
@@ -116,6 +121,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=None, help="PNG for rendering; JSON report for --simulate")
     parser.add_argument("--report", type=Path, default=None, help="machine-readable frame report (requires --headless)")
     args = parser.parse_args(argv)
+    if args.version:
+        # --version is a standalone query; combining it with a run mode would
+        # silently ignore the mode, which every other standalone flag rejects.
+        if len(argv or sys.argv[1:]) > 1:
+            parser.error("--version is a standalone query and takes no other flags")
+        from keystone import __version__
+
+        print(f"keystone {__version__}")
+        return 0
     if args.new is not None:
         incompatible = (
             args.project is not None or args.describe or args.headless or args.simulate

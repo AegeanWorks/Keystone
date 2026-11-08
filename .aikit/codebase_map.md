@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `149`
-- **Total Classes**: `237`
+- **Total Python Modules**: `151`
+- **Total Classes**: `240`
 - **Total Top-Level Functions**: `426`
-- **Total Class Methods**: `1536`
-- **Total Source Lines**: `41720`
+- **Total Class Methods**: `1558`
+- **Total Source Lines**: `42098`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `184` lines (`4095` bytes)
+**Size**: `185` lines (`4133` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `671` lines (`36286` bytes)
+**Size**: `685` lines (`36824` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -38,6 +38,13 @@
 - `def _port(text)`
 - `def _seed(text)`
 - `def main(argv)`
+
+---
+
+### [`keystone/_version.py`](keystone/_version.py)
+> *The single source of truth for the engine version.*
+
+**Size**: `10` lines (`324` bytes)
 
 ---
 
@@ -209,11 +216,12 @@
 ### [`keystone/app.py`](keystone/app.py)
 > *Game-agnostic engine runtime: window, fixed step, input, render and capture.*
 
-**Size**: `330` lines (`13143` bytes)
+**Size**: `350` lines (`13935` bytes)
 
 **Classes:**
 - `class Engine` - *Owns the runtime around one external GameModule.*
   - Method `.__init__(game, width, height, visible, msaa, title, ui, scene)`
+  - Method `._apply_game_bindings()` - *Let the game extend the default bindings through an optional hook.*
   - Method `.__enter__()`
   - Method `.__exit__(*exc_info)`
   - Method `._set_capture(captured)`
@@ -232,7 +240,7 @@
 ### [`keystone/asset_io.py`](keystone/asset_io.py)
 > *Disk-backed asset sources, default loaders and hot-reload reporting.*
 
-**Size**: `129` lines (`4548` bytes)
+**Size**: `184` lines (`6438` bytes)
 
 **Classes:**
 - `class AssetSource` - *One file-backed asset: where it came from, how to load it and its last stamp.*
@@ -243,6 +251,9 @@
 
 **Functions:**
 - `def default_loader(kind)` - *Return the built-in loader for a kind, or explain how to supply one.*
+- `def rebind_payload(payload, replacements)` - *Return a reloaded payload (or a material with a reloaded texture).*
+- `def rebind_node_assets(node, replacements)` - *Point one node's mesh and material at reloaded payloads; return changes.*
+- `def rebind_prefab_assets(prefab, replacements)` - *Swap reloaded payloads inside one cached prefab template.*
 - `def kind_from_suffix(path)` - *Infer an asset kind from a .obj, .png or .kprefab path.*
 - `def fingerprint(path)` - *Return (mtime_ns, size) for a readable path, or None when it is absent.*
 - `def asset_kind(payload)` - *Return the registry kind of a payload object.*
@@ -253,7 +264,7 @@
 ### [`keystone/assets.py`](keystone/assets.py)
 > *Game-agnostic asset registry with stable ids, content hashes and dependencies.*
 
-**Size**: `436` lines (`16847` bytes)
+**Size**: `496` lines (`19308` bytes)
 
 **Classes:**
 - `class AssetRecord` - *One registered asset: a stable id, kind, immutable payload and content digest.*
@@ -268,6 +279,8 @@
   - Method `.register_file(asset_id, path, *, kind, loader, dependencies, component_types, replace)` - *Load a .obj, .png or .kprefab file and bind it for hot reload.*
   - Method `._refresh_order()` - *Order sources so dependencies and new leaf edges reload first.*
   - Method `.refresh()` - *Re-read every changed source and report reloaded, unchanged, failed and missing ids.*
+  - Method `.reload(scene)` - *Refresh every source and rebind live scene nodes to new payloads.*
+  - Method `._rebind_registry_materials(replacements)` - *Keep registered materials pointing at their reloaded textures.*
   - Method `.get(asset_id)` - *Return one record, or None when the id is not registered.*
   - Method `.require(asset_id)` - *Return one record or raise a KeyError naming the missing asset.*
   - Method `.remove(asset_id)` - *Remove one record or raise a KeyError naming the missing asset.*
@@ -873,7 +886,7 @@
 ### [`keystone/input.py`](keystone/input.py)
 > *Generic input mapping: named actions, axes and pointer look.*
 
-**Size**: `375` lines (`15647` bytes)
+**Size**: `396` lines (`16539` bytes)
 
 **Classes:**
 - `class ActionState` - *One sampled input frame; games translate names into their own rules.*
@@ -889,6 +902,7 @@
   - Method `.list_contexts()`
   - Method `.unbind(action)` - *Remove a custom binding from the active context; returns False when not bound.*
   - Method `.list_actions()` - *Return a copy of the current action-to-key map for UI and AI clients.*
+  - Method `.unbound_buttons(buttons)` - *Return declared buttons that no binding in any context can produce.*
   - Method `.to_dict()`
   - Method `.from_dict(data)`
   - Method `.save_bindings(path)`
@@ -1182,7 +1196,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `115` lines (`4253` bytes)
+**Size**: `120` lines (`4532` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1696,7 +1710,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `3213` lines (`113934` bytes)
+**Size**: `3182` lines (`112798` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1737,9 +1751,6 @@
 - `def _snapshot_nodes(scene)`
 - `def _node_from_snapshot(data)`
 - `def _restore_nodes(scene, snapshot)`
-- `def _rebind_payload(payload, replacements)` - *Return a reloaded payload (or a material with a reloaded texture).*
-- `def _rebind_node_assets(node, replacements)`
-- `def _rebind_prefab_assets(prefab, replacements)` - *Swap reloaded payloads inside one cached prefab template.*
 - `def _clear_node_payloads(node, payload_ids)`
 - `def clear_clipboard_payloads(clipboard, payload_ids)` - *Remove forgotten payloads from the selection clipboard.*
 - `def _count_node_payloads(node, payload_ids)`
@@ -2109,12 +2120,20 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `554` lines (`22672` bytes)
+**Size**: `617` lines (`24907` bytes)
 
 **Classes:**
 - `class HudCube`
   - Method `.draw_ui(canvas, _state)`
+- `class BindCube`
+  - Method `.__init__()`
+  - Method `.bind_input(mapping)`
+- `class BadBindCube`
+  - Method `.bind_input(mapping)`
 - `class EngineTest`
+  - Method `.test_engine_lets_the_game_bind_its_own_controls()`
+  - Method `.test_a_failing_bind_hook_does_not_leave_the_engine_half_open()`
+  - Method `.test_a_game_without_the_bind_hook_keeps_the_defaults()`
   - Method `.test_headless_engine_runs_fixed_steps_and_saves_a_png()`
   - Method `.test_ui_capture_alpha_is_opaque()`
   - Method `.test_ui_overlay_changes_the_captured_frame()`
@@ -2145,6 +2164,7 @@
   - Method `.test_capture_report_and_png()`
 - `class CleanupAndCliTest`
   - Method `.test_close_closes_context_when_release_raises()`
+  - Method `.test_version_flag_prints_the_release_and_is_standalone()`
   - Method `.test_standalone_commands_reject_irrelevant_flags()`
   - Method `.test_zero_frames_is_rejected_instead_of_silently_defaulted()` - *`--frames 0` must fail: every mode used a falsy check and ran 1 or 120.*
 - `class _CadenceContext`
@@ -2180,7 +2200,7 @@
 ### [`tests/test_assets.py`](tests/test_assets.py)
 > *Unit tests for the asset registry: identity, digests and dependencies.*
 
-**Size**: `612` lines (`27239` bytes)
+**Size**: `696` lines (`30804` bytes)
 
 **Classes:**
 - `class PrefabHealth`
@@ -2204,6 +2224,10 @@
   - Method `.test_register_file_requires_kind_or_known_suffix()`
   - Method `.test_refresh_reports_unchanged()`
   - Method `.test_refresh_reloads_changed_texture()`
+  - Method `.test_reload_rebinds_live_scene_nodes()` - *A plain consumer must not keep stale geometry after a reload.*
+  - Method `.test_reload_rejects_a_non_scene_target()`
+  - Method `.test_reload_without_a_scene_still_refreshes()`
+  - Method `.test_reload_reports_zero_rebound_when_nothing_changed()`
   - Method `.test_refresh_failure_keeps_last_good_payload()`
   - Method `.test_refresh_missing_then_recovers()`
   - Method `.test_refresh_reports_loader_type_error()`
@@ -2588,7 +2612,7 @@
 ### [`tests/test_input.py`](tests/test_input.py)
 > *Tests for input sampling and action state.*
 
-**Size**: `216` lines (`8896` bytes)
+**Size**: `235` lines (`9767` bytes)
 
 **Classes:**
 - `class FakeContext`
@@ -2597,6 +2621,9 @@
   - Method `.cursor_position()`
   - Method `.mouse_down(button)`
 - `class InputMapTest`
+  - Method `.test_unbound_buttons_reports_declared_actions_with_no_binding()`
+  - Method `.test_unbound_buttons_counts_bindings_from_every_context()`
+  - Method `.test_unbound_buttons_rejects_non_list_input()`
   - Method `.test_axes_and_pressed_edges()`
   - Method `.test_custom_binding()`
   - Method `.test_mouse_delta_feeds_look()`
@@ -3502,6 +3529,20 @@
 
 **Functions:**
 - `def state(**overrides)`
+
+---
+
+### [`tests/test_version.py`](tests/test_version.py)
+> *Tests that the version is stated in exactly one place and does not drift.*
+
+**Size**: `57` lines (`2019` bytes)
+
+**Classes:**
+- `class VersionTest`
+  - Method `.test_package_and_private_version_agree()`
+  - Method `.test_pyproject_version_matches_the_package()`
+  - Method `.test_architecture_docs_do_not_claim_a_future_version()`
+  - Method `.test_changelog_exists_and_lists_the_current_version()`
 
 ---
 

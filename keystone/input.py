@@ -244,6 +244,27 @@ class InputMap:
         """Return a copy of the current action-to-key map for UI and AI clients."""
         return dict(self.bindings)
 
+    def unbound_buttons(self, buttons: object) -> list[str]:
+        """Return declared buttons that no binding in any context can produce.
+
+        A game advertises its buttons through ``actions()["buttons"]``. When one
+        of those names has no binding, a live press can never reach it, so the
+        contract is misleading. This reports the gap instead of hiding it.
+        """
+        if isinstance(buttons, (str, bytes)) or not isinstance(
+            buttons, (list, tuple, set, frozenset)
+        ):
+            raise TypeError("buttons must be a list of action names")
+        bound: set[str] = set()
+        for mapping in self.contexts.values():
+            bound.update(mapping)
+        bound.update(self.bindings)
+        return sorted(
+            name
+            for name in buttons
+            if isinstance(name, str) and name.strip() and name not in bound
+        )
+
     def to_dict(self) -> dict[str, object]:
         return {
             "schema": 2,

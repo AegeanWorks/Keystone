@@ -2,7 +2,7 @@
 
 import unittest
 
-from keystone.input import ActionState, InputMap
+from keystone.input import DEFAULT_BINDINGS, ActionState, InputMap
 
 
 class FakeContext:
@@ -22,6 +22,25 @@ class FakeContext:
 
 
 class InputMapTest(unittest.TestCase):
+    def test_unbound_buttons_reports_declared_actions_with_no_binding(self):
+        mapping = InputMap()
+        self.assertEqual(mapping.unbound_buttons(list(DEFAULT_BINDINGS)), [])
+
+        mapping.bind("fire", "mouse_left")
+        declared = ["fire", "sprint", "reload", "jump", "slot1"]
+        self.assertEqual(mapping.unbound_buttons(declared), ["jump", "reload", "slot1"])
+
+    def test_unbound_buttons_counts_bindings_from_every_context(self):
+        mapping = InputMap()
+        mapping.bind("fire", "space", context="water")
+        self.assertEqual(mapping.unbound_buttons(["fire"]), [])
+
+    def test_unbound_buttons_rejects_non_list_input(self):
+        mapping = InputMap()
+        for value in ("fire", 5, None):
+            with self.subTest(value=value), self.assertRaises(TypeError):
+                mapping.unbound_buttons(value)
+
     def test_axes_and_pressed_edges(self):
         context = FakeContext()
         context.keys = {"w", "d"}

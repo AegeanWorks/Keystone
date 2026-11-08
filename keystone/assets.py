@@ -20,6 +20,8 @@ from keystone.asset_io import (
     fingerprint,
     kind_from_suffix,
     load_asset,
+    rebind_node_assets,
+    rebind_payload,
 )
 from keystone.geometry import Material, MeshData
 from keystone.prefab import Prefab
@@ -253,6 +255,64 @@ class AssetRegistry:
             failed=tuple(sorted(failed)),
             missing=tuple(sorted(missing)),
         )
+
+    def reload(self, scene: object | None = None) -> ReloadReport:
+        """Refresh every source and rebind live scene nodes to new payloads.
+
+        ``refresh()`` only replaces registry records, so a plain consumer keeps
+        stale mesh and material objects and silently renders old geometry. This
+        walks ``scene`` after the refresh and points each node's mesh, material
+        and inline material texture at the reloaded payload, then reports how
+        many references changed in ``rebound``.
+        """
+        if scene is not None and not hasattr(scene, "traverse"):
+            raise TypeError("scene must expose traverse() or be None")
+        before = {record.id: record.payload for record in self._records.values()}
+        report = self.refresh()
+        replacements: dict[int, object] = {}
+        for asset_id in (*report.reloaded, *report.unchanged):
+            old = before.get(asset_id)
+            current = self._records[asset_id].payload if asset_id in self._records else None
+            if old is None or current is None or old is current:
+                continue
+            replacements[id(old)] = current
+        registry_rebound = self._rebind_registry_materials(replacements)
+        rebound = 0
+        if scene is not None:
+            rebound = sum(
+                rebind_node_assets(node, replacements)
+                for node in scene.traverse()
+            )
+        return replace(
+            report,
+            rebound=rebound,
+            registry_rebound=registry_rebound,
+        )
+
+    def _rebind_registry_materials(
+        self, replacements: dict[int, object]
+    ) -> int:
+        """Keep registered materials pointing at their reloaded textures."""
+        rebound = 0
+        for asset_id, record in list(self._records.items()):
+            if record.kind != "material" or not isinstance(
+                record.payload, Material
+            ):
+                continue
+            material, changed = rebind_payload(record.payload, replacements)
+            if not changed:
+                continue
+            self.register(
+                asset_id,
+                material,
+                kind=record.kind,
+                source=record.source,
+                dependencies=record.dependencies,
+                replace=True,
+            )
+            replacements[id(record.payload)] = material
+            rebound += 1
+        return rebound
 
     def get(self, asset_id: str) -> AssetRecord | None:
         """Return one record, or None when the id is not registered."""

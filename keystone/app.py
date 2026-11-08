@@ -57,6 +57,14 @@ class Engine:
             self.context.close()
             raise TypeError("GameModule.build_scene() must return a Scene")
         self.input = InputMap()
+        try:
+            self._apply_game_bindings()
+        except Exception:
+            if self.ui_renderer is not None:
+                self.ui_renderer.release()
+            self.renderer.release()
+            self.context.close()
+            raise
         self.clock = FixedStepClock()
         self.paused = False
         self._frames = 0
@@ -74,6 +82,18 @@ class Engine:
             self.context.set_cursor_captured(True)
         else:
             self.input.set_mouse_enabled(False)
+
+    def _apply_game_bindings(self) -> None:
+        """Let the game extend the default bindings through an optional hook.
+
+        The engine owns the window, but only the game knows which actions its
+        ``actions()`` contract advertises. A game that implements
+        ``bind_input(mapping)`` can therefore bind its own buttons instead of
+        inheriting a fixed set it can never rebind.
+        """
+        bind_input = getattr(self.game, "bind_input", None)
+        if callable(bind_input):
+            bind_input(self.input)
 
     def __enter__(self) -> Engine:
         return self

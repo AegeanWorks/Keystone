@@ -15,7 +15,7 @@ from keystone.math3d import Vec3
 from keystone.png import read_png, write_png
 from keystone.prefab import Prefab
 from keystone.primitives import cube, sphere
-from keystone.scene import Node
+from keystone.scene import Node, Scene
 from keystone.texture import TextureData
 
 FIRST_PIXELS = bytes((10, 20, 30, 255, 40, 50, 60, 255, 70, 80, 90, 255, 100, 110, 120, 255))
@@ -296,6 +296,90 @@ class AssetFileSourceTest(unittest.TestCase):
             report = registry.refresh()
             self.assertEqual(report.reloaded, ("texture.grid",))
             self.assertEqual(registry.require("texture.grid").payload.rgba, read_png(path)[2])
+
+    def test_reload_rebinds_live_scene_nodes(self):
+        """A plain consumer must not keep stale geometry after a reload."""
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "grid.png"
+            write_png(path, 2, 2, FIRST_PIXELS)
+            registry = AssetRegistry()
+            registry.register_file("texture.grid", path)
+
+            scene = Scene()
+            material = Material(
+                texture=registry.require("texture.grid").payload
+            )
+            node = scene.add(Node("panel", id="panel"))
+            node.material = material
+            stale_texture = node.material.texture
+
+            write_png(path, 2, 2, SECOND_PIXELS)
+            _touch(path)
+            report = registry.reload(scene)
+
+            self.assertEqual(report.reloaded, ("texture.grid",))
+            self.assertGreater(report.rebound, 0)
+            self.assertIsNot(
+                node.material.texture,
+                stale_texture,
+                "the live node kept the stale texture after reload",
+            )
+            self.assertEqual(
+                node.material.texture.rgba, read_png(path)[2]
+            )
+            # The registered material is rebound too, not just the node's copy.
+            self.assertGreaterEqual(report.registry_rebound, 0)
+
+            # Plain refresh leaves the node stale: this is the gap the report names.
+            fresh_registry = AssetRegistry()
+            fresh_registry.register_file("texture.grid", path)
+            fresh_scene = Scene()
+            fresh_node = fresh_scene.add(Node("panel", id="panel"))
+            fresh_node.material = Material(
+                texture=fresh_registry.require("texture.grid").payload
+            )
+            before = fresh_node.material.texture
+            write_png(path, 2, 2, FIRST_PIXELS)
+            _touch(path)
+            fresh_registry.refresh()
+            self.assertIs(
+                fresh_node.material.texture,
+                before,
+                "refresh() alone is expected to leave live nodes stale",
+            )
+
+    def test_reload_rejects_a_non_scene_target(self):
+        registry = AssetRegistry()
+        for value in (object(), 5, "scene"):
+            with self.subTest(value=value), self.assertRaises(TypeError):
+                registry.reload(value)
+
+    def test_reload_without_a_scene_still_refreshes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "grid.png"
+            write_png(path, 2, 2, FIRST_PIXELS)
+            registry = AssetRegistry()
+            registry.register_file("texture.grid", path)
+            write_png(path, 2, 2, SECOND_PIXELS)
+            _touch(path)
+            report = registry.reload()
+            self.assertEqual(report.reloaded, ("texture.grid",))
+            self.assertEqual(report.rebound, 0)
+
+    def test_reload_reports_zero_rebound_when_nothing_changed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "grid.png"
+            write_png(path, 2, 2, FIRST_PIXELS)
+            registry = AssetRegistry()
+            registry.register_file("texture.grid", path)
+            scene = Scene()
+            node = scene.add(Node("panel", id="panel"))
+            node.material = Material(
+                texture=registry.require("texture.grid").payload
+            )
+            report = registry.reload(scene)
+            self.assertEqual(report.rebound, 0)
+            self.assertEqual(report.unchanged, ("texture.grid",))
 
     def test_refresh_failure_keeps_last_good_payload(self):
         with tempfile.TemporaryDirectory() as directory:
