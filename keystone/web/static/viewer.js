@@ -138,6 +138,21 @@ function perspective(fovYDegrees, aspect, near, far) {
   ]);
 }
 
+function orthographic(left, right, bottom, top, near, far) {
+  const width = left - right;
+  const height = bottom - top;
+  const depth = near - far;
+  return new Float32Array([
+    -2 / width, 0, 0, 0,
+    0, -2 / height, 0, 0,
+    0, 0, 2 / depth, 0,
+    (left + right) / width,
+    (top + bottom) / height,
+    (far + near) / depth,
+    1,
+  ]);
+}
+
 function multiply(left, right) {
   const out = new Float32Array(16);
   for (let column = 0; column < 4; column += 1) {
@@ -503,6 +518,9 @@ export class SceneViewer {
     this.hoverAxis = null;
     this.editable = true;
     this.viewMode = "scene";
+    this.projectionMode = "perspective";
+    this.viewPreset = "persp";
+    this.onProjectionMode = null;
     this.editorCameraState = null;
     this.onViewMode = null;
     this.pointerStart = [0, 0];
@@ -773,6 +791,38 @@ export class SceneViewer {
     }
     this.render();
     return this.viewMode;
+  }
+
+  setProjectionPreset(preset) {
+    const next = ["persp", "top", "front", "side"].includes(preset)
+      ? preset
+      : "persp";
+    if (next === "persp") {
+      this.projectionMode = "perspective";
+      this.viewPreset = "persp";
+    } else {
+      this.projectionMode = "ortho";
+      this.viewPreset = next;
+      if (!this.cameraState && this.scene) {
+        this.ensureCamera(this.scene);
+      }
+      if (this.cameraState) {
+        this.cameraState.yaw = next === "side" ? Math.PI / 2 : 0;
+        this.cameraState.pitch = next === "top" ? Math.PI / 2 : 0;
+        this.cameraState.distance = Math.max(1.0, this.cameraState.distance);
+      }
+    }
+    this.cancelGizmoDrag();
+    this.cancelBoxDrag();
+    this.dragging = false;
+    this.hoverAxis = null;
+    this.canvas.style.cursor =
+      this.viewMode === "scene" && this.boxSelect ? "crosshair" : "";
+    if (typeof this.onProjectionMode === "function") {
+      this.onProjectionMode(this.viewPreset);
+    }
+    this.render();
+    return this.viewPreset;
   }
 
   resetCamera() {
@@ -1733,12 +1783,24 @@ export class SceneViewer {
       return null;
     }
     const camera = this.scene.camera;
-    return perspective(
-      camera.fov_y,
-      Math.max(1, this.canvas.width) / Math.max(1, this.canvas.height),
-      camera.near,
-      camera.far,
-    );
+    const aspect =
+      Math.max(1, this.canvas.width) / Math.max(1, this.canvas.height);
+    if (this.projectionMode === "ortho" && this.viewMode === "scene") {
+      const height = Math.max(
+        1.0,
+        this.cameraState ? this.cameraState.distance : 10.0,
+      );
+      const width = height * aspect;
+      return orthographic(
+        -width / 2,
+        width / 2,
+        -height / 2,
+        height / 2,
+        camera.near,
+        camera.far,
+      );
+    }
+    return perspective(camera.fov_y, aspect, camera.near, camera.far);
   }
 
   viewProjectionMatrix() {

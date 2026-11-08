@@ -1128,3 +1128,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The editor could insert, revert and apply multi-root prefabs, but `save_prefab` only captured one node, so a multi-selection could not become a template.
 - **Decision**: Accept an ordered `ids` list on `save_prefab`. Deduplicate ids in selection order, drop nodes whose selected ancestor already covers them, require the remaining top-level roots to share a parent, and capture them through `Prefab.from_nodes`. Single `id` behavior is unchanged. The console sends the whole selection automatically when more than one node is selected, and the editor schema reaches 35.
 - **Consequences**: 765 tests green; multi-root save, library reload, duplicate-id dedupe, descendant folding, mixed-parent rejection and missing-id errors are covered. Captured roots must share a parent, asset writes remain outside scene undo, and nested prefab links are preserved by the existing capture path.
+
+### ADR-138: Perspective and orthographic view presets
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The Scene view was perspective-only, so axis-aligned top/front/side authoring common in Unity and Unreal was unavailable.
+- **Decision**: Track a Scene-view projection mode and preset in `SceneViewer`. A projection button cycles Persp, Top, Front and Side (O shortcut). Orthographic presets reuse the editor camera state, orient yaw/pitch for the axis, and use a standard orthographic matrix sized by the camera distance; wheel zoom changes the orthographic height. Game view remains perspective, and grid, picking, box selection and gizmos continue through the same view-projection path. No API or schema change.
+- **Consequences**: 765 tests green; static viewer/console coverage verifies the projection matrix, presets, button and shortcut wiring. Presets snap the camera to world axes without an up-axis switch, orthographic size is tied to the orbit distance, and no separate per-viewport camera state is stored.

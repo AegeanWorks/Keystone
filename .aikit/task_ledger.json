@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-multiroot-prefab-save-v1",
+    "task_id": "keystone-ortho-views-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794107466.2966504,
+    "updated_at": 1794108292.1794024,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794107467.0496821
+    "completed_at": 1794108292.5649943
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-history-navigation-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Named transaction history implemented: labeled EditorHistory entries, newest-first undo/redo stack labels, multi-step undo/redo (1-100), redo preservation, action/batch labels, history steps UI and readout, schema 31; 761 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 31, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794104396.5185542,
-      "timestamp_str": "2026-11-08 05:19:56",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-history-navigation-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-history-navigation-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794104405.1423872,
-      "timestamp_str": "2026-11-08 05:20:05",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-realtime-play-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan real-time Play with Pause/Resume, paused stepping and console loop control",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794104457.18193,
-      "timestamp_str": "2026-11-08 05:20:57",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Play mode only advances when Step is pressed and cannot pause, so the editor cannot behave like a Unity/Unreal game view.",
-        "benefits": "Play runs a bounded real-time loop, play_pause/play_resume expose paused state, Step still advances while paused, and play state/console show Playing, Paused or Stopped.",
-        "risks": "contract: editor schema 32 and two new actions; dependency: none; concurrency: editor lock and overlapping browser requests; state: loop cleanup, duplicate loops, stop restore, editing blocked, fixed-step determinism.",
-        "mitigation": "Use one guarded loop with elapsed-frame batching, cancel on pause/stop, validate pause/resume in the server, keep fixed-step updates, and add API plus static regressions."
-      },
-      "plan_digest": "e008ca8a349808b522c7c0a0ff132de0f4bc169606ae4c20cd66fa647a18ad0d"
-    },
     {
       "task_id": "keystone-realtime-play-v1",
       "phase": "in_progress",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794107467.0496843,
       "timestamp_str": "2026-11-08 06:11:07",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-ortho-views-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan perspective/orthographic top/front/side view presets for the Scene view",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794107503.353317,
+      "timestamp_str": "2026-11-08 06:11:43",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "The Scene view is perspective-only, so axis-aligned authoring that Unity/Unreal users expect from top/front/side orthographic views is unavailable.",
+        "benefits": "A projection button cycles Persp/Top/Front/Side, orthographic projection uses the editor camera distance for zoom, and existing grid, picking, gizmos and view modes keep working.",
+        "risks": "contract: UI-only, no API/schema change; dependency: none; concurrency: pointer arbitration unchanged; state: projection math, camera preset orientation, Game-view perspective, reset/focus behavior, near-plane picking.",
+        "mitigation": "Add a standard orthographic matrix, switch projection only in Scene view, orient the existing camera state for each preset, keep Game view perspective, and add static viewer/console regressions."
+      },
+      "plan_digest": "2d51faced9e2a8dab5f0fb4ef3f9c67dc23c6e80aa3057af8feee983c5932001"
+    },
+    {
+      "task_id": "keystone-ortho-views-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Perspective/orthographic view presets implemented: Persp/Top/Front/Side projection button and O shortcut, standard orthographic matrix sized by camera distance, axis-aligned camera orientation, Game view stays perspective, grid/picking/gizmos share the view-projection path; 765 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 35, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794108292.1794024,
+      "timestamp_str": "2026-11-08 06:24:52",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-ortho-views-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-ortho-views-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794108292.5649967,
+      "timestamp_str": "2026-11-08 06:24:52",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

@@ -94,6 +94,7 @@ const elements = {
   viewMode: document.getElementById("view-mode"),
   gridToggle: document.getElementById("grid-toggle"),
   snapToggle: document.getElementById("snap-toggle"),
+  projectionMode: document.getElementById("projection-mode"),
   gizmoMove: document.getElementById("gizmo-move"),
   gizmoRotate: document.getElementById("gizmo-rotate"),
   gizmoScale: document.getElementById("gizmo-scale"),
@@ -132,6 +133,8 @@ try {
     run(() => applyGizmoSelectionScale(axis, factor, pivot));
   viewer.onViewMode = updateViewModeButton;
   updateViewModeButton(viewer.viewMode);
+  viewer.onProjectionMode = updateProjectionButton;
+  updateProjectionButton(viewer.viewPreset);
 } catch (error) {
   elements.viewerStatus.textContent = `Viewer unavailable: ${error.message}`;
 }
@@ -960,6 +963,28 @@ function toggleSnap() {
   setStatus(`snap ${enabled ? "on" : "off"}`);
 }
 
+function updateProjectionButton(preset) {
+  const labels = {
+    persp: "Persp",
+    top: "Top",
+    front: "Front",
+    side: "Side",
+  };
+  elements.projectionMode.textContent =
+    `Proj: ${labels[preset] || labels.persp}`;
+}
+
+function toggleProjection() {
+  if (!viewer) {
+    return;
+  }
+  const presets = ["persp", "top", "front", "side"];
+  const current = viewer.viewPreset || "persp";
+  const next = presets[(presets.indexOf(current) + 1) % presets.length];
+  viewer.setProjectionPreset(next);
+  setStatus(`projection: ${next}`);
+}
+
 function toggleGizmoSpace() {
   gizmoSpace = gizmoSpace === "world" ? "local" : "world";
   if (viewer) {
@@ -1634,6 +1659,11 @@ document.addEventListener("keydown", (event) => {
     toggleSnap();
     return;
   }
+  if (!modifier && key === "o") {
+    event.preventDefault();
+    toggleProjection();
+    return;
+  }
   const direction = NUDGE_DIRECTIONS[event.key];
   if (direction && editorState.selection) {
     event.preventDefault();
@@ -1675,6 +1705,7 @@ elements.viewReset.addEventListener("click", () => {
 elements.viewMode.addEventListener("click", () => run(toggleViewMode));
 elements.gridToggle.addEventListener("click", toggleGrid);
 elements.snapToggle.addEventListener("click", toggleSnap);
+elements.projectionMode.addEventListener("click", toggleProjection);
 elements.viewFocus.addEventListener("click", () => {
   if (viewer && editorState && (editorState.selection_count || 0) > 0) {
     if ((editorState.selection_count || 0) > 1) {
