@@ -487,6 +487,7 @@ EDITOR_SCHEMA = {
             "registry",
             "prefabs",
             "scenes",
+            "history_references",
             "project_asset",
             "references",
             "found",

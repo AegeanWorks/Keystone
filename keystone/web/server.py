@@ -527,6 +527,11 @@ class GameSession:
             project_asset = path in {
                 Path(item).as_posix() for item in self.project_assets
             }
+        history_references = (
+            self.history.count_payloads({id(payload)})
+            if payload is not None
+            else 0
+        )
         references = (
             len(scene_nodes) + len(registry_refs) + len(prefabs) + len(scenes)
         )
@@ -539,6 +544,7 @@ class GameSession:
             "registry": registry_refs,
             "prefabs": sorted(prefabs),
             "scenes": sorted(scenes),
+            "history_references": history_references,
             "project_asset": project_asset,
             "references": references,
             "found": references > 0,

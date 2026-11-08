@@ -3907,6 +3907,24 @@ class WebServerTest(unittest.TestCase):
             )["asset_usages"]
             self.assertEqual(by_path, report)
 
+            temporary = session.editor_action(
+                {
+                    "action": "create_node",
+                    "name": "temporary",
+                    "mesh": "project:assets/cube.obj",
+                }
+            )["selection"]["id"]
+            session.editor_action({"action": "delete_node", "id": temporary})
+            history_report = session.editor_action(
+                {"action": "asset_usages", "path": "assets/cube.obj"}
+            )["asset_usages"]
+            self.assertGreaterEqual(
+                history_report["history_references"], 1
+            )
+            self.assertEqual(
+                history_report["references"], report["references"]
+            )
+
             unknown = session.editor_action(
                 {"action": "asset_usages", "asset": "mesh.missing"}
             )["asset_usages"]

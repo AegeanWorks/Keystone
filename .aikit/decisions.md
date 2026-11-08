@@ -1520,3 +1520,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->6 audit found that `forget_asset` scanned authored content for references but ignored undo/redo snapshots. Deleting a node that used an asset let the asset be forgotten, and Undo then restored a node bound to an unregistered mesh, material or texture payload.
 - **Decision**: Add `EditorHistory.clear_payloads`, which walks every undo and redo snapshot and nulls matching mesh/material references or replaces inline materials whose texture matches a forgotten texture. The `forget_asset` action calls it after the registry removal succeeds and reports `history_cleared`. Add a regression that deletes an asset-bearing node, forgets the source, undoes, and asserts the restored node has no mesh.
 - **Consequences**: Forgetting an asset can no longer resurrect stale payloads through history. Undo still restores the structural edit, but the forgotten reference becomes empty. Reports and schema grow by one count; live and saved content checks are unchanged.
+
+### ADR-187: Commit audit reports history references in asset usage
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->9 audit found that `asset_usages` scanned the live scene, registry, prefabs and saved scenes but not undo/redo snapshots. After a node using an asset was deleted, the usage report could say the payload was unused while history still held it.
+- **Decision**: Add `EditorHistory.count_payloads` and a `history_references` count to `asset_usage_report`. Count mesh, material and inline-material-texture identities in both stacks. Keep the count out of `references`/`found` because `forget_asset` now safely clears history instead of blocking on it. Add a regression that creates and deletes a node, then checks the count without changing authored references.
+- **Consequences**: AI and human clients can see pending history references before forgetting or reloading an asset. The report is additive; existing `references` semantics and the forget gate stay authored-content-only.
