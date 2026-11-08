@@ -261,6 +261,21 @@ class AnimationStateMachine:
             raise KeyError(f"unknown animation state {name!r}")
         return self.states[name]
 
+    def _sync_pose_provider(self) -> None:
+        """Give the controller the active blend-space sampler, or clear it."""
+        state = self.states[self.current]
+        if state.blend_space is None:
+            self.controller.set_pose_provider(None)
+            return
+
+        space = state.blend_space
+
+        def pose_at(moment: float) -> dict[str, Transform]:
+            parameter = self.parameters.get(state.blend_parameter, 0.0)
+            return space.sample(float(parameter), moment)
+
+        self.controller.set_pose_provider(pose_at, lambda: space.duration)
+
     def play(self, name: str, restart: bool = True) -> None:
         if not isinstance(restart, bool):
             raise TypeError("restart must be a boolean")
@@ -269,6 +284,7 @@ class AnimationStateMachine:
         self.controller.play(state.name, restart=restart)
         self.controller.loop = state.loop
         self.controller.speed = state.speed
+        self._sync_pose_provider()
 
     def set_parameter(self, name: str, value: object) -> None:
         key = _name("parameter name", name)
@@ -299,17 +315,12 @@ class AnimationStateMachine:
             )
             self.controller.loop = target.loop
             self.controller.speed = target.speed
+            self._sync_pose_provider()
             if transition.operator == "trigger":
                 self.parameters[transition.parameter] = False
             break
         pose, events = self.controller.advance_with_events(float(dt))
         self.events.extend(events)
-        state = self.states[self.current]
-        if state.blend_space is not None and not self.controller.blending:
-            parameter = self.parameters.get(state.blend_parameter, 0.0)
-            pose = state.blend_space.sample(
-                float(parameter), self.controller.time
-            )
         return pose
 
     def take_events(self) -> list[str]:

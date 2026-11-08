@@ -51,6 +51,14 @@ const elements = {
   stateMachineDelete: document.getElementById("state-machine-delete"),
   stateMachineRestore: document.getElementById("state-machine-restore"),
   stateMachineState: document.getElementById("state-machine-state"),
+  blendSpaceJson: document.getElementById("blend-space-json"),
+  blendSpaceName: document.getElementById("blend-space-name"),
+  blendSpaceParameter: document.getElementById("blend-space-parameter"),
+  blendSpaceValue: document.getElementById("blend-space-value"),
+  blendSpaceTime: document.getElementById("blend-space-time"),
+  blendSpacePreview: document.getElementById("blend-space-preview"),
+  blendSpaceSave: document.getElementById("blend-space-save"),
+  blendSpaceState: document.getElementById("blend-space-state"),
   nodeCreate: document.getElementById("node-create"),
   nodeDuplicate: document.getElementById("node-duplicate"),
   selectionCopy: document.getElementById("selection-copy"),
@@ -281,6 +289,7 @@ function setBusy(value) {
     elements.playPause, elements.playResume, elements.playStep, elements.playStop, elements.componentSet, elements.componentRemove,
     elements.animationPreview, elements.animationSample,
     elements.animationPlay,
+    elements.blendSpacePreview, elements.blendSpaceSave,
     elements.animationSave, elements.animationDelete, elements.animationRestore,
     elements.prefabSave, elements.prefabInsert, elements.prefabRename,
     elements.prefabRevert, elements.prefabApply, elements.prefabRefresh,
@@ -998,6 +1007,11 @@ function showEditor(editor) {
   renderHistory(history);
   const play = editor.play || { active: false, paused: false, frames: 0 };
   const lifecycle = play.lifecycle || { started: 0 };
+  if (!play.active) {
+    // The server owns play state. When it is no longer running, the client
+    // must not keep re-arming its tick, whatever ended the session.
+    stopPlayLoop();
+  }
   if (viewer) {
     if (play.active && !wasPlaying) {
       viewer.setViewMode("game");
@@ -1036,6 +1050,12 @@ function showEditor(editor) {
     ? `Previewed ${statePreview.name} · ${statePreview.current} · ` +
       `${statePreview.frames} frames · ${statePreview.updated.length} nodes`
     : "No state machine preview.";
+  const blendPreview = editor.blend_space_preview;
+  elements.blendSpaceState.textContent = blendPreview
+    ? `Blend ${blendPreview.parameter} @ ${blendPreview.time}s · ` +
+      `${blendPreview.updated.length} nodes · ` +
+      `${blendPreview.report.samples.length} samples`
+    : "No blend-space preview.";
   syncAnimationTimeline(editor);
   if (!busy) {
     updatePlayButtons(play);
@@ -1950,8 +1970,11 @@ async function playPause() {
 }
 
 async function playResume() {
-  await editorAction({ action: "play_resume" }, "resuming play");
-  startPlayLoop();
+  stopPlayLoop();
+  const editor = await editorAction({ action: "play_resume" }, "resuming play");
+  if (editor.play && editor.play.active && !editor.play.paused) {
+    startPlayLoop();
+  }
 }
 
 async function playStep() {
@@ -2248,6 +2271,20 @@ async function removeAnimationKey() {
   });
 }
 
+function blendStateFromMachine(machine) {
+  if (!machine || typeof machine !== "object") {
+    return null;
+  }
+  const states = Array.isArray(machine.states) ? machine.states : [];
+  const blends = states.filter(
+    (state) => state && typeof state === "object" && state.blend_space,
+  );
+  if (!blends.length) {
+    return null;
+  }
+  return blends.find((state) => state.name === machine.current) || blends[0];
+}
+
 async function loadStateMachine() {
   const name = elements.stateMachineName.value.trim();
   if (!name) {
@@ -2265,6 +2302,12 @@ async function loadStateMachine() {
       null,
       2,
     );
+    const blend = blendStateFromMachine(document.machine);
+    if (blend) {
+      elements.blendSpaceJson.value = JSON.stringify(blend.blend_space, null, 2);
+      elements.blendSpaceName.value = blend.name;
+      elements.blendSpaceParameter.value = blend.blend_parameter || "speed";
+    }
     show({ ok: true, action: "load_state_machine", name: document.name });
   }
 }
@@ -2274,15 +2317,7 @@ async function saveStateMachine() {
   if (!name) {
     throw new Error("Enter a state machine name before saving.");
   }
-  let machine;
-  try {
-    machine = JSON.parse(elements.stateMachineJson.value || "{}");
-  } catch (error) {
-    throw new Error(`State machine JSON: ${error.message}`);
-  }
-  if (!machine || typeof machine !== "object" || Array.isArray(machine)) {
-    throw new Error("State machine JSON must be an object.");
-  }
+  const machine = readStateMachineJson();
   await editorAction(
     { action: "save_state_machine", name, machine },
     `saving state machine ${name}`,
@@ -2363,6 +2398,118 @@ async function restoreStateMachine() {
     { action: "restore_state_machine", trash: entry.trash },
     "restoring state machine",
   );
+}
+
+function readBlendSpaceJson() {
+  let blendSpace;
+  try {
+    blendSpace = JSON.parse(elements.blendSpaceJson.value || "{}");
+  } catch (error) {
+    throw new Error(`Blend space JSON: ${error.message}`);
+  }
+  if (
+    !blendSpace ||
+    typeof blendSpace !== "object" ||
+    Array.isArray(blendSpace)
+  ) {
+    throw new Error("Blend space JSON must be an object.");
+  }
+  return blendSpace;
+}
+
+async function previewBlendSpace() {
+  const blendSpace = readBlendSpaceJson();
+  const parameter = Number(elements.blendSpaceValue.value);
+  const time = Number(elements.blendSpaceTime.value);
+  if (!Number.isFinite(parameter)) {
+    throw new Error("Blend preview parameter must be a finite number.");
+  }
+  if (!Number.isFinite(time) || time < 0) {
+    throw new Error("Blend preview time must be non-negative.");
+  }
+  const editor = await editorAction(
+    {
+      action: "preview_blend_space",
+      blend_space: blendSpace,
+      parameter,
+      time,
+      record: true,
+    },
+    "previewing blend space",
+  );
+  await refreshScene(false);
+  show({
+    ok: true,
+    action: "preview_blend_space",
+    blend_space_preview: editor.blend_space_preview,
+  });
+}
+
+function readStateMachineJson() {
+  let machine;
+  try {
+    machine = JSON.parse(elements.stateMachineJson.value || "{}");
+  } catch (error) {
+    throw new Error(`State machine JSON: ${error.message}`);
+  }
+  if (!machine || typeof machine !== "object" || Array.isArray(machine)) {
+    throw new Error("State machine JSON must be an object.");
+  }
+  return machine;
+}
+
+function mergeBlendState(machine, blendState, parameter) {
+  const states = (Array.isArray(machine.states) ? machine.states : []).filter(
+    (state) => !state || state.name !== blendState.name,
+  );
+  states.push(blendState);
+  const parameters =
+    machine.parameters && typeof machine.parameters === "object"
+      ? { ...machine.parameters }
+      : {};
+  if (!(parameter in parameters)) {
+    parameters[parameter] = 0.0;
+  }
+  const current = states.some((state) => state.name === machine.current)
+    ? machine.current
+    : blendState.name;
+  return {
+    schema: 1,
+    states,
+    transitions: Array.isArray(machine.transitions)
+      ? machine.transitions
+      : [],
+    parameters,
+    current,
+  };
+}
+
+async function saveBlendState() {
+  const name = elements.blendSpaceName.value.trim();
+  if (!name) {
+    throw new Error("Enter a blend state name before saving.");
+  }
+  const parameter = elements.blendSpaceParameter.value.trim() || "speed";
+  const blendState = {
+    name,
+    blend_space: readBlendSpaceJson(),
+    blend_parameter: parameter,
+    loop: true,
+    speed: 1.0,
+  };
+  const machineName = elements.stateMachineName.value.trim() || name;
+  const machine = mergeBlendState(
+    readStateMachineJson(),
+    blendState,
+    parameter,
+  );
+  await editorAction(
+    { action: "save_state_machine", name: machineName, machine },
+    `saving blend state ${name}`,
+  );
+  elements.stateMachineName.value = machineName;
+  elements.stateMachineJson.value = JSON.stringify(machine, null, 2);
+  await refreshScene(false);
 }
 
 async function applyNodeProperties() {
@@ -3205,6 +3352,10 @@ elements.stateMachineDelete.addEventListener("click", () =>
 elements.stateMachineRestore.addEventListener("click", () =>
   run(restoreStateMachine),
 );
+elements.blendSpacePreview.addEventListener("click", () =>
+  run(previewBlendSpace),
+);
+elements.blendSpaceSave.addEventListener("click", () => run(saveBlendState));
 elements.animationTime.addEventListener("input", () => {
   stopAnimationPlay();
   const time = Number(elements.animationTime.value);

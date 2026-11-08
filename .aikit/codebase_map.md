@@ -9,8 +9,8 @@
 - **Total Python Modules**: `147`
 - **Total Classes**: `234`
 - **Total Top-Level Functions**: `425`
-- **Total Class Methods**: `1497`
-- **Total Source Lines**: `40863`
+- **Total Class Methods**: `1512`
+- **Total Source Lines**: `41399`
 
 ---
 
@@ -88,7 +88,7 @@
 ### [`keystone/animation.py`](keystone/animation.py)
 > *Deterministic, game-agnostic animation: keyframe clips, sampling and control.*
 
-**Size**: `432` lines (`19913` bytes)
+**Size**: `459` lines (`21111` bytes)
 
 **Classes:**
 - `class Track` - *One keyframed channel: sorted times with Vec3 or Quat values.*
@@ -106,6 +106,8 @@
   - Method `.to_dict()`
   - Method `.from_dict(data)`
 - `class AnimationController` - *Deterministic playback: advance time, loop, blend and write Transforms.*
+  - Method `.set_pose_provider(pose, wrap_duration)` - *Let a caller-supplied sampler own the pose and the loop length.*
+  - Method `._pose_at(moment, clip)`
   - Method `.__post_init__()`
   - Method `.add(clip)`
   - Method `.play(name, restart)`
@@ -171,7 +173,7 @@
 ### [`keystone/animation_state.py`](keystone/animation_state.py)
 > *Deterministic parameter-driven animation state machines.*
 
-**Size**: `385` lines (`14429` bytes)
+**Size**: `396` lines (`14776` bytes)
 
 **Classes:**
 - `class AnimationState` - *One named clip or 1D blend space with loop and speed settings.*
@@ -186,6 +188,7 @@
 - `class AnimationStateMachine` - *One deterministic controller driven by named states and transitions.*
   - Method `.__init__(states, transitions, parameters, current)`
   - Method `._state(name)`
+  - Method `._sync_pose_provider()` - *Give the controller the active blend-space sampler, or clear it.*
   - Method `.play(name, restart)`
   - Method `.set_parameter(name, value)`
   - Method `.set_trigger(name)`
@@ -916,7 +919,7 @@
 ### [`keystone/lifecycle.py`](keystone/lifecycle.py)
 > *Deterministic start/update/stop lifecycle for scene components.*
 
-**Size**: `148` lines (`5138` bytes)
+**Size**: `177` lines (`6323` bytes)
 
 **Classes:**
 - `class LifecycleContext` - *Arguments passed to one component lifecycle hook.*
@@ -926,6 +929,7 @@
   - Method `._context(node, component, dt)`
   - Method `._start_component(node, component)`
   - Method `.start()` - *Start every hook-bearing component once and return the count.*
+  - Method `._unwind_failed_start()` - *Stop whatever started before a failure, ignoring stop() errors.*
   - Method `.update(dt)` - *Advance one fixed tick and return the number of update hooks run.*
   - Method `.stop()` - *Stop started components in reverse order and return the count.*
   - Method `.describe()` - *Return the JSON-safe runtime summary for editor documents.*
@@ -1139,7 +1143,7 @@
 ### [`keystone/playtest.py`](keystone/playtest.py)
 > *Seeded bot playtesting: transcripts, diffing, policies and fairness checks.*
 
-**Size**: `614` lines (`25810` bytes)
+**Size**: `615` lines (`25842` bytes)
 
 **Classes:**
 - `class BotPolicy` - *One seeded decision step over the five-operation game contract.*
@@ -1849,7 +1853,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2957` lines (`132487` bytes)
+**Size**: `2958` lines (`132528` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2003,7 +2007,7 @@
 ### [`tests/test_animation.py`](tests/test_animation.py)
 > *Tests for deterministic animation clips, controllers and pose application.*
 
-**Size**: `284` lines (`12010` bytes)
+**Size**: `303` lines (`12709` bytes)
 
 **Classes:**
 - `class TrackTest`
@@ -2020,6 +2024,7 @@
   - Method `.test_crossfade_from_empty_clip_completes()`
   - Method `.test_unknown_clip_rejected()`
   - Method `.test_events_fire_once_per_crossing()`
+  - Method `.test_play_clears_a_caller_supplied_pose_provider()`
   - Method `.test_crossfade_blends_deterministically()`
 - `class MergeTest`
   - Method `.test_merge_bakes_static_groups()`
@@ -2074,7 +2079,7 @@
 ### [`tests/test_animation_state.py`](tests/test_animation_state.py)
 > *Tests for deterministic parameter-driven animation state machines.*
 
-**Size**: `253` lines (`9458` bytes)
+**Size**: `487` lines (`17021` bytes)
 
 **Classes:**
 - `class AnimationStateMachineTest`
@@ -2085,6 +2090,11 @@
   - Method `.test_crossfade_blending_finishes()`
   - Method `.test_serialization_round_trip_and_report()`
   - Method `.test_blend_space_state_samples_parameter_and_round_trips()`
+  - Method `.test_blend_space_state_loops_like_a_plain_state()`
+  - Method `.test_non_looping_blend_space_state_holds_the_last_frame()`
+  - Method `.test_crossfade_into_a_blend_state_targets_the_blended_pose()`
+  - Method `.test_blend_space_loops_at_its_own_longest_clip()`
+  - Method `.test_crossfade_out_of_a_blend_state_blends_its_sampled_pose()`
   - Method `.test_validation_rejects_bad_shapes()`
   - Method `.test_available_transitions_and_play_errors()`
   - Method `.test_parameter_can_be_added_after_construction()`
@@ -2607,7 +2617,7 @@
 ### [`tests/test_lifecycle.py`](tests/test_lifecycle.py)
 > *Tests for deterministic component start/update/stop lifecycle hooks.*
 
-**Size**: `165` lines (`5135` bytes)
+**Size**: `203` lines (`6438` bytes)
 
 **Classes:**
 - `class Alpha`
@@ -2621,6 +2631,7 @@
   - Method `._scene()`
   - Method `.test_start_update_stop_order_context_and_counts()`
   - Method `.test_components_added_after_start_begin_on_the_next_tick()`
+  - Method `.test_failed_start_stops_components_it_already_started()`
   - Method `.test_components_without_hooks_are_ignored()`
   - Method `.test_lifecycle_hooks_reports_available_methods()`
   - Method `.test_runtime_state_and_dt_validation()`
@@ -2820,10 +2831,13 @@
 ### [`tests/test_playtest.py`](tests/test_playtest.py)
 > *Tests for the seeded bot playtester: transcripts, diffs, policies and fairness.*
 
-**Size**: `457` lines (`18927` bytes)
+**Size**: `487` lines (`19989` bytes)
 
 **Classes:**
 - `class TranscriptTest`
+  - Method `.test_outcome_vocabulary_covers_what_the_runner_emits()`
+  - Method `.test_read_outcome_round_trips_every_declared_outcome()`
+  - Method `.test_timeout_is_reported_for_a_run_that_never_signals()`
   - Method `.test_run_bot_applies_a_scene_loader()`
   - Method `.test_run_bot_records_a_command_log_compatible_transcript()`
   - Method `.test_transcript_hash_matches_simulation_for_the_same_actions()`
@@ -3448,7 +3462,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `5960` lines (`244784` bytes)
+**Size**: `6106` lines (`250255` bytes)
 
 **Classes:**
 - `class Health`
@@ -3556,6 +3570,7 @@
   - Method `.test_editor_state_machine_rename_and_duplicate()`
   - Method `.test_editor_state_machine_restore_collision_is_400()`
   - Method `.test_editor_preview_blend_space()`
+  - Method `.test_editor_blend_state_console_round_trip()`
   - Method `.test_editor_animation_key_authoring()`
   - Method `.test_editor_material_library_save_assign_and_reload()`
   - Method `.test_editor_component_lifecycle_play_mode()`

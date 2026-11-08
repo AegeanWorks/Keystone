@@ -28,8 +28,9 @@ from keystone.scene import Scene
 TRANSCRIPT_SCHEMA = 1
 PLAYTEST_REPORT_SCHEMA = 1
 
-OUTCOMES = ("ongoing", "win", "lose", "unknown")
+OUTCOMES = ("ongoing", "win", "lose", "unknown", "timeout")
 TERMINAL_OUTCOMES = ("win", "lose")
+_OUTCOME_SET = frozenset(OUTCOMES)
 
 
 def _canon_value(value: object) -> object:
@@ -63,7 +64,7 @@ def canon_hash(snapshot: Mapping[str, Any]) -> str:
 def read_outcome(snapshot: Mapping[str, Any]) -> str:
     """Read the opportunistic outcome signal; ``unknown`` when absent."""
     outcome = snapshot.get("outcome", "unknown") if isinstance(snapshot, Mapping) else "unknown"
-    return outcome if outcome in ("ongoing", "win", "lose") else "unknown"
+    return outcome if outcome in _OUTCOME_SET else "unknown"
 
 
 def read_score(snapshot: Mapping[str, Any]) -> float | None:

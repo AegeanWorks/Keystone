@@ -1,191 +1,16 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-blend-state-v1",
-    "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1794152496.7639363,
-    "owner": "opencode:keystone",
-    "started_by": "opencode:keystone",
-    "continuations": [],
-    "completed_at": 1794152498.6794565
+    "task_id": "keystone-implicit-fsm-v1",
+    "last_phase": "in_progress",
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1794166541.5943851,
+    "owner": "commandcode:keystone-console",
+    "started_by": "commandcode:keystone-console",
+    "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-commit-audit-v3-1to42",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: audit range 1->42 clipboard, layer and registry reload fixes; reject missing same-name state-machine rename",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794148214.3517334,
-      "timestamp_str": "2026-11-08 17:30:14",
-      "agent": "opencode:keystone",
-      "impact_assessment": {
-        "why": "StateMachineLibrary.rename returns an error entry when source and target are the same missing name instead of raising KeyError, so the editor silently succeeds on a missing machine.",
-        "benefits": "Same-name rename now has the same missing-entry behavior as every other library operation.",
-        "risks": "contract: rename failure path; dependency: .kstate files; concurrency: session lock unchanged; state: no file changes.",
-        "mitigation": "Check source existence before the same-name shortcut, add a library regression, and run the 6/6 gate."
-      },
-      "plan_digest": "859fd197da9265c3e957686098673bc8807faceda02184d5976cf1bb678f9f0b"
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-1to42",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/3] Reject same-name rename of a missing .kstate machine with KeyError; regression covers the shortcut",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794148490.8184013,
-      "timestamp_str": "2026-11-08 17:34:50",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "state": "missing rename and regression green",
-        "next": "record the gate and push"
-      }
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-1to42",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Range 1->42 gate passes 6/6 with consistent missing state-machine rename; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794148492.1323671,
-      "timestamp_str": "2026-11-08 17:34:52",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "next": "commit and push range 1->42, then continue at 1->45",
-        "evidence": "full 6/6 gate green"
-      }
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-1to42",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-commit-audit-v3-1to42' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794148493.4989371,
-      "timestamp_str": "2026-11-08 17:34:53",
-      "agent": "opencode:keystone"
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-1to45",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: audit range 1->45 prefab ordering, locked descendants and override rollback; block prefab revert when a descendant is locked",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794148708.1307976,
-      "timestamp_str": "2026-11-08 17:38:28",
-      "agent": "opencode:keystone",
-      "impact_assessment": {
-        "why": "revert_prefab checks only the selected instance root, then replaces the whole group, deleting a locked child. This bypasses the subtree deletion protection already applied to delete actions.",
-        "benefits": "Prefab revert honors locks on any node in the replaced group.",
-        "risks": "contract: revert failure path; dependency: subtree lock helper; concurrency: session lock unchanged; state: scene group replacement.",
-        "mitigation": "Use the subtree lock check in revert_prefab, add a locked-child regression, and run the 6/6 gate."
-      },
-      "plan_digest": "013a6ea1dfeb8108cb9f6718da1beb87b37508238d1ad741b7114fee31b4a856"
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-1to45",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/3] Use subtree lock checks for prefab revert; regression locks a child and asserts the parent revert is rejected",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794149028.4874473,
-      "timestamp_str": "2026-11-08 17:43:48",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "state": "locked-descendant revert and regression green",
-        "next": "record the gate and push"
-      }
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-1to45",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Range 1->45 gate passes 6/6 with locked-descendant prefab revert; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794149029.4084234,
-      "timestamp_str": "2026-11-08 17:43:49",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "next": "commit and push range 1->45, then finish the End range",
-        "evidence": "full 6/6 gate green"
-      }
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-1to45",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-commit-audit-v3-1to45' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794149030.1740503,
-      "timestamp_str": "2026-11-08 17:43:50",
-      "agent": "opencode:keystone"
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-end",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: audit the final End range; block prefab apply when a locked descendant would be baked into the template",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794149286.8030267,
-      "timestamp_str": "2026-11-08 17:48:06",
-      "agent": "opencode:keystone",
-      "impact_assessment": {
-        "why": "revert now protects locked descendants, but apply_prefab still checks only the instance root before capturing the whole group into the prefab library, so a locked child can be overwritten into the template.",
-        "benefits": "Prefab apply respects the same subtree lock contract as delete, refresh and revert.",
-        "risks": "contract: apply failure path; dependency: subtree lock helper; concurrency: session lock unchanged; state: prefab template/library writes.",
-        "mitigation": "Use the subtree lock check in apply_prefab, add a locked-child regression, and run the 6/6 gate."
-      },
-      "plan_digest": "b2ddbac859ab43f1fa8bc75af969b5605c33b768732582f3c2cbd170a2f7acc3"
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-end",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/3] Use subtree lock checks for prefab apply; regression locks a child and asserts applying its parent is rejected",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794149559.5849874,
-      "timestamp_str": "2026-11-08 17:52:39",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "state": "locked-descendant apply and regression green",
-        "next": "record the gate and push"
-      }
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-end",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Final End range gate passes 6/6 with locked-descendant apply protection; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794149560.3652859,
-      "timestamp_str": "2026-11-08 17:52:40",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "next": "commit and push the End range",
-        "evidence": "full 6/6 gate green"
-      }
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-end",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-commit-audit-v3-end' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794149561.1789818,
-      "timestamp_str": "2026-11-08 17:52:41",
-      "agent": "opencode:keystone"
-    },
     {
       "task_id": "keystone-blend-space-v1",
       "phase": "phase 2",
@@ -301,6 +126,156 @@
       "timestamp": 1794152498.6794581,
       "timestamp_str": "2026-11-08 18:41:38",
       "agent": "opencode:keystone"
+    },
+    {
+      "task_id": "keystone-blend-state-console-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan: finish the uncommitted console blend-space panel - repair the mangled applyNodeProperties signature, mirror saved blend states back into the editor panel for round-trip authoring, and cover it with the static console test",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794154601.1425815,
+      "timestamp_str": "2026-11-08 19:16:41",
+      "agent": "commandcode:keystone-console",
+      "impact_assessment": {
+        "why": "The committed blend-state feature left the console half uncommitted and a bad merge collapsed applyNodeProperties onto its first if-statement, so the browser console cannot reload a saved blend state for editing and the panel was never documented or gated.",
+        "benefits": "The console gains complete blend-space authoring (preview, save, reload), the syntax-valid console script passes node --check, and the editor schema docs match the shipped UI.",
+        "risks": "contract: console-only JS, no API or schema change; dependency: existing preview_blend_space and load_state_machine actions; concurrency: none; state: no persisted format change.",
+        "mitigation": "Keep the change additive and inside app.js, index.html and test_web.py, reuse the existing state-machine load action, and run the project 6/6 gate plus node --check."
+      },
+      "plan_digest": "e814d99ebc19772da192da8a3754a77a521f8dcea9945e2e2e572a6bb848917c"
+    },
+    {
+      "task_id": "keystone-blend-state-console-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Console blend panel finished: applyNodeProperties signature repaired, valid default blend JSON, save merges one blend state into the state-machine document, load mirrors a saved blend state back; node --check clean and web tests green",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794156215.8821056,
+      "timestamp_str": "2026-11-08 19:43:35",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-blend-state-console-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[3/3] Project gate passes 6/6 (test, lint, mechanics, hygiene, guidelines, secrets) with the finished console blend-space panel; node --check clean; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794156784.81231,
+      "timestamp_str": "2026-11-08 19:53:04",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-blend-state-console-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-blend-state-console-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794156804.319363,
+      "timestamp_str": "2026-11-08 19:53:24",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-blend-loop-audit-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan: audit blend-state playback - fix loops wrapping at the representative clip, and crossfades that pop into and out of a blend state because the controller samples the representative clip instead of the blended pose",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794159818.5377634,
+      "timestamp_str": "2026-11-08 20:43:38",
+      "agent": "commandcode:keystone-console",
+      "impact_assessment": {
+        "why": "ADR-202 wired blend spaces into state machines by sampling them after the controller advanced, so the controller owned loop wrapping (representative clip length) and crossfade target poses (representative clip sample). A looping blend state froze after its shortest clip, and crossfading to or from a blend state jumped to the blended pose instead of blending toward it.",
+        "benefits": "Blend states now loop like plain states, loop at the longest clip in the space, and crossfade smoothly in both directions.",
+        "risks": "contract: additive AnimationController.set_pose_provider plus a public sample path; dependency: AnimationBlend only; concurrency: none; state: no persisted format change.",
+        "mitigation": "Drive the existing controller with a caller-supplied pose provider, keep the no-provider path byte-identical, and pin every fix with a failing-first regression plus the canonical determinism hash."
+      },
+      "plan_digest": "53f38c5567a446f2891a986c962e5d0d7d56c4c3edec945d729976348c5d4608"
+    },
+    {
+      "task_id": "keystone-blend-loop-audit-v1",
+      "phase": "in_progress",
+      "phase_num": 3,
+      "description": "[2/3] Pose-provider seam added to AnimationController and installed by AnimationStateMachine; three reproduced defects fixed with failing-first regressions (loop, wrap duration, crossfade in/out) plus provider-clearing on play",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794160056.46095,
+      "timestamp_str": "2026-11-08 20:47:36",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-blend-loop-audit-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[3/3] Project gate passes 6/6 with looping blend states, blend-space wrap duration, smooth crossfades in both directions and the editor preview looping; canonical --simulate hash still 772cac5232a0947b8f6d1914a5cf0cde; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794160629.3002172,
+      "timestamp_str": "2026-11-08 20:57:09",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-blend-loop-audit-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-blend-loop-audit-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794160636.9906075,
+      "timestamp_str": "2026-11-08 20:57:16",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-blend-loop-audit-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[3/3] Re-verified with labeled evidence: JUnit 856 tests 0 failures 0 errors; --simulate --frames 120 hash 772cac5232a0947b8f6d1914a5cf0cde and --expect-hash exit 0; --verify-determinism ok; headless 96x64 PNG+report; aikit check keystone 6/6. Crossfade-out test corrected to be genuinely failing-first (all five fail with animation.py and animation_state.py reverted to HEAD). checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794162191.5502684,
+      "timestamp_str": "2026-11-08 21:23:11",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-blend-loop-audit-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-blend-loop-audit-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794162405.8405914,
+      "timestamp_str": "2026-11-08 21:26:45",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-implicit-fsm-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/4] Plan: verified implicit-state-machine audit remediation - fix ComponentRuntime start() failure cleanup, unify the playtest outcome vocabulary, reconcile the console play loop with server state, share the viewport cursor rule, and make setViewMode always run its reset",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794165244.043284,
+      "timestamp_str": "2026-11-08 22:14:04",
+      "agent": "commandcode:keystone-console",
+      "impact_assessment": {
+        "why": "Implicit state machines were catalogued then re-verified; 6 reported claims were disproved by probe and rejected. The surviving defects are real: a failed component start leaves hooks running, the playtest outcome vocabulary cannot round-trip its own timeout value, the console play loop never stops when the server ends play, and the box-select cursor rule is duplicated with divergent conditions.",
+        "benefits": "Correct lifecycle teardown, a transcript vocabulary agents can round-trip, no runaway client polling, and one cursor rule instead of four.",
+        "risks": "contract: ComponentRuntime.start and playtest.read_outcome behaviour; dependency: none new; concurrency: console loops; state: no persisted format change.",
+        "mitigation": "Failing-first regression per fix, keep the default paths byte-identical, and run the full 6/6 project gate plus the canonical simulate hash."
+      },
+      "plan_digest": "6fb423717e52a00ca6c00d3f01d73a57fe7f996901caee1444a88a4c22e838d9"
+    },
+    {
+      "task_id": "keystone-implicit-fsm-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/4] Implemented and verified - ComponentRuntime.start unwinds through stop(); playtest OUTCOMES declares timeout and read_outcome round-trips it; showEditor reconciles the client loop with editor.play.active and playResume confirms server state; viewer.cursorFor is the single cursor rule; close_prefab_edit clears _scene_before_prefab. Five regressions added, each proven failing-first against the pre-fix source",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794166541.5943851,
+      "timestamp_str": "2026-11-08 22:35:41",
+      "agent": "commandcode:keystone-console"
     }
   ]
 }

@@ -143,6 +143,25 @@ class ClipControllerTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             AnimationClip(name="bad", events=((-0.1, "x"),))
 
+    def test_play_clears_a_caller_supplied_pose_provider(self):
+        clip = AnimationClip(
+            name="a",
+            position_tracks=(("cube", _vec_track([(0.0, Vec3(1.0, 0.0, 0.0)), (1.0, Vec3(1.0, 0.0, 0.0))])),),
+        )
+        controller = AnimationController()
+        controller.add(clip)
+        controller.play("a")
+        controller.set_pose_provider(
+            lambda moment: {"cube": Transform(position=Vec3(99.0, 0.0, 0.0))}
+        )
+        self.assertAlmostEqual(
+            controller.advance(0.1)["cube"].position.x, 99.0
+        )
+        controller.play("a")
+        self.assertAlmostEqual(
+            controller.advance(0.1)["cube"].position.x, 1.0
+        )
+
     def test_crossfade_blends_deterministically(self):
         first = AnimationClip(
             name="a",

@@ -53,6 +53,7 @@ class ComponentRuntime:
         self.running = False
         self._started: list[tuple[Node, object]] = []
         self._started_keys: set[tuple[int, int]] = set()
+        self._cleanup_errors: list[tuple[str, str]] = []
 
     def _entries(self) -> list[tuple[Node, object]]:
         entries: list[tuple[Node, object]] = []
@@ -86,16 +87,44 @@ class ComponentRuntime:
         return True
 
     def start(self) -> int:
-        """Start every hook-bearing component once and return the count."""
+        """Start every hook-bearing component once and return the count.
+
+        A component that raises from ``start`` aborts the whole runtime: the
+        hooks that already started are stopped in reverse order, so a failed
+        start never leaves a half-started scene behind.
+        """
         if self.running:
             raise ValueError("lifecycle runtime is already running")
         self.running = True
         self.frame = 0
         started = 0
-        for node, component in self._entries():
-            if self._start_component(node, component):
-                started += 1
+        try:
+            for node, component in self._entries():
+                if self._start_component(node, component):
+                    started += 1
+        except BaseException:
+            self._unwind_failed_start()
+            raise
         return started
+
+    def _unwind_failed_start(self) -> None:
+        """Stop whatever started before a failure, ignoring stop() errors.
+
+        Cleanup must never mask the error that aborted ``start``, so each
+        ``stop`` call is isolated and failures are ignored.
+        """
+        for node, component in reversed(self._started):
+            stop = getattr(component, "stop", None)
+            if not callable(stop):
+                continue
+            try:
+                stop(self._context(node, component, 0.0))
+            except Exception:  # noqa: BLE001 - cleanup must never mask the start error
+                self._cleanup_errors.append((type(component).__name__, "stop"))
+        self._started.clear()
+        self._started_keys.clear()
+        self.running = False
+        self.frame = 0
 
     def update(self, dt: float) -> int:
         """Advance one fixed tick and return the number of update hooks run."""

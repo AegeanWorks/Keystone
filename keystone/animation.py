@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import itertools
 import math
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from keystone.math3d import Quat, Vec3
@@ -276,6 +277,29 @@ class AnimationController:
     _blend_duration: float = 0.0
     _blend_elapsed: float = 0.0
     _fresh_start: bool = field(default=True, repr=False)
+    _pose_provider: Callable[[float], dict[str, Transform]] | None = field(
+        default=None, repr=False
+    )
+    _wrap_duration: Callable[[], float] | None = field(default=None, repr=False)
+
+    def set_pose_provider(
+        self,
+        pose: Callable[[float], dict[str, Transform]] | None,
+        wrap_duration: Callable[[], float] | None = None,
+    ) -> None:
+        """Let a caller-supplied sampler own the pose and the loop length.
+
+        Blend-space states sample a pose that no single clip describes and may
+        span several clips, so the controller asks them for the pose at a time
+        and for the length to wrap at instead of using the active clip.
+        """
+        self._pose_provider = pose
+        self._wrap_duration = wrap_duration if pose is not None else None
+
+    def _pose_at(self, moment: float, clip: AnimationClip) -> dict[str, Transform]:
+        if self._pose_provider is not None:
+            return self._pose_provider(moment)
+        return clip.sample(moment)
 
     def __post_init__(self) -> None:
         if isinstance(self.speed, bool) or not isinstance(self.speed, (int, float)) or not math.isfinite(self.speed):
@@ -297,6 +321,7 @@ class AnimationController:
         self.blending = False
         self._blend_from_pose = {}
         self._blend_to = ""
+        self.set_pose_provider(None)
         if restart:
             self.time = 0.0
             self._fresh_start = True
@@ -315,9 +340,9 @@ class AnimationController:
         moment = self._moment()
         if self.blending and self._blend_duration > 0.0:
             factor = min(1.0, self._blend_elapsed / self._blend_duration)
-            source = blend_poses(self._blend_from_pose, self.clips[self.current].sample(moment), factor)
+            source = blend_poses(self._blend_from_pose, self._pose_at(moment, self.clips[self.current]), factor)
         else:
-            source = self.clips[self.current].sample(moment)
+            source = self._pose_at(moment, self.clips[self.current])
         self._blend_from_pose = source
         self._blend_to = name
         self._blend_duration = duration
@@ -332,6 +357,8 @@ class AnimationController:
         if clip is None:
             return 0.0
         duration = clip.duration()
+        if self._wrap_duration is not None:
+            duration = self._wrap_duration()
         if duration > 0.0 and self.loop:
             return self.time % duration
         return min(self.time, duration)
@@ -366,7 +393,7 @@ class AnimationController:
             fired = clip.events_in_range(-1.0, moment)
         else:
             fired = clip.events_in_range(previous, moment)
-        pose = clip.sample(moment)
+        pose = self._pose_at(moment, clip)
         if self.blending:
             self._blend_elapsed += dt
             factor = 1.0 if self._blend_duration <= 0.0 else min(1.0, self._blend_elapsed / self._blend_duration)

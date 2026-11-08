@@ -1753,6 +1753,11 @@ class WebServerTest(unittest.TestCase):
                 "before-enter", {node["name"] for node in discarded["nodes"]}
             )
             self.assertEqual(discarded["selection"]["name"], "before-enter")
+            self.assertIsNone(
+                session._scene_before_prefab,
+                "closing prefab edit must clear the authored-scene fallback, "
+                "otherwise it permanently shadows the live game scene",
+            )
 
             reopened = session.editor_action({"action": "edit_prefab", "name": "hero"})
             root = reopened["selection"]
@@ -4973,6 +4978,129 @@ class WebServerTest(unittest.TestCase):
             )
         self.assertEqual(caught.exception.status, 400)
 
+    def test_editor_blend_state_console_round_trip(self):
+        with tempfile.TemporaryDirectory() as directory:
+            animation_dir = Path(directory) / "animations"
+            session = GameSession(CubeDemo(), animation_dir=animation_dir)
+            previewed = session.editor_action(
+                {
+                    "action": "preview_blend_space",
+                    "blend_space": _blend_space_document(),
+                    "parameter": 0.5,
+                    "time": 0.0,
+                }
+            )
+            self.assertIn("cube-0", previewed["blend_space_preview"]["updated"])
+
+            machine = {
+                "schema": 1,
+                "states": [
+                    {
+                        "name": "locomotion",
+                        "clip": {
+                            "schema": 1,
+                            "name": "locomotion",
+                            "position": {},
+                            "rotation": {},
+                            "scale": {},
+                            "events": [],
+                        },
+                        "loop": True,
+                        "speed": 1.0,
+                    },
+                    {
+                        "name": "walk",
+                        "blend_space": _blend_space_document(),
+                        "blend_parameter": "speed",
+                        "loop": True,
+                        "speed": 1.0,
+                    },
+                ],
+                "transitions": [],
+                "parameters": {"speed": 0.0},
+                "current": "locomotion",
+            }
+            saved = session.editor_action(
+                {
+                    "action": "save_state_machine",
+                    "name": "blend",
+                    "machine": machine,
+                }
+            )
+            entry = next(
+                item for item in saved["state_machines"] if item["name"] == "blend"
+            )
+            self.assertEqual(entry["states"], 2)
+
+            loaded = session.editor_action(
+                {"action": "load_state_machine", "name": "blend"}
+            )
+            document = loaded["state_machine_document"]["machine"]
+            blend_state = next(
+                state for state in document["states"] if state["name"] == "walk"
+            )
+            self.assertEqual(blend_state["blend_parameter"], "speed")
+            self.assertEqual(
+                blend_state["blend_space"]["samples"][1]["threshold"], 1.0
+            )
+            self.assertEqual(document["current"], "locomotion")
+
+            walk_only = AnimationClip(
+                name="walk",
+                position_tracks=(
+                    (
+                        "cube-0",
+                        Track(
+                            times=(0.0, 1.0),
+                            values=(Vec3(0, 0, 0), Vec3(0, 1, 0)),
+                        ),
+                    ),
+                ),
+            )
+            looping = {
+                "schema": 1,
+                "states": [
+                    {
+                        "name": "walk",
+                        "blend_space": BlendSpace1D(
+                            (BlendSample(walk_only, 0.0),)
+                        ).to_dict(),
+                        "blend_parameter": "speed",
+                        "loop": True,
+                        "speed": 1.0,
+                    }
+                ],
+                "transitions": [],
+                "parameters": {"speed": 0.0},
+                "current": "walk",
+            }
+            session.editor_action(
+                {
+                    "action": "save_state_machine",
+                    "name": "looping",
+                    "machine": looping,
+                }
+            )
+            previewed = session.editor_action(
+                {
+                    "action": "preview_state_machine",
+                    "name": "looping",
+                    "parameters": {"speed": 0.0},
+                    "frames": 90,
+                }
+            )
+            node = next(
+                item
+                for item in previewed["nodes"]
+                if item["id"] == "cube-0"
+            )
+            self.assertAlmostEqual(
+                node["transform"]["position"][1],
+                0.5,
+                places=4,
+                msg="the blend state froze instead of looping during an editor preview",
+            )
+
     def test_editor_animation_key_authoring(self):
         with tempfile.TemporaryDirectory() as directory:
             animation_dir = Path(directory) / "animations"
@@ -5418,6 +5546,14 @@ class WebServerTest(unittest.TestCase):
             "state-machine-delete",
             "state-machine-restore",
             "state-machine-state",
+            "blend-space-json",
+            "blend-space-name",
+            "blend-space-parameter",
+            "blend-space-value",
+            "blend-space-time",
+            "blend-space-preview",
+            "blend-space-save",
+            "blend-space-state",
             "node-parent",
             "node-create",
             "node-duplicate",
@@ -5754,6 +5890,16 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("restore_state_machine", script)
         self.assertIn("state_machine_preview", script)
         self.assertIn("state-machine-state", script)
+        self.assertIn("blend-space-json", script)
+        self.assertIn("previewBlendSpace", script)
+        self.assertIn("saveBlendState", script)
+        self.assertIn("preview_blend_space", script)
+        self.assertIn("blend_space_preview", script)
+        self.assertIn("blendStateFromMachine", script)
+        self.assertIn("mergeBlendState", script)
+        self.assertIn("blend_parameter", script)
+        self.assertIn('id="blend-space-json" spellcheck="false"', text)
+        self.assertNotIn('"samples":[]', text)
         self.assertIn("fillStateMachineDatalist", script)
         self.assertIn("animation_preview", script)
         self.assertIn("playFrames", script)

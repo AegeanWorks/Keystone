@@ -867,8 +867,7 @@ export class SceneViewer {
     this.cancelBoxDrag();
     this.dragging = false;
     this.hoverAxis = null;
-    this.canvas.style.cursor =
-      this.viewMode === "scene" && this.boxSelect ? "crosshair" : "";
+    this.canvas.style.cursor = this.cursorFor();
     if (typeof this.onViewMode === "function") {
       this.onViewMode(this.viewMode);
     }
@@ -900,8 +899,7 @@ export class SceneViewer {
     this.cancelBoxDrag();
     this.dragging = false;
     this.hoverAxis = null;
-    this.canvas.style.cursor =
-      this.viewMode === "scene" && this.boxSelect ? "crosshair" : "";
+    this.canvas.style.cursor = this.cursorFor();
     if (typeof this.onProjectionMode === "function") {
       this.onProjectionMode(this.viewPreset);
     }
@@ -1041,8 +1039,10 @@ export class SceneViewer {
       this.cancelGizmoDrag();
       this.cancelBoxDrag();
       this.hoverAxis = null;
-      this.canvas.style.cursor = "";
+      this.canvas.style.cursor = this.cursorFor();
       this.render();
+    } else {
+      this.canvas.style.cursor = this.cursorFor(this.hoverAxis);
     }
   }
 
@@ -1132,10 +1132,23 @@ export class SceneViewer {
     this.notifyLayoutChange();
   }
 
+  cursorFor(axis = null) {
+    // One cursor rule for every state that can change it. Game view never
+    // shows an editor cursor, a gizmo hover wins over box-select, and
+    // box-select only applies while the scene view is editable.
+    if (this.viewMode === "game") {
+      return "";
+    }
+    if (axis) {
+      return "grab";
+    }
+    return this.boxSelect && this.editable ? "crosshair" : "";
+  }
+
   setBoxSelect(enabled) {
     this.boxSelect = Boolean(enabled);
     this.cancelBoxDrag();
-    this.canvas.style.cursor = this.boxSelect ? "crosshair" : "";
+    this.canvas.style.cursor = this.cursorFor(this.hoverAxis);
     this.render();
   }
 
@@ -1616,11 +1629,7 @@ export class SceneViewer {
       return;
     }
     this.hoverAxis = axis;
-    this.canvas.style.cursor = axis
-      ? "grab"
-      : this.boxSelect
-        ? "crosshair"
-        : "";
+    this.canvas.style.cursor = this.cursorFor(axis);
     this.render();
   }
 

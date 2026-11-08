@@ -129,6 +129,44 @@ class LifecycleTest(unittest.TestCase):
         )
         self.assertEqual(runtime.stop(), 2)
 
+    def test_failed_start_stops_components_it_already_started(self):
+        class Boom:
+            ticks = 0
+
+            def start(self, context):
+                raise RuntimeError("boom")
+
+            def update(self, context):
+                Boom.ticks += 1
+
+            def stop(self, context):
+                raise AssertionError("an unstarted component must not be stopped")
+
+        scene = Scene()
+        first = scene.add(Node("first", id="first"))
+        alpha = Alpha("a")
+        first.add_component(alpha)
+        second = scene.add(Node("second", id="second"))
+        second.add_component(Boom())
+
+        runtime = ComponentRuntime(scene)
+        with self.assertRaises(RuntimeError):
+            runtime.start()
+
+        self.assertEqual(alpha.started, 1)
+        self.assertEqual(
+            alpha.stopped,
+            1,
+            "a component whose start() succeeded must receive stop() when a later start() fails",
+        )
+        self.assertFalse(runtime.running)
+        self.assertEqual(
+            runtime.describe(),
+            {"active": False, "frame": 0, "started": 0, "hooks": []},
+        )
+        self.assertEqual(Boom.ticks, 0, "a failed start must not tick any component")
+        self.assertEqual(EVENTS, ["a:start:0:0.0:first", "a:stop:0:0.0:first"])
+
     def test_components_without_hooks_are_ignored(self):
         scene = Scene()
         node = scene.add(Node("plain", id="plain"))

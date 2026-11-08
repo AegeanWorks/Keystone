@@ -735,6 +735,7 @@ class GameSession:
         original_history = self._prefab_edit_original_history
         original_selection = list(self._prefab_edit_original_selection)
         self._scene_override = None
+        self._scene_before_prefab = None
         self.prefab_edit = None
         self._prefab_edit_original_history = None
         self._prefab_edit_original_selection = []

@@ -1,5 +1,6 @@
 """Tests for deterministic parameter-driven animation state machines."""
 
+import itertools
 import json
 import math
 import unittest
@@ -179,6 +180,239 @@ class AnimationStateMachineTest(unittest.TestCase):
         without_clip.pop("clip")
         rebuilt = AnimationState.from_dict(without_clip)
         self.assertEqual(rebuilt.clip.name, "walk")
+
+    def test_blend_space_state_loops_like_a_plain_state(self):
+        walk = _clip("walk", 0.0)
+        space = BlendSpace1D((BlendSample(walk, 0.0),))
+
+        plain = AnimationStateMachine(
+            [AnimationState("walk", walk, loop=True)], current="walk"
+        )
+        blended = AnimationStateMachine(
+            [
+                AnimationState(
+                    "walk",
+                    walk,
+                    loop=True,
+                    blend_space=space,
+                    blend_parameter="speed",
+                )
+            ],
+            parameters={"speed": 0.0},
+            current="walk",
+        )
+
+        plain_positions = [plain.advance(1 / 60)["node"].position.x for _ in range(90)]
+        blend_positions = [blended.advance(1 / 60)["node"].position.x for _ in range(90)]
+
+        for index, (plain_x, blend_x) in enumerate(
+            zip(plain_positions, blend_positions)
+        ):
+            self.assertAlmostEqual(
+                blend_x,
+                plain_x,
+                places=9,
+                msg=f"frame {index} diverged from the plain state",
+            )
+        self.assertLess(min(blend_positions[60:]), 0.5)
+
+    def test_non_looping_blend_space_state_holds_the_last_frame(self):
+        walk = _clip("walk", 0.0)
+        space = BlendSpace1D((BlendSample(walk, 0.0),))
+        machine = AnimationStateMachine(
+            [
+                AnimationState(
+                    "walk",
+                    walk,
+                    loop=False,
+                    blend_space=space,
+                    blend_parameter="speed",
+                )
+            ],
+            parameters={"speed": 0.0},
+            current="walk",
+        )
+        for _ in range(120):
+            pose = machine.advance(1 / 60)
+        self.assertAlmostEqual(pose["node"].position.x, 1.0)
+
+    def test_crossfade_into_a_blend_state_targets_the_blended_pose(self):
+        def hold(name, offset):
+            return AnimationClip(
+                name=name,
+                position_tracks=(
+                    (
+                        "node",
+                        Track(
+                            times=(0.0, 1.0),
+                            values=(
+                                Vec3(offset, 0.0, 0.0),
+                                Vec3(offset, 0.0, 0.0),
+                            ),
+                        ),
+                    ),
+                ),
+            )
+
+        idle = hold("idle", 0.0)
+        walk = hold("walk", 1.0)
+        run = hold("run", 10.0)
+        space = BlendSpace1D(
+            (BlendSample(walk, 0.0), BlendSample(run, 10.0))
+        )
+        machine = AnimationStateMachine(
+            [
+                AnimationState("idle", idle),
+                AnimationState(
+                    "locomotion",
+                    walk,
+                    blend_space=space,
+                    blend_parameter="speed",
+                ),
+            ],
+            [
+                AnimationTransition(
+                    "idle", "locomotion", "speed", "greater", 0.5, 0.2
+                )
+            ],
+            parameters={"speed": 0.0},
+            current="idle",
+        )
+        self.assertAlmostEqual(machine.advance(0.0)["node"].position.x, 0.0)
+
+        machine.set_parameter("speed", 10.0)
+        positions = [
+            machine.advance(1 / 60)["node"].position.x for _ in range(14)
+        ]
+        steps = [
+            later - earlier
+            for earlier, later in itertools.pairwise(positions)
+        ]
+        self.assertGreater(max(steps), 0.0)
+        self.assertLess(
+            max(steps),
+            1.5,
+            f"crossfade popped instead of blending smoothly: {positions}",
+        )
+        self.assertAlmostEqual(positions[-1], 10.0)
+
+    def test_blend_space_loops_at_its_own_longest_clip(self):
+        short = AnimationClip(
+            name="short",
+            position_tracks=(
+                (
+                    "node",
+                    Track(
+                        times=(0.0, 1.0),
+                        values=(Vec3(0, 0, 0), Vec3(0, 1, 0)),
+                    ),
+                ),
+            ),
+        )
+        long = AnimationClip(
+            name="long",
+            position_tracks=(
+                (
+                    "node",
+                    Track(
+                        times=(0.0, 2.0),
+                        values=(Vec3(0, 0, 0), Vec3(0, 2, 0)),
+                    ),
+                ),
+            ),
+        )
+        space = BlendSpace1D(
+            (BlendSample(short, 0.0), BlendSample(long, 10.0))
+        )
+        self.assertEqual(space.duration, 2.0)
+        self.assertEqual(short.duration(), 1.0)
+
+        machine = AnimationStateMachine(
+            [
+                AnimationState(
+                    "locomotion",
+                    short,
+                    blend_space=space,
+                    blend_parameter="speed",
+                )
+            ],
+            parameters={"speed": 10.0},
+            current="locomotion",
+        )
+        heights = [
+            machine.advance(1 / 60)["node"].position.y for _ in range(180)
+        ]
+        self.assertAlmostEqual(max(heights), 2.0, places=6)
+        self.assertLess(
+            heights[150],
+            1.9,
+            "the loop wrapped at the representative clip length instead of the blend space length",
+        )
+
+    def test_crossfade_out_of_a_blend_state_blends_its_sampled_pose(self):
+        def hold(name, offset):
+            return AnimationClip(
+                name=name,
+                position_tracks=(
+                    (
+                        "node",
+                        Track(
+                            times=(0.0, 1.0),
+                            values=(
+                                Vec3(offset, 0.0, 0.0),
+                                Vec3(offset, 0.0, 0.0),
+                            ),
+                        ),
+                    ),
+                ),
+            )
+
+        walk = hold("walk", 1.0)
+        run = hold("run", 10.0)
+        idle = hold("idle", 0.0)
+        space = BlendSpace1D(
+            (BlendSample(walk, 0.0), BlendSample(run, 10.0))
+        )
+        machine = AnimationStateMachine(
+            [
+                AnimationState(
+                    "locomotion",
+                    walk,
+                    blend_space=space,
+                    blend_parameter="speed",
+                ),
+                AnimationState("idle", idle),
+            ],
+            [
+                AnimationTransition(
+                    "locomotion", "idle", "stop", "greater", 0.5, 0.2
+                )
+            ],
+            parameters={"speed": 10.0, "stop": 0.0},
+            current="locomotion",
+        )
+        start = machine.advance(0.0)["node"].position.x
+        self.assertAlmostEqual(start, 10.0)
+
+        machine.set_parameter("stop", 1.0)
+        positions = [
+            machine.advance(1 / 60)["node"].position.x for _ in range(14)
+        ]
+        steps = [
+            earlier - later
+            for earlier, later in itertools.pairwise([start, *positions])
+        ]
+        self.assertLess(
+            max(steps),
+            1.5,
+            f"crossfade out popped instead of blending from the blended pose: {[start, *positions]}",
+        )
+        self.assertLess(
+            positions[0],
+            start - 0.05,
+            "the first crossfade frame jumped instead of blending from the sampled blend pose",
+        )
+        self.assertAlmostEqual(positions[-1], 0.0)
 
     def test_validation_rejects_bad_shapes(self):
         idle = AnimationState("idle", _clip("idle"))

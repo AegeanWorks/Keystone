@@ -10,6 +10,7 @@ from pathlib import Path
 from keystone.headless import run_simulation
 from keystone.input import ActionState
 from keystone.playtest import (
+    OUTCOMES,
     PLAYTEST_REPORT_SCHEMA,
     TRANSCRIPT_SCHEMA,
     GreedyPolicy,
@@ -19,6 +20,7 @@ from keystone.playtest import (
     canon_hash,
     diff_transcripts,
     make_report,
+    read_outcome,
     run_bot,
     to_command_log,
     validate_fairness,
@@ -39,6 +41,34 @@ from tests.support_maze_game import (
 
 
 class TranscriptTest(unittest.TestCase):
+    def test_outcome_vocabulary_covers_what_the_runner_emits(self):
+        self.assertEqual(
+            set(OUTCOMES),
+            {"ongoing", "win", "lose", "unknown", "timeout"},
+            "OUTCOMES must declare every outcome run_bot can report",
+        )
+
+    def test_read_outcome_round_trips_every_declared_outcome(self):
+        for value in OUTCOMES:
+            with self.subTest(outcome=value):
+                self.assertEqual(
+                    read_outcome({"outcome": value}),
+                    value,
+                    f"read_outcome must preserve the declared outcome {value!r}",
+                )
+
+    def test_timeout_is_reported_for_a_run_that_never_signals(self):
+        transcript = run_bot(
+            CubeDemo,
+            RandomPolicy(),
+            frames=100000,
+            seed=0,
+            max_wall_seconds=1e-9,
+        )
+        self.assertTrue(transcript["timed_out"])
+        self.assertEqual(transcript["outcome"], "timeout")
+        self.assertIn(transcript["outcome"], OUTCOMES)
+
     def test_run_bot_applies_a_scene_loader(self):
         calls = []
 
