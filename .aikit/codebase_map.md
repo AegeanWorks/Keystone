@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `135`
 - **Total Classes**: `215`
-- **Total Top-Level Functions**: `350`
-- **Total Class Methods**: `1323`
-- **Total Source Lines**: `30345`
+- **Total Top-Level Functions**: `355`
+- **Total Class Methods**: `1324`
+- **Total Source Lines**: `30580`
 
 ---
 
@@ -1535,7 +1535,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `1845` lines (`66555` bytes)
+**Size**: `1997` lines (`71333` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene and environment edits.*
@@ -1613,7 +1613,12 @@
 - `def save_scene_group(scene, node, library)` - *Write one scene group's children back to its library scene in place.*
 - `def _top_level_selected(scene, ids)`
 - `def _parent_linear_inverse(node)`
-- `def transform_selection(scene, ids, payload)` - *Apply a world position delta and/or local rotation/scale deltas.*
+- `def _world_position(node)`
+- `def _quat_from_basis(x, y, z)`
+- `def _parent_rotation(node)`
+- `def _world_to_local_position(node, position)`
+- `def _apply_group_transform(node, pivot, rotation, scale)`
+- `def transform_selection(scene, ids, payload)` - *Apply world position delta, local deltas, or a centroid group transform.*
 - `def toggle_selection_visible(scene, ids)` - *Flip the visibility of every selected node in one operation.*
 - `def delete_selection(scene, ids)` - *Delete all top-level selected nodes and return a surviving parent.*
 
@@ -1636,7 +1641,7 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `226` lines (`10853` bytes)
+**Size**: `227` lines (`11000` bytes)
 
 ---
 
@@ -3115,7 +3120,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `2095` lines (`88032` bytes)
+**Size**: `2177` lines (`91432` bytes)
 
 **Classes:**
 - `class Health`
@@ -3169,6 +3174,7 @@
   - Method `.test_editor_add_save_unload_scene_group()`
   - Method `.test_editor_multi_selection_and_batch_actions()`
   - Method `.test_editor_multi_selection_skips_selected_descendants()`
+  - Method `.test_editor_group_rotation_and_scale_around_selection_pivot()`
   - Method `.test_editor_scene_settings_and_undo()`
   - Method `.test_editor_batch_authoring_is_atomic()`
   - Method `.test_editor_node_property_editing()`

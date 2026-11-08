@@ -1725,23 +1725,175 @@ def _parent_linear_inverse(node: Node) -> tuple[tuple[float, ...], ...]:
     )
 
 
+def _world_position(node: Node) -> Vec3:
+    matrix = list(node.world_matrix().flat())
+    return Vec3(matrix[12], matrix[13], matrix[14])
+
+
+def _quat_from_basis(x: Vec3, y: Vec3, z: Vec3) -> Quat:
+    m00, m01, m02 = x.x, y.x, z.x
+    m10, m11, m12 = x.y, y.y, z.y
+    m20, m21, m22 = x.z, y.z, z.z
+    trace = m00 + m11 + m22
+    if trace > 0.0:
+        scale = math.sqrt(trace + 1.0) * 2.0
+        return Quat(
+            0.25 * scale,
+            (m21 - m12) / scale,
+            (m02 - m20) / scale,
+            (m10 - m01) / scale,
+        ).normalized()
+    if m00 > m11 and m00 > m22:
+        scale = math.sqrt(1.0 + m00 - m11 - m22) * 2.0
+        return Quat(
+            (m21 - m12) / scale,
+            0.25 * scale,
+            (m01 + m10) / scale,
+            (m02 + m20) / scale,
+        ).normalized()
+    if m11 > m22:
+        scale = math.sqrt(1.0 + m11 - m00 - m22) * 2.0
+        return Quat(
+            (m02 - m20) / scale,
+            (m01 + m10) / scale,
+            0.25 * scale,
+            (m12 + m21) / scale,
+        ).normalized()
+    scale = math.sqrt(1.0 + m22 - m00 - m11) * 2.0
+    return Quat(
+        (m10 - m01) / scale,
+        (m02 + m20) / scale,
+        (m12 + m21) / scale,
+        0.25 * scale,
+    ).normalized()
+
+
+def _parent_rotation(node: Node) -> Quat:
+    if node.parent is None:
+        return Quat()
+    matrix = list(node.parent.world_matrix().flat())
+    x = Vec3(matrix[0], matrix[1], matrix[2]).normalized()
+    raw_y = Vec3(matrix[4], matrix[5], matrix[6])
+    y = (raw_y - x * x.dot(raw_y)).normalized()
+    z = x.cross(y).normalized()
+    return _quat_from_basis(x, y, z)
+
+
+def _world_to_local_position(node: Node, position: Vec3) -> Vec3:
+    if node.parent is None:
+        return position
+    matrix = list(node.parent.world_matrix().flat())
+    offset = [
+        position.x - matrix[12],
+        position.y - matrix[13],
+        position.z - matrix[14],
+    ]
+    inverse = _parent_linear_inverse(node)
+    return Vec3(
+        inverse[0][0] * offset[0]
+        + inverse[0][1] * offset[1]
+        + inverse[0][2] * offset[2],
+        inverse[1][0] * offset[0]
+        + inverse[1][1] * offset[1]
+        + inverse[1][2] * offset[2],
+        inverse[2][0] * offset[0]
+        + inverse[2][1] * offset[1]
+        + inverse[2][2] * offset[2],
+    )
+
+
+def _apply_group_transform(
+    node: Node,
+    pivot: Vec3,
+    rotation: Quat | None,
+    scale: float | None,
+) -> None:
+    world = _world_position(node)
+    offset = world - pivot
+    if rotation is not None:
+        offset = rotation.rotate(offset)
+    if scale is not None:
+        offset = offset * scale
+    new_world = pivot + offset
+    transform = node.transform
+    rotation_value = transform.rotation
+    if rotation is not None:
+        parent_rotation = _parent_rotation(node)
+        rotation_value = (
+            parent_rotation.conjugate()
+            * rotation
+            * parent_rotation
+            * transform.rotation
+        ).normalized()
+    scale_value = transform.scale
+    if scale is not None:
+        scale_value = Vec3(
+            scale_value.x * scale,
+            scale_value.y * scale,
+            scale_value.z * scale,
+        )
+    node.transform = Transform(
+        _world_to_local_position(node, new_world),
+        rotation_value,
+        scale_value,
+    )
+
+
 def transform_selection(
     scene: Scene,
     ids: list[str],
     payload: Mapping[str, object],
 ) -> list[Node]:
-    """Apply a world position delta and/or local rotation/scale deltas."""
+    """Apply world position delta, local deltas, or a centroid group transform."""
     if not isinstance(scene, Scene):
         raise TypeError("transform_selection target must be a Scene")
     if not ids:
         raise ValueError("select at least one node")
     if not isinstance(payload, Mapping):
         raise TypeError("transform_selection payload must be a mapping")
-    unknown = sorted(set(payload) - {"action", "position", "rotation", "scale"})
+    unknown = sorted(
+        set(payload)
+        - {
+            "action",
+            "position",
+            "rotation",
+            "scale",
+            "pivot",
+            "group_rotation",
+            "group_scale",
+        }
+    )
     if unknown:
         raise ValueError(
             f"transform_selection has unknown fields: {', '.join(unknown)}"
         )
+    if {"pivot", "group_rotation", "group_scale"} & set(payload):
+        if "pivot" not in payload:
+            raise ValueError("group transform_selection needs pivot")
+        if any(name in payload for name in ("position", "rotation", "scale")):
+            raise ValueError(
+                "group transform_selection cannot mix position/rotation/scale"
+            )
+        pivot = Vec3(*_finite_array(payload["pivot"], 3, "group pivot"))
+        group_rotation = None
+        if "group_rotation" in payload:
+            x, y, z, w = _finite_array(
+                payload["group_rotation"], 4, "group rotation"
+            )
+            group_rotation = Quat(w, x, y, z).normalized()
+        group_scale = None
+        if "group_scale" in payload:
+            group_scale = _finite_number(payload["group_scale"], "group scale")
+            if group_scale <= 0.0:
+                raise ValueError("group scale must be positive")
+        if group_rotation is None and group_scale is None:
+            raise ValueError(
+                "group transform_selection needs group_rotation or group_scale"
+            )
+        nodes = _top_level_selected(scene, ids)
+        for node in nodes:
+            _apply_group_transform(node, pivot, group_rotation, group_scale)
+        return nodes
     fields = [name for name in ("position", "rotation", "scale") if name in payload]
     if not fields:
         raise ValueError("transform_selection needs position, rotation or scale")

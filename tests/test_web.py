@@ -1470,6 +1470,80 @@ class WebServerTest(unittest.TestCase):
         )
         self.assertEqual(parent["transform"]["position"], [0.0, 0.0, 0.0])
 
+    def test_editor_group_rotation_and_scale_around_selection_pivot(self):
+        session = GameSession(CubeDemo())
+        for node_id, x in (("group-left", -1.0), ("group-right", 1.0)):
+            session.editor_action(
+                {
+                    "action": "create_node",
+                    "id": node_id,
+                    "name": node_id,
+                    "position": [x, 0.0, 0.0],
+                }
+            )
+        session.editor_action(
+            {
+                "action": "select_many",
+                "ids": ["group-left", "group-right"],
+                "mode": "replace",
+            }
+        )
+        rotated = session.editor_action(
+            {
+                "action": "transform_selection",
+                "pivot": [0.0, 0.0, 0.0],
+                "group_rotation": [0.0, 0.7071067811865476, 0.0, 0.7071067811865476],
+            }
+        )
+        left = next(
+            node for node in rotated["nodes"] if node["id"] == "group-left"
+        )
+        right = next(
+            node for node in rotated["nodes"] if node["id"] == "group-right"
+        )
+        self.assertAlmostEqual(left["transform"]["position"][0], 0.0)
+        self.assertAlmostEqual(left["transform"]["position"][2], 1.0)
+        self.assertAlmostEqual(right["transform"]["position"][0], 0.0)
+        self.assertAlmostEqual(right["transform"]["position"][2], -1.0)
+        self.assertAlmostEqual(
+            left["transform"]["rotation"][1], 0.7071067811865476
+        )
+        undone = session.editor_action({"action": "undo"})
+        right = next(
+            node for node in undone["nodes"] if node["id"] == "group-right"
+        )
+        self.assertEqual(right["transform"]["position"], [1.0, 0.0, 0.0])
+        scaled = session.editor_action(
+            {
+                "action": "transform_selection",
+                "pivot": [0.0, 0.0, 0.0],
+                "group_scale": 2.0,
+            }
+        )
+        left = next(
+            node for node in scaled["nodes"] if node["id"] == "group-left"
+        )
+        right = next(
+            node for node in scaled["nodes"] if node["id"] == "group-right"
+        )
+        self.assertEqual(left["transform"]["position"], [-2.0, 0.0, 0.0])
+        self.assertEqual(right["transform"]["position"], [2.0, 0.0, 0.0])
+        self.assertEqual(left["transform"]["scale"], [2.0, 2.0, 2.0])
+        undone = session.editor_action({"action": "undo"})
+        right = next(
+            node for node in undone["nodes"] if node["id"] == "group-right"
+        )
+        self.assertEqual(right["transform"]["position"], [1.0, 0.0, 0.0])
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action(
+                {
+                    "action": "transform_selection",
+                    "pivot": [0.0, 0.0, 0.0],
+                    "group_scale": 0.0,
+                }
+            )
+        self.assertEqual(caught.exception.status, 400)
+
     def test_editor_scene_settings_and_undo(self):
         session = GameSession(CubeDemo())
         editor = session.editor()
@@ -1913,6 +1987,11 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("toggle_selection_visible", script)
         self.assertIn("delete_selection", script)
         self.assertIn("selectionToggleVisible", script)
+        self.assertIn("applyGizmoSelectionTransform", script)
+        self.assertIn("applyGizmoSelectionRotation", script)
+        self.assertIn("applyGizmoSelectionScale", script)
+        self.assertIn("group_rotation", script)
+        self.assertIn("group_scale", script)
         self.assertIn("onSelect", script)
         self.assertIn("isEditingTarget", script)
         self.assertIn("keydown", script)
@@ -1955,6 +2034,9 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("previewBasesForSelection", viewer_script)
         self.assertIn("focusSelection", viewer_script)
         self.assertIn("onTransformSelection", viewer_script)
+        self.assertIn("onRotateSelection", viewer_script)
+        self.assertIn("onScaleSelection", viewer_script)
+        self.assertIn("uniformScaleMatrix", viewer_script)
         self.assertIn("u_selected", viewer_script)
         self.assertIn("pointerdown", viewer_script)
         self.assertIn("shiftKey", viewer_script)

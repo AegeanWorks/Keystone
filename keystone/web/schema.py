@@ -131,7 +131,7 @@ EDITOR_SCHEMA = {
         "node": ["id", "name", "parent_id", "children", "visible", "selected", "tags", "layer", "components", "component_data", "mesh", "material", "prefab_link", "scene_group", "transform", "world"],
         "selection": ["selected_ids", "selection_count"],
         "select_many": ["ids", "mode"],
-        "transform_selection": ["position", "rotation", "scale"],
+        "transform_selection": ["position", "rotation", "scale", "pivot", "group_rotation", "group_scale"],
         "prefab_instance": ["id", "name", "instance"],
         "scene_group": ["id", "name", "parent_id", "node_count", "roots"],
         "transform": ["position", "rotation", "scale"],
@@ -200,6 +200,7 @@ EDITOR_SCHEMA = {
         "schema 24 adds deterministic component lifecycle hooks: component schemas advertise start/update/stop and play state reports the runtime started/frame summary",
         "schema 25 adds additive scene groups with add_scene/unload_scene/save_scene_group and editor scene_groups inventory",
         "schema 26 adds selection sets and batch transform/toggle/delete actions; selected_ids and selection_count expose the set",
+        "schema 27 adds centroid group_rotation/group_scale to transform_selection for multi-selection",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

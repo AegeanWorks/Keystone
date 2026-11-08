@@ -363,6 +363,15 @@ function scaleMatrix(axis, factor) {
   ]);
 }
 
+function uniformScaleMatrix(factor) {
+  return new Float32Array([
+    factor, 0, 0, 0,
+    0, factor, 0, 0,
+    0, 0, factor, 0,
+    0, 0, 0, 1,
+  ]);
+}
+
 function base64ToBytes(encoded) {
   const binary = atob(encoded);
   const bytes = new Uint8Array(binary.length);
@@ -889,7 +898,7 @@ export class SceneViewer {
     let best = null;
     let bestDistance = 10.0;
     const handles = this.gizmoAxes();
-    if (this.gizmoMode === "rotate" && this.selectedIds.size === 1) {
+    if (this.gizmoMode === "rotate") {
       for (const handle of handles) {
         const distance = this.ringDistance(
           clientX,
@@ -1061,7 +1070,7 @@ export class SceneViewer {
       return false;
     }
     const multi = this.selectedIds.size > 1;
-    const mode = multi ? "translate" : this.gizmoMode;
+    const mode = this.gizmoMode;
     const bases = multi
       ? this.previewBasesForSelection()
       : this.previewBases(this.selectedId);
@@ -1199,9 +1208,22 @@ export class SceneViewer {
       }
       factor = Math.max(0.01, Math.round(factor * 1e6) / 1e6);
       drag.factor = factor;
-      const matrix = scaleMatrix(drag.axis, factor);
-      for (const base of drag.bases) {
-        base.node.world = multiply(base.world, matrix);
+      if (drag.selection) {
+        const transform = multiply(
+          multiply(
+            translationMatrix(drag.origin),
+            uniformScaleMatrix(factor),
+          ),
+          translationMatrix(negate(drag.origin)),
+        );
+        for (const base of drag.bases) {
+          base.node.world = multiply(transform, base.world);
+        }
+      } else {
+        const matrix = scaleMatrix(drag.axis, factor);
+        for (const base of drag.bases) {
+          base.node.world = multiply(base.world, matrix);
+        }
       }
       this.render();
       return;
@@ -1236,12 +1258,24 @@ export class SceneViewer {
       base.node.world = Array.from(base.world);
     }
     if (drag.mode === "rotate") {
-      if (drag.angle !== 0 && typeof this.onRotate === "function") {
-        this.onRotate(drag.axis, (drag.angle * 180) / Math.PI);
+      if (drag.angle !== 0) {
+        if (drag.selection && typeof this.onRotateSelection === "function") {
+          this.onRotateSelection(
+            drag.axis,
+            (drag.angle * 180) / Math.PI,
+            drag.origin,
+          );
+        } else if (typeof this.onRotate === "function") {
+          this.onRotate(drag.axis, (drag.angle * 180) / Math.PI);
+        }
       }
     } else if (drag.mode === "scale") {
-      if (drag.factor !== 1 && typeof this.onScale === "function") {
-        this.onScale(drag.axis, drag.factor);
+      if (drag.factor !== 1) {
+        if (drag.selection && typeof this.onScaleSelection === "function") {
+          this.onScaleSelection(drag.factor, drag.origin);
+        } else if (typeof this.onScale === "function") {
+          this.onScale(drag.axis, drag.factor);
+        }
       }
     } else if (drag.selection) {
       if (
@@ -1488,16 +1522,13 @@ export class SceneViewer {
       return;
     }
     const gl = this.gl;
-    const multi = this.selectedIds.size > 1;
     const scale = this.gizmoScale(origin);
     const active = this.gizmoDrag ? this.gizmoDrag.axis : this.hoverAxis;
-    const geometry = multi
-      ? this.gizmoArrow
-      : this.gizmoMode === "rotate"
-        ? this.gizmoRing
-        : this.gizmoMode === "scale"
-          ? this.gizmoScaleHandle
-          : this.gizmoArrow;
+    const geometry = this.gizmoMode === "rotate"
+      ? this.gizmoRing
+      : this.gizmoMode === "scale"
+        ? this.gizmoScaleHandle
+        : this.gizmoArrow;
     gl.useProgram(this.gizmoProgram);
     gl.disable(gl.DEPTH_TEST);
     gl.disable(gl.CULL_FACE);

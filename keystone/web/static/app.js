@@ -101,8 +101,12 @@ try {
     run(() => applyGizmoSelectionTransform(delta));
   viewer.onRotate = (axis, degrees) =>
     run(() => applyGizmoRotation(axis, degrees));
+  viewer.onRotateSelection = (axis, degrees, pivot) =>
+    run(() => applyGizmoSelectionRotation(axis, degrees, pivot));
   viewer.onScale = (axis, factor) =>
     run(() => applyGizmoScale(axis, factor));
+  viewer.onScaleSelection = (factor, pivot) =>
+    run(() => applyGizmoSelectionScale(factor, pivot));
 } catch (error) {
   elements.viewerStatus.textContent = `Viewer unavailable: ${error.message}`;
 }
@@ -557,9 +561,6 @@ function showEditor(editor) {
       editor.selected_ids ||
         (editor.selection ? [editor.selection.id] : []),
     );
-    if ((editor.selection_count || 0) > 1) {
-      viewer.setGizmoMode("translate");
-    }
   }
   elements.sceneSettings.value = JSON.stringify(
     editor.scene_settings || {},
@@ -740,6 +741,26 @@ async function applyGizmoSelectionTransform(delta) {
   await refreshScene(false);
 }
 
+async function applyGizmoSelectionRotation(axis, degrees, pivot) {
+  await editorAction(
+    {
+      action: "transform_selection",
+      pivot,
+      group_rotation: axisAngleQuaternion(axis, degrees),
+    },
+    "rotating selection",
+  );
+  await refreshScene(false);
+}
+
+async function applyGizmoSelectionScale(factor, pivot) {
+  await editorAction(
+    { action: "transform_selection", pivot, group_scale: factor },
+    "scaling selection",
+  );
+  await refreshScene(false);
+}
+
 function axisAngleQuaternion(axis, degrees) {
   const half = (degrees * Math.PI) / 360;
   const sine = Math.sin(half);
@@ -804,9 +825,6 @@ async function applyGizmoScale(axis, factor) {
 }
 
 function setGizmoMode(mode) {
-  if (editorState && (editorState.selection_count || 0) > 1) {
-    mode = "translate";
-  }
   if (viewer) {
     viewer.setGizmoMode(mode);
   }
