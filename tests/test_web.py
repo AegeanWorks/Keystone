@@ -1658,6 +1658,37 @@ class WebServerTest(unittest.TestCase):
             node for node in undone["nodes"] if node["id"] == "group-right"
         )
         self.assertEqual(right["transform"]["position"], [1.0, 0.0, 0.0])
+        axis_scaled = session.editor_action(
+            {
+                "action": "transform_selection",
+                "pivot": [0.0, 0.0, 0.0],
+                "group_scale": [2.0, 1.0, 1.0],
+            }
+        )
+        left = next(
+            node for node in axis_scaled["nodes"] if node["id"] == "group-left"
+        )
+        right = next(
+            node for node in axis_scaled["nodes"] if node["id"] == "group-right"
+        )
+        self.assertEqual(left["transform"]["position"], [-2.0, 0.0, 0.0])
+        self.assertEqual(right["transform"]["position"], [2.0, 0.0, 0.0])
+        self.assertEqual(left["transform"]["scale"], [2.0, 1.0, 1.0])
+        self.assertEqual(right["transform"]["scale"], [2.0, 1.0, 1.0])
+        undone = session.editor_action({"action": "undo"})
+        right = next(
+            node for node in undone["nodes"] if node["id"] == "group-right"
+        )
+        self.assertEqual(right["transform"]["position"], [1.0, 0.0, 0.0])
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action(
+                {
+                    "action": "transform_selection",
+                    "pivot": [0.0, 0.0, 0.0],
+                    "group_scale": [2.0, 0.0, 1.0],
+                }
+            )
+        self.assertEqual(caught.exception.status, 400)
         with self.assertRaises(WebProblem) as caught:
             session.editor_action(
                 {
@@ -2168,7 +2199,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("onTransformSelection", viewer_script)
         self.assertIn("onRotateSelection", viewer_script)
         self.assertIn("onScaleSelection", viewer_script)
-        self.assertIn("uniformScaleMatrix", viewer_script)
+        self.assertIn("scaleMatrix", viewer_script)
         self.assertIn("setBoxSelect", viewer_script)
         self.assertIn("startBoxDrag", viewer_script)
         self.assertIn("finishBoxDrag", viewer_script)

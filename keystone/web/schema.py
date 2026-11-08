@@ -218,6 +218,7 @@ EDITOR_SCHEMA = {
         "schema 26 adds selection sets and batch transform/toggle/delete actions; selected_ids and selection_count expose the set",
         "schema 27 adds centroid group_rotation/group_scale to transform_selection for multi-selection",
         "schema 28 adds shared set_selection_properties/set_selection_transform actions and selection_summary mixed/shared fields",
+        "schema 29 accepts scalar or three-axis group_scale for centroid group scaling",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

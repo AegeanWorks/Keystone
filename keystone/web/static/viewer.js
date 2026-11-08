@@ -363,15 +363,6 @@ function scaleMatrix(axis, factor) {
   ]);
 }
 
-function uniformScaleMatrix(factor) {
-  return new Float32Array([
-    factor, 0, 0, 0,
-    0, factor, 0, 0,
-    0, 0, factor, 0,
-    0, 0, 0, 1,
-  ]);
-}
-
 function base64ToBytes(encoded) {
   const binary = atob(encoded);
   const bytes = new Uint8Array(binary.length);
@@ -1369,7 +1360,7 @@ export class SceneViewer {
         const transform = multiply(
           multiply(
             translationMatrix(drag.origin),
-            uniformScaleMatrix(factor),
+            scaleMatrix(drag.axis, factor),
           ),
           translationMatrix(negate(drag.origin)),
         );
@@ -1429,7 +1420,7 @@ export class SceneViewer {
     } else if (drag.mode === "scale") {
       if (drag.factor !== 1) {
         if (drag.selection && typeof this.onScaleSelection === "function") {
-          this.onScaleSelection(drag.factor, drag.origin);
+          this.onScaleSelection(drag.axis, drag.factor, drag.origin);
         } else if (typeof this.onScale === "function") {
           this.onScale(drag.axis, drag.factor);
         }

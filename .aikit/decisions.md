@@ -1048,3 +1048,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The inspector edited only the primary node; multi-selection could not batch-edit shared name, visibility, tags, layer or absolute transforms.
 - **Decision**: Add `set_selection_properties` (name/visible/tags/layer) and `set_selection_transform` (absolute local position/rotation/scale), each applying the same validated values to every ordered selected node under one undo entry. Expose `selection_summary` with per-field `shared`/`value` entries and a `mixed` list; the console shows mixed fields and routes Apply transform/Apply node properties through the batch actions when more than one node is selected. Bump the editor schema to 28.
 - **Consequences**: 758 tests green; multi-node property/transform editing, shared/mixed summaries and undo are covered. Absolute transform edits intentionally collapse selected nodes to the same value, mixed fields show the primary inspector value until overwritten, and per-field mixed-value entry remains future work.
+
+### ADR-128: Axis-local group scaling around the selection centroid
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Multi-selection scaling was uniform, so the X/Y/Z scale handles could not stretch a selection along one world axis.
+- **Decision**: Let `group_scale` be either a positive scalar (uniform) or three positive X/Y/Z factors. Group scaling applies the factors to world offsets from `pivot`, multiplies local scale components by the same factors, and converts positions back through the parent inverse; group rotation still works alongside it. The multi-selection scale gizmo previews `T(pivot) * S(axis) * T(-pivot)` for the dragged world axis and submits one `transform_selection` action with the corresponding factor array and undo. Bump the editor schema to 29.
+- **Consequences**: 758 tests green; axis-local and uniform group scaling, previews, invalid-factor rejection and undo are covered. Rotated or non-uniformly parented nodes can only approximate world-axis scaling under the local TRS model, and multi-node inspector/box-selection refinements remain future work.

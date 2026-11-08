@@ -110,8 +110,8 @@ try {
     run(() => applyGizmoSelectionRotation(axis, degrees, pivot));
   viewer.onScale = (axis, factor) =>
     run(() => applyGizmoScale(axis, factor));
-  viewer.onScaleSelection = (factor, pivot) =>
-    run(() => applyGizmoSelectionScale(factor, pivot));
+  viewer.onScaleSelection = (axis, factor, pivot) =>
+    run(() => applyGizmoSelectionScale(axis, factor, pivot));
 } catch (error) {
   elements.viewerStatus.textContent = `Viewer unavailable: ${error.message}`;
 }
@@ -771,9 +771,15 @@ async function applyGizmoSelectionRotation(axis, degrees, pivot) {
   await refreshScene(false);
 }
 
-async function applyGizmoSelectionScale(factor, pivot) {
+async function applyGizmoSelectionScale(axis, factor, pivot) {
+  const factors =
+    axis === "x"
+      ? [factor, 1.0, 1.0]
+      : axis === "y"
+        ? [1.0, factor, 1.0]
+        : [1.0, 1.0, factor];
   await editorAction(
-    { action: "transform_selection", pivot, group_scale: factor },
+    { action: "transform_selection", pivot, group_scale: factors },
     "scaling selection",
   );
   await refreshScene(false);

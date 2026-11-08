@@ -1808,14 +1808,18 @@ def _apply_group_transform(
     node: Node,
     pivot: Vec3,
     rotation: Quat | None,
-    scale: float | None,
+    scale: tuple[float, float, float] | None,
 ) -> None:
     world = _world_position(node)
     offset = world - pivot
     if rotation is not None:
         offset = rotation.rotate(offset)
     if scale is not None:
-        offset = offset * scale
+        offset = Vec3(
+            offset.x * scale[0],
+            offset.y * scale[1],
+            offset.z * scale[2],
+        )
     new_world = pivot + offset
     transform = node.transform
     rotation_value = transform.rotation
@@ -1830,9 +1834,9 @@ def _apply_group_transform(
     scale_value = transform.scale
     if scale is not None:
         scale_value = Vec3(
-            scale_value.x * scale,
-            scale_value.y * scale,
-            scale_value.z * scale,
+            scale_value.x * scale[0],
+            scale_value.y * scale[1],
+            scale_value.z * scale[2],
         )
     node.transform = Transform(
         _world_to_local_position(node, new_world),
@@ -1883,11 +1887,25 @@ def transform_selection(
                 payload["group_rotation"], 4, "group rotation"
             )
             group_rotation = Quat(w, x, y, z).normalized()
-        group_scale = None
+        group_scale: tuple[float, float, float] | None = None
         if "group_scale" in payload:
-            group_scale = _finite_number(payload["group_scale"], "group scale")
-            if group_scale <= 0.0:
-                raise ValueError("group scale must be positive")
+            raw_scale = payload["group_scale"]
+            if isinstance(raw_scale, bool) or not isinstance(
+                raw_scale, (int, float, list, tuple)
+            ):
+                raise TypeError(
+                    "group scale must be a number or three positive values"
+                )
+            if isinstance(raw_scale, (int, float)):
+                value = _finite_number(raw_scale, "group scale")
+                if value <= 0.0:
+                    raise ValueError("group scale must be positive")
+                group_scale = (value, value, value)
+            else:
+                values = _finite_array(raw_scale, 3, "group scale")
+                if any(value <= 0.0 for value in values):
+                    raise ValueError("group scale values must be positive")
+                group_scale = (values[0], values[1], values[2])
         if group_rotation is None and group_scale is None:
             raise ValueError(
                 "group transform_selection needs group_rotation or group_scale"
