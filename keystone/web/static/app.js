@@ -88,6 +88,12 @@ const elements = {
   sceneSettingsApply: document.getElementById("scene-settings-apply"),
   sceneValidate: document.getElementById("scene-validate"),
   validationState: document.getElementById("validation-state"),
+  viewBookmarkName: document.getElementById("view-bookmark-name"),
+  viewBookmarkSelect: document.getElementById("view-bookmark-select"),
+  viewBookmarkSave: document.getElementById("view-bookmark-save"),
+  viewBookmarkApply: document.getElementById("view-bookmark-apply"),
+  viewBookmarkDelete: document.getElementById("view-bookmark-delete"),
+  viewBookmarkState: document.getElementById("view-bookmark-state"),
   cameraPosition: document.getElementById("camera-position"),
   cameraYaw: document.getElementById("camera-yaw"),
   cameraPitch: document.getElementById("camera-pitch"),
@@ -204,6 +210,8 @@ let playLoopBusy = false;
 let playLoopLast = 0;
 let wasPlaying = false;
 let layoutTimer = null;
+let viewBookmarks = {};
+let viewBookmarkKey = "";
 let animationPlayActive = false;
 let animationPlayTimer = null;
 let animationPlayBusy = false;
@@ -1522,6 +1530,92 @@ function resetLayout() {
   elements.gridToggle.textContent = "Grid: on";
   elements.snapToggle.textContent = "Snap: off";
   setStatus("layout reset");
+}
+
+function viewBookmarkStorageKey() {
+  const game = (elements.game.textContent || "game").trim() || "game";
+  return `keystone.viewBookmarks.v1:${game}`;
+}
+
+function loadViewBookmarks() {
+  viewBookmarkKey = viewBookmarkStorageKey();
+  viewBookmarks = {};
+  try {
+    const raw = window.localStorage.getItem(viewBookmarkKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        viewBookmarks = parsed;
+      }
+    }
+  } catch {
+    viewBookmarks = {};
+  }
+  renderViewBookmarks();
+}
+
+function persistViewBookmarks() {
+  try {
+    window.localStorage.setItem(viewBookmarkKey, JSON.stringify(viewBookmarks));
+  } catch {
+    // ignore unavailable storage
+  }
+}
+
+function renderViewBookmarks() {
+  const previous = elements.viewBookmarkSelect.value;
+  const names = Object.keys(viewBookmarks).sort();
+  elements.viewBookmarkSelect.replaceChildren();
+  for (const name of names) {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    elements.viewBookmarkSelect.append(option);
+  }
+  if (names.includes(previous)) {
+    elements.viewBookmarkSelect.value = previous;
+  }
+  elements.viewBookmarkState.textContent = names.length
+    ? `${names.length} view bookmarks.`
+    : "No view bookmarks.";
+}
+
+function saveViewBookmark() {
+  const name = elements.viewBookmarkName.value.trim();
+  if (!name) {
+    throw new Error("Enter a view bookmark name.");
+  }
+  const snapshot = viewer && viewer.cameraBookmark();
+  if (!snapshot) {
+    throw new Error("The scene view camera is not ready.");
+  }
+  viewBookmarks[name] = snapshot;
+  persistViewBookmarks();
+  renderViewBookmarks();
+  elements.viewBookmarkSelect.value = name;
+  elements.viewBookmarkState.textContent = `Saved view ${name}.`;
+}
+
+function applyViewBookmark() {
+  const name = elements.viewBookmarkSelect.value;
+  if (!name || !viewBookmarks[name]) {
+    throw new Error("Select a saved view.");
+  }
+  if (!viewer || !viewer.applyCameraBookmark(viewBookmarks[name])) {
+    throw new Error(`View ${name} is invalid.`);
+  }
+  elements.viewBookmarkState.textContent = `Moved to view ${name}.`;
+}
+
+function deleteViewBookmark() {
+  const name = elements.viewBookmarkSelect.value;
+  if (!name || !(name in viewBookmarks)) {
+    throw new Error("Select a saved view to delete.");
+  }
+  delete viewBookmarks[name];
+  persistViewBookmarks();
+  renderViewBookmarks();
+  elements.viewBookmarkState.textContent = `Deleted view ${name}.`;
 }
 
 function toggleGizmoSpace() {
@@ -2898,6 +2992,7 @@ async function init() {
   try {
     const description = await api("/api/describe");
     elements.game.textContent = description.game;
+    loadViewBookmarks();
     const scene = await refreshScene(false);
     await refreshEditor(false);
     restoreLayout();
@@ -3021,8 +3116,7 @@ document.addEventListener("keydown", (event) => {
 
 elements.viewReset.addEventListener("click", () => {
   if (viewer) {
-    viewer.resetCamera();
-  }
+    viewer.resetCamera();  }
 });
 elements.viewMode.addEventListener("click", () => run(toggleViewMode));
 elements.gridToggle.addEventListener("click", toggleGrid);
@@ -3036,6 +3130,11 @@ for (const input of [
 }
 elements.projectionMode.addEventListener("click", toggleProjection);
 elements.layoutReset.addEventListener("click", resetLayout);
+elements.viewBookmarkSave.addEventListener("click", () => run(saveViewBookmark));
+elements.viewBookmarkApply.addEventListener("click", () => run(applyViewBookmark));
+elements.viewBookmarkDelete.addEventListener("click", () =>
+  run(deleteViewBookmark),
+);
 elements.viewFocus.addEventListener("click", () => {
   if (viewer && editorState && (editorState.selection_count || 0) > 0) {
     if ((editorState.selection_count || 0) > 1) {

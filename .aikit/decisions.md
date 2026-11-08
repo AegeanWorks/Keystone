@@ -1400,3 +1400,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Large or prefab-heavy scenes could be accidentally transformed or deleted; there was no editor-only lock state or AI-readable lock report.
 - **Decision**: Add session-only `locked_ids`, `set_nodes_locked` for an id list or current selection, a `locked` flag per node document, and top-level `locked_ids`/`locked_count`. Locked nodes and descendants reject transforms, batch selection transforms, delete selection/node, reparent, asset assignment, component edits and prefab revert/apply while remaining selectable and visible. Add console Lock/Unlock selection controls and a locked-count readout. Bump the editor schema to 57.
 - **Consequences**: Web tests cover lock state, transform/delete/asset/component/reparent rejection and unlock recovery; static tests cover the console wiring. Locks are not persisted to project files or layouts, and refresh_prefab_instances is not yet lock-aware.
+
+### ADR-172: Named scene-view camera bookmarks
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The editor camera could be reset or focused, but recurring inspection views had to be recreated manually every session.
+- **Decision**: Add viewer `cameraBookmark`/`applyCameraBookmark` methods with finite target/distance/yaw/pitch validation. The console stores named bookmarks per game in `localStorage`, renders a sorted select, and provides Save view, Go to view and Delete view controls with a terse readout. No API or schema change.
+- **Consequences**: Static tests cover the controls, script wiring and camera methods. Bookmarks are client-local, do not travel with the project, and malformed storage falls back to an empty set.

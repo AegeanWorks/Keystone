@@ -199,6 +199,17 @@
           <button id="scene-validate" type="button">Validate scene</button>
         </div>
         <div id="validation-state" class="hint">Not validated.</div>
+        <label class="stack">View bookmarks</label>
+        <div class="field-grid">
+          <label>Name <input id="view-bookmark-name" type="text" placeholder="overview"></label>
+          <label>Saved <select id="view-bookmark-select"></select></label>
+        </div>
+        <div class="buttons">
+          <button id="view-bookmark-save" type="button">Save view</button>
+          <button id="view-bookmark-apply" type="button">Go to view</button>
+          <button id="view-bookmark-delete" type="button">Delete view</button>
+        </div>
+        <div id="view-bookmark-state" class="hint">No view bookmarks.</div>
         <div class="field-grid">
           <label>Prefab name <input id="prefab-name" type="text" value="hero" list="prefab-names"></label>
           <label>New prefab name <input id="prefab-new-name" type="text" placeholder="renamed-prefab"></label>

@@ -733,6 +733,44 @@ export class SceneViewer {
     return this.hiddenLayers.has(layer || "default");
   }
 
+  cameraBookmark() {
+    if (!this.cameraState) {
+      return null;
+    }
+    return {
+      target: [...this.cameraState.target],
+      distance: this.cameraState.distance,
+      yaw: this.cameraState.yaw,
+      pitch: this.cameraState.pitch,
+    };
+  }
+
+  applyCameraBookmark(bookmark) {
+    if (!bookmark || typeof bookmark !== "object") {
+      return false;
+    }
+    const target = Array.isArray(bookmark.target)
+      ? bookmark.target.map((value) => Number(value))
+      : null;
+    const distance = Number(bookmark.distance);
+    const yaw = Number(bookmark.yaw);
+    const pitch = Number(bookmark.pitch);
+    if (
+      !target ||
+      target.length !== 3 ||
+      !target.every(Number.isFinite) ||
+      !Number.isFinite(distance) ||
+      distance <= 0 ||
+      !Number.isFinite(yaw) ||
+      !Number.isFinite(pitch)
+    ) {
+      return false;
+    }
+    this.cameraState = { target, distance, yaw, pitch };
+    this.render();
+    return true;
+  }
+
   setSnap(enabled) {
     this.snapEnabled = Boolean(enabled);
     this.notifyLayoutChange();

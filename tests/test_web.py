@@ -4262,6 +4262,12 @@ class WebServerTest(unittest.TestCase):
             "scene-settings-apply",
             "scene-validate",
             "validation-state",
+            "view-bookmark-name",
+            "view-bookmark-select",
+            "view-bookmark-save",
+            "view-bookmark-apply",
+            "view-bookmark-delete",
+            "view-bookmark-state",
             "startup-set",
             "startup-clear",
             "startup-state",
@@ -4423,6 +4429,12 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("set_layer_visible", script)
         self.assertIn("hidden_layers", script)
         self.assertIn("setHiddenLayers", script)
+        self.assertIn("saveViewBookmark", script)
+        self.assertIn("applyViewBookmark", script)
+        self.assertIn("deleteViewBookmark", script)
+        self.assertIn("loadViewBookmarks", script)
+        self.assertIn("cameraBookmark", script)
+        self.assertIn("view-bookmark-state", script)
         self.assertIn("assetFilter", script)
         self.assertIn("assign_asset", script)
         self.assertIn("assignSelectionAssets", script)
