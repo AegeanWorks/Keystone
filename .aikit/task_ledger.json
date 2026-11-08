@@ -3,63 +3,15 @@
   "active_task": {
     "task_id": "keystone-hardening-v1",
     "last_phase": "in_progress",
-    "active_phase": 2,
-    "status": "in_progress",
-    "updated_at": 1794170719.6813033,
+    "active_phase": 5,
+    "status": "completed",
+    "updated_at": 1794171750.3609424,
     "owner": "commandcode:keystone-console",
     "started_by": "commandcode:keystone-console",
     "continuations": [],
-    "impact_assessment": {
-      "why": "The CLI accepted --frames 0 then a falsy check turned it into 1 frame (simulate/headless) or 120 (playtest) while reporting the coerced value, so an agent could not trust its own requested frame count. The shared component codec was the only versioned loader that silently dropped unknown keys, and an unknown dataclass field leaked a raw TypeError. component_codec and library_trash had no test file at all.",
-      "benefits": "Requested frame counts are honoured or rejected, never silently changed; component authoring typos fail loudly with the codebase's existing message shape; the two untested modules now have regression coverage.",
-      "risks": "contract: CLI argument validation and component_from_dict strictness; dependency: none new; concurrency: none; state: no persisted format change - existing valid documents still load.",
-      "mitigation": "Failing-first test per defect, verify every consumer (prefab, scene snapshot, scene/prefab library, editor) still round-trips, and run the full 6/6 gate plus the canonical simulate hash."
-    }
+    "completed_at": 1794171756.2397342
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-blend-space-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-blend-space-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794151477.8410532,
-      "timestamp_str": "2026-11-08 18:24:37",
-      "agent": "opencode:keystone"
-    },
-    {
-      "task_id": "keystone-blend-state-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: integrate BlendSpace1D into AnimationState/AnimationStateMachine and add preview_blend_space editor action",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794152493.7256565,
-      "timestamp_str": "2026-11-08 18:41:33",
-      "agent": "opencode:keystone",
-      "impact_assessment": {
-        "why": "Blend spaces were core-only. State machines and editor/AI clients could not use or inspect them.",
-        "benefits": "Scalar-driven blend states work in code and API, with schema-1 serialization/reporting and inline preview.",
-        "risks": "contract: additive state fields and editor action; dependency: blend-space core; concurrency: session lock unchanged; state: state-machine JSON and preview history.",
-        "mitigation": "Keep schema-1 compatibility, derive a representative clip when omitted, add core/web regressions and run the 6/6 gate."
-      },
-      "plan_digest": "cad7f6fb4033c8a0003ee05734b290ba1c3b8a74292123df95824245d6b6d308"
-    },
-    {
-      "task_id": "keystone-blend-state-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/3] Blend states, schema-1 round trips/reports and preview_blend_space action implemented; core and web tests green",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794152495.2700293,
-      "timestamp_str": "2026-11-08 18:41:35",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "state": "integration and preview complete",
-        "next": "record the gate and publish"
-      }
-    },
     {
       "task_id": "keystone-blend-state-v1",
       "phase": "phase 4",
@@ -273,6 +225,38 @@
         "mitigation": "Failing-first test per defect, verify every consumer (prefab, scene snapshot, scene/prefab library, editor) still round-trips, and run the full 6/6 gate plus the canonical simulate hash."
       },
       "plan_digest": "a932bae1f46afa6e467108bc5b2273fe194447f43bb2e99d9ecb4096b686c83e"
+    },
+    {
+      "task_id": "keystone-hardening-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Hardening implemented and verified - --frames 0 rejected on all four modes (was silently 1 or 120); component_from_dict rejects unknown document keys and unknown dataclass fields as ValueError; new test_component_codec.py (10 tests) and test_library_trash.py (12 tests). 909 tests pass, canonical simulate hash unchanged",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794171741.8614302,
+      "timestamp_str": "2026-11-09 00:02:21",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-hardening-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[3/3] Project gate passes 6/6 and both commits pushed to origin/master (575bcd9, 6274807); branch clean and in sync; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794171750.3609424,
+      "timestamp_str": "2026-11-09 00:02:30",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-hardening-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-hardening-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794171756.2397363,
+      "timestamp_str": "2026-11-09 00:02:36",
+      "agent": "commandcode:keystone-console"
     }
   ]
 }
