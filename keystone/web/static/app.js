@@ -1043,10 +1043,16 @@ async function deletePrefab() {
 
 async function savePrefab() {
   if (!editorState || !editorState.selection) {
-    throw new Error("Select a node before saving a prefab.");
+    throw new Error("Select at least one node before saving a prefab.");
   }
   const name = elements.prefabName.value.trim() || editorState.selection.id;
-  await editorAction({ action: "save_prefab", name }, "saving prefab");
+  const payload = { action: "save_prefab", name };
+  if ((editorState.selection_count || 0) > 1) {
+    payload.ids = editorState.selected_ids;
+  } else {
+    payload.id = editorState.selection.id;
+  }
+  await editorAction(payload, "saving prefab");
 }
 
 async function insertPrefab() {

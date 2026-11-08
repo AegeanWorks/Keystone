@@ -176,6 +176,7 @@ EDITOR_SCHEMA = {
         "scene_group": ["id", "name", "parent_id", "node_count", "roots"],
         "transform": ["position", "rotation", "scale"],
         "set_node": ["id", "name", "visible", "tags", "layer"],
+        "save_prefab": ["id", "ids", "name"],
         "set_scene": ["camera", "environment"],
         "camera": ["position", "yaw", "pitch", "fov_y", "near", "far"],
         "environment": ["ambient", "background", "sky", "fog_density", "light", "point_light", "shadow", "color", "post", "bloom", "sprites", "culling"],
@@ -248,6 +249,7 @@ EDITOR_SCHEMA = {
         "schema 32 adds play_pause/play_resume and a paused flag for real-time play mode",
         "schema 33 adds isolated prefab edit mode: edit_prefab, save_prefab_edit and close_prefab_edit with a prefab_edit document",
         "schema 34 adds refresh_prefab_instances, which replaces safe authored instance groups and reports refreshed/skipped counts",
+        "schema 35 lets save_prefab accept an ordered ids list for multi-root capture from a multi-selection",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

@@ -1323,6 +1323,102 @@ class WebServerTest(unittest.TestCase):
             self.assertEqual(caught.exception.status, 400)
             session.editor_action({"action": "close_prefab_edit", "save": False})
 
+    def test_editor_multi_root_prefab_save_from_selection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefab_dir = Path(directory) / "prefabs"
+            session = GameSession(CubeDemo(), prefab_dir=prefab_dir)
+            left = session.editor_action(
+                {"action": "create_node", "name": "left"}
+            )["selection"]["id"]
+            right = session.editor_action(
+                {"action": "create_node", "name": "right"}
+            )["selection"]["id"]
+            saved = session.editor_action(
+                {"action": "save_prefab", "ids": [left, right], "name": "pair"}
+            )
+            entry = next(
+                item for item in saved["prefabs"] if item["name"] == "pair"
+            )
+            self.assertEqual(entry["node_count"], 2)
+            self.assertEqual(len(session.prefabs["pair"].roots), 2)
+            self.assertTrue((prefab_dir / "pair.kprefab").is_file())
+
+            inserted = session.editor_action(
+                {"action": "insert_prefab", "name": "pair", "instance": "pair-1"}
+            )
+            ids = {node["id"] for node in inserted["nodes"]}
+            self.assertIn(f"pair-1:{left}", ids)
+            self.assertIn(f"pair-1:{right}", ids)
+            self.assertEqual(inserted["prefab_instance_count"], 1)
+
+            duplicate = session.editor_action(
+                {
+                    "action": "save_prefab",
+                    "ids": [left, left, right],
+                    "name": "pair-copy",
+                }
+            )
+            self.assertIn(
+                "pair-copy",
+                {item["name"] for item in duplicate["prefabs"]},
+            )
+            self.assertEqual(len(session.prefabs["pair-copy"].roots), 2)
+
+            parent = session.editor_action(
+                {"action": "create_node", "name": "tree"}
+            )["selection"]["id"]
+            child = session.editor_action(
+                {"action": "create_node", "name": "child", "parent": parent}
+            )["selection"]["id"]
+            nested = session.editor_action(
+                {
+                    "action": "save_prefab",
+                    "ids": [parent, child],
+                    "name": "tree-prefab",
+                }
+            )
+            entry = next(
+                item
+                for item in nested["prefabs"]
+                if item["name"] == "tree-prefab"
+            )
+            self.assertEqual(entry["node_count"], 2)
+            self.assertEqual(len(session.prefabs["tree-prefab"].roots), 1)
+
+            other = session.editor_action(
+                {"action": "create_node", "name": "other"}
+            )["selection"]["id"]
+            other_child = session.editor_action(
+                {"action": "create_node", "name": "other-child", "parent": other}
+            )["selection"]["id"]
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "save_prefab",
+                        "ids": [left, other_child],
+                        "name": "bad",
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "save_prefab", "ids": [], "name": "bad"}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "save_prefab", "ids": ["missing"], "name": "bad"}
+                )
+            self.assertEqual(caught.exception.status, 404)
+
+            reloaded = GameSession(CubeDemo(), prefab_dir=prefab_dir)
+            entry = next(
+                item
+                for item in reloaded.editor()["prefabs"]
+                if item["name"] == "pair"
+            )
+            self.assertEqual(entry["node_count"], 2)
+
     def test_editor_library_rename_and_delete(self):
         with tempfile.TemporaryDirectory() as directory:
             prefab_dir = Path(directory) / "prefabs"
@@ -2548,6 +2644,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("refresh_prefab_instances", script)
         self.assertIn("refreshPrefabInstances", script)
         self.assertIn("prefab_refresh", script)
+        self.assertIn("payload.ids", script)
         self.assertIn("setViewMode", script)
         self.assertIn("toggleViewMode", script)
         self.assertIn("updateViewModeButton", script)

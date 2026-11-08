@@ -1120,3 +1120,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The Scene view had no ground reference grid, and snapping required holding Ctrl/Cmd for every drag, which slowed precise authoring.
 - **Decision**: Build minor/major grid lines and colored X/Z axes in the WebGL viewer and render them with the existing line shader only in Scene view, behind depth testing so geometry occludes the grid. Add Grid and Snap console toggles with G/S shortcuts. Snap now activates when the toggle is on or Ctrl/Cmd is held, and all translate/rotate/scale rounding routes through one `snapActive` predicate. No API or schema change.
 - **Consequences**: 764 tests green; static viewer/console coverage verifies grid geometry, rendering, toggles and the snap predicate. Grid spacing and snap increments remain fixed, the grid is presentation-only and absent from Game view, and game-view camera controls stay disabled.
+
+### ADR-137: Save a multi-selection as a multi-root prefab
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The editor could insert, revert and apply multi-root prefabs, but `save_prefab` only captured one node, so a multi-selection could not become a template.
+- **Decision**: Accept an ordered `ids` list on `save_prefab`. Deduplicate ids in selection order, drop nodes whose selected ancestor already covers them, require the remaining top-level roots to share a parent, and capture them through `Prefab.from_nodes`. Single `id` behavior is unchanged. The console sends the whole selection automatically when more than one node is selected, and the editor schema reaches 35.
+- **Consequences**: 765 tests green; multi-root save, library reload, duplicate-id dedupe, descendant folding, mixed-parent rejection and missing-id errors are covered. Captured roots must share a parent, asset writes remain outside scene undo, and nested prefab links are preserved by the existing capture path.

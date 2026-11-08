@@ -49,6 +49,7 @@ from keystone.web.editor import (
     revert_prefab_instance,
     revert_prefab_override,
     save_prefab,
+    save_prefab_nodes,
     save_scene_group,
     set_component,
     set_node_properties,
@@ -455,6 +456,20 @@ class GameSession:
         self._set_selected_ids(original_selection)
         self.last_diff = None
         return self._scene_locked()
+
+    def _persist_prefab_locked(
+        self, name: str, prefab: Prefab, previous: Prefab | None
+    ) -> None:
+        if self.prefab_library is None:
+            return
+        try:
+            self.prefab_library.save(name, prefab)
+        except Exception:
+            if previous is None:
+                self.prefabs.pop(name, None)
+            else:
+                self.prefabs[name] = previous
+            raise
 
     def _ensure_prefab_locked(self, name: object) -> None:
         if not isinstance(name, str) or not name.strip():
@@ -914,23 +929,53 @@ class GameSession:
                     )
                     self.last_prefab_refresh = result
                 elif action == "save_prefab":
-                    node_id = payload.get("id") or self.selected_id
-                    if node_id is None:
-                        raise ValueError("select a node before saving a prefab")
-                    node = find_node(scene, node_id)
-                    name = payload.get("name") or node.id or node.name
-                    previous = self.prefabs.get(name) if isinstance(name, str) else None
-                    prefab = save_prefab(scene, node, name, self.prefabs)
-                    if self.prefab_library is not None:
-                        try:
-                            self.prefab_library.save(name, prefab)
-                        except Exception:
-                            if previous is None:
-                                self.prefabs.pop(name, None)
-                            else:
-                                self.prefabs[name] = previous
-                            raise
-                    self.selected_id = node.id
+                    ids = payload.get("ids")
+                    if ids is not None:
+                        if not isinstance(ids, list) or not ids:
+                            raise ValueError(
+                                "save_prefab ids must be a non-empty list"
+                            )
+                        if any(
+                            not isinstance(item, str) or not item.strip()
+                            for item in ids
+                        ):
+                            raise ValueError(
+                                "save_prefab ids must be non-blank strings"
+                            )
+                        nodes: list[Node] = []
+                        seen: set[str] = set()
+                        for node_id in ids:
+                            node = find_node(scene, node_id)
+                            if node.id not in seen:
+                                seen.add(node.id)
+                                nodes.append(node)
+                        name = payload.get("name") or nodes[0].id or nodes[0].name
+                        previous = (
+                            self.prefabs.get(name)
+                            if isinstance(name, str)
+                            else None
+                        )
+                        prefab, roots = save_prefab_nodes(
+                            nodes, name, self.prefabs
+                        )
+                        self._persist_prefab_locked(name, prefab, previous)
+                        self._set_selected_ids([root.id for root in roots])
+                    else:
+                        node_id = payload.get("id") or self.selected_id
+                        if node_id is None:
+                            raise ValueError(
+                                "select a node before saving a prefab"
+                            )
+                        node = find_node(scene, node_id)
+                        name = payload.get("name") or node.id or node.name
+                        previous = (
+                            self.prefabs.get(name)
+                            if isinstance(name, str)
+                            else None
+                        )
+                        prefab = save_prefab(scene, node, name, self.prefabs)
+                        self._persist_prefab_locked(name, prefab, previous)
+                        self.selected_id = node.id
                 elif action == "rename_prefab":
                     if self.prefab_library is None:
                         raise ValueError("no prefab library is configured")

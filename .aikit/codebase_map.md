@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `135`
 - **Total Classes**: `216`
-- **Total Top-Level Functions**: `364`
-- **Total Class Methods**: `1338`
-- **Total Source Lines**: `31827`
+- **Total Top-Level Functions**: `365`
+- **Total Class Methods**: `1340`
+- **Total Source Lines**: `32013`
 
 ---
 
@@ -1535,7 +1535,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `2289` lines (`81434` bytes)
+**Size**: `2331` lines (`82949` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1591,6 +1591,7 @@
 - `def remove_component(node, type_name, component_types)` - *Remove one named component from a node.*
 - `def assign_assets(node, payload, registry)` - *Assign or clear a node's mesh/material through registry asset ids.*
 - `def save_prefab(scene, node, name, prefabs)`
+- `def save_prefab_nodes(nodes, name, prefabs)` - *Capture top-level selected roots as one multi-root prefab.*
 - `def _next_instance_prefix(scene, name)`
 - `def _prefab_instance_roots(scene, link)`
 - `def insert_prefab(scene, prefabs, name, parent, instance)`
@@ -1651,14 +1652,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `274` lines (`13360` bytes)
+**Size**: `276` lines (`13517` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1482` lines (`64567` bytes)
+**Size**: `1527` lines (`66447` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1685,6 +1686,7 @@
   - Method `._edit_prefab_locked(name)`
   - Method `._save_prefab_edit_locked(scene)`
   - Method `._close_prefab_edit_locked(scene, save)`
+  - Method `._persist_prefab_locked(name, prefab, previous)`
   - Method `._ensure_prefab_locked(name)`
   - Method `._lifecycle_state()`
   - Method `._editor_locked(scene)`
@@ -3137,7 +3139,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `2772` lines (`117390` bytes)
+**Size**: `2869` lines (`121443` bytes)
 
 **Classes:**
 - `class Health`
@@ -3185,6 +3187,7 @@
   - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_prefab_edit_mode_round_trip()`
   - Method `.test_editor_refresh_prefab_instances()`
+  - Method `.test_editor_multi_root_prefab_save_from_selection()`
   - Method `.test_editor_library_rename_and_delete()`
   - Method `.test_editor_library_trash_and_restore()`
   - Method `.test_editor_library_duplicate()`

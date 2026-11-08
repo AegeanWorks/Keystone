@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-grid-snap-v1",
+    "task_id": "keystone-multiroot-prefab-save-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794106965.2369254,
+    "updated_at": 1794107466.2966504,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794106965.5281854
+    "completed_at": 1794107467.0496821
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-box-proxies-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Box-selection proxies and near-plane clipping implemented: all-mesh boxBounds include hidden nodes, meshless world-position proxies use an 8px tolerance, AABB faces clip against the near plane with camera-inside handling, click picks stay visible-only, static regressions added; 760 tests green, node --check clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 30, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794103469.2044895,
-      "timestamp_str": "2026-11-08 05:04:29",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-box-proxies-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-box-proxies-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794103474.6248646,
-      "timestamp_str": "2026-11-08 05:04:34",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-history-navigation-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan named editor transaction history with multi-step undo/redo and AI-readable stack labels",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794103664.894564,
-      "timestamp_str": "2026-11-08 05:07:44",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Undo/redo only moves one step and the editor exposes only stack depths, so an AI client cannot see or roll back a named sequence of authoring actions.",
-        "benefits": "History entries carry action labels, undo/redo accept a 1..100 step count, /api/editor exposes newest-first undo and redo labels, and the console shows the stacks with a step count.",
-        "risks": "contract: editor schema 31 and undo/redo payload shape; dependency: none; concurrency: editor lock unchanged; state: label ordering, bounds, selection restoration, batch single entry, redo invalidation.",
-        "mitigation": "Keep snapshots, wrap each entry with a label, validate steps, preserve redo labels while looping, update exact history assertions, and add multi-step/label/batch regressions."
-      },
-      "plan_digest": "28bc9511071b8fd9b7d12bf4d4dd2ebfe06437612a71c0daf89e59ef028d6fa2"
-    },
     {
       "task_id": "keystone-history-navigation-v1",
       "phase": "in_progress",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794106965.5281887,
       "timestamp_str": "2026-11-08 06:02:45",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-multiroot-prefab-save-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan saving the multi-selection as a multi-root prefab",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794107060.066667,
+      "timestamp_str": "2026-11-08 06:04:20",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "The editor can insert and manage multi-root prefabs, but save_prefab only captures one node, so a multi-selection cannot become a prefab.",
+        "benefits": "save_prefab accepts an ordered ids list, filters selected descendants, requires one parent, captures a multi-root template, and the console uses the whole selection automatically.",
+        "risks": "contract: editor schema 35 and save_prefab payload extension; dependency: none; concurrency: editor lock; state: duplicate/descendant selection, mixed parents, name fallback, library rollback, selection restore.",
+        "mitigation": "Deduplicate ids in selection order, drop descendants of selected roots, require a shared parent, reuse Prefab.from_nodes, keep single-id behavior, and add multi-root save/insert/error regressions."
+      },
+      "plan_digest": "85c995511367fddd16519cd8d75cc16685f94b07fc53eb0c639119b1075d77ca"
+    },
+    {
+      "task_id": "keystone-multiroot-prefab-save-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Multi-root prefab capture implemented: save_prefab accepts ordered ids, dedupes and folds selected descendants, requires one parent, captures via Prefab.from_nodes, preserves single-id behavior, console sends the whole selection, schema 35; 765 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 35, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794107466.2966504,
+      "timestamp_str": "2026-11-08 06:11:06",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-multiroot-prefab-save-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-multiroot-prefab-save-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794107467.0496843,
+      "timestamp_str": "2026-11-08 06:11:07",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

@@ -60,6 +60,7 @@ __all__ = [
     "remove_component",
     "reparent_node",
     "save_prefab",
+    "save_prefab_nodes",
     "scene_settings_document",
     "set_component",
     "set_node_properties",
@@ -1161,6 +1162,47 @@ def save_prefab(scene: Scene, node: Node, name: str, prefabs: dict[str, Prefab])
     prefab = Prefab.from_node(node, name=name)
     prefabs[name] = prefab
     return prefab
+
+
+def save_prefab_nodes(
+    nodes: list[Node] | tuple[Node, ...],
+    name: str,
+    prefabs: dict[str, Prefab],
+) -> tuple[Prefab, list[Node]]:
+    """Capture top-level selected roots as one multi-root prefab."""
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError("prefab name must be a non-blank string")
+    if not isinstance(nodes, (list, tuple)) or not nodes:
+        raise ValueError("prefab needs at least one source node")
+    ordered: list[Node] = []
+    seen: set[int] = set()
+    for node in nodes:
+        if not isinstance(node, Node):
+            raise TypeError("prefab sources must be Node instances")
+        marker = id(node)
+        if marker not in seen:
+            seen.add(marker)
+            ordered.append(node)
+    node_ids = {id(node) for node in ordered}
+    roots: list[Node] = []
+    for node in ordered:
+        current = node.parent
+        nested = False
+        while current is not None:
+            if id(current) in node_ids:
+                nested = True
+                break
+            current = current.parent
+        if not nested:
+            roots.append(node)
+    if not roots:
+        raise ValueError("prefab needs at least one top-level source node")
+    parent = roots[0].parent
+    if any(root.parent is not parent for root in roots):
+        raise ValueError("multi-root prefab sources must share a parent")
+    prefab = Prefab.from_nodes(roots, name=name)
+    prefabs[name] = prefab
+    return prefab, roots
 
 
 def _next_instance_prefix(scene: Scene, name: str) -> str:
