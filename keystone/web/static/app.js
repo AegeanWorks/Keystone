@@ -22,6 +22,7 @@ const elements = {
   playFrames: document.getElementById("play-frames"),
   playActions: document.getElementById("play-actions"),
   playState: document.getElementById("play-state"),
+  playSnapshot: document.getElementById("play-snapshot"),
   nodeCreate: document.getElementById("node-create"),
   nodeDuplicate: document.getElementById("node-duplicate"),
   nodeDelete: document.getElementById("node-delete"),
@@ -705,6 +706,17 @@ function showEditor(editor) {
   elements.playState.textContent = play.active
     ? `${play.paused ? "Paused" : "Playing"} · ${play.frames} frames · ${lifecycle.started ?? 0} behaviors`
     : "Stopped";
+  const playDocument = play.active
+    ? {
+        status: play.status ?? null,
+        snapshot: play.snapshot ?? null,
+        status_error: play.status_error,
+        snapshot_error: play.snapshot_error,
+      }
+    : null;
+  elements.playSnapshot.textContent = playDocument
+    ? JSON.stringify(playDocument, null, 2)
+    : "No play snapshot.";
   if (!busy) {
     updatePlayButtons(play);
   }

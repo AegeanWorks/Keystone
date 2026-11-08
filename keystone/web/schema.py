@@ -205,7 +205,7 @@ EDITOR_SCHEMA = {
         "set_component": ["id", "type", "data"],
         "remove_component": ["id", "type"],
         "play_step": ["frames", "actions"],
-        "play": ["active", "paused", "frames", "step"],
+        "play": ["active", "paused", "frames", "step", "status", "snapshot"],
         "asset": ["id", "kind", "sha256", "source", "dependencies", "metadata"],
         "component_types": ["name"],
         "component_schema": ["fields"],
@@ -250,6 +250,7 @@ EDITOR_SCHEMA = {
         "schema 33 adds isolated prefab edit mode: edit_prefab, save_prefab_edit and close_prefab_edit with a prefab_edit document",
         "schema 34 adds refresh_prefab_instances, which replaces safe authored instance groups and reports refreshed/skipped counts",
         "schema 35 lets save_prefab accept an ordered ids list for multi-root capture from a multi-selection",
+        "schema 36 exposes the live game status and snapshot in the play document while play mode is active",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

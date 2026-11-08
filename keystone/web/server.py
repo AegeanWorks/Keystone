@@ -485,6 +485,33 @@ class GameSession:
             return self.lifecycle.describe()
         return {"active": False, "frame": 0, "started": 0, "hooks": []}
 
+    def _play_state_locked(self) -> dict[str, object]:
+        state: dict[str, object] = {
+            "active": self.playing,
+            "paused": self.play_paused,
+            "frames": self.play_frames,
+            "step": FIXED_STEP,
+            "lifecycle": self._lifecycle_state(),
+            "status": None,
+            "snapshot": None,
+        }
+        if not self.playing:
+            return state
+        try:
+            status = self.game.status()
+            state["status"] = status if isinstance(status, str) else str(status)
+        # hygiene: allow game hooks are foreign code
+        except Exception as exc:  # noqa: BLE001
+            state["status_error"] = str(exc)
+        try:
+            snapshot = self.game.snapshot()
+            json.dumps(snapshot)
+            state["snapshot"] = snapshot
+        # hygiene: allow game hooks are foreign code
+        except Exception as exc:  # noqa: BLE001
+            state["snapshot_error"] = str(exc)
+        return state
+
     def _editor_locked(self, scene: Scene) -> dict:
         existing = [
             node_id
@@ -520,13 +547,7 @@ class GameSession:
             assets=asset_entries(registry),
             component_types=sorted(self.component_types or {}),
             component_schema_documents=component_schemas(self.component_types),
-            play_state={
-                "active": self.playing,
-                "paused": self.play_paused,
-                "frames": self.play_frames,
-                "step": FIXED_STEP,
-                "lifecycle": self._lifecycle_state(),
-            },
+            play_state=self._play_state_locked(),
             diff=self.last_diff,
             trash={
                 "prefabs": (

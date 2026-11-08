@@ -9,8 +9,8 @@
 - **Total Python Modules**: `135`
 - **Total Classes**: `216`
 - **Total Top-Level Functions**: `365`
-- **Total Class Methods**: `1340`
-- **Total Source Lines**: `32045`
+- **Total Class Methods**: `1343`
+- **Total Source Lines**: `32101`
 
 ---
 
@@ -1652,14 +1652,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `276` lines (`13517` bytes)
+**Size**: `277` lines (`13649` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1527` lines (`66447` bytes)
+**Size**: `1548` lines (`67234` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1689,6 +1689,7 @@
   - Method `._persist_prefab_locked(name, prefab, previous)`
   - Method `._ensure_prefab_locked(name)`
   - Method `._lifecycle_state()`
+  - Method `._play_state_locked()`
   - Method `._editor_locked(scene)`
   - Method `.editor()`
   - Method `.editor_action(payload)`
@@ -3139,7 +3140,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `2901` lines (`122710` bytes)
+**Size**: `2935` lines (`124230` bytes)
 
 **Classes:**
 - `class Health`
@@ -3206,6 +3207,8 @@
   - Method `.test_editor_node_property_editing()`
   - Method `.test_editor_play_mode_restores_authored_scene()`
   - Method `.test_editor_play_pause_resume_and_paused_step()`
+  - Method `.test_editor_play_state_exposes_snapshot_and_status()`
+  - Method `.test_editor_play_state_reports_hook_errors()`
   - Method `.test_editor_component_lifecycle_play_mode()`
   - Method `.test_editor_component_authoring_and_scene_round_trip()`
   - Method `.test_editor_static_controls_and_index()`

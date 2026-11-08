@@ -2398,6 +2398,38 @@ class WebServerTest(unittest.TestCase):
         self.assertFalse(resumed_again["play"]["paused"])
         session.editor_action({"action": "play_stop"})
 
+    def test_editor_play_state_exposes_snapshot_and_status(self):
+        session = GameSession(CubeDemo())
+        stopped = session.editor()
+        self.assertIsNone(stopped["play"]["snapshot"])
+        self.assertIsNone(stopped["play"]["status"])
+
+        started = session.editor_action({"action": "play_start"})
+        self.assertIsInstance(started["play"]["snapshot"], dict)
+        self.assertIsInstance(started["play"]["status"], str)
+        stepped = session.editor_action({"action": "play_step", "frames": 2})
+        self.assertIn("time", stepped["play"]["snapshot"])
+
+        stopped = session.editor_action({"action": "play_stop"})
+        self.assertIsNone(stopped["play"]["snapshot"])
+        self.assertIsNone(stopped["play"]["status"])
+
+    def test_editor_play_state_reports_hook_errors(self):
+        class BrokenHooks(CubeDemo):
+            def snapshot(self):
+                raise RuntimeError("snapshot failed")
+
+            def status(self):
+                raise RuntimeError("status failed")
+
+        session = GameSession(BrokenHooks())
+        started = session.editor_action({"action": "play_start"})
+        self.assertIsNone(started["play"]["snapshot"])
+        self.assertIsNone(started["play"]["status"])
+        self.assertIn("snapshot failed", started["play"]["snapshot_error"])
+        self.assertIn("status failed", started["play"]["status_error"])
+        session.editor_action({"action": "play_stop"})
+
     def test_editor_component_lifecycle_play_mode(self):
         session = GameSession(LifecycleDemo())
         editor = session.editor()
@@ -2541,6 +2573,7 @@ class WebServerTest(unittest.TestCase):
             "play-frames",
             "play-actions",
             "play-state",
+            "play-snapshot",
             "node-parent",
             "node-create",
             "node-duplicate",
@@ -2702,6 +2735,7 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("playTick", script)
         self.assertIn("startPlayLoop", script)
         self.assertIn("readPlayActions", script)
+        self.assertIn("playSnapshot", script)
         self.assertIn("playFrames", script)
         self.assertIn("set_node", script)
         self.assertIn("onTransform", script)

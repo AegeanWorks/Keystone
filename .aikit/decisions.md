@@ -1152,3 +1152,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Camera and lighting authoring required hand-editing a raw JSON textarea, which was slow and error-prone for people and AI clients.
 - **Decision**: Add labeled camera position/yaw/pitch/fov controls, environment light direction/color/intensity, ambient, fog density, and shadows/color/post/bloom/sprites/culling toggles. Fill them from `scene_settings` on every editor refresh, submit only the edited camera or environment fields through the existing validated `set_scene` action, and keep the JSON textarea as an advanced fallback. No API or schema change.
 - **Consequences**: 765 tests green; static console coverage verifies the controls, fill path, readers and both apply actions. Near/far, background/sky and point-light fields stay in advanced JSON, toggle state follows the editor document after undo, and partial environment payloads preserve untouched engine fields.
+
+### ADR-141: Live play snapshot and status inspection
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Play mode exposed frames and component lifecycle but not the game's own snapshot or status, so inspecting runtime state required a separate simulation.
+- **Decision**: Add `status` and `snapshot` to the play document while play is active, with `status_error` and `snapshot_error` when a game hook fails. Snapshots are JSON-checked before exposure; stopped play returns both as null. The console renders the play document as JSON under a live snapshot panel. Bump the editor schema to 36.
+- **Consequences**: 767 tests green; active/stopped shapes, JSON snapshots and failing hooks are covered. Snapshot calls run under the editor lock on each editor document refresh, game hooks remain foreign code, and non-JSON snapshots surface as errors rather than breaking the API.
