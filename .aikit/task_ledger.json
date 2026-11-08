@@ -3,59 +3,15 @@
   "active_task": {
     "task_id": "keystone-report-fixes-v1",
     "last_phase": "in_progress",
-    "active_phase": 2,
-    "status": "in_progress",
-    "updated_at": 1794172278.8288717,
+    "active_phase": 5,
+    "status": "completed",
+    "updated_at": 1794174920.2090604,
     "owner": "commandcode:keystone-console",
     "started_by": "commandcode:keystone-console",
     "continuations": [],
-    "impact_assessment": {
-      "why": "Every actionable claim in reports/keystone-improvement-2026-11-08.md was verified against live source by execution: engine constructs InputMap() with no game hook at app.py:59, DEFAULT_BINDINGS lacks fire/reload/slot/jump, AssetRegistry.refresh never touches a scene while rebinding lives only in web/editor.py:965, apply_pose has no mask, Scene has one point_light slot, instancing keys on id(), plan draw_calls is a node count, widgets expose only panel/button, no VersionedStore, and ARCHITECTURE.md claims v0.46.0 while the package is 0.45.0 with no CHANGELOG or --version.",
-      "benefits": "A game can finally deliver its own live controls; hot reload rebinds any AssetRegistry consumer instead of only the web editor; version drift and missing changelog stop misleading cold-starting agents.",
-      "risks": "contract: additive GameModule hook and a new reload_assets helper plus CLI flag; dependency: none new; concurrency: none; state: no persisted format change - existing scenes and bindings still load.",
-      "mitigation": "Keep every change additive and optional, keep default paths byte-identical, pin each fix with a failing-first test, and verify the canonical simulate hash plus all 6 project gates."
-    }
+    "completed_at": 1794174927.7745523
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-blend-state-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-blend-state-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794152498.6794581,
-      "timestamp_str": "2026-11-08 18:41:38",
-      "agent": "opencode:keystone"
-    },
-    {
-      "task_id": "keystone-blend-state-console-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan: finish the uncommitted console blend-space panel - repair the mangled applyNodeProperties signature, mirror saved blend states back into the editor panel for round-trip authoring, and cover it with the static console test",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794154601.1425815,
-      "timestamp_str": "2026-11-08 19:16:41",
-      "agent": "commandcode:keystone-console",
-      "impact_assessment": {
-        "why": "The committed blend-state feature left the console half uncommitted and a bad merge collapsed applyNodeProperties onto its first if-statement, so the browser console cannot reload a saved blend state for editing and the panel was never documented or gated.",
-        "benefits": "The console gains complete blend-space authoring (preview, save, reload), the syntax-valid console script passes node --check, and the editor schema docs match the shipped UI.",
-        "risks": "contract: console-only JS, no API or schema change; dependency: existing preview_blend_space and load_state_machine actions; concurrency: none; state: no persisted format change.",
-        "mitigation": "Keep the change additive and inside app.js, index.html and test_web.py, reuse the existing state-machine load action, and run the project 6/6 gate plus node --check."
-      },
-      "plan_digest": "e814d99ebc19772da192da8a3754a77a521f8dcea9945e2e2e572a6bb848917c"
-    },
-    {
-      "task_id": "keystone-blend-state-console-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Console blend panel finished: applyNodeProperties signature repaired, valid default blend JSON, save merges one blend state into the state-machine document, load mirrors a saved blend state back; node --check clean and web tests green",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794156215.8821056,
-      "timestamp_str": "2026-11-08 19:43:35",
-      "agent": "commandcode:keystone-console"
-    },
     {
       "task_id": "keystone-blend-state-console-v1",
       "phase": "in_progress",
@@ -265,6 +221,38 @@
         "mitigation": "Keep every change additive and optional, keep default paths byte-identical, pin each fix with a failing-first test, and verify the canonical simulate hash plus all 6 project gates."
       },
       "plan_digest": "5ad2751472c63d10014bcb422a59a1604b6d16b0215de61fcd90dbed22c6ee6a"
+    },
+    {
+      "task_id": "keystone-report-fixes-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/5] Verified all 14 report findings TRUE against live source by execution; implemented F1 GameModule.bind_input hook plus InputMap.unbound_buttons and capabilities.input_bind_hook, F2 AssetRegistry.reload(scene) with core rebind helpers shared by the web editor, and F13 keystone/_version.py single source plus --version, CHANGELOG.md and drift tests; 933 tests pass; canonical simulate hash unchanged",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794174905.0717947,
+      "timestamp_str": "2026-11-09 00:55:05",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-report-fixes-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[3/5] Project gate passes 6/6 and --strict on the committed tree; end-to-end verification 7/7 (describe hook, --version, --version rejection, engine merged binding, defaults preserved, unbound_buttons, reload rebind); pushed 100c543 to origin/master; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794174920.2090604,
+      "timestamp_str": "2026-11-09 00:55:20",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-report-fixes-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-report-fixes-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794174927.7745538,
+      "timestamp_str": "2026-11-09 00:55:27",
+      "agent": "commandcode:keystone-console"
     }
   ]
 }
