@@ -12,5 +12,19 @@
     "final_snapshot_digest": "",
     "final_snapshot_entries": 0,
     "surface_digest": "2628a886fc7d933dcacf44b836c5fc8e8365db6d70b9d78be429c154c25712dc"
+  },
+  {
+    "schema": 1,
+    "surface": "web",
+    "baseline_commit": "8131876e49c8e79146f97355cf3e846e0e2022c8",
+    "contract_hash": "3a546ec6c38368b241e33bcb645e3e37095307e6a89c5c44678d752a3526399c",
+    "started_at": 1794130229.5183647,
+    "finished_at": 1794130336.874955,
+    "strikes": 0,
+    "reviewer": "opencode:deepseek-v4.1-flash",
+    "allowed_removals": [],
+    "final_snapshot_digest": "",
+    "final_snapshot_entries": 0,
+    "surface_digest": "7ee0a015fda17b190453c42a510d0ba98020eda891f1f27de5e4d3b0b1634688"
   }
 ]
