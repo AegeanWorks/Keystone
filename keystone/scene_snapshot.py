@@ -29,7 +29,7 @@ from keystone.scene import (
     Transform,
 )
 
-SCENE_SNAPSHOT_VERSION = 4
+SCENE_SNAPSHOT_VERSION = 5
 
 
 def _vec3_to_list(value: Vec3) -> list[float]:
@@ -240,7 +240,7 @@ def scene_from_dict(
     if not isinstance(data, Mapping):
         raise TypeError("scene snapshot must be a mapping")
     version = data.get("schema", data.get("version", SCENE_SNAPSHOT_VERSION))
-    if isinstance(version, bool) or not isinstance(version, int) or version not in (1, 2, 3, SCENE_SNAPSHOT_VERSION):
+    if isinstance(version, bool) or not isinstance(version, int) or version not in (1, 2, 3, 4, SCENE_SNAPSHOT_VERSION):
         raise ValueError(f"unsupported scene snapshot version {version}")
     if "nodes" not in data:
         raise ValueError("scene snapshot must contain a nodes list")

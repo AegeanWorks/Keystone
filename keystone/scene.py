@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import math
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
@@ -82,26 +83,49 @@ class SceneGroup:
     """Editor-facing metadata for one additively loaded scene container."""
 
     name: str
+    camera: dict[str, object] | None = None
+    environment: dict[str, object] | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name.strip():
             raise ValueError("scene group name must be a non-blank string")
+        if self.camera is not None and not isinstance(self.camera, Mapping):
+            raise TypeError("scene group camera must be a mapping or None")
+        if self.environment is not None and not isinstance(
+            self.environment, Mapping
+        ):
+            raise TypeError("scene group environment must be a mapping or None")
 
-    def to_dict(self) -> dict[str, str]:
+    def to_dict(self) -> dict[str, object]:
         """Return the JSON-safe group document."""
-        return {"name": self.name}
+        data: dict[str, object] = {"name": self.name}
+        if self.camera is not None:
+            data["camera"] = copy.deepcopy(dict(self.camera))
+        if self.environment is not None:
+            data["environment"] = copy.deepcopy(dict(self.environment))
+        return data
 
     @classmethod
     def from_dict(cls, data: object) -> SceneGroup:
         """Validate one scene group document."""
         if not isinstance(data, Mapping):
             raise TypeError("scene group must be a mapping")
-        unknown = sorted(set(data) - {"name"})
+        unknown = sorted(set(data) - {"name", "camera", "environment"})
         if unknown:
             raise ValueError(
                 f"scene group has unknown fields: {', '.join(unknown)}"
             )
-        return cls(data.get("name"))  # type: ignore[arg-type]
+        camera = data.get("camera")
+        environment = data.get("environment")
+        if camera is not None and not isinstance(camera, Mapping):
+            raise TypeError("scene group camera must be a mapping or null")
+        if environment is not None and not isinstance(environment, Mapping):
+            raise TypeError("scene group environment must be a mapping or null")
+        return cls(
+            data.get("name"),  # type: ignore[arg-type]
+            copy.deepcopy(dict(camera)) if camera is not None else None,
+            copy.deepcopy(dict(environment)) if environment is not None else None,
+        )
 
 
 @dataclass(eq=False)

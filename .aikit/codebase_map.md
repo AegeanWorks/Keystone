@@ -9,8 +9,8 @@
 - **Total Python Modules**: `135`
 - **Total Classes**: `215`
 - **Total Top-Level Functions**: `360`
-- **Total Class Methods**: `1326`
-- **Total Source Lines**: `30927`
+- **Total Class Methods**: `1328`
+- **Total Source Lines**: `31110`
 
 ---
 
@@ -1229,7 +1229,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `482` lines (`18500` bytes)
+**Size**: `506` lines (`19788` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -1333,7 +1333,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `457` lines (`19351` bytes)
+**Size**: `457` lines (`19354` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)`
@@ -1535,7 +1535,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `2140` lines (`76380` bytes)
+**Size**: `2190` lines (`78054` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene and environment edits.*
@@ -1610,7 +1610,7 @@
 - `def add_scene(scene, name, library, parent)` - *Add one saved scene as a named child group of the current scene.*
 - `def unload_scene(scene, node)` - *Remove one scene group container and return its former parent.*
 - `def _copy_scene_settings(source, target)`
-- `def save_scene_group(scene, node, library)` - *Write one scene group's children back to its library scene in place.*
+- `def save_scene_group(scene, node, library, name)` - *Write one scene group's children, settings and transform back to a library scene.*
 - `def _top_level_selected(scene, ids)`
 - `def _parent_linear_inverse(node)`
 - `def _world_position(node)`
@@ -1646,14 +1646,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `245` lines (`11854` bytes)
+**Size**: `250` lines (`12042` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1240` lines (`54350` bytes)
+**Size**: `1255` lines (`55017` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2875,7 +2875,7 @@
 ### [`tests/test_scene_snapshot.py`](tests/test_scene_snapshot.py)
 > *Unit tests for versioned scene snapshots.*
 
-**Size**: `297` lines (`12281` bytes)
+**Size**: `320` lines (`13016` bytes)
 
 **Classes:**
 - `class Health`
@@ -2884,6 +2884,7 @@
   - Method `.test_round_trip_preserves_structure_and_transforms()`
   - Method `.test_prefab_links_round_trip_and_older_snapshots_default_to_none()`
   - Method `.test_scene_groups_round_trip_and_older_snapshots_default_to_none()`
+  - Method `.test_scene_group_source_settings_round_trip()`
   - Method `.test_round_trip_preserves_typed_components()`
   - Method `.test_components_require_a_type_map_and_supported_codec()`
   - Method `.test_round_trip_preserves_camera_lens_and_environment()`
@@ -3125,7 +3126,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `2345` lines (`98247` bytes)
+**Size**: `2411` lines (`100962` bytes)
 
 **Classes:**
 - `class Health`
@@ -3182,6 +3183,7 @@
   - Method `.test_editor_multi_selection_shared_properties_and_summary()`
   - Method `.test_editor_multi_selection_absolute_transform()`
   - Method `.test_editor_group_rotation_and_scale_around_selection_pivot()`
+  - Method `.test_editor_scene_group_save_as_source_settings_and_transform()`
   - Method `.test_editor_scene_settings_and_undo()`
   - Method `.test_editor_batch_authoring_is_atomic()`
   - Method `.test_editor_node_property_editing()`

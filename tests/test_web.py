@@ -1699,6 +1699,72 @@ class WebServerTest(unittest.TestCase):
             )
         self.assertEqual(caught.exception.status, 400)
 
+    def test_editor_scene_group_save_as_source_settings_and_transform(self):
+        with tempfile.TemporaryDirectory() as directory:
+            scene_dir = Path(directory) / "scenes"
+            session = GameSession(CubeDemo(), scene_dir=scene_dir)
+            session.editor_action(
+                {
+                    "action": "set_scene",
+                    "camera": {"position": [1.0, 2.0, 3.0], "fov_y": 60.0},
+                    "environment": {
+                        "background": [0.1, 0.2, 0.3],
+                        "fog_density": 0.02,
+                    },
+                }
+            )
+            session.editor_action({"action": "save_scene", "name": "level"})
+            session.editor_action(
+                {"action": "set_scene", "camera": {"position": [9.0, 9.0, 9.0]}}
+            )
+            added = session.editor_action(
+                {"action": "add_scene", "name": "level"}
+            )
+            group = added["scene_groups"][0]
+            group_id = group["id"]
+            self.assertEqual(
+                group["camera"]["position"], [1.0, 2.0, 3.0]
+            )
+            session.editor_action(
+                {
+                    "action": "transform",
+                    "id": group_id,
+                    "position": [10.0, 0.0, 0.0],
+                }
+            )
+            saved = session.editor_action(
+                {
+                    "action": "save_scene_group",
+                    "id": group_id,
+                    "name": "level-copy",
+                }
+            )
+            self.assertEqual(saved["scene_groups"][0]["name"], "level-copy")
+            self.assertTrue((scene_dir / "level-copy.kscene").is_file())
+            loaded = session.scene_library.load("level-copy")
+            self.assertEqual(loaded.camera.position, Vec3(1.0, 2.0, 3.0))
+            self.assertEqual(
+                loaded.root.transform.position, Vec3(10.0, 0.0, 0.0)
+            )
+            undone = session.editor_action({"action": "undo"})
+            self.assertEqual(undone["scene_groups"][0]["name"], "level")
+            reloaded = GameSession(CubeDemo(), scene_dir=scene_dir)
+            fresh = reloaded.editor_action(
+                {"action": "add_scene", "name": "level-copy"}
+            )
+            fresh_group = fresh["scene_groups"][0]
+            container = next(
+                node
+                for node in fresh["nodes"]
+                if node["id"] == fresh_group["id"]
+            )
+            self.assertEqual(
+                container["transform"]["position"], [10.0, 0.0, 0.0]
+            )
+            self.assertEqual(
+                fresh_group["camera"]["position"], [1.0, 2.0, 3.0]
+            )
+
     def test_editor_scene_settings_and_undo(self):
         session = GameSession(CubeDemo())
         editor = session.editor()

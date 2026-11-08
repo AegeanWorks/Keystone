@@ -661,7 +661,22 @@ class GameSession:
                     if self.scene_library is None:
                         raise ValueError("no scene library is configured")
                     node = find_node(scene, payload.get("id"))
-                    save_scene_group(scene, node, self.scene_library)
+                    group = node.scene_group
+                    if group is None:
+                        raise ValueError("node is not a scene group")
+                    requested = payload.get("name")
+                    if requested is None or requested == group.name:
+                        save_scene_group(scene, node, self.scene_library)
+                    else:
+                        self._apply_history(
+                            scene,
+                            lambda: save_scene_group(
+                                scene,
+                                node,
+                                self.scene_library,
+                                requested,
+                            ),
+                        )
                     self.selected_id = node.id
                 elif action == "diff_scene":
                     if self.scene_library is None:

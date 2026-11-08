@@ -104,6 +104,29 @@ class SceneSnapshotTest(unittest.TestCase):
             scene_from_dict(document).find_by_id("level").scene_group
         )
 
+    def test_scene_group_source_settings_round_trip(self):
+        scene = Scene()
+        group = SceneGroup(
+            "level",
+            {"position": [1.0, 2.0, 3.0]},
+            {"fog_density": 0.1},
+        )
+        scene.add(Node("level", id="level", scene_group=group))
+        document = scene_to_dict(scene)
+        self.assertEqual(
+            document["nodes"][0]["scene_group"],
+            {
+                "name": "level",
+                "camera": {"position": [1.0, 2.0, 3.0]},
+                "environment": {"fog_density": 0.1},
+            },
+        )
+        restored = scene_from_dict(document)
+        self.assertEqual(
+            restored.find_by_id("level").scene_group,
+            group,
+        )
+
     def test_round_trip_preserves_typed_components(self):
         scene = self._scene()
         child = next(node for node in scene.traverse() if node.id == "child")

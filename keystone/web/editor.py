@@ -41,6 +41,7 @@ from keystone.scene import (
     Transform,
 )
 from keystone.scene_library import SceneLibrary
+from keystone.scene_snapshot import SCENE_SNAPSHOT_VERSION, scene_from_dict
 from keystone.schema import EDITOR_ACTIONS, EDITOR_SCHEMA_VERSION
 from keystone.texture import TextureData
 
@@ -1571,6 +1572,8 @@ def scene_group_document(scene: Scene) -> list[dict[str, object]]:
                 ),
                 "node_count": max(0, sum(1 for _ in node.traverse()) - 1),
                 "roots": [child.id for child in node.children],
+                "camera": copy.deepcopy(group.camera),
+                "environment": copy.deepcopy(group.environment),
             }
         )
     return groups
@@ -1606,7 +1609,23 @@ def add_scene(
     if parent is not None and not isinstance(parent, Node):
         raise TypeError("scene group parent must be a Node or None")
     loaded = library.load(name)
-    container = Node(name, scene_group=SceneGroup(name))
+    data = library.document(name)
+    camera = data.get("camera")
+    environment = data.get("environment")
+    container = Node(
+        name,
+        transform=loaded.root.transform,
+        visible=loaded.root.visible,
+        scene_group=SceneGroup(
+            name,
+            copy.deepcopy(dict(camera))
+            if isinstance(camera, Mapping)
+            else None,
+            copy.deepcopy(dict(environment))
+            if isinstance(environment, Mapping)
+            else None,
+        ),
+    )
     used = {node.id for node in scene.traverse() if node.id}
     for root in loaded.root.children:
         clone = _clone_scene_node(root)
@@ -1655,8 +1674,13 @@ def _copy_scene_settings(source: Scene, target: Scene) -> None:
     target.fog_density = source.fog_density
 
 
-def save_scene_group(scene: Scene, node: Node, library: SceneLibrary) -> str:
-    """Write one scene group's children back to its library scene in place."""
+def save_scene_group(
+    scene: Scene,
+    node: Node,
+    library: SceneLibrary,
+    name: str | None = None,
+) -> str:
+    """Write one scene group's children, settings and transform back to a library scene."""
     if not isinstance(scene, Scene):
         raise TypeError("save_scene_group target must be a Scene")
     if not isinstance(library, SceneLibrary):
@@ -1664,12 +1688,38 @@ def save_scene_group(scene: Scene, node: Node, library: SceneLibrary) -> str:
     group = node.scene_group
     if group is None:
         raise ValueError("node is not a scene group")
+    target_name = name if name is not None else group.name
+    if not isinstance(target_name, str) or not target_name.strip():
+        raise ValueError("scene name must be a non-blank string")
+    library.path_for(target_name)
     temp = Scene()
-    _copy_scene_settings(scene, temp)
+    if group.camera is not None or group.environment is not None:
+        source = scene_from_dict(
+            {
+                "schema": SCENE_SNAPSHOT_VERSION,
+                "nodes": [],
+                "camera": group.camera or {},
+                "environment": group.environment or {},
+            },
+            library.registry,
+            library.component_types,
+        )
+        _copy_scene_settings(source, temp)
+    else:
+        _copy_scene_settings(scene, temp)
+    temp.root.transform = node.transform
+    temp.root.visible = node.visible
     for child in node.children:
         temp.add(_clone_scene_node(child))
-    library.save(group.name, temp)
-    return group.name
+    library.save(target_name, temp)
+    if target_name != group.name:
+        node.scene_group = SceneGroup(
+            target_name,
+            camera=group.camera,
+            environment=group.environment,
+        )
+        node.name = target_name
+    return target_name
 
 
 def _top_level_selected(scene: Scene, ids: list[str]) -> list[Node]:

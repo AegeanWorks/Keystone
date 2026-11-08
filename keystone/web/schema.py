@@ -122,7 +122,11 @@ EDITOR_EXAMPLES = {
     "load_scene": {"action": "load_scene", "name": "level"},
     "add_scene": {"action": "add_scene", "name": "level"},
     "unload_scene": {"action": "unload_scene", "id": "scene-1"},
-    "save_scene_group": {"action": "save_scene_group", "id": "scene-1"},
+    "save_scene_group": {
+        "action": "save_scene_group",
+        "id": "scene-1",
+        "name": "level-copy",
+    },
     "diff_scene": {"action": "diff_scene", "name": "level"},
     "rename_scene": {"action": "rename_scene", "name": "level", "new_name": "level-alt"},
     "duplicate_scene": {
@@ -167,7 +171,7 @@ EDITOR_SCHEMA = {
         "prefab_override": ["id", "template_id", "fields"],
         "add_scene": ["name", "parent"],
         "unload_scene": ["id"],
-        "save_scene_group": ["id"],
+        "save_scene_group": ["id", "name"],
         "diff_scene": ["name"],
         "rename_scene": ["name", "new_name"],
         "duplicate_scene": ["name", "new_name"],
@@ -219,6 +223,7 @@ EDITOR_SCHEMA = {
         "schema 27 adds centroid group_rotation/group_scale to transform_selection for multi-selection",
         "schema 28 adds shared set_selection_properties/set_selection_transform actions and selection_summary mixed/shared fields",
         "schema 29 accepts scalar or three-axis group_scale for centroid group scaling",
+        "schema 30 adds source camera/environment and container-transform scene group metadata plus save_scene_group save-as",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

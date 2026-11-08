@@ -1056,3 +1056,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Multi-selection scaling was uniform, so the X/Y/Z scale handles could not stretch a selection along one world axis.
 - **Decision**: Let `group_scale` be either a positive scalar (uniform) or three positive X/Y/Z factors. Group scaling applies the factors to world offsets from `pivot`, multiplies local scale components by the same factors, and converts positions back through the parent inverse; group rotation still works alongside it. The multi-selection scale gizmo previews `T(pivot) * S(axis) * T(-pivot)` for the dragged world axis and submits one `transform_selection` action with the corresponding factor array and undo. Bump the editor schema to 29.
 - **Consequences**: 758 tests green; axis-local and uniform group scaling, previews, invalid-factor rejection and undo are covered. Rotated or non-uniformly parented nodes can only approximate world-axis scaling under the local TRS model, and multi-node inspector/box-selection refinements remain future work.
+
+### ADR-129: Scene-group save-as with source settings and container transforms
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Additive scene groups ignored source camera/environment, discarded container transforms on group save and could not be saved under a new name.
+- **Decision**: Persist optional source camera/environment documents in `SceneGroup` metadata and scene snapshot schema 5. `add_scene` captures the source documents and copies the source root transform/visibility onto the container. `save_scene_group` restores source settings through `scene_from_dict`, writes the container transform as the saved root transform, and accepts an optional `name` for save-as; save-as writes first, then updates group name/container name under one undo entry. Editor schema 30 and the scene-group inventory expose the source settings and container roots.
+- **Consequences**: 760 tests green; source settings, container transforms, save-as, undo and cross-session reload are covered. Undo restores save-as metadata but leaves the newly written scene file as an asset side effect; legacy groups without stored settings fall back to current editor settings.
