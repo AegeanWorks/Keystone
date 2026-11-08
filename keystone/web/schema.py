@@ -23,6 +23,11 @@ EDITOR_EXAMPLES = {
         "name": "default",
         "visible": False,
     },
+    "set_nodes_locked": {
+        "action": "set_nodes_locked",
+        "ids": ["cube-0"],
+        "locked": True,
+    },
     "transform": {
         "action": "transform",
         "id": "cube-0",
@@ -296,10 +301,12 @@ EDITOR_SCHEMA = {
     "actions": list(EDITOR_ACTIONS),
     "examples": EDITOR_EXAMPLES,
     "fields": {
-        "node": ["id", "name", "parent_id", "children", "visible", "selected", "tags", "layer", "components", "component_data", "mesh", "material", "prefab_link", "scene_group", "transform", "world"],
+        "node": ["id", "name", "parent_id", "children", "visible", "locked", "selected", "tags", "layer", "components", "component_data", "mesh", "material", "prefab_link", "scene_group", "transform", "world"],
         "selection": ["selected_ids", "selection_count"],
         "select_many": ["ids", "mode"],
         "set_layer_visible": ["name", "visible"],
+        "set_nodes_locked": ["ids", "locked"],
+        "locked": ["locked_ids", "locked_count"],
         "layer": ["name", "count"],
         "transform_selection": ["position", "rotation", "scale", "pivot", "group_rotation", "group_scale"],
         "set_selection_properties": ["name", "visible", "tags", "layer"],
@@ -543,6 +550,7 @@ EDITOR_SCHEMA = {
         "schema 54 adds copy_selection/paste_nodes using a detached prefab clipboard and a clipboard document report",
         "schema 55 adds set_animation_key/remove_animation_key for library clip track authoring at a time",
         "schema 56 adds a layer inventory plus set_layer_visible, with editor-only hidden layers filtered by the viewer",
+        "schema 57 adds node lock state plus set_nodes_locked; locked nodes and descendants reject transforms, deletes, reparenting, asset/component edits and prefab revert/apply",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

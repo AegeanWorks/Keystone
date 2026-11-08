@@ -125,6 +125,7 @@ SCENE_NEUTRAL_ACTIONS = frozenset(
         "select",
         "select_many",
         "set_layer_visible",
+        "set_nodes_locked",
         "copy_selection",
         "play_start",
         "play_step",
@@ -245,6 +246,7 @@ class GameSession:
         self.selected_id: str | None = None
         self.selected_ids: list[str] = []
         self.hidden_layers: set[str] = set()
+        self.locked_ids: set[str] = set()
         self.prefabs: dict[str, Prefab] = {}
         self.clipboard: Prefab | None = None
         self.history = EditorHistory()
@@ -415,6 +417,24 @@ class GameSession:
     def _registry_locked(self) -> AssetRegistry | None:
         registry = getattr(self.game, "assets", None)
         return registry if isinstance(registry, AssetRegistry) else None
+
+    def _node_locked_locked(self, node: Node) -> bool:
+        current: Node | None = node
+        while current is not None:
+            if current.id in self.locked_ids:
+                return True
+            current = current.parent
+        return False
+
+    def _ensure_unlocked_locked(self, nodes: list[Node]) -> None:
+        locked = [
+            node.id for node in nodes if self._node_locked_locked(node)
+        ]
+        if locked:
+            raise ValueError(
+                "locked nodes cannot be edited: "
+                + ", ".join(sorted(set(locked)))
+            )
 
     @staticmethod
     def _document_asset_ids(value: object, ids: set[str]) -> None:
@@ -787,6 +807,7 @@ class GameSession:
             },
             selected_ids=self.selected_ids,
             prefab_edit=self._prefab_edit_document(),
+            locked_ids=self.locked_ids,
         )
         document["game"] = self.name
         document["prefab_refresh"] = self.last_prefab_refresh
@@ -992,8 +1013,33 @@ class GameSession:
                         self.hidden_layers.discard(name)
                     else:
                         self.hidden_layers.add(name)
+                elif action == "set_nodes_locked":
+                    ids = payload.get("ids")
+                    if ids is None:
+                        ids = self.selected_ids
+                    if not isinstance(ids, list) or not ids:
+                        raise ValueError(
+                            "select at least one node before changing locks"
+                        )
+                    if any(
+                        not isinstance(item, str) or not item.strip()
+                        for item in ids
+                    ):
+                        raise ValueError(
+                            "locked node ids must be non-blank strings"
+                        )
+                    nodes = [find_node(scene, node_id) for node_id in ids]
+                    locked = payload.get("locked")
+                    if not isinstance(locked, bool):
+                        raise TypeError("node locked must be a boolean")
+                    for node in nodes:
+                        if locked:
+                            self.locked_ids.add(node.id)
+                        else:
+                            self.locked_ids.discard(node.id)
                 elif action == "transform":
                     node = find_node(scene, payload.get("id"))
+                    self._ensure_unlocked_locked([node])
 
                     def apply_transform() -> None:
                         node.transform = transform_from_payload(node, payload)
@@ -1001,6 +1047,11 @@ class GameSession:
                     self._apply_history(scene, apply_transform)
                     self.selected_id = node.id
                 elif action == "transform_selection":
+                    nodes = [
+                        find_node(scene, node_id)
+                        for node_id in self.selected_ids
+                    ]
+                    self._ensure_unlocked_locked(nodes)
                     self._apply_history(
                         scene,
                         lambda: transform_selection(
@@ -1015,6 +1066,11 @@ class GameSession:
                         ),
                     )
                 elif action == "delete_selection":
+                    nodes = [
+                        find_node(scene, node_id)
+                        for node_id in self.selected_ids
+                    ]
+                    self._ensure_unlocked_locked(nodes)
                     parent = self._apply_history(
                         scene,
                         lambda: delete_selection(scene, self.selected_ids),
@@ -1034,6 +1090,11 @@ class GameSession:
                         ),
                     )
                 elif action == "set_selection_transform":
+                    nodes = [
+                        find_node(scene, node_id)
+                        for node_id in self.selected_ids
+                    ]
+                    self._ensure_unlocked_locked(nodes)
                     self._apply_history(
                         scene,
                         lambda: set_selection_transform(
@@ -1044,6 +1105,7 @@ class GameSession:
                     self._apply_history(scene, lambda: set_scene(scene, payload))
                 elif action == "assign_asset":
                     node = find_node(scene, payload.get("id"))
+                    self._ensure_unlocked_locked([node])
                     self._apply_history(
                         scene,
                         lambda: assign_assets(node, payload, self._registry_locked()),
@@ -1058,6 +1120,7 @@ class GameSession:
                         find_node(scene, node_id)
                         for node_id in self.selected_ids
                     ]
+                    self._ensure_unlocked_locked(nodes)
                     registry = self._registry_locked()
                     self._apply_history(
                         scene,
@@ -1499,6 +1562,7 @@ class GameSession:
                         )
                 elif action == "set_component":
                     node = find_node(scene, payload.get("id"))
+                    self._ensure_unlocked_locked([node])
                     self._apply_history(
                         scene,
                         lambda: set_component(
@@ -1511,6 +1575,7 @@ class GameSession:
                     self.selected_id = node.id
                 elif action == "remove_component":
                     node = find_node(scene, payload.get("id"))
+                    self._ensure_unlocked_locked([node])
                     self._apply_history(
                         scene,
                         lambda: remove_component(
@@ -1532,6 +1597,7 @@ class GameSession:
                     self.selected_id = node.id
                 elif action == "delete_node":
                     node = find_node(scene, payload.get("id"))
+                    self._ensure_unlocked_locked([node])
                     parent = self._apply_history(scene, lambda: delete_node(scene, node))
                     self.selected_id = None if parent is scene.root else parent.id
                 elif action == "duplicate_node":
@@ -1575,6 +1641,7 @@ class GameSession:
                     self._set_selected_ids([root.id for root in roots])
                 elif action == "reparent_node":
                     node = find_node(scene, payload.get("id"))
+                    self._ensure_unlocked_locked([node])
                     parent = self._parent_locked(scene, payload.get("parent"))
                     self._apply_history(scene, lambda: reparent_node(scene, node, parent))
                     self.selected_id = node.id
@@ -1818,6 +1885,7 @@ class GameSession:
                         self.selected_id = roots[0].id
                 elif action == "revert_prefab":
                     node = find_node(scene, payload.get("id") or self.selected_id)
+                    self._ensure_unlocked_locked([node])
                     link = node.prefab_link
                     if link is None:
                         raise ValueError("node is not a prefab instance")
@@ -1836,6 +1904,7 @@ class GameSession:
                         self.selected_id = root[0].id
                 elif action == "apply_prefab":
                     node = find_node(scene, payload.get("id") or self.selected_id)
+                    self._ensure_unlocked_locked([node])
                     link = node.prefab_link
                     if link is None:
                         raise ValueError("node is not a prefab instance")
@@ -1855,6 +1924,8 @@ class GameSession:
                     node_id = payload.get("id") or self.selected_id
                     if node_id is None:
                         raise ValueError("select a node before reverting an override")
+                    node = find_node(scene, node_id)
+                    self._ensure_unlocked_locked([node])
                     node = self._apply_history(
                         scene,
                         lambda: revert_prefab_override(
@@ -1871,6 +1942,7 @@ class GameSession:
                     if node_id is None:
                         raise ValueError("select a node before applying an override")
                     node = find_node(scene, node_id)
+                    self._ensure_unlocked_locked([node])
                     updated = apply_prefab_override(
                         scene,
                         node_id,

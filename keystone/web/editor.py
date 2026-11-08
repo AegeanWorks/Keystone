@@ -1066,6 +1066,7 @@ def node_document(
     selected_id: str | None,
     registry: object | None = None,
     selected_ids: set[str] | None = None,
+    locked_ids: set[str] | None = None,
 ) -> dict:
     transform = node.transform
     rotation = transform.rotation
@@ -1080,6 +1081,7 @@ def node_document(
         "parent_id": node.parent.id if node.parent is not None and node.parent.id else None,
         "children": [child.id for child in node.children],
         "visible": node.visible,
+        "locked": node.id in (locked_ids or set()),
         "selected": node.id in selected,
         "tags": sorted(node.tags),
         "layer": node.layer,
@@ -1118,6 +1120,7 @@ def editor_document(
     trash: dict[str, list[dict[str, str]]] | None = None,
     selected_ids: list[str] | None = None,
     prefab_edit: dict[str, object] | None = None,
+    locked_ids: set[str] | None = None,
 ) -> dict:
     ordered_ids = list(
         dict.fromkeys(
@@ -1129,7 +1132,7 @@ def editor_document(
     selected_set = set(ordered_ids)
     selection_details = selection_summary(scene, ordered_ids)
     nodes = [
-        node_document(node, selected_id, registry, selected_set)
+        node_document(node, selected_id, registry, selected_set, locked_ids)
         for node in scene.traverse()
     ]
     selection = next((node for node in nodes if node["id"] == selected_id), None)
@@ -1159,6 +1162,8 @@ def editor_document(
         "selection": selection,
         "selected_ids": ordered_ids,
         "selection_count": len(ordered_ids),
+        "locked_ids": sorted(locked_ids or set()),
+        "locked_count": len(locked_ids or ()),
         "selection_summary": selection_details,
         "nodes": nodes,
         "prefab_instances": prefab_instances,

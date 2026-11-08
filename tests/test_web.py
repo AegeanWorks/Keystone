@@ -685,6 +685,68 @@ class WebServerTest(unittest.TestCase):
             )
         self.assertEqual(caught.exception.status, 400)
 
+    def test_editor_node_locking_blocks_edits(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        cubes = [
+            node for node in editor["nodes"] if node["mesh"] == "mesh.cube"
+        ][:2]
+        ids = [node["id"] for node in cubes]
+        session.editor_action(
+            {"action": "select_many", "ids": ids, "mode": "replace"}
+        )
+        locked = session.editor_action(
+            {"action": "set_nodes_locked", "ids": ids, "locked": True}
+        )
+        self.assertEqual(locked["locked_count"], 2)
+        self.assertEqual(set(locked["locked_ids"]), set(ids))
+        locked_nodes = [
+            node for node in locked["nodes"] if node["id"] in ids
+        ]
+        self.assertTrue(all(node["locked"] for node in locked_nodes))
+
+        for payload in (
+            {
+                "action": "transform_selection",
+                "position": [1.0, 0.0, 0.0],
+            },
+            {"action": "delete_selection"},
+            {
+                "action": "assign_asset_selection",
+                "mesh": "mesh.sphere",
+            },
+            {
+                "action": "set_selection_transform",
+                "position": [1.0, 0.0, 0.0],
+            },
+            {
+                "action": "reparent_node",
+                "id": ids[0],
+                "parent": "floor",
+            },
+            {
+                "action": "set_component",
+                "id": ids[0],
+                "type": "Health",
+                "data": {},
+            },
+        ):
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(payload)
+            self.assertEqual(caught.exception.status, 400)
+
+        unlocked = session.editor_action(
+            {"action": "set_nodes_locked", "ids": ids, "locked": False}
+        )
+        self.assertEqual(unlocked["locked_count"], 0)
+        moved = session.editor_action(
+            {
+                "action": "transform_selection",
+                "position": [1.0, 0.0, 0.0],
+            }
+        )
+        self.assertEqual(moved["locked_count"], 0)
+
     def test_editor_copy_paste_selection(self):
         session = GameSession(CubeDemo())
         editor = session.editor()
@@ -4169,6 +4231,8 @@ class WebServerTest(unittest.TestCase):
             "node-duplicate",
             "selection-copy",
             "selection-paste",
+            "selection-lock",
+            "selection-unlock",
             "node-delete",
             "selection-toggle-visible",
             "box-select",
@@ -4305,6 +4369,9 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("pasteNodes", script)
         self.assertIn("copy_selection", script)
         self.assertIn("paste_nodes", script)
+        self.assertIn("setSelectionLocked", script)
+        self.assertIn("set_nodes_locked", script)
+        self.assertIn("locked_count", script)
         self.assertIn("save_scene", script)
         self.assertIn("rename_scene", script)
         self.assertIn("duplicate_scene", script)

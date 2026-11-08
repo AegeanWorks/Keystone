@@ -9,8 +9,8 @@
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
 - **Total Top-Level Functions**: `402`
-- **Total Class Methods**: `1442`
-- **Total Source Lines**: `37908`
+- **Total Class Methods**: `1445`
+- **Total Source Lines**: `38061`
 
 ---
 
@@ -1462,7 +1462,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `87` lines (`1911` bytes)
+**Size**: `88` lines (`1935` bytes)
 
 ---
 
@@ -1662,7 +1662,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `2679` lines (`95146` bytes)
+**Size**: `2684` lines (`95388` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1718,8 +1718,8 @@
 - `def _history_label(label)`
 - `def _history_steps(steps)`
 - `def _component_documents(node)`
-- `def node_document(node, selected_id, registry, selected_ids)`
-- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, component_schema_documents, play_state, diff, trash, selected_ids, prefab_edit)`
+- `def node_document(node, selected_id, registry, selected_ids, locked_ids)`
+- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, component_schema_documents, play_state, diff, trash, selected_ids, prefab_edit, locked_ids)`
 - `def find_node(scene, node_id)`
 - `def create_node(scene, payload, parent, registry)` - *Create, validate and attach one node from an editor payload.*
 - `def delete_node(scene, node)` - *Detach one node subtree or its whole prefab instance and return the parent.*
@@ -1793,14 +1793,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `569` lines (`24316` bytes)
+**Size**: `577` lines (`24726` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2654` lines (`118939` bytes)
+**Size**: `2726` lines (`122123` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1818,6 +1818,8 @@
   - Method `._scene_locked()`
   - Method `.scene()`
   - Method `._registry_locked()`
+  - Method `._node_locked_locked(node)`
+  - Method `._ensure_unlocked_locked(nodes)`
   - Method `._document_asset_ids(value, ids)` - *Collect mesh/material/texture ids from one scene document.*
   - Method `._format_asset_usage(report)`
   - Method `._asset_usage_report_locked(scene, registry, asset_id)` - *Return structured references to one asset across live and saved content.*
@@ -3370,7 +3372,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `4685` lines (`194926` bytes)
+**Size**: `4752` lines (`197252` bytes)
 
 **Classes:**
 - `class Health`
@@ -3407,6 +3409,7 @@
   - Method `.test_editor_asset_inventory_and_assignment()`
   - Method `.test_editor_assign_assets_to_selection()`
   - Method `.test_editor_layer_visibility()`
+  - Method `.test_editor_node_locking_blocks_edits()`
   - Method `.test_editor_copy_paste_selection()`
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_prefab_instance_revert_and_apply()`

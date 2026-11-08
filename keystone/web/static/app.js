@@ -55,6 +55,8 @@ const elements = {
   nodeDuplicate: document.getElementById("node-duplicate"),
   selectionCopy: document.getElementById("selection-copy"),
   selectionPaste: document.getElementById("selection-paste"),
+  selectionLock: document.getElementById("selection-lock"),
+  selectionUnlock: document.getElementById("selection-unlock"),
   nodeDelete: document.getElementById("node-delete"),
   selectionToggleVisible: document.getElementById("selection-toggle-visible"),
   boxSelect: document.getElementById("box-select"),
@@ -1055,6 +1057,7 @@ function showEditor(editor) {
     `${editor.prefab_instance_count ?? (editor.prefab_instances || []).length} instances · ` +
     `${editor.prefab_override_count ?? 0} overrides · ` +
     `${editor.scene_group_count ?? 0} scenes · ` +
+    `${editor.locked_count ?? 0} locked · ` +
     `undo ${history.undo} / redo ${history.redo} · ` +
     `selected ${editor.selection_count ?? (editor.selection ? 1 : 0)}` +
     `${editor.selection ? ` (${editor.selection.id})` : ""}`;
@@ -2746,6 +2749,20 @@ async function pasteNodes() {
   });
 }
 
+async function setSelectionLocked(locked) {
+  if (!editorState || !editorState.selection_count) {
+    throw new Error("Select at least one node before changing locks.");
+  }
+  await editorAction(
+    {
+      action: "set_nodes_locked",
+      ids: editorState.selected_ids,
+      locked,
+    },
+    `${locked ? "locking" : "unlocking"} selection`,
+  );
+}
+
 async function deleteSelection() {
   if (!editorState || !(editorState.selected_ids || []).length) {
     throw new Error("Select at least one node before deleting.");
@@ -3138,6 +3155,8 @@ elements.nodeCreate.addEventListener("click", () => run(createNode));
 elements.nodeDuplicate.addEventListener("click", () => run(duplicateNode));
 elements.selectionCopy.addEventListener("click", () => run(copySelection));
 elements.selectionPaste.addEventListener("click", () => run(pasteNodes));
+elements.selectionLock.addEventListener("click", () => run(() => setSelectionLocked(true)));
+elements.selectionUnlock.addEventListener("click", () => run(() => setSelectionLocked(false)));
 elements.nodeDelete.addEventListener("click", () => run(deleteSelection));
 elements.selectionToggleVisible.addEventListener("click", () =>
   run(toggleSelectionVisible),
