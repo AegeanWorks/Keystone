@@ -25,6 +25,7 @@ const elements = {
   playSnapshot: document.getElementById("play-snapshot"),
   animationClip: document.getElementById("animation-clip"),
   animationTime: document.getElementById("animation-time"),
+  animationScrub: document.getElementById("animation-scrub"),
   animationName: document.getElementById("animation-name"),
   animationNames: document.getElementById("animation-names"),
   animationPreview: document.getElementById("animation-preview"),
@@ -827,6 +828,7 @@ function showEditor(editor) {
     ? `Previewed ${animationPreview.name} at ${animationPreview.time}s · ` +
       `${animationPreview.updated.length} nodes`
     : "No animation preview.";
+  syncAnimationTimeline(editor);
   if (!busy) {
     updatePlayButtons(play);
   }
@@ -1614,6 +1616,46 @@ function sampleAnimationClip() {
     elements.animationName.value = `${node.name || node.id}-clip`;
   }
   elements.animationState.textContent = `Sample clip for ${node.id}.`;
+  syncAnimationTimeline(editorState);
+}
+
+function animationDuration(editor) {
+  const name = elements.animationName.value.trim();
+  if (name && editor) {
+    const entry = (editor.animations || []).find(
+      (item) => item.name === name,
+    );
+    if (entry && Number.isFinite(entry.duration)) {
+      return Math.max(0.01, Number(entry.duration));
+    }
+  }
+  try {
+    const clip = JSON.parse(elements.animationClip.value || "{}");
+    let duration = 0.0;
+    for (const group of ["position", "rotation", "scale"]) {
+      const tracks = clip[group] || {};
+      for (const track of Object.values(tracks)) {
+        for (const key of (track && track.keys) || []) {
+          const time = Number(key && key.t);
+          if (Number.isFinite(time)) {
+            duration = Math.max(duration, time);
+          }
+        }
+      }
+    }
+    return Math.max(0.01, duration);
+  } catch {
+    return 1.0;
+  }
+}
+
+function syncAnimationTimeline(editor) {
+  const duration = animationDuration(editor);
+  elements.animationScrub.max = String(duration);
+  const time = Number(elements.animationTime.value);
+  elements.animationScrub.value = String(
+    Math.min(Math.max(Number.isFinite(time) ? time : 0, 0), duration),
+  );
 }
 
 async function previewAnimation() {
@@ -2313,6 +2355,18 @@ elements.animationSample.addEventListener("click", () => run(sampleAnimationClip
 elements.animationSave.addEventListener("click", () => run(saveAnimation));
 elements.animationDelete.addEventListener("click", () => run(deleteAnimation));
 elements.animationRestore.addEventListener("click", () => run(restoreAnimation));
+elements.animationTime.addEventListener("input", () => {
+  const time = Number(elements.animationTime.value);
+  if (!Number.isFinite(time)) {
+    return;
+  }
+  const max = Number(elements.animationScrub.max) || 1;
+  elements.animationScrub.value = String(Math.min(Math.max(0, time), max));
+});
+elements.animationScrub.addEventListener("input", () => {
+  elements.animationTime.value = elements.animationScrub.value;
+});
+elements.animationScrub.addEventListener("change", () => run(previewAnimation));
 elements.hierarchyFilter.addEventListener("input", () => {
   if (editorState) {
     renderHierarchy(editorState);

@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-material-delete-v1",
+    "task_id": "keystone-timeline-scrub-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794115880.3847344,
+    "updated_at": 1794116297.7869709,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794115880.7340326
+    "completed_at": 1794116298.004384
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-project-export-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-project-export-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794110888.0912743,
-      "timestamp_str": "2026-11-08 07:08:08",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-animation-preview-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan inline animation-clip preview with time scrubbing and undo",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794110924.5291348,
-      "timestamp_str": "2026-11-08 07:08:44",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "The engine has deterministic clips, sampling and pose application, but the editor cannot preview animation, so authored clips are invisible until gameplay runs.",
-        "benefits": "preview_animation samples an inline clip at a chosen time, applies it to the scene in one undo entry, and the console can generate a sample clip from the selected node and scrub it.",
-        "risks": "contract: editor schema 37 and one new action; dependency: none; concurrency: editor lock; state: clip validation, finite time, unknown node ids, pose overwrite semantics, undo, play-mode blocking.",
-        "mitigation": "Parse through AnimationClip.from_dict, validate time, use apply_pose, wrap the mutation in history, expose updated ids/time, and add preview/undo/error regressions."
-      },
-      "plan_digest": "ac0f684a59ae9f322728fc9af2ecb550cc5a1c07a738c3d0c10e3edf2d173704"
-    },
-    {
-      "task_id": "keystone-animation-preview-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Inline animation preview implemented: preview_animation parses schema-1 clips, samples at a non-negative time, applies poses in one undo entry, exposes animation_preview name/time/updated/track_count, console clip editor with sample-selected and preview actions, play-mode blocking, schema 37; 772 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 37, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794111341.2799156,
-      "timestamp_str": "2026-11-08 07:15:41",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-animation-preview-v1",
       "phase": "completed",
@@ -257,6 +218,45 @@
       "status": "completed",
       "timestamp": 1794115880.7340355,
       "timestamp_str": "2026-11-08 08:31:20",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-timeline-scrub-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan an animation timeline scrubber tied to clip duration and preview",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794115920.265698,
+      "timestamp_str": "2026-11-08 08:32:00",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "Animation preview only accepts a typed time; there is no visual timeline and no duration feedback.",
+        "benefits": "A range scrubber derives duration from a library clip or inline keys, mirrors the time field, and previews on release.",
+        "risks": "contract: UI-only, no API/schema change; dependency: none; concurrency: debounced preview actions; state: malformed clip JSON, zero-length clips, library duration, time clamping, scene refresh.",
+        "mitigation": "Parse key times defensively, prefer library duration, clamp both controls, preview only on change, and add static timeline wiring regressions."
+      },
+      "plan_digest": "5f406456c47f27911db1d76b1da1ca2131f7a02069fa51fab9e7cc6514e9210b"
+    },
+    {
+      "task_id": "keystone-timeline-scrub-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Animation timeline scrubber implemented: range control derives duration from library clip or inline key times, mirrors/clamps the time field, previews once on release, safe malformed-JSON fallback; 779 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 40, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794116297.7869709,
+      "timestamp_str": "2026-11-08 08:38:17",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-timeline-scrub-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-timeline-scrub-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794116298.0043855,
+      "timestamp_str": "2026-11-08 08:38:18",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

@@ -2877,6 +2877,7 @@ class WebServerTest(unittest.TestCase):
             "play-snapshot",
             "animation-clip",
             "animation-time",
+            "animation-scrub",
             "animation-name",
             "animation-names",
             "animation-preview",
@@ -3087,6 +3088,9 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("playSnapshot", script)
         self.assertIn("previewAnimation", script)
         self.assertIn("sampleAnimationClip", script)
+        self.assertIn("animationDuration", script)
+        self.assertIn("syncAnimationTimeline", script)
+        self.assertIn("animationScrub", script)
         self.assertIn("saveAnimation", script)
         self.assertIn("deleteAnimation", script)
         self.assertIn("restoreAnimation", script)

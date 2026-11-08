@@ -58,6 +58,8 @@
           <label>Preview time <input id="animation-time" type="number" min="0" step="0.05" value="0"></label>
           <label>Clip name <input id="animation-name" type="text" list="animation-names"></label>
         </div>
+        <label class="stack" for="animation-scrub">Timeline</label>
+        <input id="animation-scrub" type="range" min="0" max="1" step="0.01" value="0">
         <datalist id="animation-names"></datalist>
         <div class="buttons">
           <button id="animation-preview" type="button">Preview animation</button>

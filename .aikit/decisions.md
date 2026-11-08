@@ -1224,3 +1224,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Saved materials could be created and assigned but never removed, so the material library grew without a lifecycle.
 - **Decision**: Add `MaterialLibrary.delete/trash/restore` using the shared recoverable trash helper. Add `delete_material` and `restore_material` actions. Deletion is refused while any node in the current scene references the registered material object; otherwise the file moves to `.trash`, the registry record is removed, and a later restore re-registers `material.<name>`. The console adds Delete material and Restore material controls. Bump the editor schema to 40.
 - **Consequences**: 779 tests green; library delete/restore, in-use protection, registry removal/re-registration, inventory/trash exposure and restore are covered. Deleting a material still referenced by an unsaved or unloaded scene is the user's responsibility, and scene/prefab asset writes remain outside scene undo.
+
+### ADR-150: Animation timeline scrubber
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Animation preview accepted only a typed time value, with no duration feedback or visual timeline for scrubbing.
+- **Decision**: Add a range scrubber to the animation panel. Its duration comes from the selected library entry when available, otherwise from the maximum key time in the inline clip JSON, with a 0.01s floor and a safe 1s fallback for malformed input. Scrubbing mirrors the time field; releasing the scrubber previews once through `preview_animation`. The time field also clamps the scrubber. No API or schema change.
+- **Consequences**: 779 tests green; static coverage verifies duration derivation and scrub/time wiring. Scrubbing records one preview undo entry per release, invalid inline JSON only affects duration estimation, and playback/loop controls remain future work.
