@@ -16,6 +16,7 @@ from unittest.mock import patch
 
 from keystone import web
 from keystone.animation import AnimationClip, Track
+from keystone.animation_blend import BlendSample, BlendSpace1D
 from keystone.animation_state import (
     AnimationState,
     AnimationStateMachine,
@@ -111,6 +112,36 @@ def _state_machine_document():
             )
         ],
         {"speed": 0.0},
+    ).to_dict()
+
+
+def _blend_space_document():
+    walk = AnimationClip(
+        name="walk",
+        position_tracks=(
+            (
+                "cube-0",
+                Track(
+                    times=(0.0, 1.0),
+                    values=(Vec3(0, 0, 0), Vec3(0, 1, 0)),
+                ),
+            ),
+        ),
+    )
+    run = AnimationClip(
+        name="run",
+        position_tracks=(
+            (
+                "cube-0",
+                Track(
+                    times=(0.0, 1.0),
+                    values=(Vec3(2, 0, 0), Vec3(2, 1, 0)),
+                ),
+            ),
+        ),
+    )
+    return BlendSpace1D(
+        (BlendSample(walk, 0.0), BlendSample(run, 1.0))
     ).to_dict()
 
 
@@ -4893,6 +4924,54 @@ class WebServerTest(unittest.TestCase):
                 )
             self.assertEqual(caught.exception.status, 400)
             self.assertIn("already exists", caught.exception.why)
+
+    def test_editor_preview_blend_space(self):
+        session = GameSession(CubeDemo())
+        document = _blend_space_document()
+        previewed = session.editor_action(
+            {
+                "action": "preview_blend_space",
+                "blend_space": document,
+                "parameter": 0.5,
+                "time": 0.0,
+            }
+        )
+        preview = previewed["blend_space_preview"]
+        self.assertEqual(preview["parameter"], 0.5)
+        self.assertIn("cube-0", preview["updated"])
+        self.assertEqual(
+            preview["report"]["thresholds"], [0.0, 1.0]
+        )
+        moved = next(
+            node for node in previewed["nodes"] if node["id"] == "cube-0"
+        )
+        self.assertEqual(moved["transform"]["position"][0], 1.0)
+        self.assertEqual(previewed["history"]["undo"], 1)
+
+        before = previewed["history"]["undo"]
+        unrecorded = session.editor_action(
+            {
+                "action": "preview_blend_space",
+                "blend_space": document,
+                "parameter": 1.0,
+                "time": 0.0,
+                "record": False,
+            }
+        )
+        self.assertFalse(
+            unrecorded["blend_space_preview"]["record"]
+        )
+        self.assertEqual(unrecorded["history"]["undo"], before)
+
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action(
+                {
+                    "action": "preview_blend_space",
+                    "blend_space": document,
+                    "parameter": float("nan"),
+                }
+            )
+        self.assertEqual(caught.exception.status, 400)
 
     def test_editor_animation_key_authoring(self):
         with tempfile.TemporaryDirectory() as directory:

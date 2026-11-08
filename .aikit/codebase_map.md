@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `147`
 - **Total Classes**: `234`
-- **Total Top-Level Functions**: `424`
-- **Total Class Methods**: `1495`
-- **Total Source Lines**: `40607`
+- **Total Top-Level Functions**: `425`
+- **Total Class Methods**: `1497`
+- **Total Source Lines**: `40863`
 
 ---
 
@@ -171,10 +171,10 @@
 ### [`keystone/animation_state.py`](keystone/animation_state.py)
 > *Deterministic parameter-driven animation state machines.*
 
-**Size**: `341` lines (`12668` bytes)
+**Size**: `385` lines (`14429` bytes)
 
 **Classes:**
-- `class AnimationState` - *One named clip with its loop and speed settings.*
+- `class AnimationState` - *One named clip or 1D blend space with loop and speed settings.*
   - Method `.__post_init__()`
   - Method `.to_dict()`
   - Method `.from_dict(data)`
@@ -1489,7 +1489,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `90` lines (`1994` bytes)
+**Size**: `91` lines (`2021` bytes)
 
 ---
 
@@ -1842,14 +1842,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `604` lines (`25637` bytes)
+**Size**: `650` lines (`26967` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2904` lines (`129889` bytes)
+**Size**: `2957` lines (`132487` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2074,7 +2074,7 @@
 ### [`tests/test_animation_state.py`](tests/test_animation_state.py)
 > *Tests for deterministic parameter-driven animation state machines.*
 
-**Size**: `220` lines (`8069` bytes)
+**Size**: `253` lines (`9458` bytes)
 
 **Classes:**
 - `class AnimationStateMachineTest`
@@ -2084,6 +2084,7 @@
   - Method `.test_zero_speed_target_still_completes_crossfade()`
   - Method `.test_crossfade_blending_finishes()`
   - Method `.test_serialization_round_trip_and_report()`
+  - Method `.test_blend_space_state_samples_parameter_and_round_trips()`
   - Method `.test_validation_rejects_bad_shapes()`
   - Method `.test_available_transitions_and_play_errors()`
   - Method `.test_parameter_can_be_added_after_construction()`
@@ -3447,7 +3448,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `5881` lines (`242373` bytes)
+**Size**: `5960` lines (`244784` bytes)
 
 **Classes:**
 - `class Health`
@@ -3554,6 +3555,7 @@
   - Method `.test_editor_state_machine_library_and_preview()`
   - Method `.test_editor_state_machine_rename_and_duplicate()`
   - Method `.test_editor_state_machine_restore_collision_is_400()`
+  - Method `.test_editor_preview_blend_space()`
   - Method `.test_editor_animation_key_authoring()`
   - Method `.test_editor_material_library_save_assign_and_reload()`
   - Method `.test_editor_component_lifecycle_play_mode()`
@@ -3571,5 +3573,6 @@
 **Functions:**
 - `def _triangle_gltf()`
 - `def _state_machine_document()`
+- `def _blend_space_document()`
 
 ---

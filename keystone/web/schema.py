@@ -116,6 +116,38 @@ EDITOR_EXAMPLES = {
         },
         "time": 0.5,
     },
+    "preview_blend_space": {
+        "action": "preview_blend_space",
+        "blend_space": {
+            "schema": 1,
+            "samples": [
+                {
+                    "clip": {
+                        "schema": 1,
+                        "name": "walk",
+                        "position": {},
+                        "rotation": {},
+                        "scale": {},
+                        "events": [],
+                    },
+                    "threshold": 0.0,
+                },
+                {
+                    "clip": {
+                        "schema": 1,
+                        "name": "run",
+                        "position": {},
+                        "rotation": {},
+                        "scale": {},
+                        "events": [],
+                    },
+                    "threshold": 1.0,
+                },
+            ],
+        },
+        "parameter": 0.5,
+        "time": 0.0,
+    },
     "save_animation": {
         "action": "save_animation",
         "name": "bob",
@@ -370,6 +402,19 @@ EDITOR_SCHEMA = {
         "play_step": ["frames", "actions"],
         "play": ["active", "paused", "frames", "step", "status", "snapshot"],
         "preview_animation": ["clip", "time", "record"],
+        "preview_blend_space": [
+            "blend_space",
+            "parameter",
+            "time",
+            "record",
+        ],
+        "blend_space_preview": [
+            "parameter",
+            "time",
+            "updated",
+            "record",
+            "report",
+        ],
         "save_animation": ["name", "clip"],
         "delete_animation": ["name"],
         "restore_animation": ["trash"],
@@ -578,6 +623,7 @@ EDITOR_SCHEMA = {
         "schema 56 adds a layer inventory plus set_layer_visible, with editor-only hidden layers filtered by the viewer",
         "schema 57 adds node lock state plus set_nodes_locked; locked nodes and descendants reject transforms, deletes, reparenting, asset/component edits and prefab revert/apply",
         "schema 58 adds rename_state_machine and duplicate_state_machine for .kstate library entries",
+        "schema 59 adds preview_blend_space for inline 1D blend-space previews and export",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

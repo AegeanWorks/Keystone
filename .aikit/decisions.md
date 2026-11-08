@@ -1640,3 +1640,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Keystone had clips, crossfades, events and state machines, but scalar-driven blends such as walk-to-run still needed game-side pose code. Unity/Unreal-style animation authoring needs a reusable blend primitive.
 - **Decision**: Add `BlendSample` and `BlendSpace1D`. Samples carry a clip and finite threshold; the space sorts thresholds, rejects duplicates and empty inputs, clamps outside the range, samples both neighbours at the same clip time and uses `blend_poses` for the linear in-between. Provide schema-1 `to_dict`/`from_dict`, a JSON-safe `report` and public package exports. Add unit tests for interpolation, clamping, ordering, serialization, reports and validation.
 - **Consequences**: Games and AI clients can drive a scalar animation blend deterministically. State-machine integration and editor authoring of blend spaces remain future work; the core API is additive and game-agnostic.
+
+### ADR-202: Blend-space states and editor preview
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The 1D blend-space primitive was core-only. State machines could not sample it, and AI/editor clients had no way to preview an inline blend space.
+- **Decision**: Extend `AnimationState` with optional `blend_space` and `blend_parameter`; serialize both additively, derive the representative clip when omitted, and have the state machine sample the blend space at the active parameter after controller time advances. Add schema-1 JSON/report metadata. Add a `preview_blend_space` editor action that applies an inline blend pose with optional undo recording, and expose `blend_space_preview`. Bump the editor schema to 59. Add core and web regressions.
+- **Consequences**: Blend states work in code and through the JSON state-machine API; editor clients can preview them. Clip events still come from the representative clip, and the console has no dedicated blend-space authoring panel yet.

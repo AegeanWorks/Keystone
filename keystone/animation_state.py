@@ -11,13 +11,16 @@ from collections.abc import Mapping
 from dataclasses import dataclass, replace
 
 from keystone.animation import AnimationClip, AnimationController
+from keystone.animation_blend import BlendSpace1D
 from keystone.scene import Transform
 
 __all__ = ["AnimationState", "AnimationStateMachine", "AnimationTransition"]
 
 OPERATORS = ("greater", "less", "equal", "not_equal", "trigger")
 PARAMETER = float | bool
-_STATE_KEYS = frozenset({"name", "clip", "loop", "speed"})
+_STATE_KEYS = frozenset(
+    {"name", "clip", "loop", "speed", "blend_space", "blend_parameter"}
+)
 _TRANSITION_KEYS = frozenset(
     {"source", "target", "parameter", "operator", "value", "duration"}
 )
@@ -53,12 +56,14 @@ def _parameter_value(label: str, value: object) -> PARAMETER:
 
 @dataclass(frozen=True, slots=True)
 class AnimationState:
-    """One named clip with its loop and speed settings."""
+    """One named clip or 1D blend space with loop and speed settings."""
 
     name: str
     clip: AnimationClip
     loop: bool = True
     speed: float = 1.0
+    blend_space: BlendSpace1D | None = None
+    blend_parameter: str = "speed"
 
     def __post_init__(self) -> None:
         _name("state name", self.name)
@@ -67,14 +72,23 @@ class AnimationState:
         if not isinstance(self.loop, bool):
             raise TypeError("state loop must be a boolean")
         _finite("state speed", self.speed, minimum=0.0)
+        if self.blend_space is not None and not isinstance(
+            self.blend_space, BlendSpace1D
+        ):
+            raise TypeError("state blend_space must be a BlendSpace1D or None")
+        _name("state blend parameter", self.blend_parameter)
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        document: dict[str, object] = {
             "name": self.name,
             "clip": self.clip.to_dict(),
             "loop": self.loop,
             "speed": self.speed,
         }
+        if self.blend_space is not None:
+            document["blend_space"] = self.blend_space.to_dict()
+            document["blend_parameter"] = self.blend_parameter
+        return document
 
     @classmethod
     def from_dict(cls, data: object) -> AnimationState:
@@ -83,13 +97,27 @@ class AnimationState:
         unknown = set(data) - _STATE_KEYS
         if unknown:
             raise ValueError(f"animation state has unknown keys: {sorted(unknown)}")
-        if "name" not in data or "clip" not in data:
-            raise ValueError("animation state needs a name and clip")
+        if "name" not in data:
+            raise ValueError("animation state needs a name")
+        raw_space = data.get("blend_space")
+        blend_space = (
+            BlendSpace1D.from_dict(raw_space)
+            if raw_space is not None
+            else None
+        )
+        if "clip" in data:
+            clip = AnimationClip.from_dict(data["clip"])
+        elif blend_space is not None:
+            clip = blend_space.samples[0].clip
+        else:
+            raise ValueError("animation state needs a clip or blend_space")
         return cls(
             name=data["name"],
-            clip=AnimationClip.from_dict(data["clip"]),
+            clip=clip,
             loop=data.get("loop", True),
             speed=data.get("speed", 1.0),
+            blend_space=blend_space,
+            blend_parameter=data.get("blend_parameter", "speed"),
         )
 
 
@@ -276,6 +304,12 @@ class AnimationStateMachine:
             break
         pose, events = self.controller.advance_with_events(float(dt))
         self.events.extend(events)
+        state = self.states[self.current]
+        if state.blend_space is not None and not self.controller.blending:
+            parameter = self.parameters.get(state.blend_parameter, 0.0)
+            pose = state.blend_space.sample(
+                float(parameter), self.controller.time
+            )
         return pose
 
     def take_events(self) -> list[str]:
@@ -294,6 +328,16 @@ class AnimationStateMachine:
             "transitions": len(self.transitions),
             "parameters": dict(sorted(self.parameters.items())),
             "blending": self.controller.blending,
+            "blend_space": (
+                state.blend_space.report()
+                if state.blend_space is not None
+                else None
+            ),
+            "blend_parameter": (
+                state.blend_parameter
+                if state.blend_space is not None
+                else None
+            ),
             "events": list(self.events),
         }
 

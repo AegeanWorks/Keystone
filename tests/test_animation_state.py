@@ -10,6 +10,7 @@ from keystone import (
     AnimationTransition,
 )
 from keystone.animation import AnimationClip, Track
+from keystone.animation_blend import BlendSample, BlendSpace1D
 from keystone.math3d import Vec3
 
 
@@ -146,6 +147,38 @@ class AnimationStateMachineTest(unittest.TestCase):
         )
         self.assertEqual(restored.report()["states"], ["idle", "run"])
         self.assertEqual(restored.report()["transitions"], 1)
+
+    def test_blend_space_state_samples_parameter_and_round_trips(self):
+        walk = _clip("walk", 0.0)
+        run = _clip("run", 10.0)
+        space = BlendSpace1D(
+            (BlendSample(walk, 0.0), BlendSample(run, 10.0))
+        )
+        state = AnimationState(
+            "locomotion",
+            walk,
+            blend_space=space,
+            blend_parameter="speed",
+        )
+        machine = AnimationStateMachine([state], parameters={"speed": 5.0})
+        pose = machine.advance(0.0)
+        self.assertEqual(pose["node"].position, Vec3(5.0, 0.0, 0.0))
+        machine.set_parameter("speed", 10.0)
+        pose = machine.advance(0.0)
+        self.assertEqual(pose["node"].position, Vec3(10.0, 0.0, 0.0))
+
+        document = machine.to_dict()
+        self.assertIn("blend_space", document["states"][0])
+        restored = AnimationStateMachine.from_dict(document)
+        report = restored.report()
+        self.assertEqual(report["blend_parameter"], "speed")
+        self.assertEqual(report["blend_space"]["thresholds"], [0.0, 10.0])
+        self.assertEqual(restored.advance(0.0)["node"].position, Vec3(10.0, 0.0, 0.0))
+
+        without_clip = state.to_dict()
+        without_clip.pop("clip")
+        rebuilt = AnimationState.from_dict(without_clip)
+        self.assertEqual(rebuilt.clip.name, "walk")
 
     def test_validation_rejects_bad_shapes(self):
         idle = AnimationState("idle", _clip("idle"))

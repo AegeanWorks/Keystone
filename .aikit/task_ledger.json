@@ -1,75 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-blend-space-v1",
+    "task_id": "keystone-blend-state-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794151476.674346,
+    "updated_at": 1794152496.7639363,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
     "continuations": [],
-    "completed_at": 1794151477.8410506
+    "completed_at": 1794152498.6794565
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-commit-audit-v3-1to39",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: audit range 1->39 state-machine lifecycle, history/clipboard cleanup; map restore collisions to a 400",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794147849.4222546,
-      "timestamp_str": "2026-11-08 17:24:09",
-      "agent": "opencode:keystone",
-      "impact_assessment": {
-        "why": "State-machine restore raises FileExistsError when the original name is occupied, and editor_action only maps KeyError/TypeError/ValueError, so clients receive a 500 for a normal collision.",
-        "benefits": "Restore collisions become actionable client errors instead of server failures.",
-        "risks": "contract: state-machine restore failure path; dependency: library_trash collision check; concurrency: session lock unchanged; state: trash/live files.",
-        "mitigation": "Catch FileExistsError in the action, add a collision regression, and run the 6/6 gate."
-      },
-      "plan_digest": "5b47de2cf592a6241670d29fb187f400e4f743cfd9218ea7aad4cced28cc6a42"
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-1to39",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/3] Map state-machine restore collisions to HTTP 400 with a rename/delete fix; regression covers save-delete-save-restore",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794148009.2235382,
-      "timestamp_str": "2026-11-08 17:26:49",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "state": "restore collision and regression green",
-        "next": "record the gate and push"
-      }
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-1to39",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Range 1->39 gate passes 6/6 with actionable restore collisions; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794148009.8439133,
-      "timestamp_str": "2026-11-08 17:26:49",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "next": "commit and push range 1->39, then continue at 1->42",
-        "evidence": "full 6/6 gate green"
-      }
-    },
-    {
-      "task_id": "keystone-commit-audit-v3-1to39",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-commit-audit-v3-1to39' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794148010.4357362,
-      "timestamp_str": "2026-11-08 17:26:50",
-      "agent": "opencode:keystone"
-    },
     {
       "task_id": "keystone-commit-audit-v3-1to42",
       "phase": "phase 2",
@@ -300,6 +242,64 @@
       "status": "completed",
       "timestamp": 1794151477.8410532,
       "timestamp_str": "2026-11-08 18:24:37",
+      "agent": "opencode:keystone"
+    },
+    {
+      "task_id": "keystone-blend-state-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: integrate BlendSpace1D into AnimationState/AnimationStateMachine and add preview_blend_space editor action",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794152493.7256565,
+      "timestamp_str": "2026-11-08 18:41:33",
+      "agent": "opencode:keystone",
+      "impact_assessment": {
+        "why": "Blend spaces were core-only. State machines and editor/AI clients could not use or inspect them.",
+        "benefits": "Scalar-driven blend states work in code and API, with schema-1 serialization/reporting and inline preview.",
+        "risks": "contract: additive state fields and editor action; dependency: blend-space core; concurrency: session lock unchanged; state: state-machine JSON and preview history.",
+        "mitigation": "Keep schema-1 compatibility, derive a representative clip when omitted, add core/web regressions and run the 6/6 gate."
+      },
+      "plan_digest": "cad7f6fb4033c8a0003ee05734b290ba1c3b8a74292123df95824245d6b6d308"
+    },
+    {
+      "task_id": "keystone-blend-state-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/3] Blend states, schema-1 round trips/reports and preview_blend_space action implemented; core and web tests green",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794152495.2700293,
+      "timestamp_str": "2026-11-08 18:41:35",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "state": "integration and preview complete",
+        "next": "record the gate and publish"
+      }
+    },
+    {
+      "task_id": "keystone-blend-state-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Blend-state integration and editor preview pass the full 6/6 gate; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794152496.7639363,
+      "timestamp_str": "2026-11-08 18:41:36",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "next": "commit and push the blend-state feature",
+        "evidence": "full 6/6 gate green"
+      }
+    },
+    {
+      "task_id": "keystone-blend-state-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-blend-state-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794152498.6794581,
+      "timestamp_str": "2026-11-08 18:41:38",
       "agent": "opencode:keystone"
     }
   ]
