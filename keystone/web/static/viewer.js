@@ -480,6 +480,7 @@ export class SceneViewer {
     this.gizmoScaleHandle = this.buildGizmoVao(gizmoScaleArrow());
     this.gridEnabled = true;
     this.snapEnabled = false;
+    this.snapSteps = { translate: 0.25, rotate: 15.0, scale: 0.1 };
     this.grid = this.buildGridVaos();
     this.pivotIcon = this.buildGizmoVao({
       positions: new Float32Array([
@@ -726,6 +727,25 @@ export class SceneViewer {
     return this.snapEnabled;
   }
 
+  setSnapSteps(steps) {
+    if (!steps || typeof steps !== "object") {
+      throw new TypeError("snap steps must be an object");
+    }
+    const translate = Number(steps.translate);
+    const rotate = Number(steps.rotate);
+    const scale = Number(steps.scale);
+    if (
+      ![translate, rotate, scale].every(
+        (value) => Number.isFinite(value) && value > 0.0,
+      )
+    ) {
+      throw new Error("snap steps must be positive numbers");
+    }
+    this.snapSteps = { translate, rotate, scale };
+    this.notifyLayoutChange();
+    return { ...this.snapSteps };
+  }
+
   snapActive(event) {
     return (
       this.snapEnabled ||
@@ -858,6 +878,7 @@ export class SceneViewer {
       projection: this.viewPreset,
       grid: this.gridEnabled,
       snap: this.snapEnabled,
+      snapSteps: { ...this.snapSteps },
     };
   }
 
@@ -888,6 +909,19 @@ export class SceneViewer {
     }
     this.gridEnabled = Boolean(layout.grid);
     this.snapEnabled = Boolean(layout.snap);
+    const steps = layout.snapSteps;
+    if (steps && typeof steps === "object") {
+      const translate = Number(steps.translate);
+      const rotate = Number(steps.rotate);
+      const scale = Number(steps.scale);
+      if (
+        [translate, rotate, scale].every(
+          (value) => Number.isFinite(value) && value > 0.0,
+        )
+      ) {
+        this.snapSteps = { translate, rotate, scale };
+      }
+    }
     this.viewMode = layout.viewMode === "game" ? "game" : "scene";
     const projection = ["persp", "top", "front", "side"].includes(
       layout.projection,
@@ -1720,7 +1754,7 @@ export class SceneViewer {
         drag.start[0] * current[0] + drag.start[1] * current[1],
       );
       if (this.snapActive(event)) {
-        const step = Math.PI / 12;
+        const step = (this.snapSteps.rotate * Math.PI) / 180;
         angle = Math.round(angle / step) * step;
       }
       drag.angle = Math.round(angle * 1e6) / 1e6;
@@ -1749,7 +1783,8 @@ export class SceneViewer {
     if (drag.mode === "scale") {
       let factor = 1 + (current - drag.start) / (this.gizmoScale(drag.origin) * 2.0);
       if (this.snapActive(event)) {
-        factor = Math.round(factor / 0.1) * 0.1;
+        factor =
+          Math.round(factor / this.snapSteps.scale) * this.snapSteps.scale;
       }
       factor = Math.max(0.01, Math.round(factor * 1e6) / 1e6);
       drag.factor = factor;
@@ -1775,7 +1810,9 @@ export class SceneViewer {
     }
     let distance = current - drag.start;
     if (this.snapActive(event)) {
-      distance = Math.round(distance / 0.25) * 0.25;
+      distance =
+        Math.round(distance / this.snapSteps.translate) *
+        this.snapSteps.translate;
     }
     distance = Math.round(distance * 1e6) / 1e6;
     drag.delta = [

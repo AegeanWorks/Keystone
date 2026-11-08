@@ -1256,3 +1256,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: AI and human authors could save scenes with unregistered assets, dangling prefab links or duplicate names without an explicit preflight report.
 - **Decision**: Add `validate_scene`, returning a schema-1 report with `ok`, error/warning counts, node count and structured issues (`severity`, `node_id`, `field`, `message`). Check unregistered mesh/material references, dangling prefab links, blank names, duplicate names and empty scene groups; warn when the game exposes no AssetRegistry. The action does not mutate history, resets on the next editor action, and the console adds Validate scene with a compact count readout. Bump the editor schema to 42.
 - **Consequences**: 780 tests green; valid, missing-material, dangling-link, duplicate-name and reset cases are covered. Validation uses registry identity and current prefab cache, reports no geometry/topology or performance issues, and does not block saving on errors.
+
+### ADR-154: Editable snap increments
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Snap rounding was hard-coded to 0.25 units, 15 degrees and 0.1 scale, so authors could not match a project grid or angle convention.
+- **Decision**: Store translate/rotate/scale snap increments on `SceneViewer`, validate them as finite positive numbers, and route translate, rotate and scale rounding through those values. The console adds Snap move/rotate/scale number inputs, persists increments in the workspace layout snapshot, restores validated values, and resets defaults (0.25, 15, 0.1) with Reset layout. No API or schema change.
+- **Consequences**: 780 tests green; static viewer/console coverage verifies editable increments, layout persistence and reset wiring. Extreme increments are allowed, snapping remains opt-in through the toggle or Ctrl/Cmd, and the nudge shortcuts keep their fixed 0.1/1.0 steps.

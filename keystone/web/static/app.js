@@ -143,6 +143,9 @@ const elements = {
   viewMode: document.getElementById("view-mode"),
   gridToggle: document.getElementById("grid-toggle"),
   snapToggle: document.getElementById("snap-toggle"),
+  snapMove: document.getElementById("snap-move"),
+  snapRotate: document.getElementById("snap-rotate"),
+  snapScale: document.getElementById("snap-scale"),
   projectionMode: document.getElementById("projection-mode"),
   layoutReset: document.getElementById("layout-reset"),
   gizmoMove: document.getElementById("gizmo-move"),
@@ -193,6 +196,7 @@ try {
   viewer.onProjectionMode = updateProjectionButton;
   updateProjectionButton(viewer.viewPreset);
   viewer.onLayoutChange = scheduleLayoutSave;
+  syncSnapSteps();
 } catch (error) {
   elements.viewerStatus.textContent = `Viewer unavailable: ${error.message}`;
 }
@@ -1206,6 +1210,31 @@ function toggleSnap() {
   setStatus(`snap ${enabled ? "on" : "off"}`);
 }
 
+function syncSnapSteps() {
+  if (!viewer) {
+    return;
+  }
+  elements.snapMove.value = viewer.snapSteps.translate;
+  elements.snapRotate.value = viewer.snapSteps.rotate;
+  elements.snapScale.value = viewer.snapSteps.scale;
+}
+
+function applySnapSteps() {
+  if (!viewer) {
+    return;
+  }
+  viewer.setSnapSteps({
+    translate: Number(elements.snapMove.value),
+    rotate: Number(elements.snapRotate.value),
+    scale: Number(elements.snapScale.value),
+  });
+  syncSnapSteps();
+  setStatus(
+    `snap steps: ${viewer.snapSteps.translate} / ` +
+      `${viewer.snapSteps.rotate}° / ${viewer.snapSteps.scale}`,
+  );
+}
+
 function updateProjectionButton(preset) {
   const labels = {
     persp: "Persp",
@@ -1275,6 +1304,7 @@ function restoreLayout() {
     `Grid: ${viewer.gridEnabled ? "on" : "off"}`;
   elements.snapToggle.textContent =
     `Snap: ${viewer.snapEnabled ? "on" : "off"}`;
+  syncSnapSteps();
 }
 
 function resetLayout() {
@@ -1290,6 +1320,8 @@ function resetLayout() {
   viewer.setProjectionPreset("persp");
   viewer.setGrid(true);
   viewer.setSnap(false);
+  viewer.setSnapSteps({ translate: 0.25, rotate: 15, scale: 0.1 });
+  syncSnapSteps();
   viewer.resetCamera();
   updateViewModeButton(viewer.viewMode);
   updateProjectionButton(viewer.viewPreset);
@@ -2466,6 +2498,13 @@ elements.viewReset.addEventListener("click", () => {
 elements.viewMode.addEventListener("click", () => run(toggleViewMode));
 elements.gridToggle.addEventListener("click", toggleGrid);
 elements.snapToggle.addEventListener("click", toggleSnap);
+for (const input of [
+  elements.snapMove,
+  elements.snapRotate,
+  elements.snapScale,
+]) {
+  input.addEventListener("change", () => run(applySnapSteps));
+}
 elements.projectionMode.addEventListener("click", toggleProjection);
 elements.layoutReset.addEventListener("click", resetLayout);
 elements.viewFocus.addEventListener("click", () => {

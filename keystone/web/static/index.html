@@ -193,6 +193,11 @@
           <button id="gizmo-scale" type="button">Scale</button>
           <button id="gizmo-space" type="button">Space: World</button>
         </div>
+        <div class="field-grid">
+          <label>Snap move <input id="snap-move" type="number" min="0.001" step="0.01" value="0.25"></label>
+          <label>Snap rotate <input id="snap-rotate" type="number" min="0.1" step="1" value="15"></label>
+          <label>Snap scale <input id="snap-scale" type="number" min="0.001" step="0.01" value="0.1"></label>
+        </div>
         <label class="stack" for="position">Position x/y/z</label>
         <input id="position" type="text" value="0, 0, 0">
         <label class="stack" for="rotation">Rotation x/y/z/w</label>

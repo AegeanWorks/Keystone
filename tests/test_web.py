@@ -3056,6 +3056,9 @@ class WebServerTest(unittest.TestCase):
             "view-mode",
             "grid-toggle",
             "snap-toggle",
+            "snap-move",
+            "snap-rotate",
+            "snap-scale",
             "projection-mode",
             "layout-reset",
             "gizmo-move",
@@ -3137,6 +3140,10 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("updateViewModeButton", script)
         self.assertIn("toggleGrid", script)
         self.assertIn("toggleSnap", script)
+        self.assertIn("syncSnapSteps", script)
+        self.assertIn("applySnapSteps", script)
+        self.assertIn("snapSteps", script)
+        self.assertIn("setSnapSteps", script)
         self.assertIn("toggleProjection", script)
         self.assertIn("updateProjectionButton", script)
         self.assertIn("scheduleLayoutSave", script)
