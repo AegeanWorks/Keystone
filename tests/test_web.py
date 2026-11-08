@@ -2,6 +2,7 @@
 
 import base64
 import json
+import os
 import struct
 import tempfile
 import threading
@@ -3447,6 +3448,83 @@ class WebServerTest(unittest.TestCase):
                 bare.editor_action({"action": "reload_assets"})
             self.assertEqual(caught.exception.status, 400)
             self.assertIn("AssetRegistry", caught.exception.why)
+
+    def test_editor_reload_rebinds_unchanged_payload_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name="reload-identity")
+            assets = root / "assets"
+            assets.mkdir()
+            source = assets / "crate.obj"
+            source.write_text(
+                "v 0 0 0\nv 1 0 0\nv 0 1 0\nvn 0 0 1\nf 1//1 2//1 3//1\n",
+                encoding="utf-8",
+            )
+            session = GameSession(CubeDemo(), project_dir=root)
+            session.editor_action(
+                {"action": "import_asset", "path": "assets/crate.obj"}
+            )
+            created = session.editor_action(
+                {
+                    "action": "create_node",
+                    "name": "crate",
+                    "mesh": "project:assets/crate.obj",
+                }
+            )
+            crate_id = next(
+                node["id"]
+                for node in created["nodes"]
+                if node["name"] == "crate"
+            )
+            crate = session.game.scene.find_by_id(crate_id)
+            old_mesh = crate.mesh
+            session.editor_action(
+                {
+                    "action": "transform",
+                    "id": crate_id,
+                    "position": [1.0, 2.0, 3.0],
+                }
+            )
+
+            status = source.stat()
+            os.utime(source, (status.st_atime, status.st_mtime + 10))
+            reloaded = session.editor_action({"action": "reload_assets"})[
+                "asset_reload"
+            ]
+            self.assertTrue(reloaded["ok"])
+            self.assertNotIn(
+                "project:assets/crate.obj", reloaded["reloaded"]
+            )
+            self.assertIn(
+                "project:assets/crate.obj", reloaded["unchanged"]
+            )
+            self.assertGreaterEqual(reloaded["rebound"], 1)
+            self.assertGreaterEqual(reloaded["history_rebound"], 1)
+            record = session.game.assets.require(
+                "project:assets/crate.obj"
+            )
+            self.assertIsNot(record.payload, old_mesh)
+            self.assertIs(crate.mesh, record.payload)
+            self.assertIs(
+                session.game.scene.find_by_id(crate_id).mesh, record.payload
+            )
+
+            usages = session.editor_action(
+                {
+                    "action": "asset_usages",
+                    "asset": "project:assets/crate.obj",
+                }
+            )["asset_usages"]
+            self.assertIn(
+                {"node": crate_id, "field": "mesh"},
+                usages["scene_nodes"],
+            )
+
+            session.editor_action({"action": "undo"})
+            self.assertIs(
+                session.game.scene.find_by_id(crate_id).mesh,
+                record.payload,
+            )
 
     def test_editor_preview_animation_and_undo(self):
         session = GameSession(CubeDemo())

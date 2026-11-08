@@ -867,7 +867,7 @@ def reload_scene_assets(
     before = {record.id: record for record in registry}
     report = registry.refresh()
     replacements: dict[int, object] = {}
-    for asset_id in report.reloaded:
+    for asset_id in (*report.reloaded, *report.unchanged):
         old = before.get(asset_id)
         current = registry.get(asset_id)
         if old is None or current is None or old.payload is current.payload:
