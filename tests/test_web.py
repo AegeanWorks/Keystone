@@ -3801,6 +3801,54 @@ class WebServerTest(unittest.TestCase):
             self.assertEqual(caught.exception.status, 400)
             self.assertIn("--project", caught.exception.fix)
 
+    def test_editor_forget_asset_clears_undo_payloads(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name="forget-history")
+            assets = root / "assets"
+            assets.mkdir()
+            source = assets / "crate.obj"
+            source.write_text(
+                "v 0 0 0\nv 1 0 0\nv 0 1 0\nvn 0 0 1\nf 1//1 2//1 3//1\n",
+                encoding="utf-8",
+            )
+            session = GameSession(CubeDemo(), project_dir=root)
+            session.editor_action(
+                {"action": "import_asset", "path": "assets/crate.obj"}
+            )
+            created = session.editor_action(
+                {
+                    "action": "create_node",
+                    "name": "crate",
+                    "mesh": "project:assets/crate.obj",
+                }
+            )
+            crate_id = next(
+                node["id"]
+                for node in created["nodes"]
+                if node["name"] == "crate"
+            )
+            session.editor_action({"action": "delete_node", "id": crate_id})
+
+            forgotten = session.editor_action(
+                {"action": "forget_asset", "path": "assets/crate.obj"}
+            )["forgotten_asset"]
+            self.assertTrue(forgotten["removed"])
+            self.assertGreaterEqual(forgotten["history_cleared"], 1)
+
+            undone = session.editor_action({"action": "undo"})
+            restored = next(
+                node for node in undone["nodes"] if node["id"] == crate_id
+            )
+            self.assertIsNone(restored["mesh"])
+            self.assertIsNone(
+                session.game.scene.find_by_id(crate_id).mesh
+            )
+            self.assertNotIn(
+                "project:assets/crate.obj",
+                {asset["id"] for asset in undone["assets"]},
+            )
+
     def test_editor_asset_usages_and_saved_references(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "project"

@@ -2238,8 +2238,14 @@ class GameSession:
                             f"could not load the project manifest: {exc}",
                             "check keystone.json and restore a valid manifest",
                         ) from exc
+                    record = registry.get(identifier)
                     self.last_forgotten_asset = forget_project_asset(
                         context, registry, value
+                    )
+                    self.last_forgotten_asset["history_cleared"] = (
+                        self.history.clear_payloads({id(record.payload)})
+                        if record is not None
+                        else 0
                     )
                     updated = load_project(self.project_dir)
                     self.project_assets = updated.manifest.assets

@@ -470,7 +470,13 @@ EDITOR_SCHEMA = {
             "clipboard_rebound",
         ],
         "forget_asset": ["path"],
-        "forgotten_asset": ["path", "asset", "removed", "count"],
+        "forgotten_asset": [
+            "path",
+            "asset",
+            "removed",
+            "history_cleared",
+            "count",
+        ],
         "asset_usages": ["asset", "path"],
         "asset_usage_report": [
             "schema",

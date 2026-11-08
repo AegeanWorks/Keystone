@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
-- **Total Top-Level Functions**: `414`
-- **Total Class Methods**: `1462`
-- **Total Source Lines**: `39430`
+- **Total Top-Level Functions**: `415`
+- **Total Class Methods**: `1464`
+- **Total Source Lines**: `39528`
 
 ---
 
@@ -1664,7 +1664,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `3035` lines (`107881` bytes)
+**Size**: `3073` lines (`109300` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1676,6 +1676,7 @@
   - Method `.redo(scene, steps)` - *Restore up to `steps` redone states and return how many were redone.*
   - Method `.clear()`
   - Method `.rebind_assets(replacements)` - *Swap reloaded asset payloads in every undo and redo snapshot.*
+  - Method `.clear_payloads(payload_ids)` - *Remove forgotten payloads from every undo and redo snapshot.*
   - Method `._push(entry)`
   - Method `._append_undo(entry)`
 
@@ -1707,6 +1708,7 @@
 - `def _rebind_node_assets(node, replacements)`
 - `def _rebind_prefab_assets(prefab, replacements)` - *Swap reloaded payloads inside one cached prefab template.*
 - `def _rebind_snapshot_nodes(nodes, replacements)`
+- `def _clear_snapshot_payloads(nodes, payload_ids)`
 - `def _scene_snapshot(scene)`
 - `def _restore_scene_state(scene, snapshot)`
 - `def reload_scene_assets(scene, registry, history, prefabs, clipboard)` - *Reload file-backed assets and rebind scene, history, prefab and clipboard payloads.*
@@ -1806,14 +1808,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `581` lines (`24879` bytes)
+**Size**: `587` lines (`24969` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2798` lines (`125271` bytes)
+**Size**: `2804` lines (`125567` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3390,7 +3392,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `5445` lines (`224537` bytes)
+**Size**: `5493` lines (`226427` bytes)
 
 **Classes:**
 - `class Health`
@@ -3479,6 +3481,7 @@
   - Method `.test_editor_startup_scene_follows_rename_and_delete()`
   - Method `.test_editor_startup_rename_failure_restores_saved_scene()`
   - Method `.test_editor_forget_asset_and_project_inventory()`
+  - Method `.test_editor_forget_asset_clears_undo_payloads()`
   - Method `.test_editor_asset_usages_and_saved_references()`
   - Method `.test_editor_build_project()`
   - Method `.test_editor_reload_assets_rebinds_scene_and_history()`

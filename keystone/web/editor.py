@@ -728,6 +728,33 @@ def _rebind_snapshot_nodes(
     return rebound
 
 
+def _clear_snapshot_payloads(
+    nodes: list[object], payload_ids: set[int]
+) -> int:
+    cleared = 0
+    for data in nodes:
+        if not isinstance(data, dict):
+            continue
+        if data.get("mesh") is not None and id(data["mesh"]) in payload_ids:
+            data["mesh"] = None
+            cleared += 1
+        material = data.get("material")
+        if material is not None and id(material) in payload_ids:
+            data["material"] = None
+            cleared += 1
+        elif (
+            isinstance(material, Material)
+            and material.texture is not None
+            and id(material.texture) in payload_ids
+        ):
+            data["material"] = replace(material, texture=None)
+            cleared += 1
+        children = data.get("children")
+        if isinstance(children, list):
+            cleared += _clear_snapshot_payloads(children, payload_ids)
+    return cleared
+
+
 def _scene_snapshot(scene: Scene) -> dict[str, object]:
     return {
         "nodes": _snapshot_nodes(scene),
@@ -855,6 +882,17 @@ class EditorHistory:
             if isinstance(nodes, list):
                 rebound += _rebind_snapshot_nodes(nodes, replacements)
         return rebound
+
+    def clear_payloads(self, payload_ids: set[int]) -> int:
+        """Remove forgotten payloads from every undo and redo snapshot."""
+        if not isinstance(payload_ids, (set, frozenset)):
+            raise TypeError("payload ids must be a set")
+        cleared = 0
+        for entry in (*self._undo, *self._redo):
+            nodes = entry.snapshot.get("nodes")
+            if isinstance(nodes, list):
+                cleared += _clear_snapshot_payloads(nodes, set(payload_ids))
+        return cleared
 
     def _push(self, entry: _HistoryEntry) -> None:
         self._append_undo(entry)

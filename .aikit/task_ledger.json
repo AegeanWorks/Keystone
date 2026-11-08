@@ -1,79 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-commit-audit-v3-1to3",
+    "task_id": "keystone-commit-audit-v3-1to6",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794141688.6509004,
+    "updated_at": 1794142278.2554448,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
     "continuations": [],
-    "completed_at": 1794141689.338996
+    "completed_at": 1794142279.1307657
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-prefab-propagation-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/5] Implement persisted prefab baselines and merge-preserving refresh; add regression coverage",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794137365.4072607,
-      "timestamp_str": "2026-11-08 14:29:25",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "state": "core, tests and docs implemented",
-        "next": "record UI delivery evidence, rerun the 6/6 gate, then commit and publish",
-        "open": "UI task still unfinished",
-        "evidence": "pytest web/prefab/snapshot suites green"
-      }
-    },
-    {
-      "task_id": "keystone-prefab-propagation-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[3/5] Add console Keep overrides control, update editor schema/docs/ADR and README prefab contract",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794137374.4126284,
-      "timestamp_str": "2026-11-08 14:29:34",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "state": "static wiring and docs complete",
-        "next": "open the UI delivery task and record a reviewed screenshot"
-      }
-    },
-    {
-      "task_id": "keystone-prefab-propagation-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[4/5] Full AIKit gate passes 6/6 (test, lint, mechanics, hygiene, guidelines, secrets); checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794137375.019923,
-      "timestamp_str": "2026-11-08 14:29:35",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "next": "finish UI delivery evidence, commit and publish",
-        "evidence": "6/6 gate green after README size repair and codebase-map refresh"
-      }
-    },
-    {
-      "task_id": "keystone-prefab-propagation-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[4/5] UI delivery task finished with reviewed snapshot; checklists: passed; UI history matches app.js and index.html",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794137767.5687563,
-      "timestamp_str": "2026-11-08 14:36:07",
-      "agent": "opencode:keystone",
-      "handoff": {
-        "next": "rerun the 6/6 gate, commit UI evidence, then publish",
-        "evidence": "ui verify/finish OK"
-      }
-    },
     {
       "task_id": "keystone-prefab-propagation-v1",
       "phase": "phase 5",
@@ -302,6 +240,64 @@
       "status": "completed",
       "timestamp": 1794141689.338998,
       "timestamp_str": "2026-11-08 15:41:29",
+      "agent": "opencode:keystone"
+    },
+    {
+      "task_id": "keystone-commit-audit-v3-1to6",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: audit range 1->6 for dirty-state, startup-scene and forget-asset gaps; fix stale asset payloads left in undo/redo snapshots after forget",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794141947.6118674,
+      "timestamp_str": "2026-11-08 15:45:47",
+      "agent": "opencode:keystone",
+      "impact_assessment": {
+        "why": "Range 1->6 introduced forget_asset. Usage checks cover live and saved content but not editor undo/redo snapshots, so forgetting an asset used by a deleted node lets Undo resurrect an unregistered payload.",
+        "benefits": "Forget becomes history-safe: undone nodes no longer point at removed mesh/material/texture payloads, and the report exposes how many snapshot references were cleared.",
+        "risks": "contract: forgotten_asset report grows; dependency: EditorHistory snapshot format; concurrency: session lock unchanged; state: undo/redo snapshots and registry removal order.",
+        "mitigation": "Clear only after the registry removal succeeds, handle mesh/material/texture identities, add a failing-first delete-forget-undo test, and run the 6/6 gate."
+      },
+      "plan_digest": "fbf9b73636e4b5789871b7b4c1831d6632378d37137245041a219810ccc6414e"
+    },
+    {
+      "task_id": "keystone-commit-audit-v3-1to6",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/3] Clear forgotten mesh/material/texture payloads from undo and redo snapshots; regression deletes, forgets and undoes",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794142277.4369047,
+      "timestamp_str": "2026-11-08 15:51:17",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "state": "history cleanup and regression green",
+        "next": "record the gate and push"
+      }
+    },
+    {
+      "task_id": "keystone-commit-audit-v3-1to6",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Range 1->6 gate passes 6/6 with history-safe forget_asset; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794142278.2554448,
+      "timestamp_str": "2026-11-08 15:51:18",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "next": "commit and push range 1->6, then continue at 1->9",
+        "evidence": "full 6/6 gate green"
+      }
+    },
+    {
+      "task_id": "keystone-commit-audit-v3-1to6",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-commit-audit-v3-1to6' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794142279.1307673,
+      "timestamp_str": "2026-11-08 15:51:19",
       "agent": "opencode:keystone"
     }
   ]
