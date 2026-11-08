@@ -1360,3 +1360,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Saved `.kstate` machines could be previewed but not loaded back into the console JSON panel, so editing one required opening its file outside the editor.
 - **Decision**: Add `load_state_machine`, which loads a saved machine and returns `state_machine_document` (`name`, `machine`) in the editor document. The console adds a Load state machine button that fills the name field and JSON textarea from the response. Reset the loaded document on every action and bump the editor schema to 52.
 - **Consequences**: Web and static tests cover loading, missing names, missing libraries and textarea wiring. The action reads the file through the validated state machine parser, but the returned document is transient and is not persisted until Save is pressed.
+
+### ADR-167: Shared asset assignment for multi-selection
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: `assign_asset` edited one node, so a multi-selection could not share or replace a mesh/material in one operation.
+- **Decision**: Add `assign_asset_selection`, which resolves every selected node under the editor lock and runs the existing `assign_assets` validation for each node inside one history entry. The console adds an Assign to selection button that sends only non-empty mesh/material fields; single-node clearing stays on `assign_asset`. Bump the editor schema to 53.
+- **Consequences**: Web tests cover two-node assignment, one-step undo, empty selection and invalid asset errors. Nested selections receive the assignment on every selected node, and the console cannot clear both fields across a selection.

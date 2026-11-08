@@ -1003,6 +1003,23 @@ class GameSession:
                         lambda: assign_assets(node, payload, self._registry_locked()),
                     )
                     self.selected_id = node.id
+                elif action == "assign_asset_selection":
+                    if not self.selected_ids:
+                        raise ValueError(
+                            "select at least one node before assigning assets"
+                        )
+                    nodes = [
+                        find_node(scene, node_id)
+                        for node_id in self.selected_ids
+                    ]
+                    registry = self._registry_locked()
+                    self._apply_history(
+                        scene,
+                        lambda: [
+                            assign_assets(node, payload, registry)
+                            for node in nodes
+                        ],
+                    )
                 elif action == "play_start":
                     if self.playing:
                         raise ValueError("play mode is already active")

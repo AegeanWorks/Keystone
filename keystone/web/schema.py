@@ -69,6 +69,11 @@ EDITOR_EXAMPLES = {
         ],
     },
     "assign_asset": {"action": "assign_asset", "id": "cube-0", "mesh": "mesh.cube"},
+    "assign_asset_selection": {
+        "action": "assign_asset_selection",
+        "mesh": "mesh.sphere",
+        "material": "material.orb",
+    },
     "set_component": {
         "action": "set_component",
         "id": "cube-0",
@@ -319,6 +324,7 @@ EDITOR_SCHEMA = {
         "scene_diff": ["added", "removed", "changed", "camera", "environment", "root", "has_changes"],
         "create_node": ["id", "name", "parent", "position", "rotation", "scale", "tags", "layer", "visible", "mesh", "material"],
         "assign_asset": ["id", "mesh", "material"],
+        "assign_asset_selection": ["mesh", "material"],
         "set_component": ["id", "type", "data"],
         "remove_component": ["id", "type"],
         "play_step": ["frames", "actions"],
@@ -499,6 +505,7 @@ EDITOR_SCHEMA = {
         "schema 50 adds asset_usages, which reports live-scene, registry, prefab and saved-scene references for one asset id or project path",
         "schema 51 adds the .kstate state machine library with save/delete/restore actions and fixed-step preview_state_machine pose application",
         "schema 52 adds load_state_machine, returning the saved document for console JSON editing",
+        "schema 53 adds assign_asset_selection for shared mesh/material assignment across the selected nodes in one undo entry",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

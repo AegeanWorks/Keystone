@@ -141,6 +141,7 @@ const elements = {
   materialRestore: document.getElementById("material-restore"),
   materialState: document.getElementById("material-state"),
   assignAsset: document.getElementById("assign-asset"),
+  assignAssetSelection: document.getElementById("assign-asset-selection"),
   assetInfo: document.getElementById("asset-info"),
   assetPreview: document.getElementById("asset-preview"),
   importPath: document.getElementById("import-path"),
@@ -2220,6 +2221,29 @@ async function assignAssets() {
   await refreshScene(false);
 }
 
+async function assignSelectionAssets() {
+  if (!editorState || !editorState.selection_count) {
+    throw new Error("Select at least one node before assigning assets.");
+  }
+  const fields = {};
+  const mesh = elements.meshAsset.value || null;
+  const material = elements.materialAsset.value || null;
+  if (mesh) {
+    fields.mesh = mesh;
+  }
+  if (material) {
+    fields.material = material;
+  }
+  if (!Object.keys(fields).length) {
+    throw new Error("Choose a mesh or material asset first.");
+  }
+  await editorAction(
+    { action: "assign_asset_selection", ...fields },
+    "assigning assets to selection",
+  );
+  await refreshScene(false);
+}
+
 async function importAsset() {
   const path = elements.importPath.value.trim();
   if (!path) {
@@ -2979,6 +3003,9 @@ elements.assetFilter.addEventListener("input", () => {
 elements.meshAsset.addEventListener("change", updateAssetInfo);
 elements.materialAsset.addEventListener("change", updateAssetInfo);
 elements.assignAsset.addEventListener("click", () => run(assignAssets));
+elements.assignAssetSelection.addEventListener("click", () =>
+  run(assignSelectionAssets),
+);
 elements.importAsset.addEventListener("click", () => run(importAsset));
 elements.reloadAssets.addEventListener("click", () => run(reloadAssets));
 elements.forgetAsset.addEventListener("click", () => run(forgetAsset));

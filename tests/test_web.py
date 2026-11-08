@@ -589,6 +589,62 @@ class WebServerTest(unittest.TestCase):
         )
         self.assertEqual(status, 400)
 
+    def test_editor_assign_assets_to_selection(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        cubes = [
+            node for node in editor["nodes"] if node["mesh"] == "mesh.cube"
+        ][:2]
+        ids = [node["id"] for node in cubes]
+        selected = session.editor_action(
+            {"action": "select_many", "ids": ids, "mode": "replace"}
+        )
+        self.assertEqual(selected["selection_count"], 2)
+        assigned = session.editor_action(
+            {
+                "action": "assign_asset_selection",
+                "mesh": "mesh.sphere",
+                "material": "material.orb",
+            }
+        )
+        selected_nodes = [
+            node for node in assigned["nodes"] if node["id"] in ids
+        ]
+        self.assertEqual(
+            {node["mesh"] for node in selected_nodes}, {"mesh.sphere"}
+        )
+        self.assertEqual(
+            {node["material"] for node in selected_nodes},
+            {"material.orb"},
+        )
+        self.assertEqual(assigned["history"]["undo"], 1)
+
+        original = {node["id"]: node for node in editor["nodes"]}
+        undone = session.editor_action({"action": "undo"})
+        restored = [node for node in undone["nodes"] if node["id"] in ids]
+        self.assertEqual(
+            {node["mesh"] for node in restored},
+            {original[node_id]["mesh"] for node_id in ids},
+        )
+        self.assertEqual(undone["history"]["undo"], 0)
+
+        session.editor_action({"action": "select_many", "ids": [], "mode": "replace"})
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action(
+                {"action": "assign_asset_selection", "mesh": "mesh.sphere"}
+            )
+        self.assertEqual(caught.exception.status, 400)
+
+        session.editor_action(
+            {"action": "select_many", "ids": ids, "mode": "replace"}
+        )
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action(
+                {"action": "assign_asset_selection", "mesh": "missing.mesh"}
+            )
+        self.assertEqual(caught.exception.status, 400)
+        self.assertEqual(session.editor()["history"]["undo"], 0)
+
     def test_editor_prefab_capture_and_insert(self):
         _, _, editor = self._json("/api/editor")
         cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
@@ -3943,6 +3999,7 @@ class WebServerTest(unittest.TestCase):
             "material-restore",
             "material-state",
             "assign-asset",
+            "assign-asset-selection",
             "asset-info",
             "asset-preview",
             "import-path",
@@ -4037,6 +4094,8 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("hierarchyFilter", script)
         self.assertIn("assetFilter", script)
         self.assertIn("assign_asset", script)
+        self.assertIn("assignSelectionAssets", script)
+        self.assertIn("assign_asset_selection", script)
         self.assertIn("saveMaterial", script)
         self.assertIn("assignMaterial", script)
         self.assertIn("clearMaterial", script)

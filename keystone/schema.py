@@ -4,7 +4,7 @@ from __future__ import annotations
 
 WEB_API_VERSION = 1
 SCENE_SCHEMA_VERSION = 2
-EDITOR_SCHEMA_VERSION = 52
+EDITOR_SCHEMA_VERSION = 53
 PREFAB_SCHEMA_VERSION = 2
 EDITOR_ACTIONS = (
     "select",
@@ -19,6 +19,7 @@ EDITOR_ACTIONS = (
     "set_scene",
     "batch",
     "assign_asset",
+    "assign_asset_selection",
     "set_component",
     "remove_component",
     "play_start",
