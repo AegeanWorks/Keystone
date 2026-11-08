@@ -257,6 +257,81 @@ function pointSegmentDistance(px, py, ax, ay, bx, by) {
   return Math.hypot(px - (ax + dx * t), py - (ay + dy * t));
 }
 
+const BOX_FACES = [
+  [0, 1, 2, 3],
+  [4, 5, 6, 7],
+  [0, 1, 5, 4],
+  [3, 2, 6, 7],
+  [0, 4, 7, 3],
+  [1, 5, 6, 2],
+];
+
+function transformPoint(matrix, point) {
+  return [
+    matrix[0] * point[0] + matrix[4] * point[1] + matrix[8] * point[2] + matrix[12],
+    matrix[1] * point[0] + matrix[5] * point[1] + matrix[9] * point[2] + matrix[13],
+    matrix[2] * point[0] + matrix[6] * point[1] + matrix[10] * point[2] + matrix[14],
+  ];
+}
+
+function clipNearPolygon(points, nearZ) {
+  const clipped = [];
+  for (let index = 0; index < points.length; index += 1) {
+    const current = points[index];
+    const next = points[(index + 1) % points.length];
+    const currentInside = current[2] <= nearZ;
+    const nextInside = next[2] <= nearZ;
+    if (currentInside) {
+      clipped.push(current);
+    }
+    if (currentInside !== nextInside) {
+      const ratio = (nearZ - current[2]) / (next[2] - current[2]);
+      clipped.push([
+        current[0] + (next[0] - current[0]) * ratio,
+        current[1] + (next[1] - current[1]) * ratio,
+        nearZ,
+      ]);
+    }
+  }
+  return clipped;
+}
+
+function projectViewPoint(point, projection, rect) {
+  const x =
+    projection[0] * point[0] +
+    projection[4] * point[1] +
+    projection[8] * point[2] +
+    projection[12];
+  const y =
+    projection[1] * point[0] +
+    projection[5] * point[1] +
+    projection[9] * point[2] +
+    projection[13];
+  const w =
+    projection[3] * point[0] +
+    projection[7] * point[1] +
+    projection[11] * point[2] +
+    projection[15];
+  if (w <= 1e-5) {
+    return null;
+  }
+  return [
+    rect.left + ((x / w) * 0.5 + 0.5) * rect.width,
+    rect.top + (1.0 - ((y / w) * 0.5 + 0.5)) * rect.height,
+  ];
+}
+
+function pointInBox(point, min, max) {
+  return (
+    point[0] >= min[0] &&
+    point[0] <= max[0] &&
+    point[1] >= min[1] &&
+    point[1] <= max[1] &&
+    point[2] >= min[2] &&
+    point[2] <= max[2]
+  );
+}
+
 function pushBox(positions, start, end, half) {
   const corners = [
     [start, -half, -half], [start, half, -half], [start, half, half], [start, -half, half],
@@ -416,6 +491,8 @@ export class SceneViewer {
     this.canvas.parentElement.appendChild(this.selectionBox);
     this.cameraState = null;
     this.nodeBounds = new Map();
+    this.boxBounds = new Map();
+    this.boxProxies = new Map();
     this.dragging = false;
     this.gizmoDrag = null;
     this.gizmoMode = "translate";
@@ -784,46 +861,80 @@ export class SceneViewer {
     if (!this.scene || !this.cameraState) {
       return [];
     }
-    const matrix = this.viewProjectionMatrix();
+    const view = this.viewMatrix();
+    const projection = this.projectionMatrix();
     const rect = this.canvas.getBoundingClientRect();
-    if (!matrix || rect.width <= 0 || rect.height <= 0) {
+    if (!view || !projection || rect.width <= 0 || rect.height <= 0) {
       return [];
     }
+    const nearZ = -this.scene.camera.near;
+    const camera = this.cameraPosition();
     const hits = [];
-    for (const [nodeId, bounds] of this.nodeBounds.entries()) {
-      const corners = [
+    for (const [nodeId, bounds] of this.boxBounds.entries()) {
+      const worldCorners = [
         [bounds.min[0], bounds.min[1], bounds.min[2]],
-        [bounds.min[0], bounds.min[1], bounds.max[2]],
-        [bounds.min[0], bounds.max[1], bounds.min[2]],
-        [bounds.min[0], bounds.max[1], bounds.max[2]],
         [bounds.max[0], bounds.min[1], bounds.min[2]],
-        [bounds.max[0], bounds.min[1], bounds.max[2]],
         [bounds.max[0], bounds.max[1], bounds.min[2]],
+        [bounds.min[0], bounds.max[1], bounds.min[2]],
+        [bounds.min[0], bounds.min[1], bounds.max[2]],
+        [bounds.max[0], bounds.min[1], bounds.max[2]],
         [bounds.max[0], bounds.max[1], bounds.max[2]],
+        [bounds.min[0], bounds.max[1], bounds.max[2]],
       ];
+      const viewCorners = worldCorners.map((corner) =>
+        transformPoint(view, corner),
+      );
+      const clipped = [];
+      for (const face of BOX_FACES) {
+        clipped.push(
+          ...clipNearPolygon(
+            face.map((index) => viewCorners[index]),
+            nearZ,
+          ),
+        );
+      }
+      if (!clipped.length) {
+        if (pointInBox(camera, bounds.min, bounds.max)) {
+          hits.push(nodeId);
+        }
+        continue;
+      }
       let minX = Infinity;
       let minY = Infinity;
       let maxX = -Infinity;
       let maxY = -Infinity;
-      let visible = true;
-      for (const corner of corners) {
-        const screen = this.projectToScreen(corner, matrix, rect);
+      for (const point of clipped) {
+        const screen = projectViewPoint(point, projection, rect);
         if (!screen) {
-          visible = false;
-          break;
+          continue;
         }
         minX = Math.min(minX, screen[0]);
         minY = Math.min(minY, screen[1]);
         maxX = Math.max(maxX, screen[0]);
         maxY = Math.max(maxY, screen[1]);
       }
-      if (!visible) {
+      if (minX === Infinity) {
         continue;
       }
       if (maxX < left || minX > right || maxY < top || minY > bottom) {
         continue;
       }
       hits.push(nodeId);
+    }
+    for (const [nodeId, proxy] of this.boxProxies.entries()) {
+      const viewPoint = transformPoint(view, proxy.position);
+      const screen = projectViewPoint(viewPoint, projection, rect);
+      if (!screen) {
+        continue;
+      }
+      if (
+        screen[0] >= left - 8 &&
+        screen[0] <= right + 8 &&
+        screen[1] >= top - 8 &&
+        screen[1] <= bottom + 8
+      ) {
+        hits.push(nodeId);
+      }
     }
     return hits;
   }
@@ -868,18 +979,24 @@ export class SceneViewer {
 
   updateNodeBounds() {
     this.nodeBounds.clear();
+    this.boxBounds.clear();
+    this.boxProxies.clear();
     if (!this.scene) {
       return;
     }
     const meshes = this.scene.meshes || {};
     const identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
     for (const node of this.scene.nodes || []) {
-      if (!node.visible || !node.mesh) {
+      if (node.id === "root") {
         continue;
       }
-      const mesh = meshes[node.mesh];
+      const mesh = node.mesh ? meshes[node.mesh] : null;
       const positions = (mesh && mesh.positions) || [];
       if (!positions.length) {
+        const world = node.world || identity;
+        this.boxProxies.set(node.id, {
+          position: [world[12] || 0, world[13] || 0, world[14] || 0],
+        });
         continue;
       }
       const world = node.world || identity;
@@ -903,10 +1020,14 @@ export class SceneViewer {
         maxY = Math.max(maxY, wy);
         maxZ = Math.max(maxZ, wz);
       }
-      this.nodeBounds.set(node.id, {
+      const bounds = {
         min: [minX, minY, minZ],
         max: [maxX, maxY, maxZ],
-      });
+      };
+      this.boxBounds.set(node.id, bounds);
+      if (node.visible) {
+        this.nodeBounds.set(node.id, bounds);
+      }
     }
   }
 
@@ -1477,17 +1598,24 @@ export class SceneViewer {
     return lookAt(this.cameraPosition(), this.cameraState.target);
   }
 
-  viewProjectionMatrix() {
+  projectionMatrix() {
     if (!this.scene) {
       return null;
     }
     const camera = this.scene.camera;
-    const projection = perspective(
+    return perspective(
       camera.fov_y,
       Math.max(1, this.canvas.width) / Math.max(1, this.canvas.height),
       camera.near,
       camera.far,
     );
+  }
+
+  viewProjectionMatrix() {
+    const projection = this.projectionMatrix();
+    if (!projection) {
+      return null;
+    }
     return multiply(projection, this.viewMatrix());
   }
 

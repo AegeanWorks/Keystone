@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-scene-group-saveas-v1",
-    "last_phase": "verification",
+    "task_id": "keystone-box-proxies-v1",
+    "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794102516.9784336,
+    "updated_at": 1794103469.2044895,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794102517.3032837
+    "completed_at": 1794103474.6248622
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-scene-groups-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-scene-groups-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794099225.3457358,
-      "timestamp_str": "2026-11-08 03:53:45",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-multi-selection-v1",
-      "phase": "planning",
-      "phase_num": 2,
-      "description": "[1/3] Plan multi-selection sets, batch transform/toggle/delete, console multi-select and group gizmo",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794099334.099559,
-      "timestamp_str": "2026-11-08 03:55:34",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "The editor supports only one selected node; Unity/Unreal-style batch authoring needs selection sets and batch actions.",
-        "benefits": "select_many builds ordered selection sets, transform_selection/toggle_selection_visible/delete_selection edit all selected nodes in one undo, the console supports multi-select, and the viewport highlights the set with a centroid translate gizmo.",
-        "risks": "contract: editor schema 26 and selection document shape; dependency: none; concurrency: editor lock; state: primary selection compatibility, parent/child selection deduplication, prefab group deletion, gizmo preview of shared subtrees, undo.",
-        "mitigation": "Keep selected_id as a single-selection-compatible primary, filter top-level selected roots for batch transform, dedupe groups for delete, preview only union subtrees, and add selection/batch/gizmo/undo tests."
-      },
-      "plan_digest": "07b52c67c149c854e9568f4727f712d3a072fd6bff2dbe62c7e6fe1ba166174d"
-    },
-    {
-      "task_id": "keystone-multi-selection-v1",
-      "phase": "verification",
-      "phase_num": 4,
-      "description": "[2/3] Multi-selection implemented: ordered selected_ids/selection_count, select_many modes, batch transform/toggle/delete with undo and top-level dedupe, hierarchy multi-select, Ctrl/Cmd viewport toggle, centroid translate gizmo; 755 tests green, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 26, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794100404.407103,
-      "timestamp_str": "2026-11-08 04:13:24",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-multi-selection-v1",
       "phase": "completed",
@@ -264,6 +225,45 @@
       "status": "completed",
       "timestamp": 1794102517.3032858,
       "timestamp_str": "2026-11-08 04:48:37",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-box-proxies-v1",
+      "phase": "planning",
+      "phase_num": 2,
+      "description": "[1/3] Plan box-selection proxies for meshless/hidden nodes and near-plane-safe AABB clipping",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794102586.8185537,
+      "timestamp_str": "2026-11-08 04:49:46",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "Box selection ignores hidden and meshless nodes and drops bounds whose corners cross the camera plane.",
+        "benefits": "Every scene node contributes a selectable projected AABB or world-position proxy, and marquee hits remain correct when bounds straddle the near plane.",
+        "risks": "contract: UI-only, no REST/schema change; dependency: none; concurrency: pointer arbitration unchanged; state: proxy false positives, camera-inside-AABB, clipped projection math and root exclusion.",
+        "mitigation": "Keep click-pick bounds visible-only, add separate box bounds/proxies, clip AABB faces against the near plane, handle camera-inside bounds, and add static regression checks."
+      },
+      "plan_digest": "b254a62efc259e17bd7b6ca2b2dd84c6e27958fb893a40866b56a6178dff923d"
+    },
+    {
+      "task_id": "keystone-box-proxies-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Box-selection proxies and near-plane clipping implemented: all-mesh boxBounds include hidden nodes, meshless world-position proxies use an 8px tolerance, AABB faces clip against the near plane with camera-inside handling, click picks stay visible-only, static regressions added; 760 tests green, node --check clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 30, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794103469.2044895,
+      "timestamp_str": "2026-11-08 05:04:29",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-box-proxies-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-box-proxies-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794103474.6248646,
+      "timestamp_str": "2026-11-08 05:04:34",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

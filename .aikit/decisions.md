@@ -1064,3 +1064,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Additive scene groups ignored source camera/environment, discarded container transforms on group save and could not be saved under a new name.
 - **Decision**: Persist optional source camera/environment documents in `SceneGroup` metadata and scene snapshot schema 5. `add_scene` captures the source documents and copies the source root transform/visibility onto the container. `save_scene_group` restores source settings through `scene_from_dict`, writes the container transform as the saved root transform, and accepts an optional `name` for save-as; save-as writes first, then updates group name/container name under one undo entry. Editor schema 30 and the scene-group inventory expose the source settings and container roots.
 - **Consequences**: 760 tests green; source settings, container transforms, save-as, undo and cross-session reload are covered. Undo restores save-as metadata but leaves the newly written scene file as an asset side effect; legacy groups without stored settings fall back to current editor settings.
+
+### ADR-130: Box selection proxies and near-plane clipping
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Marquee selection ignored hidden and meshless nodes and dropped AABBs whose corners crossed the camera near plane.
+- **Decision**: Keep click-picking on visible mesh bounds, but build separate box-selection bounds for every mesh node regardless of visibility and world-position proxies for meshless/hidden nodes. Clip each world AABB's six faces against the camera near plane in view space, project the clipped polygon vertices, and marquee-test the resulting screen AABB; include the node if the camera lies inside its bounds. Proxies use an 8px screen tolerance. No API or schema change.
+- **Consequences**: 760 tests green; hidden/meshless nodes and near-plane-crossing bounds are selectable, with static viewer coverage. Proxies can produce false positives for coincident empty nodes, click-picking remains visible-mesh-only, and box selection intentionally has no occlusion test.
