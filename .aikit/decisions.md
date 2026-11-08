@@ -1432,3 +1432,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1→9 audit found that `AssetRegistry.refresh()` walked source ids alphabetically. A changed prefab whose id sorted before its changed mesh dependency could load the old mesh payload and then keep it after the mesh reloaded.
 - **Decision**: Compute a dependency-first refresh order from each record's current dependency edges, falling back to sorted order if a cycle or incomplete graph blocks progress. Keep report lists sorted for stable AI output. Add a regression where `aaa.prefab` depends on `zzz.mesh`; after changing both, the reloaded prefab must reference the reloaded mesh payload.
 - **Consequences**: The new registry test and full AIKit gate cover the fix. New dependencies introduced only by a changed prefab file are still unknown until that prefab loads, so an exotic dependency-changing edit can retain the old order.
+
+### ADR-176: Commit audit isolates state clips by state name
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1→12 audit found that `AnimationStateMachine` keyed its controller clips by `AnimationClip.name`. Two states with distinct clips sharing a clip name overwrote each other, so one state played the wrong animation.
+- **Decision**: Register a `replace(clip, name=state.name)` copy for each state in the controller, and play/crossfade by state name. Reports continue to expose the original clip name. Add a regression where states `a` and `b` both use a clip named `shared` with different positions and assert each pose is preserved.
+- **Consequences**: State-machine playback is isolated by state name even when source clips collide; controller `current` now names the active state rather than the clip. No schema or API change.

@@ -76,6 +76,37 @@ class AnimationStateMachineTest(unittest.TestCase):
         self.assertEqual(machine.take_events(), ["land"])
         self.assertEqual(machine.take_events(), [])
 
+    def test_states_with_same_clip_name_keep_distinct_payloads(self):
+        first = AnimationClip(
+            name="shared",
+            position_tracks=(
+                (
+                    "node",
+                    Track(times=(0.0,), values=(Vec3(0.0, 0.0, 0.0),)),
+                ),
+            ),
+        )
+        second = AnimationClip(
+            name="shared",
+            position_tracks=(
+                (
+                    "node",
+                    Track(times=(0.0,), values=(Vec3(10.0, 0.0, 0.0),)),
+                ),
+            ),
+        )
+        machine = AnimationStateMachine(
+            [AnimationState("a", first), AnimationState("b", second)],
+            [AnimationTransition("a", "b", "go", "trigger", duration=0.0)],
+            {"go": False},
+        )
+        pose = machine.advance(0.0)
+        self.assertAlmostEqual(pose["node"].position.x, 0.0)
+        machine.set_trigger("go")
+        pose = machine.advance(0.0)
+        self.assertAlmostEqual(pose["node"].position.x, 10.0)
+        self.assertEqual(machine.report()["clip"], "shared")
+
     def test_crossfade_blending_finishes(self):
         machine = _machine(duration=1.0)
         machine.set_parameter("speed", 1.0)

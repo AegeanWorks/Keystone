@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from keystone.animation import AnimationClip, AnimationController
 from keystone.scene import Transform
@@ -224,7 +224,7 @@ class AnimationStateMachine:
         self.events: list[str] = []
         self.controller = AnimationController()
         for state in state_items:
-            self.controller.add(state.clip)
+            self.controller.add(replace(state.clip, name=state.name))
         self.current = ""
         self.play(selected, restart=True)
 
@@ -238,7 +238,7 @@ class AnimationStateMachine:
             raise TypeError("restart must be a boolean")
         state = self._state(name)
         self.current = state.name
-        self.controller.play(state.clip.name, restart=restart)
+        self.controller.play(state.name, restart=restart)
         self.controller.loop = state.loop
         self.controller.speed = state.speed
 
@@ -267,7 +267,7 @@ class AnimationStateMachine:
             target = self._state(transition.target)
             self.current = target.name
             self.controller.crossfade(
-                target.clip.name, transition.duration
+                target.name, transition.duration
             )
             self.controller.loop = target.loop
             self.controller.speed = target.speed

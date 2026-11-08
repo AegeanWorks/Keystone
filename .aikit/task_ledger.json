@@ -5,22 +5,12 @@
     "last_phase": "in_progress",
     "active_phase": 4,
     "status": "in_progress",
-    "updated_at": 1794132548.841291,
+    "updated_at": 1794133102.482813,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-selection-assets-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-selection-assets-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794124776.643605,
-      "timestamp_str": "2026-11-08 10:59:36",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-copy-paste-v1",
       "phase": "in_progress",
@@ -265,6 +255,17 @@
       "status": "in_progress",
       "timestamp": 1794132548.841291,
       "timestamp_str": "2026-11-08 13:09:08",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-commit-audit-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[run 4/6] Audited commits 1-12: found states sharing a clip name overwrote controller payloads; state machine now registers state-name-keyed clip copies and a collision regression passes; full AIKit 6/6 passed; commit and publish next",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794133102.482813,
+      "timestamp_str": "2026-11-08 13:18:22",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

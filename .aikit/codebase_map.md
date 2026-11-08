@@ -9,8 +9,8 @@
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
 - **Total Top-Level Functions**: `402`
-- **Total Class Methods**: `1449`
-- **Total Source Lines**: `38293`
+- **Total Class Methods**: `1450`
+- **Total Source Lines**: `38324`
 
 ---
 
@@ -146,7 +146,7 @@
 ### [`keystone/animation_state.py`](keystone/animation_state.py)
 > *Deterministic parameter-driven animation state machines.*
 
-**Size**: `341` lines (`12643` bytes)
+**Size**: `341` lines (`12668` bytes)
 
 **Classes:**
 - `class AnimationState` - *One named clip with its loop and speed settings.*
@@ -2008,12 +2008,13 @@
 ### [`tests/test_animation_state.py`](tests/test_animation_state.py)
 > *Tests for deterministic parameter-driven animation state machines.*
 
-**Size**: `171` lines (`6335` bytes)
+**Size**: `202` lines (`7423` bytes)
 
 **Classes:**
 - `class AnimationStateMachineTest`
   - Method `.test_parameter_transition_and_state_settings()`
   - Method `.test_trigger_transition_and_events()`
+  - Method `.test_states_with_same_clip_name_keep_distinct_payloads()`
   - Method `.test_crossfade_blending_finishes()`
   - Method `.test_serialization_round_trip_and_report()`
   - Method `.test_validation_rejects_bad_shapes()`
