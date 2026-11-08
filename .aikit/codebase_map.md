@@ -9,8 +9,8 @@
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
 - **Total Top-Level Functions**: `421`
-- **Total Class Methods**: `1479`
-- **Total Source Lines**: `40282`
+- **Total Class Methods**: `1480`
+- **Total Source Lines**: `40309`
 
 ---
 
@@ -1824,7 +1824,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2904` lines (`129873` bytes)
+**Size**: `2904` lines (`129881` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3405,7 +3405,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `5829` lines (`240105` bytes)
+**Size**: `5856` lines (`241251` bytes)
 
 **Classes:**
 - `class Health`
@@ -3445,6 +3445,7 @@
   - Method `.test_editor_hiding_layer_prunes_selection()`
   - Method `.test_editor_node_locking_blocks_edits()`
   - Method `.test_editor_locked_descendant_blocks_parent_delete()`
+  - Method `.test_editor_locked_descendant_blocks_prefab_revert()`
   - Method `.test_editor_copy_paste_selection()`
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_prefab_instance_revert_and_apply()`

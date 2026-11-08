@@ -2026,7 +2026,7 @@ class GameSession:
                         self.selected_id = roots[0].id
                 elif action == "revert_prefab":
                     node = find_node(scene, payload.get("id") or self.selected_id)
-                    self._ensure_unlocked_locked([node])
+                    self._ensure_subtree_unlocked_locked([node])
                     link = node.prefab_link
                     if link is None:
                         raise ValueError("node is not a prefab instance")

@@ -1616,3 +1616,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->42 audit found that `StateMachineLibrary.rename` returned a summary entry when source and target names were identical, even when no file existed. The editor therefore reported success for a missing machine.
 - **Decision**: Check source existence before the same-name shortcut. Add a regression that `rename("missing", "missing")` raises KeyError like any other missing rename.
 - **Consequences**: Same-name rename of an existing machine still returns its entry, while missing machines now produce the standard 404 mapping. No file or schema change.
+
+### ADR-199: Commit audit protects locked descendants from prefab revert
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->45 audit found that `revert_prefab` checked only the selected instance root before replacing the whole group, so a locked child could be deleted by reverting its unlocked parent.
+- **Decision**: Use the subtree lock check for `revert_prefab`, matching delete actions and refresh. Add a regression that locks a child, selects the instance root, and asserts revert returns 400 while the child remains.
+- **Consequences**: Prefab revert preserves locked descendants. Apply remains read-only for the scene and is unchanged.
