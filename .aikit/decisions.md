@@ -1600,3 +1600,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->36 audit found two issues. New nodes created in prefab edit mode received bare `node-N` ids that could collide with template ids after the `edit:` prefix was stripped, so save failed. Override reports also stopped at any parent whose child count differed from the template, hiding existing child overrides after adding a template node.
 - **Decision**: Before capturing a prefab edit, normalize every outer edit node id under the `edit:` prefix with a collision-safe suffix. Map template and instance nodes by the stable id suffix for override reports, per-field revert/apply and baseline seeding, skipping nested groups. Add a regression that adds a node in edit mode and still sees an existing child override.
 - **Consequences**: Prefab edit save accepts newly created nodes even when allocator ids collide, and override reports survive structural template edits. Nested groups keep their separate mappings; nodes whose ids were externally renamed remain best-effort.
+
+### ADR-197: Commit audit maps state-machine restore collisions to 400
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->39 audit found that restoring a trashed state machine whose live name was occupied raised `FileExistsError`, which `editor_action` did not map, so the HTTP surface returned a 500 for a normal collision.
+- **Decision**: Catch `FileExistsError` in `restore_state_machine` and raise a 400 WebProblem with a rename-or-delete fix. Add a save-delete-save-restore regression.
+- **Consequences**: Restore collisions are actionable client errors. The library still refuses to overwrite live entries; prefab and scene restore paths are unchanged.

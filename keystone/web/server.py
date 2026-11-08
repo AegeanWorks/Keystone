@@ -1467,7 +1467,16 @@ class GameSession:
                         raise ValueError(
                             "no state machine library is configured"
                         )
-                    self.state_machine_library.restore(payload.get("trash"))
+                    try:
+                        self.state_machine_library.restore(
+                            payload.get("trash")
+                        )
+                    except FileExistsError as exc:
+                        raise WebProblem(
+                            400,
+                            str(exc),
+                            "rename or delete the live state machine before restoring",
+                        ) from exc
                 elif action == "preview_state_machine":
                     if self.state_machine_library is None:
                         raise ValueError(

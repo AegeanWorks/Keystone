@@ -4812,6 +4812,36 @@ class WebServerTest(unittest.TestCase):
                 )
             self.assertEqual(caught.exception.status, 404)
 
+    def test_editor_state_machine_restore_collision_is_400(self):
+        with tempfile.TemporaryDirectory() as directory:
+            animation_dir = Path(directory) / "animations"
+            session = GameSession(CubeDemo(), animation_dir=animation_dir)
+            machine = _state_machine_document()
+            session.editor_action(
+                {
+                    "action": "save_state_machine",
+                    "name": "walk",
+                    "machine": machine,
+                }
+            )
+            deleted = session.editor_action(
+                {"action": "delete_state_machine", "name": "walk"}
+            )
+            trash = deleted["trash"]["state_machines"][0]["trash"]
+            session.editor_action(
+                {
+                    "action": "save_state_machine",
+                    "name": "walk",
+                    "machine": machine,
+                }
+            )
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "restore_state_machine", "trash": trash}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("already exists", caught.exception.why)
+
     def test_editor_animation_key_authoring(self):
         with tempfile.TemporaryDirectory() as directory:
             animation_dir = Path(directory) / "animations"
