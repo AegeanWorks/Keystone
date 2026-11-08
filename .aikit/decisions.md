@@ -1144,3 +1144,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The API reported per-field prefab overrides, but the console hid them, so resolving a divergence still required hand-written API calls.
 - **Decision**: Render `prefab_overrides` in the console as instance groups with errors, per-node/field rows showing template and instance values, and Revert/Apply buttons that call the existing `revert_prefab_override` and `apply_prefab_override` actions. Build the DOM with `textContent` and `createElement`, refresh the scene after each action, and keep the existing busy/run guard. No API or schema change.
 - **Consequences**: 765 tests green; static console coverage verifies the panel and both actions. Revert remains scene-undoable, Apply remains an asset write, and large component values wrap instead of expanding the panel width.
+
+### ADR-140: Structured camera, environment and render-toggle inspector
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Camera and lighting authoring required hand-editing a raw JSON textarea, which was slow and error-prone for people and AI clients.
+- **Decision**: Add labeled camera position/yaw/pitch/fov controls, environment light direction/color/intensity, ambient, fog density, and shadows/color/post/bloom/sprites/culling toggles. Fill them from `scene_settings` on every editor refresh, submit only the edited camera or environment fields through the existing validated `set_scene` action, and keep the JSON textarea as an advanced fallback. No API or schema change.
+- **Consequences**: 765 tests green; static console coverage verifies the controls, fill path, readers and both apply actions. Near/far, background/sky and point-light fields stay in advanced JSON, toggle state follows the editor document after undo, and partial environment payloads preserve untouched engine fields.

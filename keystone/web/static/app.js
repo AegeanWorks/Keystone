@@ -48,6 +48,23 @@ const elements = {
   sceneRestore: document.getElementById("scene-restore"),
   sceneSettings: document.getElementById("scene-settings"),
   sceneSettingsApply: document.getElementById("scene-settings-apply"),
+  cameraPosition: document.getElementById("camera-position"),
+  cameraYaw: document.getElementById("camera-yaw"),
+  cameraPitch: document.getElementById("camera-pitch"),
+  cameraFov: document.getElementById("camera-fov"),
+  cameraSettingsApply: document.getElementById("camera-settings-apply"),
+  lightDirection: document.getElementById("light-direction"),
+  lightColor: document.getElementById("light-color"),
+  lightIntensity: document.getElementById("light-intensity"),
+  ambientColor: document.getElementById("ambient-color"),
+  fogDensity: document.getElementById("fog-density"),
+  environmentSettingsApply: document.getElementById("environment-settings-apply"),
+  shadowToggle: document.getElementById("shadow-toggle"),
+  colorToggle: document.getElementById("color-toggle"),
+  postToggle: document.getElementById("post-toggle"),
+  bloomToggle: document.getElementById("bloom-toggle"),
+  spritesToggle: document.getElementById("sprites-toggle"),
+  cullingToggle: document.getElementById("culling-toggle"),
   prefabName: document.getElementById("prefab-name"),
   prefabNames: document.getElementById("prefab-names"),
   prefabNewName: document.getElementById("prefab-new-name"),
@@ -162,7 +179,8 @@ function setBusy(value) {
     elements.selectionToggleVisible,
     elements.sceneSave, elements.sceneLoad, elements.sceneDiff, elements.sceneRename,
     elements.sceneDuplicate, elements.sceneDelete, elements.sceneRestore,
-    elements.sceneSettingsApply, elements.assignAsset, elements.playStart,
+    elements.sceneSettingsApply, elements.cameraSettingsApply,
+    elements.environmentSettingsApply, elements.assignAsset, elements.playStart,
     elements.playPause, elements.playResume, elements.playStep, elements.playStop, elements.componentSet, elements.componentRemove,
     elements.prefabSave, elements.prefabInsert, elements.prefabRename,
     elements.prefabRevert, elements.prefabApply, elements.prefabRefresh,
@@ -602,6 +620,29 @@ function fillTransform(selection) {
   elements.scale.value = selection.transform.scale.join(", ");
 }
 
+function fillSceneSettings(settings) {
+  const camera = settings.camera || {};
+  const environment = settings.environment || {};
+  const light = environment.light || {};
+  elements.cameraPosition.value = (camera.position || [0, 3.5, 9]).join(", ");
+  elements.cameraYaw.value = camera.yaw ?? 0;
+  elements.cameraPitch.value = camera.pitch ?? 0;
+  elements.cameraFov.value = camera.fov_y ?? 60;
+  elements.lightDirection.value = (light.direction || [0, -1, 0]).join(", ");
+  elements.lightColor.value = (light.color || [1, 1, 1]).join(", ");
+  elements.lightIntensity.value = light.intensity ?? 1;
+  elements.ambientColor.value = (environment.ambient || [0.2, 0.2, 0.2]).join(
+    ", ",
+  );
+  elements.fogDensity.value = environment.fog_density ?? 0;
+  elements.shadowToggle.checked = Boolean(environment.shadow);
+  elements.colorToggle.checked = Boolean(environment.color);
+  elements.postToggle.checked = Boolean(environment.post);
+  elements.bloomToggle.checked = Boolean(environment.bloom);
+  elements.spritesToggle.checked = Boolean(environment.sprites);
+  elements.cullingToggle.checked = Boolean(environment.culling);
+}
+
 function renderHistory(history) {
   const undoLabels = (history.undo_stack || []).slice(0, 4);
   const redoLabels = (history.redo_stack || []).slice(0, 4);
@@ -627,6 +668,7 @@ function showEditor(editor) {
     null,
     2,
   );
+  fillSceneSettings(editor.scene_settings || {});
   renderHierarchy(editor);
   renderLibraryOptions(editor);
   renderAssets(editor);
@@ -732,6 +774,14 @@ function readVector(id, length, label) {
     throw new Error(`${label} must contain ${length} finite numbers.`);
   }
   return values;
+}
+
+function readNumber(id, label) {
+  const value = Number(elements[id].value);
+  if (!Number.isFinite(value)) {
+    throw new Error(`${label} must be a finite number.`);
+  }
+  return value;
 }
 
 async function selectNode(nodeId) {
@@ -1426,6 +1476,44 @@ async function removeComponent() {
   await refreshScene(false);
 }
 
+async function applyCameraSettings() {
+  const position = readVector("cameraPosition", 3, "Camera position");
+  const yaw = readNumber("cameraYaw", "Camera yaw");
+  const pitch = readNumber("cameraPitch", "Camera pitch");
+  const fov = readNumber("cameraFov", "Camera FOV");
+  await editorAction(
+    { action: "set_scene", camera: { position, yaw, pitch, fov_y: fov } },
+    "applying camera",
+  );
+  await refreshScene(false);
+}
+
+async function applyEnvironmentSettings() {
+  const direction = readVector("lightDirection", 3, "Light direction");
+  const color = readVector("lightColor", 3, "Light color");
+  const intensity = readNumber("lightIntensity", "Light intensity");
+  const ambient = readVector("ambientColor", 3, "Ambient color");
+  const fog = readNumber("fogDensity", "Fog density");
+  await editorAction(
+    {
+      action: "set_scene",
+      environment: {
+        ambient,
+        fog_density: fog,
+        light: { direction, color, intensity },
+        shadow: elements.shadowToggle.checked,
+        color: elements.colorToggle.checked,
+        post: elements.postToggle.checked,
+        bloom: elements.bloomToggle.checked,
+        sprites: elements.spritesToggle.checked,
+        culling: elements.cullingToggle.checked,
+      },
+    },
+    "applying environment",
+  );
+  await refreshScene(false);
+}
+
 async function applySceneSettings() {
   let data;
   try {
@@ -1851,6 +1939,10 @@ elements.sceneDuplicate.addEventListener("click", () => run(duplicateScene));
 elements.sceneDelete.addEventListener("click", () => run(deleteScene));
 elements.sceneRestore.addEventListener("click", () => run(restoreScene));
 elements.sceneSettingsApply.addEventListener("click", () => run(applySceneSettings));
+elements.cameraSettingsApply.addEventListener("click", () => run(applyCameraSettings));
+elements.environmentSettingsApply.addEventListener("click", () =>
+  run(applyEnvironmentSettings),
+);
 elements.prefabSave.addEventListener("click", () => run(savePrefab));
 elements.prefabRename.addEventListener("click", () => run(renamePrefab));
 elements.prefabDuplicate.addEventListener("click", () => run(duplicatePrefab));

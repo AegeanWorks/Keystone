@@ -2569,6 +2569,23 @@ class WebServerTest(unittest.TestCase):
             "scene-restore",
             "scene-settings",
             "scene-settings-apply",
+            "camera-position",
+            "camera-yaw",
+            "camera-pitch",
+            "camera-fov",
+            "camera-settings-apply",
+            "light-direction",
+            "light-color",
+            "light-intensity",
+            "ambient-color",
+            "fog-density",
+            "environment-settings-apply",
+            "shadow-toggle",
+            "color-toggle",
+            "post-toggle",
+            "bloom-toggle",
+            "sprites-toggle",
+            "culling-toggle",
             "prefab-names",
             "prefab-new-name",
             "prefab-rename",
@@ -2622,6 +2639,10 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("duplicate_scene", script)
         self.assertIn("diff_scene", script)
         self.assertIn("applySceneSettings", script)
+        self.assertIn("fillSceneSettings", script)
+        self.assertIn("applyCameraSettings", script)
+        self.assertIn("applyEnvironmentSettings", script)
+        self.assertIn("readNumber", script)
         self.assertIn("restore_scene", script)
         self.assertIn("nudgeSelection", script)
         self.assertIn("ArrowLeft", script)

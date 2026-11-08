@@ -100,10 +100,40 @@
           <button id="scene-delete" type="button">Delete scene</button>
           <button id="scene-restore" type="button">Restore last scene</button>
         </div>
-        <label class="stack" for="scene-settings">Scene settings JSON</label>
-        <textarea id="scene-settings" spellcheck="false" rows="7">{}</textarea>
+        <label class="stack">Camera</label>
+        <div class="field-grid">
+          <label>Position <input id="camera-position" type="text" placeholder="0, 3.5, 9"></label>
+          <label>Yaw <input id="camera-yaw" type="number" step="0.01" value="0"></label>
+          <label>Pitch <input id="camera-pitch" type="number" step="0.01" value="0"></label>
+          <label>FOV <input id="camera-fov" type="number" step="1" min="1" max="179" value="60"></label>
+        </div>
         <div class="buttons">
-          <button id="scene-settings-apply" type="button">Apply scene settings</button>
+          <button id="camera-settings-apply" type="button">Apply camera</button>
+        </div>
+        <label class="stack">Environment</label>
+        <div class="field-grid">
+          <label>Light direction <input id="light-direction" type="text" placeholder="-0.4, -1, -0.3"></label>
+          <label>Light color <input id="light-color" type="text" placeholder="1, 0.95, 0.9"></label>
+          <label>Light intensity <input id="light-intensity" type="number" step="0.1" value="1"></label>
+          <label>Ambient <input id="ambient-color" type="text" placeholder="0.2, 0.22, 0.25"></label>
+          <label>Fog density <input id="fog-density" type="number" step="0.001" min="0" value="0"></label>
+        </div>
+        <div class="buttons">
+          <button id="environment-settings-apply" type="button">Apply environment</button>
+        </div>
+        <label class="stack">Render toggles</label>
+        <div class="field-grid">
+          <label><input id="shadow-toggle" type="checkbox"> Shadows</label>
+          <label><input id="color-toggle" type="checkbox"> Color grade</label>
+          <label><input id="post-toggle" type="checkbox"> Post</label>
+          <label><input id="bloom-toggle" type="checkbox"> Bloom</label>
+          <label><input id="sprites-toggle" type="checkbox"> Sprites</label>
+          <label><input id="culling-toggle" type="checkbox"> Culling</label>
+        </div>
+        <label class="stack" for="scene-settings">Advanced scene settings JSON</label>
+        <textarea id="scene-settings" spellcheck="false" rows="5">{}</textarea>
+        <div class="buttons">
+          <button id="scene-settings-apply" type="button">Apply JSON</button>
         </div>
         <div class="field-grid">
           <label>Prefab name <input id="prefab-name" type="text" value="hero" list="prefab-names"></label>
