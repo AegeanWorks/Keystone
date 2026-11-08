@@ -2831,6 +2831,7 @@ class WebServerTest(unittest.TestCase):
         status, _, body = self._request("/")
         text = body.decode("utf-8")
         self.assertEqual(status, 200)
+        self.assertIn('role="tree"', text)
         for control in (
             "hierarchy",
             "hierarchy-filter",
@@ -2987,6 +2988,12 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("setSelected", script)
         self.assertIn("selected_ids", script)
         self.assertIn("select_many", script)
+        self.assertIn("reparentNodeTo", script)
+        self.assertIn("hierarchy-row", script)
+        self.assertIn("draggable", script)
+        self.assertIn("dragstart", script)
+        self.assertIn("dragover", script)
+        self.assertIn("dataTransfer", script)
         self.assertIn("transform_selection", script)
         self.assertIn("toggle_selection_visible", script)
         self.assertIn("delete_selection", script)

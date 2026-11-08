@@ -1208,3 +1208,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Meshless nodes (empties, group containers and other scene markers) were selectable through box proxies but invisible in the Scene view, making them hard to find and author.
 - **Decision**: Draw a small amber three-axis pivot cross at every meshless node's world position using the existing gizmo line shader and the `boxProxies` positions. Selected pivots tint green, the icon scales with camera distance through `gizmoScale`, and the pass is skipped in Game view. No API or schema change.
 - **Consequences**: 778 tests green; static viewer coverage verifies the pivot geometry and render pass. Icons are scene-view presentation only, depth-tested against geometry, and do not replace click selection or box-proxy hit testing.
+
+### ADR-148: Draggable hierarchy tree
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The hierarchy was a flat multi-select list; reparenting required the separate parent dropdown and Reparent button, unlike Unity/Unreal tree drag-and-drop.
+- **Decision**: Replace the hierarchy `<select>` with a role-tree list of draggable rows showing indentation, prefab badges and selection state. Clicking selects, Ctrl/Cmd-click toggles, dragging a row onto another node calls `reparent_node` with that node as parent, and dropping on empty hierarchy space reparents to the scene root. Drag-over rows and the tree background get dashed feedback. The server remains authoritative for self/descendant/prefab-group validation. No API or schema change.
+- **Consequences**: 778 tests green; static coverage verifies tree semantics, draggable rows, drag/drop wiring and reparent routing. Drag/drop is not covered by a real-browser integration test, filtered views only show matching rows, and multi-select drag moves only the dragged node while prefab groups still move atomically through the server.

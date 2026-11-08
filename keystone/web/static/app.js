@@ -363,7 +363,12 @@ function renderParentOptions(editor, byId) {
 function renderHierarchy(editor) {
   const byId = new Map(editor.nodes.map((node) => [node.id, node]));
   const query = elements.hierarchyFilter.value.trim().toLowerCase();
+  const selected = new Set(
+    editor.selected_ids ||
+      (editor.selection ? [editor.selection.id] : []),
+  );
   elements.hierarchy.replaceChildren();
+  let visible = 0;
   for (const node of editor.nodes) {
     if (query) {
       const haystack = [
@@ -382,21 +387,53 @@ function renderHierarchy(editor) {
         continue;
       }
     }
-    const option = document.createElement("option");
-    option.value = node.id;
+    const row = document.createElement("div");
+    row.className =
+      "hierarchy-row" + (selected.has(node.id) ? " selected" : "");
+    row.dataset.nodeId = node.id;
+    row.draggable = true;
+    row.setAttribute("role", "treeitem");
     const badge = node.prefab_link
       ? ` [prefab:${node.prefab_link.name}/${node.prefab_link.instance}]`
       : "";
-    option.textContent =
+    row.textContent =
       `${"  ".repeat(nodeDepth(node, byId))}${node.name || "(root)"} · ${node.id}${badge}`;
-    elements.hierarchy.append(option);
+    row.addEventListener("click", (event) => {
+      if (event.ctrlKey || event.metaKey) {
+        run(() => selectMany([node.id], "toggle"));
+      } else {
+        run(() => selectMany([node.id], "replace"));
+      }
+    });
+    row.addEventListener("dragstart", (event) => {
+      event.dataTransfer.setData("text/plain", node.id);
+      event.dataTransfer.effectAllowed = "move";
+      row.classList.add("dragging");
+    });
+    row.addEventListener("dragend", () => row.classList.remove("dragging"));
+    row.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      row.classList.add("drag-over");
+    });
+    row.addEventListener("dragleave", () => row.classList.remove("drag-over"));
+    row.addEventListener("drop", (event) => {
+      event.preventDefault();
+      row.classList.remove("drag-over");
+      const dragged = event.dataTransfer.getData("text/plain");
+      if (dragged && dragged !== node.id) {
+        run(() => reparentNodeTo(dragged, node.id));
+      }
+    });
+    elements.hierarchy.append(row);
+    visible += 1;
   }
-  const selected = new Set(
-    editor.selected_ids ||
-      (editor.selection ? [editor.selection.id] : []),
-  );
-  for (const option of elements.hierarchy.options) {
-    option.selected = selected.has(option.value);
+  if (!visible) {
+    const empty = document.createElement("div");
+    empty.className = "hierarchy-empty";
+    empty.textContent = "No matching nodes.";
+    empty.style.pointerEvents = "none";
+    elements.hierarchy.append(empty);
   }
   renderParentOptions(editor, byId);
 }
@@ -1965,6 +2002,17 @@ async function reparentNode() {
   await refreshScene(false);
 }
 
+async function reparentNodeTo(nodeId, parentId) {
+  if (!nodeId) {
+    return;
+  }
+  await editorAction(
+    { action: "reparent_node", id: nodeId, parent: parentId || "root" },
+    "reparenting node",
+  );
+  await refreshScene(false);
+}
+
 function historyStepCount() {
   const steps = Number.parseInt(elements.historySteps.value, 10);
   if (!Number.isInteger(steps) || steps < 1 || steps > 100) {
@@ -2203,11 +2251,29 @@ elements.run.addEventListener("click", () => run(() => simulate(60)));
 elements.simulate.addEventListener("click", () => run(() => simulate()));
 elements.refresh.addEventListener("click", () => run(() => refreshScene(true)));
 elements.editorRefresh.addEventListener("click", () => run(() => refreshEditor(true)));
-elements.hierarchy.addEventListener("change", () => {
-  const ids = Array.from(elements.hierarchy.selectedOptions).map(
-    (option) => option.value,
-  );
-  run(() => selectMany(ids, "replace"));
+elements.hierarchy.addEventListener("dragover", (event) => {
+  if (event.target !== elements.hierarchy) {
+    return;
+  }
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
+  elements.hierarchy.classList.add("drag-over");
+});
+elements.hierarchy.addEventListener("dragleave", (event) => {
+  if (event.target === elements.hierarchy) {
+    elements.hierarchy.classList.remove("drag-over");
+  }
+});
+elements.hierarchy.addEventListener("drop", (event) => {
+  if (event.target !== elements.hierarchy) {
+    return;
+  }
+  event.preventDefault();
+  elements.hierarchy.classList.remove("drag-over");
+  const dragged = event.dataTransfer.getData("text/plain");
+  if (dragged) {
+    run(() => reparentNodeTo(dragged, "root"));
+  }
 });
 elements.transformApply.addEventListener("click", () => run(applyTransform));
 elements.playStart.addEventListener("click", () => run(playStart));

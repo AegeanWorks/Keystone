@@ -227,6 +227,53 @@ button:disabled {
   line-height: 1.4;
 }
 
+.hierarchy {
+  display: flex;
+  flex-direction: column;
+  max-height: 220px;
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel-2);
+}
+
+.hierarchy-row {
+  padding: 4px 6px;
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.hierarchy-row:hover {
+  background: rgba(118, 215, 196, 0.08);
+}
+
+.hierarchy-row.selected {
+  background: rgba(118, 215, 196, 0.18);
+  color: var(--accent);
+}
+
+.hierarchy-row.dragging {
+  opacity: 0.5;
+}
+
+.hierarchy-row.drag-over,
+.hierarchy.drag-over {
+  outline: 1px dashed var(--accent-2);
+}
+
+.hierarchy-empty {
+  padding: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
 .override-group {
   margin-top: 8px;
   padding-top: 8px;
