@@ -1232,3 +1232,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Animation preview accepted only a typed time value, with no duration feedback or visual timeline for scrubbing.
 - **Decision**: Add a range scrubber to the animation panel. Its duration comes from the selected library entry when available, otherwise from the maximum key time in the inline clip JSON, with a 0.01s floor and a safe 1s fallback for malformed input. Scrubbing mirrors the time field; releasing the scrubber previews once through `preview_animation`. The time field also clamps the scrubber. No API or schema change.
 - **Consequences**: 779 tests green; static coverage verifies duration derivation and scrub/time wiring. Scrubbing records one preview undo entry per release, invalid inline JSON only affects duration estimation, and playback/loop controls remain future work.
+
+### ADR-151: Real-time animation preview playback
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The timeline could scrub one pose at a time but could not play a clip continuously, so animation review required repeated manual releases.
+- **Decision**: Add a `record` flag to `preview_animation` (default true); record-free frames apply the sampled pose without history. The console adds a Play/Pause button that records one initial frame, then drives wall-clock preview frames through direct API calls at roughly 30 fps, wrapping at the clip duration, capping elapsed catch-up, guarding one in-flight frame, and stopping on errors or any editor action. Bump the editor schema to 41.
+- **Consequences**: 779 tests green; record-free history behavior, playback wiring, schema examples and duration/scrub integration are covered. Playback leaves the final pose in the scene until Undo, does not persist or loop-event, and the browser loop is not covered by a real-browser timing test.

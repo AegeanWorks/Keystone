@@ -261,12 +261,12 @@ EDITOR_SCHEMA = {
         "remove_component": ["id", "type"],
         "play_step": ["frames", "actions"],
         "play": ["active", "paused", "frames", "step", "status", "snapshot"],
-        "preview_animation": ["clip", "time"],
+        "preview_animation": ["clip", "time", "record"],
         "save_animation": ["name", "clip"],
         "delete_animation": ["name"],
         "restore_animation": ["trash"],
         "animation": ["name", "duration", "track_count", "source", "error"],
-        "animation_preview": ["name", "time", "updated", "track_count", "source"],
+        "animation_preview": ["name", "time", "updated", "track_count", "source", "record"],
         "material_entry": [
             "name",
             "source",
@@ -340,6 +340,7 @@ EDITOR_SCHEMA = {
         "schema 38 adds a file-backed animation library with save_animation/delete_animation/restore_animation and preview by name",
         "schema 39 adds a file-backed material library with save_material/assign_material and a materials inventory",
         "schema 40 adds material delete/restore with in-use protection and recoverable trash",
+        "schema 41 adds a preview_animation record flag for record-free playback frames",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

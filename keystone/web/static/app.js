@@ -30,6 +30,7 @@ const elements = {
   animationNames: document.getElementById("animation-names"),
   animationPreview: document.getElementById("animation-preview"),
   animationSample: document.getElementById("animation-sample"),
+  animationPlay: document.getElementById("animation-play"),
   animationSave: document.getElementById("animation-save"),
   animationDelete: document.getElementById("animation-delete"),
   animationRestore: document.getElementById("animation-restore"),
@@ -158,6 +159,10 @@ let playLoopBusy = false;
 let playLoopLast = 0;
 let wasPlaying = false;
 let layoutTimer = null;
+let animationPlayActive = false;
+let animationPlayTimer = null;
+let animationPlayBusy = false;
+let animationPlayLast = 0;
 let gizmoSpace = "world";
 let boxSelect = false;
 
@@ -217,6 +222,7 @@ function setBusy(value) {
     elements.playStart,
     elements.playPause, elements.playResume, elements.playStep, elements.playStop, elements.componentSet, elements.componentRemove,
     elements.animationPreview, elements.animationSample,
+    elements.animationPlay,
     elements.animationSave, elements.animationDelete, elements.animationRestore,
     elements.prefabSave, elements.prefabInsert, elements.prefabRename,
     elements.prefabRevert, elements.prefabApply, elements.prefabRefresh,
@@ -877,6 +883,7 @@ async function refreshEditor(display) {
 }
 
 async function editorAction(payload, label) {
+  stopAnimationPlay();
   setStatus(label, "busy");
   const editor = await api("/api/editor", {
     method: "POST",
@@ -1658,34 +1665,115 @@ function syncAnimationTimeline(editor) {
   );
 }
 
-async function previewAnimation() {
+function animationPreviewPayload() {
   const time = Number(elements.animationTime.value);
   if (!Number.isFinite(time) || time < 0) {
     throw new Error("Preview time must be a non-negative number.");
   }
   const name = elements.animationName.value.trim();
-  let payload;
   if (name) {
-    payload = { action: "preview_animation", name, time };
-  } else {
-    let clip;
-    try {
-      clip = JSON.parse(elements.animationClip.value || "{}");
-    } catch (error) {
-      throw new Error(`Animation clip JSON: ${error.message}`);
-    }
-    if (!clip || typeof clip !== "object" || Array.isArray(clip)) {
-      throw new Error("Animation clip JSON must be an object.");
-    }
-    payload = { action: "preview_animation", clip, time };
+    return { action: "preview_animation", name, time };
   }
-  const editor = await editorAction(payload, "previewing animation");
+  let clip;
+  try {
+    clip = JSON.parse(elements.animationClip.value || "{}");
+  } catch (error) {
+    throw new Error(`Animation clip JSON: ${error.message}`);
+  }
+  if (!clip || typeof clip !== "object" || Array.isArray(clip)) {
+    throw new Error("Animation clip JSON must be an object.");
+  }
+  return { action: "preview_animation", clip, time };
+}
+
+async function previewAnimation() {
+  const payload = animationPreviewPayload();
+  const editor = await editorAction(
+    { ...payload, record: true },
+    "previewing animation",
+  );
   await refreshScene(false);
   show({
     ok: true,
     action: "preview_animation",
     preview: editor.animation_preview,
   });
+}
+
+function stopAnimationPlay() {
+  animationPlayActive = false;
+  if (animationPlayTimer !== null) {
+    window.clearTimeout(animationPlayTimer);
+    animationPlayTimer = null;
+  }
+  elements.animationPlay.textContent = "Play preview";
+}
+
+async function toggleAnimationPlay() {
+  if (animationPlayActive) {
+    stopAnimationPlay();
+    return;
+  }
+  const duration = animationDuration(editorState);
+  let time = Number(elements.animationTime.value);
+  if (!Number.isFinite(time) || time < 0 || time >= duration) {
+    time = 0;
+    elements.animationTime.value = "0";
+  }
+  elements.animationScrub.value = String(Math.min(time, duration));
+  const payload = animationPreviewPayload();
+  await editorAction(
+    { ...payload, record: true },
+    "starting animation preview",
+  );
+  animationPlayActive = true;
+  animationPlayLast = performance.now();
+  elements.animationPlay.textContent = "Pause preview";
+  animationPlayTimer = window.setTimeout(animationTick, 33);
+}
+
+async function animationTick() {
+  animationPlayTimer = null;
+  if (!animationPlayActive) {
+    return;
+  }
+  if (animationPlayBusy) {
+    animationPlayTimer = window.setTimeout(animationTick, 33);
+    return;
+  }
+  animationPlayBusy = true;
+  const now = performance.now();
+  const elapsed = Math.min(
+    0.2,
+    Math.max(0, (now - animationPlayLast) / 1000),
+  );
+  animationPlayLast = now;
+  const duration = animationDuration(editorState);
+  let time = Number(elements.animationTime.value) + elapsed;
+  if (!Number.isFinite(time) || time >= duration) {
+    time = 0;
+  }
+  elements.animationTime.value = String(Math.round(time * 1000) / 1000);
+  elements.animationScrub.value = String(Math.min(time, duration));
+  try {
+    const payload = animationPreviewPayload();
+    const editor = await api("/api/editor", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...payload, record: false }),
+    });
+    showEditor(editor);
+    await refreshScene(false);
+  } catch (error) {
+    stopAnimationPlay();
+    setStatus(error.message, "error");
+    show({ ok: false, error: error.message });
+  } finally {
+    animationPlayBusy = false;
+    if (animationPlayActive) {
+      animationPlayTimer = window.setTimeout(animationTick, 33);
+    }
+  }
 }
 
 async function saveAnimation() {
@@ -2352,10 +2440,12 @@ elements.playStep.addEventListener("click", () => run(playStep));
 elements.playStop.addEventListener("click", () => run(playStop));
 elements.animationPreview.addEventListener("click", () => run(previewAnimation));
 elements.animationSample.addEventListener("click", () => run(sampleAnimationClip));
+elements.animationPlay.addEventListener("click", () => run(toggleAnimationPlay));
 elements.animationSave.addEventListener("click", () => run(saveAnimation));
 elements.animationDelete.addEventListener("click", () => run(deleteAnimation));
 elements.animationRestore.addEventListener("click", () => run(restoreAnimation));
 elements.animationTime.addEventListener("input", () => {
+  stopAnimationPlay();
   const time = Number(elements.animationTime.value);
   if (!Number.isFinite(time)) {
     return;
@@ -2364,9 +2454,13 @@ elements.animationTime.addEventListener("input", () => {
   elements.animationScrub.value = String(Math.min(Math.max(0, time), max));
 });
 elements.animationScrub.addEventListener("input", () => {
+  stopAnimationPlay();
   elements.animationTime.value = elements.animationScrub.value;
 });
-elements.animationScrub.addEventListener("change", () => run(previewAnimation));
+elements.animationScrub.addEventListener("change", () => {
+  stopAnimationPlay();
+  run(previewAnimation);
+});
 elements.hierarchyFilter.addEventListener("input", () => {
   if (editorState) {
     renderHierarchy(editorState);

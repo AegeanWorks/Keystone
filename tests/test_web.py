@@ -2485,6 +2485,25 @@ class WebServerTest(unittest.TestCase):
         )
         self.assertEqual(restored["transform"]["position"], original)
 
+        unrecorded = session.editor_action(
+            {
+                "action": "preview_animation",
+                "clip": clip,
+                "time": 0.25,
+                "record": False,
+            }
+        )
+        self.assertFalse(unrecorded["animation_preview"]["record"])
+        self.assertEqual(unrecorded["history"]["undo"], 0)
+        moved = next(
+            node for node in unrecorded["nodes"] if node["id"] == cube["id"]
+        )
+        self.assertAlmostEqual(
+            moved["transform"]["position"][1],
+            original[1] + 0.5,
+            places=4,
+        )
+
         for payload in (
             {"action": "preview_animation", "clip": clip, "time": -1.0},
             {"action": "preview_animation", "clip": clip, "time": True},
@@ -2493,6 +2512,12 @@ class WebServerTest(unittest.TestCase):
                 "action": "preview_animation",
                 "clip": {**clip, "schema": 2},
                 "time": 0.0,
+            },
+            {
+                "action": "preview_animation",
+                "clip": clip,
+                "time": 0.0,
+                "record": "yes",
             },
         ):
             with self.assertRaises(WebProblem) as caught:
@@ -2882,6 +2907,7 @@ class WebServerTest(unittest.TestCase):
             "animation-names",
             "animation-preview",
             "animation-sample",
+            "animation-play",
             "animation-save",
             "animation-delete",
             "animation-restore",
@@ -3088,6 +3114,10 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("playSnapshot", script)
         self.assertIn("previewAnimation", script)
         self.assertIn("sampleAnimationClip", script)
+        self.assertIn("toggleAnimationPlay", script)
+        self.assertIn("animationTick", script)
+        self.assertIn("stopAnimationPlay", script)
+        self.assertIn("record", script)
         self.assertIn("animationDuration", script)
         self.assertIn("syncAnimationTimeline", script)
         self.assertIn("animationScrub", script)

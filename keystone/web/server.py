@@ -880,12 +880,21 @@ class GameSession:
                         raise ValueError(
                             "preview_animation time must be non-negative"
                         )
-                    updated = self._apply_history(
-                        scene,
-                        lambda: apply_pose(
-                            scene, clip.sample(float(time))
-                        ),
-                    )
+                    record = payload.get("record", True)
+                    if not isinstance(record, bool):
+                        raise TypeError(
+                            "preview_animation record must be a boolean"
+                        )
+                    if record:
+                        updated = self._apply_history(
+                            scene,
+                            lambda: apply_pose(
+                                scene, clip.sample(float(time))
+                            ),
+                        )
+                    else:
+                        updated = apply_pose(scene, clip.sample(float(time)))
+                        self.last_diff = None
                     self.last_animation_preview = {
                         "name": clip.name,
                         "time": round(float(time), 6),
@@ -894,6 +903,7 @@ class GameSession:
                         + len(clip.rotation_tracks)
                         + len(clip.scale_tracks),
                         "source": source,
+                        "record": record,
                     }
                 elif action == "save_animation":
                     if self.animation_library is None:
