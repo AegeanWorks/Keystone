@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-prefab-group-integrity-v1",
+    "task_id": "keystone-nested-prefabs-v1",
     "last_phase": "verification",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794095055.9376328,
+    "updated_at": 1794096149.6984587,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794095056.3144956
+    "completed_at": 1794096150.0630996
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-gizmo-space-v1",
-      "phase": "verification",
-      "phase_num": 4,
-      "description": "[2/2] World/local translate space implemented: Space button, X shortcut, mode-aware basis, drag cancellation, static coverage; 731 tests green, node --check clean, determinism unchanged, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794093032.1738272,
-      "timestamp_str": "2026-11-08 02:10:32",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-gizmo-space-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-gizmo-space-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794093032.6433358,
-      "timestamp_str": "2026-11-08 02:10:32",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-prefab-inventory-v1",
-      "phase": "planning",
-      "phase_num": 2,
-      "description": "[1/2] Plan a prefab_instances summary in the editor document with schema 19",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794093065.7183204,
-      "timestamp_str": "2026-11-08 02:11:05",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "AI clients must scan every node to find prefab instances; a derived summary makes discovery and automation direct.",
-        "benefits": "One deterministic list of root id, prefab name and instance prefix, updated with every editor document, plus schema and console discovery.",
-        "risks": "contract: editor schema bump to 19; dependency: none; concurrency: none; state: derived from node links, no new persistence.",
-        "mitigation": "Derive the list from prefab_link nodes, add document tests, and run the full gate cycle."
-      },
-      "plan_digest": "e96684c966309372ae7a0fdb1c80c1406f829c0c32699f774258e8b9d332ea04"
-    },
     {
       "task_id": "keystone-prefab-inventory-v1",
       "phase": "verification",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794095056.314498,
       "timestamp_str": "2026-11-08 02:44:16",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-nested-prefabs-v1",
+      "phase": "planning",
+      "phase_num": 2,
+      "description": "[1/3] Plan nested prefab instances with prefab schema 2, prefix/ID rebasing on instantiate, and capture/revert/apply coverage",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794095192.9226375,
+      "timestamp_str": "2026-11-08 02:46:32",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "Prefab capture and instantiation flatten nested instances, so nested prefab assets cannot be composed, reverted or applied.",
+        "benefits": "Prefab documents persist nested links with a v1 migration, insertion rebases nested prefixes and IDs, and nested groups support revert/apply without disturbing the outer instance.",
+        "risks": "contract: prefab schema 2 and editor schema 22; dependency: none; concurrency: existing editor lock; state: prefix rebasing, ID uniqueness, direct self-reference and dangling nested assets.",
+        "mitigation": "Normalize template IDs and links during capture, rebase effective prefixes during instantiate, reject self-links and root links, test v1 migration and nested workflows, then run the full gate cycle."
+      },
+      "plan_digest": "f0e363bca7954aa14ab66a945924c6188a5001648e50573be3ae261735479e27"
+    },
+    {
+      "task_id": "keystone-nested-prefabs-v1",
+      "phase": "verification",
+      "phase_num": 4,
+      "description": "[2/3] Nested prefabs implemented: prefab schema 2 with schema-1 migration, parent-relative link normalization, outer.inner prefix/ID rebasing, nested and outer revert/apply; 740 tests green, node check clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 22, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794096149.6984587,
+      "timestamp_str": "2026-11-08 03:02:29",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-nested-prefabs-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-nested-prefabs-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794096150.0631025,
+      "timestamp_str": "2026-11-08 03:02:30",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

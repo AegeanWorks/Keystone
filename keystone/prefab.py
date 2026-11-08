@@ -19,32 +19,86 @@ from keystone.component_codec import (
     component_to_dict,
 )
 from keystone.math3d import Quat, Vec3
-from keystone.scene import Node, Scene, Transform
+from keystone.scene import Node, PrefabLink, Scene, Transform
 from keystone.schema import PREFAB_SCHEMA_VERSION
 from keystone.serialization import read_json, write_json_atomic
 
 __all__ = ["PREFAB_SCHEMA_VERSION", "Prefab"]
 
 
-def _clone_template(node: Node, strip_prefix: str | None = None) -> Node:
-    node_id = node.id
-    if strip_prefix is not None and node_id:
-        node_id = node_id.removeprefix(f"{strip_prefix}:")
+def _copy_template(node: Node) -> Node:
     clone = Node(
         node.name,
         transform=node.transform,
         mesh=node.mesh,
         material=node.material,
         visible=node.visible,
-        id=node_id,
+        id=node.id,
         tags=set(node.tags),
         layer=node.layer,
         components=copy.deepcopy(node.components),
-        prefab_link=None,
+        prefab_link=node.prefab_link,
     )
     for child in node.children:
-        clone.add_child(_clone_template(child, strip_prefix))
+        clone.add_child(_copy_template(child))
     return clone
+
+
+def _normalize_template(
+    node: Node,
+    inherited: str | None,
+    prefab_name: str,
+    is_root: bool,
+) -> None:
+    link = node.prefab_link
+    effective = link.instance if link is not None else inherited
+    if effective is not None and node.id:
+        node.id = node.id.removeprefix(f"{effective}:")
+    if link is not None:
+        if is_root:
+            node.prefab_link = None
+        else:
+            if link.name == prefab_name:
+                raise ValueError(f"prefab {prefab_name!r} cannot reference itself")
+            instance = link.instance
+            if inherited is not None:
+                if instance == inherited:
+                    raise ValueError(
+                        "nested prefab instance cannot reuse its parent prefix"
+                    )
+                marker = f"{inherited}."
+                if not instance.startswith(marker):
+                    raise ValueError(
+                        "nested prefab instance must be inside its parent instance"
+                    )
+                instance = instance[len(marker):]
+            node.prefab_link = PrefabLink(link.name, instance)
+    for child in node.children:
+        _normalize_template(child, effective, prefab_name, False)
+
+
+def _capture_template(node: Node, prefab_name: str) -> Node:
+    root_prefix = node.prefab_link.instance if node.prefab_link is not None else None
+    clone = _copy_template(node)
+    _normalize_template(clone, root_prefix, prefab_name, True)
+    return clone
+
+
+def _allocate_instance_prefix(scene: Scene, base: str = "prefab") -> str:
+    used_instances = {
+        node.prefab_link.instance
+        for node in scene.traverse()
+        if node.prefab_link is not None
+    }
+    used_ids = {node.id for node in scene.traverse() if node.id}
+    candidate = base
+    counter = 2
+    while candidate in used_instances or any(
+        node_id.startswith(f"{candidate}:") for node_id in used_ids
+    ):
+        candidate = f"{base}-{counter}"
+        counter += 1
+    return candidate
 
 
 def _collect_ids(node: Node) -> list[str]:
@@ -117,6 +171,12 @@ class Prefab:
                 raise TypeError("prefab roots must be Node instances")
             if root.parent is not None:
                 raise ValueError("prefab roots must be detached")
+            if root.prefab_link is not None:
+                raise ValueError("prefab roots must not carry prefab links")
+            for node in root.traverse():
+                link = node.prefab_link
+                if link is not None and link.name == self.name:
+                    raise ValueError(f"prefab {self.name!r} cannot reference itself")
             ids.extend(_collect_ids(root))
         if len(ids) != len(set(ids)):
             raise ValueError("prefab node ids must be unique across roots")
@@ -129,11 +189,8 @@ class Prefab:
             raise TypeError("prefab source must be a Node")
         if name is not None and (not isinstance(name, str) or not name.strip()):
             raise ValueError("prefab name must be a non-blank string")
-        prefix = node.prefab_link.instance if node.prefab_link is not None else None
-        return cls(
-            name if name is not None else (node.name or "prefab"),
-            (_clone_template(node, prefix),),
-        )
+        selected = name if name is not None else (node.name or "prefab")
+        return cls(selected, (_capture_template(node, selected),))
 
     @classmethod
     def from_nodes(
@@ -144,15 +201,17 @@ class Prefab:
         """Capture several subtrees as a deterministic multi-root prefab."""
         if not isinstance(nodes, (list, tuple)) or not nodes:
             raise ValueError("prefab needs at least one source node")
+        first = nodes[0]
+        if not isinstance(first, Node):
+            raise TypeError("prefab sources must be Node instances")
+        if name is not None and (not isinstance(name, str) or not name.strip()):
+            raise ValueError("prefab name must be a non-blank string")
+        selected = name if name is not None else (first.name or "prefab")
         roots: list[Node] = []
         for node in nodes:
             if not isinstance(node, Node):
                 raise TypeError("prefab sources must be Node instances")
-            prefix = node.prefab_link.instance if node.prefab_link is not None else None
-            roots.append(_clone_template(node, prefix))
-        if name is not None and (not isinstance(name, str) or not name.strip()):
-            raise ValueError("prefab name must be a non-blank string")
-        selected = name if name is not None else (roots[0].name or "prefab")
+            roots.append(_capture_template(node, selected))
         return cls(selected, tuple(roots))
 
     @classmethod
@@ -163,11 +222,7 @@ class Prefab:
         if not isinstance(name, str) or not name.strip():
             raise ValueError("prefab name must be a non-blank string")
         roots = tuple(
-            _clone_template(
-                child,
-                child.prefab_link.instance if child.prefab_link is not None else None,
-            )
-            for child in scene.root.children
+            _capture_template(child, name) for child in scene.root.children
         )
         return cls(name, roots)
 
@@ -203,6 +258,9 @@ class Prefab:
                 "visible": node.visible,
                 "tags": sorted(node.tags),
                 "layer": node.layer,
+                "prefab_link": (
+                    node.prefab_link.to_dict() if node.prefab_link is not None else None
+                ),
                 "transform": _transform_to_dict(node.transform),
                 "mesh": _asset_id(
                     registry, node.mesh, f"{node.id or node.name!r} mesh", "mesh"
@@ -239,7 +297,11 @@ class Prefab:
         if "schema" not in data:
             raise ValueError("prefab document needs a schema")
         schema = data["schema"]
-        if isinstance(schema, bool) or not isinstance(schema, int) or schema != PREFAB_SCHEMA_VERSION:
+        if (
+            isinstance(schema, bool)
+            or not isinstance(schema, int)
+            or schema not in (1, PREFAB_SCHEMA_VERSION)
+        ):
             raise ValueError(f"unsupported prefab schema {schema}")
         name = data.get("name")
         raw_roots = data.get("roots")
@@ -289,6 +351,10 @@ class Prefab:
                         f"prefab node {node_id!r} has duplicate {type(component).__name__} components"
                     )
                 components[type(component)] = component
+            raw_link = value.get("prefab_link")
+            prefab_link = (
+                PrefabLink.from_dict(raw_link) if raw_link is not None else None
+            )
             built = Node(
                 node_name,
                 transform=_transform_from_dict(value.get("transform", {})),
@@ -299,6 +365,7 @@ class Prefab:
                 tags=set(tags),
                 layer=layer,
                 components=components,
+                prefab_link=prefab_link,
             )
             raw_children = value.get("children", [])
             if not isinstance(raw_children, list):
@@ -338,14 +405,22 @@ class Prefab:
     ) -> list[Node]:
         """Attach fresh copies to a scene, returning the new root nodes.
 
-        With ``instance`` set, every ID becomes ``instance:original-id`` (or
-        ``instance:node-N`` when the template node had no ID). Without it, IDs
-        are left blank so the scene's deterministic allocator assigns them.
+        With ``instance`` set, outer IDs use ``instance:id`` and each nested
+        prefab group uses ``instance.relative:id`` while its link instance is
+        rebased to the same effective prefix. Without a prefix, simple prefabs
+        keep blank IDs for the scene allocator; prefabs with nested links get a
+        deterministic ``prefab`` prefix so nested groups stay unique.
         """
         if not isinstance(scene, Scene):
             raise TypeError("prefab target must be a Scene")
         if parent is not None and not isinstance(parent, Node):
             raise TypeError("prefab parent must be a Node or None")
+        if instance is None and any(
+            node.prefab_link is not None
+            for root in self.roots
+            for node in root.traverse()
+        ):
+            instance = _allocate_instance_prefix(scene)
         if instance is not None:
             if not isinstance(instance, str) or not instance.strip():
                 raise ValueError("instance prefix must be a non-blank string")
@@ -355,15 +430,21 @@ class Prefab:
         counter = 0
         created: list[Node] = []
 
-        def clone_for_instance(node: Node) -> Node:
+        def clone_for_instance(node: Node, inherited: str | None) -> Node:
             nonlocal counter
+            link = node.prefab_link
+            effective = inherited
+            if link is not None:
+                effective = (
+                    f"{inherited}.{link.instance}" if inherited else link.instance
+                )
             if instance is None:
                 new_id = ""
             elif node.id:
-                new_id = f"{instance}:{node.id}"
+                new_id = f"{effective}:{node.id}"
             else:
                 counter += 1
-                new_id = f"{instance}:node-{counter}"
+                new_id = f"{effective}:node-{counter}"
             clone = Node(
                 node.name,
                 transform=node.transform,
@@ -374,14 +455,18 @@ class Prefab:
                 tags=set(node.tags),
                 layer=node.layer,
                 components=copy.deepcopy(node.components),
-                prefab_link=None,
+                prefab_link=(
+                    PrefabLink(link.name, effective)
+                    if link is not None and effective is not None
+                    else None
+                ),
             )
             for child in node.children:
-                clone.add_child(clone_for_instance(child))
+                clone.add_child(clone_for_instance(child, effective))
             return clone
 
         for root in self.roots:
-            clone = clone_for_instance(root)
+            clone = clone_for_instance(root, instance)
             if target_parent is scene.root:
                 scene.add(clone)
             else:
@@ -398,6 +483,9 @@ class Prefab:
                 "name": node.name,
                 "tags": sorted(node.tags),
                 "layer": node.layer,
+                "prefab_link": (
+                    node.prefab_link.to_dict() if node.prefab_link is not None else None
+                ),
                 "components": sorted(component_type.__name__ for component_type in node.components),
                 "children": [entry(child) for child in node.children],
             }

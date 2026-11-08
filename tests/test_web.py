@@ -603,6 +603,97 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("pair-1:left", ids)
         self.assertIn("pair-1:right", ids)
 
+    def test_editor_nested_prefab_capture_revert_and_apply(self):
+        session = GameSession(CubeDemo())
+        session.prefabs["inner"] = Prefab(
+            "inner",
+            (
+                Node(
+                    "inner",
+                    id="inner",
+                    transform=Transform(position=Vec3(0.0, 1.0, 0.0)),
+                ),
+            ),
+        )
+        session.editor_action(
+            {"action": "create_node", "id": "outer", "name": "outer"}
+        )
+        session.editor_action(
+            {
+                "action": "insert_prefab",
+                "name": "inner",
+                "parent": "outer",
+                "instance": "inner-1",
+            }
+        )
+        session.editor_action(
+            {"action": "save_prefab", "id": "outer", "name": "outer"}
+        )
+        session.editor_action({"action": "delete_node", "id": "outer"})
+        inserted = session.editor_action(
+            {"action": "insert_prefab", "name": "outer", "instance": "outer-1"}
+        )
+        outer_id = "outer-1:outer"
+        nested_id = "outer-1.inner-1:inner"
+        nested = next(node for node in inserted["nodes"] if node["id"] == nested_id)
+        self.assertEqual(
+            nested["prefab_link"],
+            {"name": "inner", "instance": "outer-1.inner-1"},
+        )
+        self.assertEqual(inserted["prefab_instance_count"], 2)
+        session.editor_action(
+            {
+                "action": "transform",
+                "id": nested_id,
+                "position": [3.0, 1.0, 0.0],
+            }
+        )
+        reverted = session.editor_action(
+            {"action": "revert_prefab", "id": nested_id}
+        )
+        nested = next(node for node in reverted["nodes"] if node["id"] == nested_id)
+        self.assertEqual(nested["transform"]["position"], [0.0, 1.0, 0.0])
+        self.assertEqual(
+            reverted["selection"]["prefab_link"],
+            {"name": "inner", "instance": "outer-1.inner-1"},
+        )
+        undone = session.editor_action({"action": "undo"})
+        nested = next(node for node in undone["nodes"] if node["id"] == nested_id)
+        self.assertEqual(nested["transform"]["position"], [3.0, 1.0, 0.0])
+        applied = session.editor_action(
+            {"action": "apply_prefab", "id": nested_id}
+        )
+        inner_entry = next(
+            entry for entry in applied["prefabs"] if entry["name"] == "inner"
+        )
+        self.assertEqual(inner_entry["node_count"], 1)
+        self.assertEqual(session.prefabs["inner"].roots[0].id, "inner")
+        self.assertEqual(
+            session.prefabs["inner"].roots[0].transform.position.x, 3.0
+        )
+        outer_link = next(
+            node["prefab_link"]
+            for node in applied["nodes"]
+            if node["id"] == outer_id
+        )
+        self.assertEqual(outer_link, {"name": "outer", "instance": "outer-1"})
+        reverted_outer = session.editor_action(
+            {"action": "revert_prefab", "id": outer_id}
+        )
+        nested = next(
+            node for node in reverted_outer["nodes"] if node["id"] == nested_id
+        )
+        self.assertEqual(
+            nested["prefab_link"],
+            {"name": "inner", "instance": "outer-1.inner-1"},
+        )
+        self.assertEqual(nested["transform"]["position"], [0.0, 1.0, 0.0])
+        undone_outer = session.editor_action({"action": "undo"})
+        nested = next(
+            node for node in undone_outer["nodes"] if node["id"] == nested_id
+        )
+        self.assertEqual(nested["transform"]["position"], [3.0, 1.0, 0.0])
+
     def test_editor_batch_can_revert_prefab_instance(self):
         session = GameSession(CubeDemo())
         editor = session.editor()

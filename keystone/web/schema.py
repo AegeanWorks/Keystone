@@ -161,6 +161,7 @@ EDITOR_SCHEMA = {
         "schema 19 adds a prefab_instances inventory of linked roots to the editor document",
         "schema 20 allows revert_prefab inside atomic batch actions",
         "schema 21 makes prefab instance links and revert/apply/delete/reparent group-aware for multi-root prefabs; prefab_instance_count counts distinct groups",
+        "schema 22 supports nested prefab instances: prefab schema 2 persists nested links and instantiation rebases nested prefixes and IDs",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

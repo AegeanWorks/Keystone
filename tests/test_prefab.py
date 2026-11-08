@@ -112,10 +112,133 @@ class PrefabTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             Prefab.from_nodes([], name="pair")
 
+    def test_nested_capture_and_instantiation_rebase_prefixes(self):
+        scene = Scene()
+        outer = Node("outer", id="outer-1:outer")
+        nested = Node(
+            "nested",
+            id="outer-1.inner-1:nested",
+            prefab_link=PrefabLink("inner", "outer-1.inner-1"),
+        )
+        nested.add_child(Node("blade", id="outer-1.inner-1:blade"))
+        deep = Node(
+            "deep",
+            id="outer-1.inner-1.deep-1:deep",
+            prefab_link=PrefabLink("leaf", "outer-1.inner-1.deep-1"),
+        )
+        deep.add_child(Node("tip", id="outer-1.inner-1.deep-1:tip"))
+        nested.add_child(deep)
+        outer.add_child(nested)
+        outer.prefab_link = PrefabLink("outer", "outer-1")
+        scene.add(outer)
+
+        prefab = Prefab.from_node(outer, name="outer")
+        root = prefab.roots[0]
+        self.assertIsNone(root.prefab_link)
+        self.assertEqual(root.id, "outer")
+        nested_template = root.children[0]
+        self.assertEqual(nested_template.id, "nested")
+        self.assertEqual(
+            nested_template.prefab_link, PrefabLink("inner", "inner-1")
+        )
+        self.assertEqual(nested_template.children[0].id, "blade")
+        self.assertEqual(
+            nested_template.children[1].prefab_link,
+            PrefabLink("leaf", "deep-1"),
+        )
+        self.assertEqual(nested_template.children[1].id, "deep")
+        self.assertEqual(nested_template.children[1].children[0].id, "tip")
+
+        target = Scene()
+        created = prefab.instantiate(target, instance="copy")[0]
+        self.assertEqual(created.id, "copy:outer")
+        nested_copy = target.find_by_id("copy.inner-1:nested")
+        self.assertIsNotNone(nested_copy)
+        self.assertEqual(
+            nested_copy.prefab_link, PrefabLink("inner", "copy.inner-1")
+        )
+        self.assertIsNotNone(target.find_by_id("copy.inner-1:blade"))
+        deep_copy = target.find_by_id("copy.inner-1.deep-1:deep")
+        self.assertIsNotNone(deep_copy)
+        self.assertEqual(
+            deep_copy.prefab_link, PrefabLink("leaf", "copy.inner-1.deep-1")
+        )
+        self.assertIsNotNone(target.find_by_id("copy.inner-1.deep-1:tip"))
+
+        auto = Scene()
+        auto_root = prefab.instantiate(auto)[0]
+        self.assertEqual(auto_root.id, "prefab:outer")
+        self.assertEqual(
+            auto.find_by_id("prefab.inner-1:nested").prefab_link,
+            PrefabLink("inner", "prefab.inner-1"),
+        )
+        self.assertEqual(
+            auto.find_by_id("prefab.inner-1.deep-1:deep").prefab_link,
+            PrefabLink("leaf", "prefab.inner-1.deep-1"),
+        )
+
+    def test_nested_links_round_trip_and_schema_one_migrates(self):
+        outer = Node("outer", id="outer")
+        outer.add_child(
+            Node(
+                "nested",
+                id="nested",
+                prefab_link=PrefabLink("inner", "inner-1"),
+            )
+        )
+        prefab = Prefab("outer", (outer,))
+        document = prefab.to_dict()
+        self.assertEqual(document["schema"], 2)
+        self.assertEqual(
+            document["roots"][0]["children"][0]["prefab_link"],
+            {"name": "inner", "instance": "inner-1"},
+        )
+        loaded = Prefab.from_dict(document)
+        self.assertEqual(
+            loaded.roots[0].children[0].prefab_link,
+            PrefabLink("inner", "inner-1"),
+        )
+
+        legacy = {
+            "schema": 1,
+            "name": "legacy",
+            "roots": [
+                {
+                    "id": "root",
+                    "name": "root",
+                    "visible": True,
+                    "tags": [],
+                    "layer": "default",
+                    "transform": {},
+                    "mesh": None,
+                    "material": None,
+                    "components": [],
+                    "children": [],
+                }
+            ],
+        }
+        migrated = Prefab.from_dict(legacy)
+        self.assertIsNone(migrated.roots[0].prefab_link)
+
+    def test_prefab_rejects_root_links_and_self_references(self):
+        with self.assertRaises(ValueError):
+            Prefab(
+                "loop",
+                (Node("loop", id="loop", prefab_link=PrefabLink("other", "p")),),
+            )
+        outer = Node("outer", id="outer")
+        outer.add_child(
+            Node("child", id="child", prefab_link=PrefabLink("outer", "p"))
+        )
+        with self.assertRaises(ValueError):
+            Prefab("outer", (outer,))
+        with self.assertRaises(ValueError):
+            Prefab.from_node(outer, name="outer")
+
     def test_describe_is_json_safe(self):
         prefab = Prefab.from_scene(self._scene(), name="level")
         payload = prefab.describe()
-        self.assertEqual(payload["schema"], 1)
+        self.assertEqual(payload["schema"], PREFAB_SCHEMA_VERSION)
         self.assertEqual(payload["name"], "level")
         self.assertEqual(payload["node_count"], 3)
         json.dumps(payload, allow_nan=False)
@@ -183,7 +306,7 @@ class PrefabTest(unittest.TestCase):
         scene, registry = self._registered_scene()
         document = Prefab.from_node(scene.find_by_id("hero"), name="hero-prefab").to_dict(registry)
         with self.assertRaises(ValueError):
-            Prefab.from_dict({**document, "schema": 2}, registry, {"Health": Health})
+            Prefab.from_dict({**document, "schema": 99}, registry, {"Health": Health})
         without_schema = {key: value for key, value in document.items() if key != "schema"}
         with self.assertRaises(ValueError):
             Prefab.from_dict(without_schema, registry, {"Health": Health})

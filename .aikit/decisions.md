@@ -984,3 +984,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: After multi-root support, deleting or reparenting one linked root could split a group, making later revert/apply fail.
 - **Decision**: Make `delete_node` remove every root sharing the clicked link and return the group parent. Make `reparent_node` move every group root to the target and reject moves into the group itself. Split groups now fail with a clear 400.
 - **Consequences**: 736 tests green; multi-root groups stay atomic through deletion, reparenting and undo. A future explicit unlink action can expose per-root detachment when needed.
+
+### ADR-120: Support nested prefab instances with prefab schema 2
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Prefab capture and instantiation stripped every link, so nested instances were flattened and could not be composed, reverted or applied as nested prefabs.
+- **Decision**: Prefab documents are schema 2 and persist each node's `prefab_link`; schema-1 documents load with flat links. Capture strips the captured roots' links and effective instance prefixes, preserves descendant links, normalizes each nested link relative to its immediate parent, and rejects root links, self-references and links outside their parent instance. Instantiation computes effective `outer.inner...` prefixes, rebases nested links and IDs, and allocates a deterministic `prefab` prefix when a nested template is instantiated without one. Bump the editor schema to 22.
+- **Consequences**: 740 tests green; nested capture, instantiation, revert/apply, prefix rebasing and schema-1 migration are covered. Cross-prefab cycles, per-property overrides and automatic dependency validation remain future work; nested prefab assets should be saved alongside their dependencies.

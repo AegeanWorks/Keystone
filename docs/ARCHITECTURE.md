@@ -146,7 +146,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 |---|---|---|
 | Math | Implemented | Vec3, Mat4, Quat, transforms |
 | Scene | Implemented | hierarchy, visibility, lights, IDs, tags, layers and components |
-| Prefabs | Implemented | detached subtree capture, versioned `.kprefab` save/load, file-backed libraries, deterministic instance IDs, component copy isolation, JSON-safe describe |
+| Prefabs | Implemented | detached subtree capture, versioned `.kprefab` save/load (schema 2), file-backed libraries, deterministic instance IDs, nested prefab instances with rebased links/IDs, component copy isolation, JSON-safe describe |
 | Projects | Implemented | versioned `keystone.json` manifest, `--new` scaffold with starter scene/prefab content and component hooks, `--project` loader, `--validate-project` diagnostics, relative asset import as `project:<path>`, glTF/GLB scene-to-prefab import and generated five-op game |
 | Scene queries | Implemented | name/tag/layer/component filters and ID lookup |
 | Camera | Implemented | perspective and view matrices |
@@ -217,7 +217,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - `Scene` assigns unique IDs, preserves them across reparenting and rejects duplicate explicit IDs.
 - Scene snapshot schema 2 persists typed components; loading custom components without `component_types` fails with an actionable message, and schema-1 snapshots still load.
 - `Scene.query()`/`find()` filter by name, tag, layer and component; `find_by_id()` resolves an ID.
-- `Prefab` captures a detached subtree, saves/loads schema-1 `.kprefab` files through registered mesh/material ids, instantiates deterministic IDs, preserves tags/layers/components and isolates component copies.
+- `Prefab` captures a detached subtree, saves/loads schema-2 `.kprefab` files through registered mesh/material ids, instantiates deterministic IDs, preserves tags/layers/components, isolates component copies, and persists nested links; schema-1 documents load with flat links.
 - `/api/editor` schema 2 creates, deletes, duplicates and reparents nodes, links mesh/material ids through the game's asset registry, restores bounded undo/redo snapshots atomically, and can back prefab entries with a `PrefabLibrary` rooted in `<project>/prefabs`.
 - The editor reloads persisted prefabs after a restart, reports corrupt library entries as per-entry errors, and inserts them with deterministic instance ids.
 - Editor schema 3 saves and loads typed-component `.kscene` files in place, clears undo history on load, and rejects missing or wrong-kind asset references.
@@ -239,6 +239,7 @@ Each core system must have a game-agnostic test and must not introduce genre voc
 - Editor schema 20 allows `revert_prefab` inside atomic batches, so instance recovery and other edits share one undo entry.
 - Scene diff schema 2 compares `prefab_link` fields, so saved-scene diffs report instance-link changes.
 - Editor schema 21 makes prefab links and revert/apply/delete/reparent group-aware for multi-root prefabs; group roots must share one parent, revert preserves the group's earliest sibling position, and `prefab_instance_count` counts distinct groups.
+- Editor schema 22 supports nested prefab instances with prefab schema 2: nested links persist, instantiation rebases effective `outer.inner` prefixes and IDs, and nested groups revert/apply independently of the outer instance.
 - `--serve --scene NAME` opens a saved `.kscene` from the project/scene library before the first editor request and requires an explicit library.
 - `--simulate --scene NAME` and `--headless --scene NAME` restore the same `.kscene` into the built scene and pass it to the simulation/engine without rebuilding.
 - `--replay --scene NAME` and `--playtest --scene NAME` restore the scene into every fresh game instance, including fairness probes, so transcripts and verdicts share one authored layout.

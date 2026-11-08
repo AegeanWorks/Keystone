@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `133`
 - **Total Classes**: `206`
-- **Total Top-Level Functions**: `323`
-- **Total Class Methods**: `1278`
-- **Total Source Lines**: `28208`
+- **Total Top-Level Functions**: `326`
+- **Total Class Methods**: `1282`
+- **Total Source Lines**: `28511`
 
 ---
 
@@ -1061,7 +1061,7 @@
 ### [`keystone/prefab.py`](keystone/prefab.py)
 > *Deterministic prefabs: capture, persist and instantiate reusable subtrees.*
 
-**Size**: `410` lines (`16726` bytes)
+**Size**: `498` lines (`20152` bytes)
 
 **Classes:**
 - `class Prefab` - *An immutable-name, detached template of one or more scene subtrees.*
@@ -1079,7 +1079,10 @@
   - Method `.describe()` - *Return a JSON-safe structural summary for AI clients and tooling.*
 
 **Functions:**
-- `def _clone_template(node, strip_prefix)`
+- `def _copy_template(node)`
+- `def _normalize_template(node, inherited, prefab_name, is_root)`
+- `def _capture_template(node, prefab_name)`
+- `def _allocate_instance_prefix(scene, base)`
 - `def _collect_ids(node)`
 - `def _asset_id(registry, payload, label, kind)`
 - `def _transform_to_dict(transform)`
@@ -1583,7 +1586,7 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `187` lines (`8794` bytes)
+**Size**: `188` lines (`8937` bytes)
 
 ---
 
@@ -2553,7 +2556,7 @@
 ### [`tests/test_prefab.py`](tests/test_prefab.py)
 > *Tests for deterministic prefab capture, persistence and instantiation.*
 
-**Size**: `230` lines (`10137` bytes)
+**Size**: `353` lines (`14748` bytes)
 
 **Classes:**
 - `class Health`
@@ -2568,6 +2571,9 @@
   - Method `.test_auto_ids()`
   - Method `.test_capture_and_instantiate_strip_instance_links()`
   - Method `.test_capture_several_roots_and_strip_instance_prefixes()`
+  - Method `.test_nested_capture_and_instantiation_rebase_prefixes()`
+  - Method `.test_nested_links_round_trip_and_schema_one_migrates()`
+  - Method `.test_prefab_rejects_root_links_and_self_references()`
   - Method `.test_describe_is_json_safe()`
   - Method `.test_validation()`
   - Method `._registered_scene()`
@@ -3028,7 +3034,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `1475` lines (`63251` bytes)
+**Size**: `1566` lines (`66832` bytes)
 
 **Classes:**
 - `class Health`
@@ -3061,6 +3067,7 @@
   - Method `.test_editor_prefab_instance_revert_and_apply()`
   - Method `.test_editor_multi_root_prefab_instance_group()`
   - Method `.test_editor_multi_root_group_delete_and_reparent()`
+  - Method `.test_editor_nested_prefab_capture_revert_and_apply()`
   - Method `.test_editor_batch_can_revert_prefab_instance()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_library_rename_and_delete()`
