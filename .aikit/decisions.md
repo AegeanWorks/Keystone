@@ -1328,3 +1328,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Forgetting an asset only checked the live scene, registry dependencies and cached prefabs; authors and AI clients could not ask where an asset was used before removing or replacing it, and saved scenes or prefab files could keep dangling references.
 - **Decision**: Add `asset_usages` with exactly one of an exact asset id or a project-relative path. Return structured references from scene nodes (mesh/material/texture), registry dependencies/textures, in-memory and saved prefabs, saved scenes, plus project-manifest membership, registered/kind, reference count and `found`. Reuse the same report in `forget_asset`, which now blocks saved scene and prefab file references. Add a console Find usages button and readout. Bump the editor schema to 50.
 - **Consequences**: Web tests cover live nodes, saved scenes, prefabs, project-path lookup, unknown ids, mutual-exclusion errors, traversal errors and saved-reference forget blocking. Saved-content scans load library entries on each request, so very large libraries make the action slower; unreadable entries are skipped rather than failing the report.
+
+### ADR-163: Registry-backed material texture picker
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The material panel accepted a free-text texture id, so imported texture assets had to be typed manually and there was no visual confirmation of the chosen texture.
+- **Decision**: Replace the texture id input with a select populated from registry texture assets, independent of the asset text filter. Preserve unregistered texture ids as a "missing" option, show a thumbnail from the asset preview metadata, and update the preview on selection changes. No API or schema change.
+- **Consequences**: Static console tests cover the select, preview image, re-render wiring and missing-id fallback. The picker only lists registered textures; a missing id is preserved but saving it still fails through the existing material decoder until the texture is imported again.

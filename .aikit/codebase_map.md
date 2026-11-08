@@ -10,7 +10,7 @@
 - **Total Classes**: `224`
 - **Total Top-Level Functions**: `387`
 - **Total Class Methods**: `1400`
-- **Total Source Lines**: `36027`
+- **Total Source Lines**: `36031`
 
 ---
 
@@ -3270,7 +3270,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `4144` lines (`174094` bytes)
+**Size**: `4148` lines (`174310` bytes)
 
 **Classes:**
 - `class Health`

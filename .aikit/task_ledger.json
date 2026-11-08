@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-asset-usage-v1",
+    "task_id": "keystone-material-texture-picker-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794122623.5033824,
+    "updated_at": 1794123057.0089843,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794122624.2991986
+    "completed_at": 1794123057.3812973
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-asset-reload-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Asset hot reload implemented: reload_assets snapshots records, calls AssetRegistry.refresh(), rebinds scene mesh/material payloads, inline material textures and undo/redo snapshots, preserves last-good payloads on failed/missing files, returns asset_reload report with checked/reloaded/unchanged/failed/missing/rebound/history_rebound, console Reload assets readout, schema 44; 785 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, describe schema 44, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794119283.905746,
-      "timestamp_str": "2026-11-08 09:28:03",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-asset-reload-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-asset-reload-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794119284.248037,
-      "timestamp_str": "2026-11-08 09:28:04",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-gltf-import-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan editor glTF/GLB scene import with prefab generation and manifest tracking",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794119391.9570577,
-      "timestamp_str": "2026-11-08 09:29:51",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "The CLI imports glTF/GLB scenes into prefab libraries, but the editor rejects them, so authors must edit keystone.json and restart to bring in a 3D scene.",
-        "benefits": "import_gltf imports a project-relative .gltf/.glb, generates a project prefab, registers gltf.<stem>.* assets, appends the source to keystone.json, reports prefab/assets/replaced state, and the console routes glTF paths automatically.",
-        "risks": "contract: editor schema 45 and one action; dependency: project context and PrefabLibrary; concurrency: editor lock; state: parse failures after manifest save, partial registry assets, prefab name collisions, duplicate reimports, external glTF buffers, stale prefab cache.",
-        "mitigation": "Validate path, suffix and name before saving, snapshot registry ids for added-asset cleanup, roll back the manifest on failure, pop stale prefab cache entries, rely on atomic prefab saves, and add success/reimport/error/no-project/no-library tests."
-      },
-      "plan_digest": "7cc1b42e3bd91bc2c3533de3765e21101a422b6b5d29faf91a2dcbd8031e26da"
-    },
     {
       "task_id": "keystone-gltf-import-v1",
       "phase": "in_progress",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794122624.2992005,
       "timestamp_str": "2026-11-08 10:23:44",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-material-texture-picker-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan a registry-backed material texture picker with preview",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794122725.3420365,
+      "timestamp_str": "2026-11-08 10:25:25",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "The material form accepts a free-text texture id, so imported texture assets must be typed manually and there is no visual confirmation of the selected texture.",
+        "benefits": "The material panel lists registry textures in a select, preserves the current texture, previews it as a thumbnail, and keeps save_material's texture payload unchanged.",
+        "risks": "contract: UI-only, no API/schema change; dependency: none; concurrency: none; state: asset-filter interaction, missing/unregistered texture ids, preview absence, re-render selection loss.",
+        "mitigation": "Use a dedicated texture select that ignores the asset text filter, preserve existing values when present, hide the preview when missing, and add static wiring regressions."
+      },
+      "plan_digest": "209930b445c0b080b020c781af032f8f12749e83af12f7f1221517fe2148e356"
+    },
+    {
+      "task_id": "keystone-material-texture-picker-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Material texture picker implemented: material panel lists registry texture assets in a select independent of the asset filter, preserves unregistered texture ids as missing options, previews the chosen texture from asset metadata and clears the preview when absent; no API/schema change; 798 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, describe schema 50, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794123057.0089843,
+      "timestamp_str": "2026-11-08 10:30:57",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-material-texture-picker-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-material-texture-picker-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794123057.3812997,
+      "timestamp_str": "2026-11-08 10:30:57",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

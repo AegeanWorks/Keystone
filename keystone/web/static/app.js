@@ -121,6 +121,7 @@ const elements = {
   materialShininess: document.getElementById("material-shininess"),
   materialChecker: document.getElementById("material-checker"),
   materialTexture: document.getElementById("material-texture"),
+  materialTexturePreview: document.getElementById("material-texture-preview"),
   materialSave: document.getElementById("material-save"),
   materialAssign: document.getElementById("material-assign"),
   materialClear: document.getElementById("material-clear"),
@@ -553,9 +554,9 @@ function renderLibraryOptions(editor) {
   fillDatalist(elements.materialNames, editor.materials || []);
 }
 
-function fillAssetSelect(select, kind, assets) {
+function fillAssetSelect(select, kind, assets, useFilter = true) {
   const previous = select.value;
-  const query = elements.assetFilter.value.trim().toLowerCase();
+  const query = useFilter ? elements.assetFilter.value.trim().toLowerCase() : "";
   select.replaceChildren();
   const none = document.createElement("option");
   none.value = "";
@@ -583,6 +584,7 @@ function renderAssets(editor) {
   const assets = editor.assets || [];
   fillAssetSelect(elements.meshAsset, "mesh", assets);
   fillAssetSelect(elements.materialAsset, "material", assets);
+  fillAssetSelect(elements.materialTexture, "texture", assets, false);
 }
 
 function fillAssets(selection) {
@@ -616,9 +618,37 @@ function fillMaterialForm(editor) {
   elements.materialChecker.value = metadata.checker_scale ?? 0;
   elements.materialTexture.value =
     metadata.texture_id || (entry && entry.texture) || "";
+  if (
+    elements.materialTexture.value &&
+    !Array.from(elements.materialTexture.options).some(
+      (option) => option.value === elements.materialTexture.value,
+    )
+  ) {
+    const option = document.createElement("option");
+    option.value = elements.materialTexture.value;
+    option.textContent = `${elements.materialTexture.value} · missing`;
+    elements.materialTexture.append(option);
+  }
+  updateMaterialTexturePreview();
   elements.materialState.textContent = materialId
     ? `Selected ${materialId}`
     : "No material selected.";
+}
+
+function updateMaterialTexturePreview() {
+  const textureId = elements.materialTexture.value;
+  const assets = (editorState && editorState.assets) || [];
+  const asset = textureId
+    ? assets.find((item) => item.id === textureId)
+    : null;
+  const preview = asset && asset.metadata && asset.metadata.preview;
+  if (preview) {
+    elements.materialTexturePreview.src = preview;
+    elements.materialTexturePreview.hidden = false;
+  } else {
+    elements.materialTexturePreview.removeAttribute("src");
+    elements.materialTexturePreview.hidden = true;
+  }
 }
 
 function assetSummary(assetId) {
@@ -2794,6 +2824,7 @@ elements.forgetAsset.addEventListener("click", () => run(forgetAsset));
 elements.findUsages.addEventListener("click", () => run(findUsages));
 elements.buildProject.addEventListener("click", () => run(buildProject));
 elements.materialSave.addEventListener("click", () => run(saveMaterial));
+elements.materialTexture.addEventListener("change", updateMaterialTexturePreview);
 elements.materialAssign.addEventListener("click", () => run(assignMaterial));
 elements.materialClear.addEventListener("click", () => run(clearMaterial));
 elements.materialDelete.addEventListener("click", () => run(deleteMaterial));

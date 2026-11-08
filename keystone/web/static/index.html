@@ -258,7 +258,7 @@
           <label>Specular <input id="material-specular" type="number" min="0" step="0.05" value="0.35"></label>
           <label>Shininess <input id="material-shininess" type="number" min="0.1" step="1" value="32"></label>
           <label>Checker <input id="material-checker" type="number" min="0" step="0.1" value="0"></label>
-          <label>Texture id <input id="material-texture" type="text" placeholder="optional"></label>
+          <label>Texture <select id="material-texture"></select></label>
         </div>
         <datalist id="material-names"></datalist>
         <div class="buttons">
@@ -269,6 +269,7 @@
           <button id="material-restore" type="button">Restore material</button>
         </div>
         <div id="material-state" class="hint">No material selected.</div>
+        <img id="material-texture-preview" class="asset-preview" alt="Material texture preview" hidden>
         <div class="field-grid">
           <label>Component type <select id="component-type"></select></label>
         </div>

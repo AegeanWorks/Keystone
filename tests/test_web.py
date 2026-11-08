@@ -3740,6 +3740,7 @@ class WebServerTest(unittest.TestCase):
             "material-shininess",
             "material-checker",
             "material-texture",
+            "material-texture-preview",
             "material-save",
             "material-assign",
             "material-clear",
@@ -3852,6 +3853,9 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("restore_material", script)
         self.assertIn("fillMaterialForm", script)
         self.assertIn("fillDatalist", script)
+        self.assertIn("materialTexturePreview", script)
+        self.assertIn("updateMaterialTexturePreview", script)
+        self.assertIn("material-texture-preview", script)
         self.assertIn("setSelected", script)
         self.assertIn("selected_ids", script)
         self.assertIn("select_many", script)
