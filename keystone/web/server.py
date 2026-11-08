@@ -1042,6 +1042,17 @@ class GameSession:
                         self.hidden_layers.discard(name)
                     else:
                         self.hidden_layers.add(name)
+                        self._set_selected_ids(
+                            [
+                                node_id
+                                for node_id in self.selected_ids
+                                if (
+                                    (node := scene.find_by_id(node_id))
+                                    is not None
+                                    and node.layer not in self.hidden_layers
+                                )
+                            ]
+                        )
                 elif action == "set_nodes_locked":
                     ids = payload.get("ids")
                     if ids is None:

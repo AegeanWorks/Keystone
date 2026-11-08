@@ -687,6 +687,39 @@ class WebServerTest(unittest.TestCase):
             )
         self.assertEqual(caught.exception.status, 400)
 
+    def test_editor_hiding_layer_prunes_selection(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        cubes = [
+            node for node in editor["nodes"] if node["mesh"] == "mesh.cube"
+        ][:2]
+        ids = [node["id"] for node in cubes]
+        session.editor_action(
+            {"action": "set_node", "id": ids[1], "layer": "fx"}
+        )
+        session.editor_action(
+            {"action": "select_many", "ids": ids, "mode": "replace"}
+        )
+        hidden = session.editor_action(
+            {
+                "action": "set_layer_visible",
+                "name": "fx",
+                "visible": False,
+            }
+        )
+        self.assertEqual(hidden["selected_ids"], [ids[0]])
+        self.assertEqual(hidden["selection_count"], 1)
+        self.assertEqual(hidden["selection"]["id"], ids[0])
+        shown = session.editor_action(
+            {
+                "action": "set_layer_visible",
+                "name": "fx",
+                "visible": True,
+            }
+        )
+        self.assertEqual(shown["selected_ids"], [ids[0]])
+        self.assertEqual(shown["hidden_layers"], [])
+
     def test_editor_node_locking_blocks_edits(self):
         session = GameSession(CubeDemo())
         editor = session.editor()

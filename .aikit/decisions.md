@@ -1544,3 +1544,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->15 audit found that the selection clipboard, added in this range, was not covered by `forget_asset`. After copying a selection and deleting its source node, an asset could be forgotten while the clipboard still held the payload; pasting then reintroduced an unregistered mesh/material/texture.
 - **Decision**: Add `clear_clipboard_payloads` and `count_prefab_payloads`. `forget_asset` clears matching clipboard payloads after registry removal and reports `clipboard_cleared`; `asset_usages` reports `clipboard_references` separately, without raising `references` or blocking forget. Add a copy-delete-forget-paste regression that asserts the pasted node has no mesh.
 - **Consequences**: Forgotten assets no longer survive in the clipboard, and clients can see pending clipboard references before forgetting. Existing clipboard content and references semantics are otherwise unchanged.
+
+### ADR-190: Commit audit prunes selection when hiding a layer
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->18 audit found that hiding a layer removed its nodes from the viewport but left them in `selected_ids`. Inspector edits and gizmos could therefore continue to act on invisible nodes.
+- **Decision**: When `set_layer_visible` hides a layer, filter the current selection to nodes whose layer remains visible and update the primary selection through `_set_selected_ids`. Showing the layer again does not restore the pruned selection. Add a two-layer selection regression.
+- **Consequences**: Selection and hidden-layer state stay coherent across editor documents. Hiding a layer is still session-only and neutral to scene dirtiness; existing viewer filtering is unchanged.
