@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-view-modes-v1",
+    "task_id": "keystone-prefab-refresh-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794105873.5788555,
+    "updated_at": 1794106512.6697843,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794105874.19911
+    "completed_at": 1794106513.0938687
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-axis-group-scale-v1",
-      "phase": "verification",
-      "phase_num": 4,
-      "description": "[2/3] Axis-local group scaling implemented: group_scale scalar or X/Y/Z factors, world-offset scaling around centroid, local scale factors, axis-specific gizmo preview/callback, one action/undo, validation; 758 tests green, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 29, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794102062.9419692,
-      "timestamp_str": "2026-11-08 04:41:02",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-axis-group-scale-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-axis-group-scale-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794102063.2729425,
-      "timestamp_str": "2026-11-08 04:41:03",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-scene-group-saveas-v1",
-      "phase": "planning",
-      "phase_num": 2,
-      "description": "[1/3] Plan scene-group save-as with source camera/environment and container-transform persistence",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794102146.93286,
-      "timestamp_str": "2026-11-08 04:42:26",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Scene groups save with current editor settings, ignore container placement and cannot be saved under a new name.",
-        "benefits": "Groups retain source camera/environment and container transforms, save-as updates metadata with undo, and both survive whole-scene/group reloads.",
-        "risks": "contract: scene snapshot schema 5 and editor schema 30; dependency: none; concurrency: editor lock; state: optional metadata docs, save file before metadata update, overwrite/rename semantics and legacy groups.",
-        "mitigation": "Persist source docs in SceneGroup, load settings through scene_from_dict, write container transform as the saved root, update name under history, and add source/save-as/transform tests."
-      },
-      "plan_digest": "cc6d83b779c5752d8d424c63e372ef75f8827c79db93837c4b1e9817c43dad7c"
-    },
     {
       "task_id": "keystone-scene-group-saveas-v1",
       "phase": "verification",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794105874.1991124,
       "timestamp_str": "2026-11-08 05:44:34",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-prefab-refresh-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan refreshing authored prefab instances after a template edit, skipping overridden and nested groups",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794105948.431391,
+      "timestamp_str": "2026-11-08 05:45:48",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "Saving a prefab edit leaves existing authored instances stale until each one is reverted or applied by hand.",
+        "benefits": "refresh_prefab_instances replaces every safe instance group with the current template in one undo entry and reports refreshed/skipped counts for AI clients.",
+        "risks": "contract: editor schema 34 and one new action; dependency: none; concurrency: editor lock; state: override detection, nested groups, split groups, undo atomicity, missing prefabs, blocked prefab-edit mode.",
+        "mitigation": "Skip groups with overrides, nested or split roots, refresh top-level groups only, wrap the whole pass in one history entry, and add refresh/override/undo regressions."
+      },
+      "plan_digest": "a5670009dc12946689c51672e782c3d26b14ab792c25f87674e5dc6f0ab518f2"
+    },
+    {
+      "task_id": "keystone-prefab-refresh-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Prefab instance refresh implemented: refresh_prefab_instances with force default and keep_overrides skip, top-level-only traversal, nested/split guards, one-undo replacement, refreshed/skipped counts in the editor document, console button, schema 34; 764 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 34, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794106512.6697843,
+      "timestamp_str": "2026-11-08 05:55:12",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-prefab-refresh-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-prefab-refresh-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794106513.0938709,
+      "timestamp_str": "2026-11-08 05:55:13",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

@@ -1234,6 +1234,95 @@ class WebServerTest(unittest.TestCase):
                     session.editor_action(payload)
                 self.assertEqual(caught.exception.status, 400)
 
+    def test_editor_refresh_prefab_instances(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefab_dir = Path(directory) / "prefabs"
+            session = GameSession(CubeDemo(), prefab_dir=prefab_dir)
+            editor = session.editor()
+            cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+            session.editor_action({"action": "select", "id": cube["id"]})
+            session.editor_action({"action": "save_prefab", "name": "hero"})
+            session.editor_action(
+                {"action": "insert_prefab", "name": "hero", "instance": "a"}
+            )
+            session.editor_action(
+                {"action": "insert_prefab", "name": "hero", "instance": "b"}
+            )
+
+            opened = session.editor_action({"action": "edit_prefab", "name": "hero"})
+            root_id = opened["prefab_edit"]["roots"][0]
+            session.editor_action(
+                {"action": "set_node", "id": root_id, "name": "hero-v2"}
+            )
+            session.editor_action({"action": "close_prefab_edit", "save": True})
+
+            refreshed = session.editor_action(
+                {"action": "refresh_prefab_instances", "name": "hero"}
+            )
+            self.assertEqual(refreshed["prefab_refresh"]["refreshed"], 2)
+            self.assertEqual(refreshed["prefab_refresh"]["total"], 2)
+            names = {node["id"]: node["name"] for node in refreshed["nodes"]}
+            self.assertEqual(names["a:cube-0"], "hero-v2")
+            self.assertEqual(names["b:cube-0"], "hero-v2")
+
+            undone = session.editor_action({"action": "undo"})
+            names = {node["id"]: node["name"] for node in undone["nodes"]}
+            self.assertEqual(names["a:cube-0"], "cube-0")
+            self.assertEqual(names["b:cube-0"], "cube-0")
+
+            redone = session.editor_action({"action": "redo"})
+            names = {node["id"]: node["name"] for node in redone["nodes"]}
+            self.assertEqual(names["a:cube-0"], "hero-v2")
+            self.assertEqual(names["b:cube-0"], "hero-v2")
+
+            session.editor_action(
+                {"action": "set_node", "id": "a:cube-0", "name": "custom"}
+            )
+            refreshed = session.editor_action(
+                {
+                    "action": "refresh_prefab_instances",
+                    "name": "hero",
+                    "keep_overrides": True,
+                }
+            )
+            self.assertEqual(refreshed["prefab_refresh"]["refreshed"], 1)
+            self.assertEqual(refreshed["prefab_refresh"]["skipped_overrides"], 1)
+            names = {node["id"]: node["name"] for node in refreshed["nodes"]}
+            self.assertEqual(names["a:cube-0"], "custom")
+            self.assertEqual(names["b:cube-0"], "hero-v2")
+
+            forced = session.editor_action(
+                {"action": "refresh_prefab_instances", "name": "hero"}
+            )
+            self.assertEqual(forced["prefab_refresh"]["refreshed"], 2)
+            names = {node["id"]: node["name"] for node in forced["nodes"]}
+            self.assertEqual(names["a:cube-0"], "hero-v2")
+            self.assertEqual(names["b:cube-0"], "hero-v2")
+
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "refresh_prefab_instances",
+                        "name": "hero",
+                        "keep_overrides": "yes",
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "refresh_prefab_instances", "name": "missing"}
+                )
+            self.assertEqual(caught.exception.status, 404)
+
+            session.editor_action({"action": "edit_prefab", "name": "hero"})
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "refresh_prefab_instances", "name": "hero"}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            session.editor_action({"action": "close_prefab_edit", "save": False})
+
     def test_editor_library_rename_and_delete(self):
         with tempfile.TemporaryDirectory() as directory:
             prefab_dir = Path(directory) / "prefabs"
@@ -2392,6 +2481,7 @@ class WebServerTest(unittest.TestCase):
             "prefab-restore",
             "prefab-revert",
             "prefab-apply",
+            "prefab-refresh",
             "prefab-edit",
             "prefab-edit-save",
             "prefab-edit-close",
@@ -2453,6 +2543,9 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("save_prefab_edit", script)
         self.assertIn("close_prefab_edit", script)
         self.assertIn("updatePrefabEditButtons", script)
+        self.assertIn("refresh_prefab_instances", script)
+        self.assertIn("refreshPrefabInstances", script)
+        self.assertIn("prefab_refresh", script)
         self.assertIn("setViewMode", script)
         self.assertIn("toggleViewMode", script)
         self.assertIn("updateViewModeButton", script)

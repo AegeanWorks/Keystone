@@ -1104,3 +1104,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The WebGL viewport always used the free editor camera, so play mode never cut to the scene camera and there was no Unity/Unreal-style Scene view versus Game view separation.
 - **Decision**: Track `viewMode` in `SceneViewer` (`scene` or `game`). Switching to Game view stores the editor camera, derives a camera state from the live scene yaw/pitch/position, follows the scene camera on every scene reload, and suppresses pointer navigation, click selection, box selection, rim highlights and gizmos. Switching back restores the editor camera. The console adds a View: Scene/Game toggle, Play auto-switches to Game view and Stop returns to Scene view, and Reset view re-derives the game camera. No API or schema change.
 - **Consequences**: 763 tests green; static viewer/console coverage confirms the mode, camera derivation and auto-switch wiring. Game view is still the WebGL inspection approximation rather than the authoritative OpenGL render, exposes the single scene camera, and offers no runtime input capture or resolution controls.
+
+### ADR-135: Refresh authored prefab instances from the edited template
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Saving an isolated prefab edit left existing authored instances stale until each one was reverted or applied by hand.
+- **Decision**: Add `refresh_prefab_instances` with a `name` and a boolean `keep_overrides` (default false). It replaces top-level authored instance groups of that prefab with the current template in one undo entry, skips nested or split groups, and when `keep_overrides` is true skips groups with field overrides. The action reports `refreshed`, `skipped_overrides`, `skipped_nested`, `skipped_invalid` and `total` counts, is blocked during prefab edit mode and play, and the console adds a Refresh instances button. Bump the editor schema to 34.
+- **Consequences**: 764 tests green; force refresh, override-preserving skip, undo, missing-prefab and prefab-edit blocking are covered. Nested instances inside a refreshed group come from the template, overridden groups need explicit revert/apply resolution, and template writes remain asset side effects rather than scene-undo entries.

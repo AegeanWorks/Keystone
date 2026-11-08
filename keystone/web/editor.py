@@ -1420,6 +1420,66 @@ def prefab_override_document(
     return reports
 
 
+def refresh_prefab_instances(
+    scene: Scene,
+    prefabs: dict[str, Prefab],
+    name: str,
+    registry: object | None = None,
+    keep_overrides: bool = False,
+) -> dict[str, int]:
+    """Replace top-level instance groups with the current template."""
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError("prefab name must be a non-blank string")
+    if name not in prefabs:
+        raise KeyError(f"no saved prefab {name!r}")
+    overridden: set[str] = set()
+    if keep_overrides:
+        overridden = {
+            str(group.get("instance"))
+            for group in prefab_override_document(scene, prefabs, registry)
+            if group.get("nodes")
+        }
+    groups = [
+        (link, roots)
+        for link, roots in _instance_groups(scene).items()
+        if link.name == name
+    ]
+    if not groups:
+        raise ValueError(f"no instances of prefab {name!r} in the scene")
+    refreshed = 0
+    skipped_overrides = 0
+    skipped_nested = 0
+    skipped_invalid = 0
+    for link, roots in groups:
+        parent = roots[0].parent
+        if parent is None or any(root.parent is not parent for root in roots):
+            skipped_invalid += 1
+            continue
+        ancestor: Node | None = parent
+        nested = False
+        while ancestor is not None:
+            if ancestor.prefab_link is not None:
+                nested = True
+                break
+            ancestor = ancestor.parent
+        if nested:
+            skipped_nested += 1
+            continue
+        if link.instance in overridden:
+            skipped_overrides += 1
+            continue
+        revert_prefab_instance(scene, roots[0], prefabs)
+        refreshed += 1
+    list(scene.traverse())
+    return {
+        "refreshed": refreshed,
+        "skipped_overrides": skipped_overrides,
+        "skipped_nested": skipped_nested,
+        "skipped_invalid": skipped_invalid,
+        "total": len(groups),
+    }
+
+
 def _node_path(
     roots: tuple[Node, ...], target: Node
 ) -> tuple[int, ...] | None:

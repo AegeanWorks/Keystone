@@ -56,6 +56,7 @@ const elements = {
   prefabInsert: document.getElementById("prefab-insert"),
   prefabRevert: document.getElementById("prefab-revert"),
   prefabApply: document.getElementById("prefab-apply"),
+  prefabRefresh: document.getElementById("prefab-refresh"),
   prefabLink: document.getElementById("prefab-link"),
   prefabRename: document.getElementById("prefab-rename"),
   prefabDuplicate: document.getElementById("prefab-duplicate"),
@@ -158,7 +159,7 @@ function setBusy(value) {
     elements.sceneSettingsApply, elements.assignAsset, elements.playStart,
     elements.playPause, elements.playResume, elements.playStep, elements.playStop, elements.componentSet, elements.componentRemove,
     elements.prefabSave, elements.prefabInsert, elements.prefabRename,
-    elements.prefabRevert, elements.prefabApply,
+    elements.prefabRevert, elements.prefabApply, elements.prefabRefresh,
     elements.prefabDuplicate, elements.prefabDelete, elements.prefabRestore,
     elements.prefabEdit, elements.prefabEditSave, elements.prefabEditClose,
     elements.prefabEditDiscard,
@@ -1059,6 +1060,19 @@ async function applyPrefabInstance() {
   );
 }
 
+async function refreshPrefabInstances() {
+  const name = elements.prefabName.value.trim();
+  if (!name) {
+    throw new Error("Enter the prefab name to refresh.");
+  }
+  const editor = await editorAction(
+    { action: "refresh_prefab_instances", name },
+    `refreshing ${name} instances`,
+  );
+  await refreshScene(false);
+  show({ ok: true, action: "refresh_prefab_instances", refresh: editor.prefab_refresh });
+}
+
 async function editPrefab() {
   const link =
     editorState && editorState.selection
@@ -1695,6 +1709,7 @@ elements.prefabRestore.addEventListener("click", () => run(restorePrefab));
 elements.prefabInsert.addEventListener("click", () => run(insertPrefab));
 elements.prefabRevert.addEventListener("click", () => run(revertPrefabInstance));
 elements.prefabApply.addEventListener("click", () => run(applyPrefabInstance));
+elements.prefabRefresh.addEventListener("click", () => run(refreshPrefabInstances));
 elements.prefabEdit.addEventListener("click", () => run(editPrefab));
 elements.prefabEditSave.addEventListener("click", () => run(savePrefabEdit));
 elements.prefabEditClose.addEventListener("click", () => run(() => closePrefabEdit(true)));

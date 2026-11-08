@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `135`
 - **Total Classes**: `216`
-- **Total Top-Level Functions**: `363`
-- **Total Class Methods**: `1337`
-- **Total Source Lines**: `31626`
+- **Total Top-Level Functions**: `364`
+- **Total Class Methods**: `1338`
+- **Total Source Lines**: `31818`
 
 ---
 
@@ -1356,7 +1356,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `58` lines (`1217` bytes)
+**Size**: `59` lines (`1249` bytes)
 
 ---
 
@@ -1535,7 +1535,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `2229` lines (`79496` bytes)
+**Size**: `2289` lines (`81434` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1602,6 +1602,7 @@
 - `def _map_prefab_nodes(prefab, roots)`
 - `def _node_override_values(node, registry)`
 - `def prefab_override_document(scene, prefabs, registry)` - *Return field-level diffs for every linked scene instance group.*
+- `def refresh_prefab_instances(scene, prefabs, name, registry, keep_overrides)` - *Replace top-level instance groups with the current template.*
 - `def _node_path(roots, target)`
 - `def _follow_path(roots, path)`
 - `def _resolve_prefab_override(scene, node_id, field, prefabs, registry)`
@@ -1650,14 +1651,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `260` lines (`12839` bytes)
+**Size**: `274` lines (`13360` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1458` lines (`63422` bytes)
+**Size**: `1482` lines (`64567` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3136,7 +3137,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `2670` lines (`112577` bytes)
+**Size**: `2763` lines (`116996` bytes)
 
 **Classes:**
 - `class Health`
@@ -3183,6 +3184,7 @@
   - Method `.test_editor_batch_can_revert_prefab_instance()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`
   - Method `.test_editor_prefab_edit_mode_round_trip()`
+  - Method `.test_editor_refresh_prefab_instances()`
   - Method `.test_editor_library_rename_and_delete()`
   - Method `.test_editor_library_trash_and_restore()`
   - Method `.test_editor_library_duplicate()`

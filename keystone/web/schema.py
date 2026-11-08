@@ -97,6 +97,11 @@ EDITOR_EXAMPLES = {
     "edit_prefab": {"action": "edit_prefab", "name": "cube"},
     "save_prefab_edit": {"action": "save_prefab_edit"},
     "close_prefab_edit": {"action": "close_prefab_edit", "save": False},
+    "refresh_prefab_instances": {
+        "action": "refresh_prefab_instances",
+        "name": "cube",
+        "keep_overrides": False,
+    },
     "insert_prefab": {
         "action": "insert_prefab",
         "name": "cube",
@@ -160,6 +165,14 @@ EDITOR_SCHEMA = {
         "prefab_instance": ["id", "name", "instance"],
         "prefab_edit": ["name", "roots", "root_count", "dirty"],
         "close_prefab_edit": ["save"],
+        "refresh_prefab_instances": ["name", "keep_overrides"],
+        "prefab_refresh": [
+            "refreshed",
+            "skipped_overrides",
+            "skipped_nested",
+            "skipped_invalid",
+            "total",
+        ],
         "scene_group": ["id", "name", "parent_id", "node_count", "roots"],
         "transform": ["position", "rotation", "scale"],
         "set_node": ["id", "name", "visible", "tags", "layer"],
@@ -234,6 +247,7 @@ EDITOR_SCHEMA = {
         "schema 31 adds named undo/redo history entries, newest-first undo_stack/redo_stack labels and multi-step undo/redo",
         "schema 32 adds play_pause/play_resume and a paused flag for real-time play mode",
         "schema 33 adds isolated prefab edit mode: edit_prefab, save_prefab_edit and close_prefab_edit with a prefab_edit document",
+        "schema 34 adds refresh_prefab_instances, which replaces safe authored instance groups and reports refreshed/skipped counts",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

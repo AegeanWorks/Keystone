@@ -42,6 +42,7 @@ from keystone.web.editor import (
     editor_document,
     find_node,
     insert_prefab,
+    refresh_prefab_instances,
     remove_component,
     rename_prefab_links,
     reparent_node,
@@ -73,6 +74,7 @@ PREFAB_EDIT_BLOCKED = frozenset(
         "play_resume",
         "play_stop",
         "save_prefab",
+        "refresh_prefab_instances",
         "apply_prefab",
         "revert_prefab",
         "rename_prefab",
@@ -175,6 +177,7 @@ class GameSession:
         self.play_paused = False
         self.prefab_edit: dict[str, object] | None = None
         self._prefab_edit_dirty = False
+        self.last_prefab_refresh: dict[str, int] | None = None
         self._prefab_edit_original_history: EditorHistory | None = None
         self._prefab_edit_original_selection: list[str] = []
         self._scene_override: Scene | None = None
@@ -526,6 +529,7 @@ class GameSession:
             prefab_edit=self._prefab_edit_document(),
         )
         document["game"] = self.name
+        document["prefab_refresh"] = self.last_prefab_refresh
         document["workspace"] = {
             "prefab_dir": (
                 self.prefab_library.directory.as_posix()
@@ -555,6 +559,7 @@ class GameSession:
                 "use " + ", ".join(EDITOR_ACTIONS),
             )
         self._history_label = self._history_label_for(action, payload)
+        self.last_prefab_refresh = None
         with self.lock:
             scene = self._scene_locked()
             try:
@@ -889,6 +894,25 @@ class GameSession:
                     if not isinstance(save, bool):
                         raise TypeError("close_prefab_edit save must be a boolean")
                     scene = self._close_prefab_edit_locked(scene, save)
+                elif action == "refresh_prefab_instances":
+                    name = payload.get("name")
+                    keep_overrides = payload.get("keep_overrides", False)
+                    if not isinstance(keep_overrides, bool):
+                        raise TypeError(
+                            "refresh_prefab_instances keep_overrides must be a boolean"
+                        )
+                    self._ensure_prefab_locked(name)
+                    result = self._apply_history(
+                        scene,
+                        lambda: refresh_prefab_instances(
+                            scene,
+                            self.prefabs,
+                            name,
+                            self._registry_locked(),
+                            keep_overrides=keep_overrides,
+                        ),
+                    )
+                    self.last_prefab_refresh = result
                 elif action == "save_prefab":
                     node_id = payload.get("id") or self.selected_id
                     if node_id is None:
