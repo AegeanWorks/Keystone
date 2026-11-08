@@ -83,12 +83,12 @@ class StateMachineLibrary:
         """Rename one entry, rejecting collisions and updating the file."""
         old_path = self.path_for(old)
         new_path = self.path_for(new)
-        if old == new:
-            return self.entry(old)
         if not old_path.is_file():
             raise KeyError(
                 f"no saved state machine {old!r} in {self.directory}"
             )
+        if old == new:
+            return self.entry(old)
         if new_path.exists():
             raise FileExistsError(
                 f"state machine {new!r} already exists in {self.directory}"

@@ -108,6 +108,8 @@ class StateMachineLibraryTest(unittest.TestCase):
                 library.duplicate("run", "run")
             with self.assertRaises(KeyError):
                 library.rename("missing", "other")
+            with self.assertRaises(KeyError):
+                library.rename("missing", "missing")
             with self.assertRaises(ValueError):
                 library.rename("run", "bad name")
 

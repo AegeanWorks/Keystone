@@ -10,7 +10,7 @@
 - **Total Classes**: `231`
 - **Total Top-Level Functions**: `421`
 - **Total Class Methods**: `1479`
-- **Total Source Lines**: `40280`
+- **Total Source Lines**: `40282`
 
 ---
 
@@ -3293,7 +3293,7 @@
 ### [`tests/test_state_machine_library.py`](tests/test_state_machine_library.py)
 > *Tests for file-backed animation state machine libraries.*
 
-**Size**: `137` lines (`4903` bytes)
+**Size**: `139` lines (`5002` bytes)
 
 **Classes:**
 - `class StateMachineLibraryTest`

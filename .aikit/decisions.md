@@ -1608,3 +1608,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->39 audit found that restoring a trashed state machine whose live name was occupied raised `FileExistsError`, which `editor_action` did not map, so the HTTP surface returned a 500 for a normal collision.
 - **Decision**: Catch `FileExistsError` in `restore_state_machine` and raise a 400 WebProblem with a rename-or-delete fix. Add a save-delete-save-restore regression.
 - **Consequences**: Restore collisions are actionable client errors. The library still refuses to overwrite live entries; prefab and scene restore paths are unchanged.
+
+### ADR-198: Commit audit rejects same-name rename of a missing state machine
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->42 audit found that `StateMachineLibrary.rename` returned a summary entry when source and target names were identical, even when no file existed. The editor therefore reported success for a missing machine.
+- **Decision**: Check source existence before the same-name shortcut. Add a regression that `rename("missing", "missing")` raises KeyError like any other missing rename.
+- **Consequences**: Same-name rename of an existing machine still returns its entry, while missing machines now produce the standard 404 mapping. No file or schema change.
