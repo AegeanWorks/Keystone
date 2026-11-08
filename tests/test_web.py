@@ -2953,6 +2953,51 @@ class WebServerTest(unittest.TestCase):
             self.assertEqual(caught.exception.status, 400)
             self.assertIn("--project", caught.exception.fix)
 
+    def test_editor_build_project(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name="build-demo")
+            session = GameSession(CubeDemo(), project_dir=root)
+            self.assertIsNone(session.editor()["build"])
+            built = session.editor_action(
+                {"action": "build_project", "target": "build"}
+            )
+            build = built["build"]
+            self.assertEqual(build["target"], "build")
+            self.assertEqual(build["manifest"], "build/BUILD.json")
+            self.assertGreater(build["summary"]["files"], 0)
+            self.assertTrue((root / "build" / "BUILD.json").is_file())
+            self.assertTrue((root / "build" / "run.py").is_file())
+            self.assertIsNone(
+                session.editor_action({"action": "select", "id": None})["build"]
+            )
+
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "build_project", "target": "build"}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("not empty", caught.exception.why)
+            forced = session.editor_action(
+                {"action": "build_project", "target": "build", "force": True}
+            )
+            self.assertEqual(forced["build"]["target"], "build")
+
+            for target in ("../escape", "/absolute"):
+                with self.assertRaises(WebProblem) as caught:
+                    session.editor_action(
+                        {"action": "build_project", "target": target}
+                    )
+                self.assertEqual(caught.exception.status, 400)
+
+            bare = GameSession(CubeDemo())
+            with self.assertRaises(WebProblem) as caught:
+                bare.editor_action(
+                    {"action": "build_project", "target": "build"}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("--project", caught.exception.fix)
+
     def test_editor_reload_assets_rebinds_scene_and_history(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "project"
@@ -3616,6 +3661,10 @@ class WebServerTest(unittest.TestCase):
             "forget-asset",
             "reload-assets",
             "reload-state",
+            "build-target",
+            "build-force",
+            "build-project",
+            "build-state",
             "component-type",
             "component-fields",
             "component-hint",
@@ -3675,6 +3724,9 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("forgotten_asset", script)
         self.assertIn("project_assets", script)
         self.assertIn("project-assets", script)
+        self.assertIn("buildProject", script)
+        self.assertIn("build_project", script)
+        self.assertIn("build-state", script)
         self.assertIn("reloadAssets", script)
         self.assertIn("reload_assets", script)
         self.assertIn("asset_reload", script)

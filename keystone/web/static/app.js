@@ -137,6 +137,10 @@ const elements = {
   forgetAsset: document.getElementById("forget-asset"),
   reloadAssets: document.getElementById("reload-assets"),
   reloadState: document.getElementById("reload-state"),
+  buildTarget: document.getElementById("build-target"),
+  buildForce: document.getElementById("build-force"),
+  buildProject: document.getElementById("build-project"),
+  buildState: document.getElementById("build-state"),
   componentType: document.getElementById("component-type"),
   componentFields: document.getElementById("component-fields"),
   componentHint: document.getElementById("component-hint"),
@@ -1000,6 +1004,11 @@ function showEditor(editor) {
       ? `Saved: ${editor.saved_scene}`
       : "New scene";
   elements.sceneRevert.disabled = !editor.saved_scene || !editor.scene_dirty;
+  elements.buildState.textContent = editor.build
+    ? `Built ${editor.build.target} · ${editor.build.summary.files} files · ` +
+      `${editor.build.summary.bytes} bytes`
+    : "No build yet.";
+  elements.buildProject.disabled = !projectDir;
   if (!busy) {
     elements.editorUndo.disabled = history.undo === 0;
     elements.editorRedo.disabled = history.redo === 0;
@@ -2069,6 +2078,19 @@ async function forgetAsset() {
   }
 }
 
+async function buildProject() {
+  const target = elements.buildTarget.value.trim() || "build";
+  const force = elements.buildForce.checked;
+  const editor = await editorAction(
+    { action: "build_project", target, force },
+    `building ${target}`,
+  );
+  const build = editor.build;
+  if (build) {
+    show({ ok: true, action: "build_project", build });
+  }
+}
+
 async function saveMaterial() {
   const name = elements.materialName.value.trim();
   if (!name) {
@@ -2742,6 +2764,7 @@ elements.assignAsset.addEventListener("click", () => run(assignAssets));
 elements.importAsset.addEventListener("click", () => run(importAsset));
 elements.reloadAssets.addEventListener("click", () => run(reloadAssets));
 elements.forgetAsset.addEventListener("click", () => run(forgetAsset));
+elements.buildProject.addEventListener("click", () => run(buildProject));
 elements.materialSave.addEventListener("click", () => run(saveMaterial));
 elements.materialAssign.addEventListener("click", () => run(assignMaterial));
 elements.materialClear.addEventListener("click", () => run(clearMaterial));

@@ -204,6 +204,7 @@ EDITOR_EXAMPLES = {
     },
     "reload_assets": {"action": "reload_assets"},
     "forget_asset": {"action": "forget_asset", "path": "assets/crate.obj"},
+    "build_project": {"action": "build_project", "target": "build", "force": False},
     "rename_scene": {"action": "rename_scene", "name": "level", "new_name": "level-alt"},
     "duplicate_scene": {
         "action": "duplicate_scene",
@@ -339,6 +340,8 @@ EDITOR_SCHEMA = {
         ],
         "forget_asset": ["path"],
         "forgotten_asset": ["path", "asset", "removed", "count"],
+        "build_project": ["target", "force"],
+        "build": ["schema", "target", "manifest", "summary"],
         "asset": ["id", "kind", "sha256", "source", "dependencies", "metadata"],
         "component_types": ["name"],
         "component_schema": ["fields"],
@@ -396,6 +399,7 @@ EDITOR_SCHEMA = {
         "schema 46 adds set_startup_scene and a startup_scene document field for project-relative default scene selection",
         "schema 47 adds saved_scene/scene_dirty tracking and revert_scene, which reloads the saved scene and clears history and selection",
         "schema 48 adds project_assets inventory and forget_asset, which removes an unused manifest entry and registry record while keeping the source file",
+        "schema 49 adds build_project for project-relative runnable exports with BUILD.json summaries",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

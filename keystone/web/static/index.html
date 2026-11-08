@@ -237,6 +237,15 @@
         </div>
         <div id="import-state" class="hint">Open a project with --project to import assets.</div>
         <div id="reload-state" class="hint">No assets reloaded.</div>
+        <label class="stack" for="build-target">Build project</label>
+        <div class="field-grid">
+          <label>Target <input id="build-target" type="text" value="build"></label>
+          <label><input id="build-force" type="checkbox"> Force overwrite</label>
+        </div>
+        <div class="buttons">
+          <button id="build-project" type="button">Build project</button>
+        </div>
+        <div id="build-state" class="hint">No build yet.</div>
         <label class="stack">Material library</label>
         <div class="field-grid">
           <label>Name <input id="material-name" type="text" list="material-names"></label>

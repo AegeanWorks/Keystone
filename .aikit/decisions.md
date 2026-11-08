@@ -1312,3 +1312,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Assets could be imported and reloaded but never removed from `keystone.json` or the registry, so discarded experiments accumulated and the editor had no manifest inventory.
 - **Decision**: Expose `project_assets` in the editor document and add `forget_asset` for project-relative `.obj`, `.png` and `.kprefab` paths. Before writing, block when any scene node mesh/material, material texture, registry dependency or cached prefab references the asset. Then remove the path from the manifest atomically, unregister the file-backed record and keep the source file for re-import. Reject glTF/GLB with guidance and unsupported formats. Add a console Forget asset control and project-path suggestions. Bump the editor schema to 48.
 - **Consequences**: Project tests cover manifest/registry removal, file retention, re-import, unsupported formats and rollback; web tests cover inventory, forgetting, node and prefab protection, glTF guidance, traversal and no-project errors. Saved scene files and prefab-library files that are not currently loaded are not scanned, so forgetting may still break those references.
+
+### ADR-161: Editor project builds
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The validated project export existed only as a CLI command, so the console could edit and preview a project but could not produce a runnable build.
+- **Decision**: Add `build_project` with a project-relative target (default `build`) and `force`. Resolve the target inside the project, run the existing validated export pipeline, and return only build metadata (`schema`, relative `target`, `BUILD.json` path, file/byte summary). Non-empty targets fail with force guidance; traversal, absolute paths, root targets and validation failures return 400. Add target/force console controls and a build readout. Bump the editor schema to 49.
+- **Consequences**: Web tests cover a first build, BUILD.json/run.py creation, non-empty refusal, forced rebuild, traversal/absolute targets and missing project context. Builds are synchronous under the editor lock and can take seconds while the engine and project files are copied; the in-memory editor scene is not exported, only on-disk project files.

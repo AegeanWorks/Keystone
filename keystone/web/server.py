@@ -30,6 +30,7 @@ from keystone.project import (
     import_project_gltf,
     load_project,
     project_asset_id,
+    resolve_project_target,
     set_project_startup_scene,
 )
 from keystone.replay import FIXED_STEP
@@ -90,6 +91,7 @@ PREFAB_EDIT_BLOCKED = frozenset(
         "save_prefab",
         "import_gltf",
         "forget_asset",
+        "build_project",
         "revert_scene",
         "refresh_prefab_instances",
         "apply_prefab",
@@ -144,6 +146,7 @@ SCENE_NEUTRAL_ACTIONS = frozenset(
         "import_gltf",
         "reload_assets",
         "forget_asset",
+        "build_project",
         "rename_scene",
         "duplicate_scene",
         "delete_scene",
@@ -253,6 +256,7 @@ class GameSession:
         self.last_asset_reload: dict[str, object] | None = None
         self.last_forgotten_asset: dict[str, object] | None = None
         self.last_revert: dict[str, object] | None = None
+        self.last_build: dict[str, object] | None = None
         self.scene_dirty = False
         self.saved_scene = initial_scene
         self._prefab_edit_original_history: EditorHistory | None = None
@@ -702,6 +706,7 @@ class GameSession:
         document["saved_scene"] = self.saved_scene
         document["scene_dirty"] = self.scene_dirty
         document["revert"] = self.last_revert
+        document["build"] = self.last_build
         document["animations"] = (
             [entry.describe() for entry in self.animation_library.entries()]
             if self.animation_library is not None
@@ -772,6 +777,7 @@ class GameSession:
         self.last_asset_reload = None
         self.last_forgotten_asset = None
         self.last_revert = None
+        self.last_build = None
         with self.lock:
             scene = self._scene_locked()
             try:
@@ -1720,6 +1726,57 @@ class GameSession:
                     updated = load_project(self.project_dir)
                     self.project_assets = updated.manifest.assets
                     self.startup_scene = updated.manifest.startup_scene
+                elif action == "build_project":
+                    if self.project_dir is None:
+                        raise WebProblem(
+                            400,
+                            "build needs a project directory",
+                            "start the console with python -m keystone --project <dir> --serve",
+                        )
+                    target = payload.get("target", "build")
+                    if not isinstance(target, str) or not target.strip():
+                        raise ValueError(
+                            "build target must be a non-blank project-relative string"
+                        )
+                    force = payload.get("force", False)
+                    if not isinstance(force, bool):
+                        raise TypeError("build force must be a boolean")
+                    try:
+                        context = load_project(self.project_dir)
+                        destination = resolve_project_target(context, target)
+                    except (OSError, TypeError, ValueError) as exc:
+                        raise WebProblem(
+                            400,
+                            str(exc),
+                            "use a project-relative build target such as 'build'",
+                        ) from exc
+                    from keystone.export import export_project
+
+                    try:
+                        manifest = export_project(
+                            context.directory, destination, force=force
+                        )
+                    except FileExistsError as exc:
+                        raise WebProblem(
+                            400,
+                            str(exc),
+                            "pass force=true or choose an empty target",
+                        ) from exc
+                    except (OSError, TypeError, ValueError) as exc:
+                        raise WebProblem(
+                            400,
+                            str(exc),
+                            "fix project validation errors or choose another target",
+                        ) from exc
+                    relative_target = destination.relative_to(
+                        context.directory.resolve()
+                    ).as_posix()
+                    self.last_build = {
+                        "schema": manifest["schema"],
+                        "target": relative_target,
+                        "manifest": f"{relative_target}/BUILD.json",
+                        "summary": manifest["summary"],
+                    }
                 elif action == "undo":
                     steps = payload.get("steps", 1)
                     if (

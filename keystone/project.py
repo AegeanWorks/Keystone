@@ -43,6 +43,7 @@ __all__ = [
     "load_project_game",
     "project_asset_id",
     "resolve_project_asset",
+    "resolve_project_target",
     "save_project",
     "set_project_startup_scene",
     "validate_project",
@@ -232,6 +233,24 @@ def resolve_project_asset(
     if not target.is_file():
         raise FileNotFoundError(f"project asset does not exist: {target}")
     return relative, target
+
+
+def resolve_project_target(context: ProjectContext, value: str | Path) -> Path:
+    """Resolve one writable target path inside the project without requiring it."""
+    if not isinstance(context, ProjectContext):
+        raise TypeError("project context must be a ProjectContext")
+    root = context.directory.resolve()
+    relative = _relative_asset_path(value)
+    target = (root / relative).resolve()
+    try:
+        target.relative_to(root)
+    except ValueError as exc:
+        raise ValueError(
+            f"project target escapes the project directory: {value}"
+        ) from exc
+    if target == root:
+        raise ValueError("project target must differ from the project directory")
+    return target
 
 
 def import_project_assets(

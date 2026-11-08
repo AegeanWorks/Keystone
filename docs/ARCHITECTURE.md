@@ -147,7 +147,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Math | Implemented | Vec3, Mat4, Quat, transforms |
 | Scene | Implemented | hierarchy, visibility, lights, IDs, tags, layers and components |
 | Prefabs | Implemented | detached subtree capture, versioned `.kprefab` save/load (schema 2), file-backed libraries, deterministic instance IDs, nested prefab instances with rebased links/IDs, component copy isolation, JSON-safe describe |
-| Projects | Implemented | versioned `keystone.json` manifest, `--new` scaffold with starter scene/prefab content, startup scene and component hooks, `--project` loader, `--validate-project` diagnostics, relative asset import as `project:<path>`, editor asset import with manifest update and registry rollback, editor hot reload with scene/history rebinding, editor glTF/GLB scene import as prefabs, project asset inventory and forget-from-project, CLI glTF/GLB scene-to-prefab import and generated five-op game |
+| Projects | Implemented | versioned `keystone.json` manifest, `--new` scaffold with starter scene/prefab content, startup scene and component hooks, `--project` loader, `--validate-project` diagnostics, relative asset import as `project:<path>`, editor asset import with manifest update and registry rollback, editor hot reload with scene/history rebinding, editor glTF/GLB scene import as prefabs, project asset inventory and forget-from-project, editor runnable builds, CLI glTF/GLB scene-to-prefab import and generated five-op game |
 | Scene queries | Implemented | name/tag/layer/component filters and ID lookup |
 | Camera | Implemented | perspective and view matrices |
 | Geometry | Implemented | indexed meshes, materials, vertex colors |

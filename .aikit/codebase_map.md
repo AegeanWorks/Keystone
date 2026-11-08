@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `141`
 - **Total Classes**: `224`
-- **Total Top-Level Functions**: `386`
-- **Total Class Methods**: `1396`
-- **Total Source Lines**: `35653`
+- **Total Top-Level Functions**: `387`
+- **Total Class Methods**: `1397`
+- **Total Source Lines**: `35786`
 
 ---
 
@@ -1224,7 +1224,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `784` lines (`29488` bytes)
+**Size**: `803` lines (`30232` bytes)
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -1243,6 +1243,7 @@
 - `def _relative_asset_path(value)`
 - `def project_asset_id(value)` - *Return the deterministic registry id for one manifest asset path.*
 - `def resolve_project_asset(context, value)` - *Resolve one asset path and prove it stays inside the project.*
+- `def resolve_project_target(context, value)` - *Resolve one writable target path inside the project without requiring it.*
 - `def import_project_assets(context, registry, component_types)` - *Load every manifest asset into an existing registry.*
 - `def import_project_asset(context, registry, value, component_types)` - *Import one editor-selected file and append it to the project manifest.*
 - `def forget_project_asset(context, registry, value)` - *Remove one project asset path from the manifest and registry.*
@@ -1426,7 +1427,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `74` lines (`1583` bytes)
+**Size**: `75` lines (`1604` bytes)
 
 ---
 
@@ -1728,14 +1729,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `422` lines (`19317` bytes)
+**Size**: `426` lines (`19614` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2181` lines (`96499` bytes)
+**Size**: `2238` lines (`99256` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3267,7 +3268,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `3992` lines (`167528` bytes)
+**Size**: `4044` lines (`169861` bytes)
 
 **Classes:**
 - `class Health`
@@ -3342,6 +3343,7 @@
   - Method `.test_editor_scene_dirty_and_revert()`
   - Method `.test_editor_startup_scene_persists_and_clears()`
   - Method `.test_editor_forget_asset_and_project_inventory()`
+  - Method `.test_editor_build_project()`
   - Method `.test_editor_reload_assets_rebinds_scene_and_history()`
   - Method `.test_editor_preview_animation_and_undo()`
   - Method `.test_editor_animation_library_round_trip()`
