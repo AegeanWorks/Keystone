@@ -96,6 +96,9 @@ EDITOR_EXAMPLES = {
     "restore_prefab": {"action": "restore_prefab", "trash": "cube.deadbeef.kprefab"},
     "save_scene": {"action": "save_scene", "name": "level"},
     "load_scene": {"action": "load_scene", "name": "level"},
+    "add_scene": {"action": "add_scene", "name": "level"},
+    "unload_scene": {"action": "unload_scene", "id": "scene-1"},
+    "save_scene_group": {"action": "save_scene_group", "id": "scene-1"},
     "diff_scene": {"action": "diff_scene", "name": "level"},
     "rename_scene": {"action": "rename_scene", "name": "level", "new_name": "level-alt"},
     "duplicate_scene": {
@@ -114,8 +117,9 @@ EDITOR_SCHEMA = {
     "actions": list(EDITOR_ACTIONS),
     "examples": EDITOR_EXAMPLES,
     "fields": {
-        "node": ["id", "name", "parent_id", "children", "visible", "selected", "tags", "layer", "components", "component_data", "mesh", "material", "prefab_link", "transform", "world"],
+        "node": ["id", "name", "parent_id", "children", "visible", "selected", "tags", "layer", "components", "component_data", "mesh", "material", "prefab_link", "scene_group", "transform", "world"],
         "prefab_instance": ["id", "name", "instance"],
+        "scene_group": ["id", "name", "parent_id", "node_count", "roots"],
         "transform": ["position", "rotation", "scale"],
         "set_node": ["id", "name", "visible", "tags", "layer"],
         "set_scene": ["camera", "environment"],
@@ -131,6 +135,9 @@ EDITOR_SCHEMA = {
         "revert_prefab_override": ["id", "field"],
         "apply_prefab_override": ["id", "field"],
         "prefab_override": ["id", "template_id", "fields"],
+        "add_scene": ["name", "parent"],
+        "unload_scene": ["id"],
+        "save_scene_group": ["id"],
         "diff_scene": ["name"],
         "rename_scene": ["name", "new_name"],
         "duplicate_scene": ["name", "new_name"],
@@ -177,6 +184,7 @@ EDITOR_SCHEMA = {
         "schema 22 supports nested prefab instances: prefab schema 2 persists nested links and instantiation rebases nested prefixes and IDs",
         "schema 23 adds per-field prefab override tracking and revert_prefab_override/apply_prefab_override actions",
         "schema 24 adds deterministic component lifecycle hooks: component schemas advertise start/update/stop and play state reports the runtime started/frame summary",
+        "schema 25 adds additive scene groups with add_scene/unload_scene/save_scene_group and editor scene_groups inventory",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

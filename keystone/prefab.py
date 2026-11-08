@@ -38,6 +38,7 @@ def _copy_template(node: Node) -> Node:
         layer=node.layer,
         components=copy.deepcopy(node.components),
         prefab_link=node.prefab_link,
+        scene_group=None,
     )
     for child in node.children:
         clone.add_child(_copy_template(child))

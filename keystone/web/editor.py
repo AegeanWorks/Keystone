@@ -35,10 +35,12 @@ from keystone.scene import (
     PostSettings,
     PrefabLink,
     Scene,
+    SceneGroup,
     ShadowSettings,
     SpriteSettings,
     Transform,
 )
+from keystone.scene_library import SceneLibrary
 from keystone.schema import EDITOR_ACTIONS, EDITOR_SCHEMA_VERSION
 from keystone.texture import TextureData
 
@@ -613,6 +615,7 @@ def _node_snapshot(node: Node) -> dict[str, object]:
         "layer": node.layer,
         "components": copy.deepcopy(node.components),
         "prefab_link": node.prefab_link,
+        "scene_group": node.scene_group,
         "children": [_node_snapshot(child) for child in node.children],
     }
 
@@ -637,6 +640,7 @@ def _node_from_snapshot(data: Mapping[str, object]) -> Node:
         layer=data["layer"],
         components=copy.deepcopy(data["components"]),
         prefab_link=data.get("prefab_link"),
+        scene_group=data.get("scene_group"),
     )
     for child in children:
         node.add_child(_node_from_snapshot(child))
@@ -789,6 +793,9 @@ def node_document(
         "prefab_link": (
             node.prefab_link.to_dict() if node.prefab_link is not None else None
         ),
+        "scene_group": (
+            node.scene_group.to_dict() if node.scene_group is not None else None
+        ),
         "transform": {
             "position": [transform.position.x, transform.position.y, transform.position.z],
             "rotation": [rotation.x, rotation.y, rotation.z, rotation.w],
@@ -833,6 +840,7 @@ def editor_document(
         for group in prefab_overrides
         for node in group["nodes"]
     )
+    scene_groups = scene_group_document(scene)
     return {
         "schema": EDITOR_SCHEMA_VERSION,
         "game": None,
@@ -843,6 +851,8 @@ def editor_document(
         "prefab_instance_count": prefab_instance_count,
         "prefab_overrides": prefab_overrides,
         "prefab_override_count": prefab_override_count,
+        "scene_groups": scene_groups,
+        "scene_group_count": len(scene_groups),
         "scene_settings": scene_settings_document(scene),
         "prefabs": (
             prefab_entries
@@ -1499,3 +1509,142 @@ def apply_prefab_override(
         field,  # type: ignore[arg-type]
     )
     return updated
+
+
+def _clone_scene_node(node: Node) -> Node:
+    clone = Node(
+        node.name,
+        transform=node.transform,
+        mesh=node.mesh,
+        material=node.material,
+        visible=node.visible,
+        id=node.id,
+        tags=set(node.tags),
+        layer=node.layer,
+        components=copy.deepcopy(node.components),
+        prefab_link=node.prefab_link,
+        scene_group=node.scene_group,
+    )
+    for child in node.children:
+        clone.add_child(_clone_scene_node(child))
+    return clone
+
+
+def scene_group_document(scene: Scene) -> list[dict[str, object]]:
+    """Return one JSON-safe entry for every additive scene group container."""
+    groups: list[dict[str, object]] = []
+    for node in scene.traverse():
+        group = node.scene_group
+        if group is None:
+            continue
+        parent = node.parent
+        groups.append(
+            {
+                "id": node.id,
+                "name": group.name,
+                "parent_id": (
+                    parent.id
+                    if parent is not None and parent is not scene.root
+                    else None
+                ),
+                "node_count": max(0, sum(1 for _ in node.traverse()) - 1),
+                "roots": [child.id for child in node.children],
+            }
+        )
+    return groups
+
+
+def _rename_colliding_ids(node: Node, used: set[str]) -> None:
+    if node.id:
+        base = node.id
+        candidate = base
+        counter = 2
+        while candidate in used:
+            candidate = f"{base}-{counter}"
+            counter += 1
+        node.id = candidate
+        used.add(candidate)
+    for child in node.children:
+        _rename_colliding_ids(child, used)
+
+
+def add_scene(
+    scene: Scene,
+    name: str,
+    library: SceneLibrary,
+    parent: Node | None = None,
+) -> Node:
+    """Add one saved scene as a named child group of the current scene."""
+    if not isinstance(scene, Scene):
+        raise TypeError("add_scene target must be a Scene")
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError("scene name must be a non-blank string")
+    if not isinstance(library, SceneLibrary):
+        raise TypeError("add_scene needs a SceneLibrary")
+    if parent is not None and not isinstance(parent, Node):
+        raise TypeError("scene group parent must be a Node or None")
+    loaded = library.load(name)
+    container = Node(name, scene_group=SceneGroup(name))
+    used = {node.id for node in scene.traverse() if node.id}
+    for root in loaded.root.children:
+        clone = _clone_scene_node(root)
+        _rename_colliding_ids(clone, used)
+        container.add_child(clone)
+    target = scene.root if parent is None else parent
+    if target is scene.root:
+        scene.add(container)
+    else:
+        target.add_child(container)
+    list(scene.traverse())
+    return container
+
+
+def unload_scene(scene: Scene, node: Node) -> Node:
+    """Remove one scene group container and return its former parent."""
+    if not isinstance(scene, Scene):
+        raise TypeError("unload_scene target must be a Scene")
+    if node is scene.root or node.parent is None:
+        raise ValueError("cannot unload a detached node")
+    if node.scene_group is None:
+        raise ValueError("node is not a scene group")
+    parent = node.parent
+    parent.remove_child(node)
+    return parent
+
+
+def _copy_scene_settings(source: Scene, target: Scene) -> None:
+    target.camera.position = source.camera.position
+    target.camera.yaw = source.camera.yaw
+    target.camera.pitch = source.camera.pitch
+    target.camera.fov_y = source.camera.fov_y
+    target.camera.near = source.camera.near
+    target.camera.far = source.camera.far
+    target.light = source.light
+    target.point_light = source.point_light
+    target.shadow = source.shadow
+    target.color = source.color
+    target.post = source.post
+    target.bloom = source.bloom
+    target.sprite = source.sprite
+    target.culling = source.culling
+    target.ambient = source.ambient
+    target.background = source.background
+    target.sky = source.sky
+    target.fog_density = source.fog_density
+
+
+def save_scene_group(scene: Scene, node: Node, library: SceneLibrary) -> str:
+    """Write one scene group's children back to its library scene in place."""
+    if not isinstance(scene, Scene):
+        raise TypeError("save_scene_group target must be a Scene")
+    if not isinstance(library, SceneLibrary):
+        raise TypeError("save_scene_group needs a SceneLibrary")
+    group = node.scene_group
+    if group is None:
+        raise ValueError("node is not a scene group")
+    temp = Scene()
+    _copy_scene_settings(scene, temp)
+    for child in node.children:
+        temp.add(_clone_scene_node(child))
+    library.save(group.name, temp)
+    return group.name

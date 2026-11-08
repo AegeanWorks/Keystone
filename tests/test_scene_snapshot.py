@@ -14,6 +14,7 @@ from keystone.scene import (
     PointLight,
     PrefabLink,
     Scene,
+    SceneGroup,
     Transform,
 )
 from keystone.scene_snapshot import (
@@ -85,6 +86,23 @@ class SceneSnapshotTest(unittest.TestCase):
         document["schema"] = 2
         document["nodes"][0].pop("prefab_link")
         self.assertIsNone(scene_from_dict(document).find_by_id("hero").prefab_link)
+
+    def test_scene_groups_round_trip_and_older_snapshots_default_to_none(self):
+        scene = Scene()
+        group = Node("level", id="level", scene_group=SceneGroup("level"))
+        group.add_child(Node("child", id="child"))
+        scene.add(group)
+        document = scene_to_dict(scene)
+        self.assertEqual(document["nodes"][0]["scene_group"], {"name": "level"})
+        restored = scene_from_dict(document)
+        self.assertEqual(
+            restored.find_by_id("level").scene_group, SceneGroup("level")
+        )
+        document["schema"] = 3
+        document["nodes"][0].pop("scene_group")
+        self.assertIsNone(
+            scene_from_dict(document).find_by_id("level").scene_group
+        )
 
     def test_round_trip_preserves_typed_components(self):
         scene = self._scene()

@@ -366,6 +366,7 @@ keystone/
 │   ├── clock.py              <- fixed-step clock
 │   ├── culling.py            <- frustum culling
 │   ├── input.py              <- ActionState and InputMap
+│   ├── lifecycle.py          <- deterministic component start/update/stop
 │   ├── plugin.py             <- GameModule protocol and loader
 │   ├── playtest.py           <- seeded bot policies and fairness
 │   ├── replay.py             <- command log and stable hash
@@ -465,6 +466,7 @@ keystone/
 │   ├── test_ui.py            <- font, canvas, menu and overlay
 │   ├── test_renderer.py      <- headless OpenGL integration
 │   ├── test_input.py         <- action mapping and ActionState
+│   ├── test_lifecycle.py     <- component start/update/stop lifecycle
 │   ├── test_clock.py         <- fixed-step clock
 │   ├── test_physics.py       <- rays, AABB, sphere queries and raycasts
 │   ├── test_broadphase.py    <- spatial-grid queries, updates and pairs
@@ -585,7 +587,7 @@ snapshot = history.undo()
 1. ~~Scene identity/ECS.~~ Done in v0.19.0.
 2. ~~Broadphase/character/triggers.~~ Done in v0.21.0.
 3. ~~Assets~~ v0.22.0; ~~material graphs~~ v0.23.0; ~~glTF~~ v0.24.0; ~~GLB~~ v0.26.0; ~~PBR core~~ v0.27.0.
-4. Renderer PBR/emissive and schema 2 in v0.27.0; batch plan in v0.28.0, merge in v0.29.0, skin-aware merge in v0.44.0, ~~instancing~~ in v0.32.0, ~~shadows~~ in v0.34.0, ~~sRGB~~ in v0.35.0, ~~post grade~~ in v0.36.0, ~~bloom~~ in v0.37.0 and ~~diffusion~~ in v0.38.0; post chain remains.
+4. Renderer PBR, batches, instancing, shadows, sRGB, post, bloom and diffusion shipped through v0.44.0; post chain remains.
 5. ~~Input persistence~~ v0.27.0; ~~contexts/audio mixer~~ v0.28.0; live playback out of scope.
 6. ~~Animation core~~ in v0.29.0; ~~blending/events~~ in v0.30.0; ~~skinning~~ in v0.41.0; ~~CPU particles~~ in v0.31.0; ~~GPU sprites~~ in v0.42.0, bounce/friction/kill in v0.43.0.
 6. ~~Schema versioning~~ v0.25.0; ~~replay runner~~ v0.30.0.

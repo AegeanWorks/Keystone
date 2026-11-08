@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `135`
-- **Total Classes**: `214`
-- **Total Top-Level Functions**: `338`
-- **Total Class Methods**: `1310`
-- **Total Source Lines**: `29578`
+- **Total Classes**: `215`
+- **Total Top-Level Functions**: `345`
+- **Total Class Methods**: `1316`
+- **Total Source Lines**: `29893`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `171` lines (`3768` bytes)
+**Size**: `173` lines (`3802` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -1083,7 +1083,7 @@
 ### [`keystone/prefab.py`](keystone/prefab.py)
 > *Deterministic prefabs: capture, persist and instantiate reusable subtrees.*
 
-**Size**: `503` lines (`20431` bytes)
+**Size**: `504` lines (`20457` bytes)
 
 **Classes:**
 - `class Prefab` - *An immutable-name, detached template of one or more scene subtrees.*
@@ -1229,7 +1229,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `452` lines (`17366` bytes)
+**Size**: `482` lines (`18500` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -1239,6 +1239,10 @@
   - Method `.__post_init__()`
   - Method `.to_dict()` - *Return the JSON-safe link document.*
   - Method `.from_dict(data)` - *Validate one link document.*
+- `class SceneGroup` - *Editor-facing metadata for one additively loaded scene container.*
+  - Method `.__post_init__()`
+  - Method `.to_dict()` - *Return the JSON-safe group document.*
+  - Method `.from_dict(data)` - *Validate one scene group document.*
 - `class Node` - *A named transform node with identity, tags, components and children.*
   - Method `.__post_init__()`
   - Method `.add_tag(tag)`
@@ -1286,7 +1290,7 @@
 ### [`keystone/scene_diff.py`](keystone/scene_diff.py)
 > *Structured diffs between versioned scene snapshot documents.*
 
-**Size**: `91` lines (`3413` bytes)
+**Size**: `92` lines (`3432` bytes)
 
 **Functions:**
 - `def _node_map(document)`
@@ -1329,7 +1333,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `450` lines (`19038` bytes)
+**Size**: `457` lines (`19351` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)`
@@ -1352,7 +1356,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `44` lines (`886` bytes)
+**Size**: `47` lines (`947` bytes)
 
 ---
 
@@ -1531,7 +1535,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `1501` lines (`54569` bytes)
+**Size**: `1650` lines (`59740` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene and environment edits.*
@@ -1600,6 +1604,13 @@
 - `def _copy_node_field(source, target, field)`
 - `def revert_prefab_override(scene, node_id, field, prefabs, registry)` - *Restore one field on a linked instance from its prefab template.*
 - `def apply_prefab_override(scene, node_id, field, prefabs, registry)` - *Return a template copy with one instance field applied to it.*
+- `def _clone_scene_node(node)`
+- `def scene_group_document(scene)` - *Return one JSON-safe entry for every additive scene group container.*
+- `def _rename_colliding_ids(node, used)`
+- `def add_scene(scene, name, library, parent)` - *Add one saved scene as a named child group of the current scene.*
+- `def unload_scene(scene, node)` - *Remove one scene group container and return its former parent.*
+- `def _copy_scene_settings(source, target)`
+- `def save_scene_group(scene, node, library)` - *Write one scene group's children back to its library scene in place.*
 
 ---
 
@@ -1620,14 +1631,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `203` lines (`9672` bytes)
+**Size**: `211` lines (`10195` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1092` lines (`48309` bytes)
+**Size**: `1121` lines (`49686` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2809,13 +2820,14 @@
 ### [`tests/test_scene_diff.py`](tests/test_scene_diff.py)
 > *Tests for structured scene snapshot diffs.*
 
-**Size**: `91` lines (`3304` bytes)
+**Size**: `103` lines (`3848` bytes)
 
 **Classes:**
 - `class SceneDiffTest`
   - Method `.test_identical_documents_have_no_changes()`
   - Method `.test_reports_node_and_scene_changes()`
   - Method `.test_reports_prefab_link_changes()`
+  - Method `.test_reports_scene_group_changes()`
   - Method `.test_rejects_bad_documents()`
 
 ---
@@ -2843,7 +2855,7 @@
 ### [`tests/test_scene_snapshot.py`](tests/test_scene_snapshot.py)
 > *Unit tests for versioned scene snapshots.*
 
-**Size**: `279` lines (`11547` bytes)
+**Size**: `297` lines (`12281` bytes)
 
 **Classes:**
 - `class Health`
@@ -2851,6 +2863,7 @@
   - Method `._scene()`
   - Method `.test_round_trip_preserves_structure_and_transforms()`
   - Method `.test_prefab_links_round_trip_and_older_snapshots_default_to_none()`
+  - Method `.test_scene_groups_round_trip_and_older_snapshots_default_to_none()`
   - Method `.test_round_trip_preserves_typed_components()`
   - Method `.test_components_require_a_type_map_and_supported_codec()`
   - Method `.test_round_trip_preserves_camera_lens_and_environment()`
@@ -3092,7 +3105,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `1905` lines (`79571` bytes)
+**Size**: `1960` lines (`82493` bytes)
 
 **Classes:**
 - `class Health`
@@ -3143,6 +3156,7 @@
   - Method `.test_editor_scene_diff()`
   - Method `.test_editor_initial_scene_loads_at_startup()`
   - Method `.test_editor_scene_library_persists_and_restores()`
+  - Method `.test_editor_add_save_unload_scene_group()`
   - Method `.test_editor_scene_settings_and_undo()`
   - Method `.test_editor_batch_authoring_is_atomic()`
   - Method `.test_editor_node_property_editing()`

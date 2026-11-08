@@ -213,6 +213,7 @@ function editorSummary(editor) {
       : null,
     prefabs: editor.prefabs,
     scenes: editor.scenes,
+    scene_group_count: editor.scene_group_count,
     prefab_override_count: editor.prefab_override_count,
     assets: (editor.assets || []).length,
     component_types: editor.component_types,
@@ -576,6 +577,7 @@ function showEditor(editor) {
     `${editor.nodes.length} nodes · ${editor.prefabs.length} prefabs · ` +
     `${editor.prefab_instance_count ?? (editor.prefab_instances || []).length} instances · ` +
     `${editor.prefab_override_count ?? 0} overrides · ` +
+    `${editor.scene_group_count ?? 0} scenes · ` +
     `undo ${history.undo} / redo ${history.redo} · ` +
     `selected ${editor.selection ? editor.selection.id : "none"}`;
   if (!busy) {

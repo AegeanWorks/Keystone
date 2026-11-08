@@ -28,6 +28,7 @@ from keystone.scene_snapshot import restore_scene, scene_to_dict
 from keystone.web.editor import (
     EDITOR_ACTIONS,
     EditorHistory,
+    add_scene,
     apply_prefab_instance,
     apply_prefab_override,
     asset_entries,
@@ -45,10 +46,12 @@ from keystone.web.editor import (
     revert_prefab_instance,
     revert_prefab_override,
     save_prefab,
+    save_scene_group,
     set_component,
     set_node_properties,
     set_scene,
     transform_from_payload,
+    unload_scene,
 )
 from keystone.web.scene import scene_document
 from keystone.web.schema import EDITOR_SCHEMA, SCENE_SCHEMA, WEB_API_VERSION
@@ -515,6 +518,32 @@ class GameSession:
                     self.history.clear()
                     self.selected_id = None
                     self.last_diff = None
+                elif action == "add_scene":
+                    if self.scene_library is None:
+                        raise ValueError("no scene library is configured")
+                    parent = self._parent_locked(scene, payload.get("parent"))
+                    node = self._apply_history(
+                        scene,
+                        lambda: add_scene(
+                            scene,
+                            payload.get("name"),
+                            self.scene_library,
+                            parent,
+                        ),
+                    )
+                    self.selected_id = node.id
+                elif action == "unload_scene":
+                    node = find_node(scene, payload.get("id"))
+                    parent = self._apply_history(
+                        scene, lambda: unload_scene(scene, node)
+                    )
+                    self.selected_id = None if parent is scene.root else parent.id
+                elif action == "save_scene_group":
+                    if self.scene_library is None:
+                        raise ValueError("no scene library is configured")
+                    node = find_node(scene, payload.get("id"))
+                    save_scene_group(scene, node, self.scene_library)
+                    self.selected_id = node.id
                 elif action == "diff_scene":
                     if self.scene_library is None:
                         raise ValueError("no scene library is configured")

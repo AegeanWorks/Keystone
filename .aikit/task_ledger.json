@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-component-lifecycle-v1",
+    "task_id": "keystone-scene-groups-v1",
     "last_phase": "verification",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794098123.3170104,
+    "updated_at": 1794099224.9124084,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794098123.7473571
+    "completed_at": 1794099225.3457336
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-hierarchy-prefab-badges-v1",
-      "phase": "verification",
-      "phase_num": 4,
-      "description": "[1/1] Hierarchy prefab badges and instance count implemented; 732 tests green, node --check clean, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794093711.5677092,
-      "timestamp_str": "2026-11-08 02:21:51",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-hierarchy-prefab-badges-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-hierarchy-prefab-badges-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794093711.962015,
-      "timestamp_str": "2026-11-08 02:21:51",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-scene-diff-prefab-links-v1",
-      "phase": "planning",
-      "phase_num": 2,
-      "description": "[1/2] Plan prefab-link fields in structured scene diffs",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794093725.5627582,
-      "timestamp_str": "2026-11-08 02:22:05",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Scene diffs compare transforms, visibility and components but ignore editor-only prefab links, so AI clients miss link changes.",
-        "benefits": "diff_scene reports prefab link changes per node, keeping saved-scene comparisons accurate for prefab workflows.",
-        "risks": "contract: diff document schema bump; dependency: none; concurrency: none; state: no persistence change.",
-        "mitigation": "Add the field to node diffing, bump the diff schema, test added/removed/changed links, and run the full gate cycle."
-      },
-      "plan_digest": "85174b97988dfd3e46b554f41eb0b41ffa639fe0bc5ebd251e5e835c4055eea7"
-    },
     {
       "task_id": "keystone-scene-diff-prefab-links-v1",
       "phase": "verification",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794098123.7473595,
       "timestamp_str": "2026-11-08 03:35:23",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-scene-groups-v1",
+      "phase": "planning",
+      "phase_num": 2,
+      "description": "[1/3] Plan additive scene groups with persisted metadata, add/unload/save actions, editor inventory and tests",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794098248.2594783,
+      "timestamp_str": "2026-11-08 03:37:28",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "The editor edits one scene at a time; Unity/Unreal-style additive authoring needs named scene groups that can be loaded, unloaded and saved independently.",
+        "benefits": "A .kscene can be added as a named group, saved back in place and unloaded with undo, while scene-group metadata survives snapshots and /api/editor exposes the inventory.",
+        "risks": "contract: scene snapshot schema 4 and editor schema 25; dependency: none; concurrency: existing editor lock; state: ID collisions, nested groups, camera/environment ownership, prefab links inside groups and save atomicity.",
+        "mitigation": "Persist group metadata on container nodes, clone scene content with links, rename only colliding IDs, save through a temporary Scene, expose group IDs, and test add/save/unload/persistence/undo."
+      },
+      "plan_digest": "2b693bc857c539af87820df4a2ec1a6b6074dbf1cf746fe2b8478c93578b45e1"
+    },
+    {
+      "task_id": "keystone-scene-groups-v1",
+      "phase": "verification",
+      "phase_num": 4,
+      "description": "[2/3] Additive scene groups implemented: SceneGroup metadata in snapshot schema 4, add/unload/save actions, collision-safe IDs, scene_groups inventory/count, scene diff schema 3, README tree; 753 tests green, node check clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 25, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794099224.9124084,
+      "timestamp_str": "2026-11-08 03:53:44",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-scene-groups-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-scene-groups-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794099225.3457358,
+      "timestamp_str": "2026-11-08 03:53:45",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

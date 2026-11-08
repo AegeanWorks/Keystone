@@ -3,7 +3,7 @@
 import unittest
 
 from keystone.math3d import Vec3
-from keystone.scene import Node, PrefabLink, Scene, Transform
+from keystone.scene import Node, PrefabLink, Scene, SceneGroup, Transform
 from keystone.scene_diff import SCENE_DIFF_SCHEMA_VERSION, diff_scene_documents
 from keystone.scene_snapshot import scene_to_dict
 
@@ -74,6 +74,18 @@ class SceneDiffTest(unittest.TestCase):
                 "before": None,
                 "after": {"name": "hero-template", "instance": "copy"},
             },
+        )
+
+    def test_reports_scene_group_changes(self):
+        before = Scene()
+        before.add(Node("group", id="group"))
+        after = Scene()
+        after.add(Node("group", id="group", scene_group=SceneGroup("level")))
+        diff = diff_scene_documents(scene_to_dict(before), scene_to_dict(after))
+        self.assertEqual([item["id"] for item in diff["changed"]], ["group"])
+        self.assertEqual(
+            diff["changed"][0]["fields"]["scene_group"],
+            {"before": None, "after": {"name": "level"}},
         )
 
     def test_rejects_bad_documents(self):

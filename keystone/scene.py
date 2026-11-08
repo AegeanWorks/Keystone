@@ -77,6 +77,33 @@ class PrefabLink:
         return cls(data.get("name"), data.get("instance"))  # type: ignore[arg-type]
 
 
+@dataclass(frozen=True, slots=True)
+class SceneGroup:
+    """Editor-facing metadata for one additively loaded scene container."""
+
+    name: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.name, str) or not self.name.strip():
+            raise ValueError("scene group name must be a non-blank string")
+
+    def to_dict(self) -> dict[str, str]:
+        """Return the JSON-safe group document."""
+        return {"name": self.name}
+
+    @classmethod
+    def from_dict(cls, data: object) -> SceneGroup:
+        """Validate one scene group document."""
+        if not isinstance(data, Mapping):
+            raise TypeError("scene group must be a mapping")
+        unknown = sorted(set(data) - {"name"})
+        if unknown:
+            raise ValueError(
+                f"scene group has unknown fields: {', '.join(unknown)}"
+            )
+        return cls(data.get("name"))  # type: ignore[arg-type]
+
+
 @dataclass(eq=False)
 class Node:
     """A named transform node with identity, tags, components and children."""
@@ -93,6 +120,7 @@ class Node:
     layer: str = "default"
     components: dict[type, object] = field(default_factory=dict)
     prefab_link: PrefabLink | None = None
+    scene_group: SceneGroup | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str):
@@ -130,6 +158,8 @@ class Node:
                 raise TypeError("component value must match its key type")
         if self.prefab_link is not None and not isinstance(self.prefab_link, PrefabLink):
             raise TypeError("node prefab_link must be a PrefabLink or None")
+        if self.scene_group is not None and not isinstance(self.scene_group, SceneGroup):
+            raise TypeError("node scene_group must be a SceneGroup or None")
         if self.parent is not None:
             if self.parent is self:
                 raise ValueError("a node cannot be its own parent")

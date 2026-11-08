@@ -1293,6 +1293,61 @@ class WebServerTest(unittest.TestCase):
             entries = {entry["name"]: entry for entry in broken.editor()["scenes"]}
             self.assertIsNotNone(entries["broken"]["error"])
 
+    def test_editor_add_save_unload_scene_group(self):
+        with tempfile.TemporaryDirectory() as directory:
+            scene_dir = Path(directory) / "scenes"
+            session = GameSession(CubeDemo(), scene_dir=scene_dir)
+            editor = session.editor()
+            cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+            session.editor_action({"action": "select", "id": cube["id"]})
+            session.editor_action({"action": "save_scene", "name": "level"})
+            added = session.editor_action({"action": "add_scene", "name": "level"})
+            self.assertEqual(added["scene_group_count"], 1)
+            group = added["scene_groups"][0]
+            group_id = group["id"]
+            self.assertEqual(group["name"], "level")
+            self.assertGreater(group["node_count"], 0)
+            self.assertIn(group_id, {node["id"] for node in added["nodes"]})
+            self.assertTrue(group["roots"])
+            root_id = group["roots"][0]
+            session.editor_action(
+                {
+                    "action": "transform",
+                    "id": root_id,
+                    "position": [4.0, 0.0, 0.0],
+                }
+            )
+            session.editor_action({"action": "save_scene_group", "id": group_id})
+            session.editor_action({"action": "save_scene", "name": "composite"})
+            composite = session.editor_action(
+                {"action": "load_scene", "name": "composite"}
+            )
+            self.assertEqual(composite["scene_group_count"], 1)
+            self.assertEqual(composite["scene_groups"][0]["name"], "level")
+            reloaded = GameSession(CubeDemo(), scene_dir=scene_dir)
+            fresh = reloaded.editor_action({"action": "add_scene", "name": "level"})
+            fresh_group = fresh["scene_groups"][0]
+            fresh_root = next(
+                node
+                for node in fresh["nodes"]
+                if node["id"] == fresh_group["roots"][0]
+            )
+            self.assertEqual(fresh_root["transform"]["position"], [4.0, 0.0, 0.0])
+            unloaded = session.editor_action(
+                {"action": "unload_scene", "id": group_id}
+            )
+            self.assertEqual(unloaded["scene_groups"], [])
+            undone = session.editor_action({"action": "undo"})
+            self.assertEqual(len(undone["scene_groups"]), 1)
+            self.assertEqual(undone["scene_groups"][0]["id"], group_id)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action({"action": "add_scene", "name": "missing"})
+            self.assertEqual(caught.exception.status, 404)
+            second = session.editor_action({"action": "add_scene", "name": "level"})
+            self.assertEqual(second["scene_group_count"], 2)
+            ids = [node["id"] for node in second["nodes"]]
+            self.assertEqual(len(ids), len(set(ids)))
+
     def test_editor_scene_settings_and_undo(self):
         session = GameSession(CubeDemo())
         editor = session.editor()
