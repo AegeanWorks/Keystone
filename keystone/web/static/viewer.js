@@ -463,6 +463,9 @@ export class SceneViewer {
     this.gizmoArrow = this.buildGizmoVao(gizmoArrow());
     this.gizmoRing = this.buildGizmoVao(gizmoRing());
     this.gizmoScaleHandle = this.buildGizmoVao(gizmoScaleArrow());
+    this.gridEnabled = true;
+    this.snapEnabled = false;
+    this.grid = this.buildGridVaos();
     this.uniforms = {};
     for (const name of [
       "world", "view_proj", "normal", "color", "texture", "has_texture", "specular",
@@ -653,6 +656,50 @@ export class SceneViewer {
     gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
     gl.bindVertexArray(null);
     return { vao, buffer, count: geometry.count };
+  }
+
+  buildGridVaos() {
+    const half = 20;
+    const majorEvery = 5;
+    const minor = [];
+    const major = [];
+    for (let index = -half; index <= half; index += 1) {
+      if (index === 0) {
+        continue;
+      }
+      const target = index % majorEvery === 0 ? major : minor;
+      target.push(-half, 0, index, half, 0, index);
+      target.push(index, 0, -half, index, 0, half);
+    }
+    const line = (positions) =>
+      this.buildGizmoVao({
+        positions: new Float32Array(positions),
+        count: positions.length / 3,
+      });
+    return {
+      minor: line(minor),
+      major: line(major),
+      xAxis: line([-half, 0, 0, half, 0, 0]),
+      zAxis: line([0, 0, -half, 0, 0, half]),
+    };
+  }
+
+  setGrid(enabled) {
+    this.gridEnabled = Boolean(enabled);
+    this.render();
+    return this.gridEnabled;
+  }
+
+  setSnap(enabled) {
+    this.snapEnabled = Boolean(enabled);
+    return this.snapEnabled;
+  }
+
+  snapActive(event) {
+    return (
+      this.snapEnabled ||
+      Boolean(event && (event.ctrlKey || event.metaKey))
+    );
   }
 
   ensureCamera(scene) {
@@ -1526,7 +1573,7 @@ export class SceneViewer {
         drag.start[0] * current[1] - drag.start[1] * current[0],
         drag.start[0] * current[0] + drag.start[1] * current[1],
       );
-      if (event.ctrlKey || event.metaKey) {
+      if (this.snapActive(event)) {
         const step = Math.PI / 12;
         angle = Math.round(angle / step) * step;
       }
@@ -1555,7 +1602,7 @@ export class SceneViewer {
     }
     if (drag.mode === "scale") {
       let factor = 1 + (current - drag.start) / (this.gizmoScale(drag.origin) * 2.0);
-      if (event.ctrlKey || event.metaKey) {
+      if (this.snapActive(event)) {
         factor = Math.round(factor / 0.1) * 0.1;
       }
       factor = Math.max(0.01, Math.round(factor * 1e6) / 1e6);
@@ -1581,7 +1628,7 @@ export class SceneViewer {
       return;
     }
     let distance = current - drag.start;
-    if (event.ctrlKey || event.metaKey) {
+    if (this.snapActive(event)) {
       distance = Math.round(distance / 0.25) * 0.25;
     }
     distance = Math.round(distance * 1e6) / 1e6;
@@ -1872,7 +1919,29 @@ export class SceneViewer {
       gl.drawElements(gl.TRIANGLES, mesh.count, gl.UNSIGNED_INT, 0);
     }
     gl.bindVertexArray(null);
+    this.renderGrid(viewProjection);
     this.renderGizmo(viewProjection);
+  }
+
+  renderGrid(viewProjection) {
+    if (!this.gridEnabled || this.viewMode !== "scene") {
+      return;
+    }
+    const gl = this.gl;
+    const draw = (geometry, color) => {
+      gl.uniform3fv(this.gizmoUniforms.color, color);
+      gl.bindVertexArray(geometry.vao);
+      gl.drawArrays(gl.LINES, 0, geometry.count);
+    };
+    gl.useProgram(this.gizmoProgram);
+    gl.disable(gl.CULL_FACE);
+    gl.uniformMatrix4fv(this.gizmoUniforms.mvp, false, viewProjection);
+    draw(this.grid.minor, [0.22, 0.25, 0.30]);
+    draw(this.grid.major, [0.34, 0.38, 0.45]);
+    draw(this.grid.xAxis, [0.62, 0.24, 0.24]);
+    draw(this.grid.zAxis, [0.24, 0.38, 0.62]);
+    gl.bindVertexArray(null);
+    gl.enable(gl.CULL_FACE);
   }
 
   renderGizmo(viewProjection) {

@@ -92,6 +92,8 @@ const elements = {
   viewReset: document.getElementById("view-reset"),
   viewFocus: document.getElementById("view-focus"),
   viewMode: document.getElementById("view-mode"),
+  gridToggle: document.getElementById("grid-toggle"),
+  snapToggle: document.getElementById("snap-toggle"),
   gizmoMove: document.getElementById("gizmo-move"),
   gizmoRotate: document.getElementById("gizmo-rotate"),
   gizmoScale: document.getElementById("gizmo-scale"),
@@ -940,6 +942,24 @@ function toggleViewMode() {
   setStatus(next === "game" ? "game view" : "scene view");
 }
 
+function toggleGrid() {
+  if (!viewer) {
+    return;
+  }
+  const enabled = viewer.setGrid(!viewer.gridEnabled);
+  elements.gridToggle.textContent = `Grid: ${enabled ? "on" : "off"}`;
+  setStatus(`grid ${enabled ? "on" : "off"}`);
+}
+
+function toggleSnap() {
+  if (!viewer) {
+    return;
+  }
+  const enabled = viewer.setSnap(!viewer.snapEnabled);
+  elements.snapToggle.textContent = `Snap: ${enabled ? "on" : "off"}`;
+  setStatus(`snap ${enabled ? "on" : "off"}`);
+}
+
 function toggleGizmoSpace() {
   gizmoSpace = gizmoSpace === "world" ? "local" : "world";
   if (viewer) {
@@ -1598,6 +1618,16 @@ document.addEventListener("keydown", (event) => {
     toggleBoxSelect();
     return;
   }
+  if (!modifier && key === "g") {
+    event.preventDefault();
+    toggleGrid();
+    return;
+  }
+  if (!modifier && key === "s") {
+    event.preventDefault();
+    toggleSnap();
+    return;
+  }
   const direction = NUDGE_DIRECTIONS[event.key];
   if (direction && editorState.selection) {
     event.preventDefault();
@@ -1637,6 +1667,8 @@ elements.viewReset.addEventListener("click", () => {
   }
 });
 elements.viewMode.addEventListener("click", () => run(toggleViewMode));
+elements.gridToggle.addEventListener("click", toggleGrid);
+elements.snapToggle.addEventListener("click", toggleSnap);
 elements.viewFocus.addEventListener("click", () => {
   if (viewer && editorState && (editorState.selection_count || 0) > 0) {
     if ((editorState.selection_count || 0) > 1) {

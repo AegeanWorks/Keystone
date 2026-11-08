@@ -2502,6 +2502,8 @@ class WebServerTest(unittest.TestCase):
             "view-reset",
             "view-focus",
             "view-mode",
+            "grid-toggle",
+            "snap-toggle",
             "gizmo-move",
             "gizmo-rotate",
             "gizmo-scale",
@@ -2549,6 +2551,8 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("setViewMode", script)
         self.assertIn("toggleViewMode", script)
         self.assertIn("updateViewModeButton", script)
+        self.assertIn("toggleGrid", script)
+        self.assertIn("toggleSnap", script)
         self.assertIn("applyGizmoSelectionTransform", script)
         self.assertIn("applyGizmoSelectionRotation", script)
         self.assertIn("applyGizmoSelectionScale", script)
@@ -2602,6 +2606,11 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("cameraStateFromScene", viewer_script)
         self.assertIn("setViewMode", viewer_script)
         self.assertIn("viewMode", viewer_script)
+        self.assertIn("buildGridVaos", viewer_script)
+        self.assertIn("renderGrid", viewer_script)
+        self.assertIn("setGrid", viewer_script)
+        self.assertIn("setSnap", viewer_script)
+        self.assertIn("snapActive", viewer_script)
         self.assertIn("focusNode", viewer_script)
         self.assertIn("setSelected", viewer_script)
         self.assertIn("setSelectedIds", viewer_script)

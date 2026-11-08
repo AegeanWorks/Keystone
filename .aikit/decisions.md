@@ -1112,3 +1112,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Saving an isolated prefab edit left existing authored instances stale until each one was reverted or applied by hand.
 - **Decision**: Add `refresh_prefab_instances` with a `name` and a boolean `keep_overrides` (default false). It replaces top-level authored instance groups of that prefab with the current template in one undo entry, skips nested or split groups, and when `keep_overrides` is true skips groups with field overrides. The action reports `refreshed`, `skipped_overrides`, `skipped_nested`, `skipped_invalid` and `total` counts, is blocked during prefab edit mode and play, and the console adds a Refresh instances button. Bump the editor schema to 34.
 - **Consequences**: 764 tests green; force refresh, override-preserving skip, undo, missing-prefab and prefab-edit blocking are covered. Nested instances inside a refreshed group come from the template, overridden groups need explicit revert/apply resolution, and template writes remain asset side effects rather than scene-undo entries.
+
+### ADR-136: Scene-view grid and persistent snap toggle
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The Scene view had no ground reference grid, and snapping required holding Ctrl/Cmd for every drag, which slowed precise authoring.
+- **Decision**: Build minor/major grid lines and colored X/Z axes in the WebGL viewer and render them with the existing line shader only in Scene view, behind depth testing so geometry occludes the grid. Add Grid and Snap console toggles with G/S shortcuts. Snap now activates when the toggle is on or Ctrl/Cmd is held, and all translate/rotate/scale rounding routes through one `snapActive` predicate. No API or schema change.
+- **Consequences**: 764 tests green; static viewer/console coverage verifies grid geometry, rendering, toggles and the snap predicate. Grid spacing and snap increments remain fixed, the grid is presentation-only and absent from Game view, and game-view camera controls stay disabled.
