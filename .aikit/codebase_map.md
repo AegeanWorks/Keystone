@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `143`
-- **Total Classes**: `228`
-- **Total Top-Level Functions**: `392`
-- **Total Class Methods**: `1425`
-- **Total Source Lines**: `36551`
+- **Total Python Modules**: `145`
+- **Total Classes**: `231`
+- **Total Top-Level Functions**: `394`
+- **Total Class Methods**: `1438`
+- **Total Source Lines**: `37187`
 
 ---
 
@@ -1462,7 +1462,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `76` lines (`1624` bytes)
+**Size**: `80` lines (`1736` bytes)
 
 ---
 
@@ -1491,6 +1491,27 @@
 - `def _rotate_normal(bone, normal)` - *Transform a normal by transpose(inverse(upper 3x3)) of the bone.*
 - `def skin_point(position, normal, joints, weights, bones)` - *Deform one vertex by its influences; mirrors the vertex shader exactly.*
 - `def skin_mesh(mesh, bones)` - *Return a deformed copy of the mesh in bind-pose layout (CPU oracle).*
+
+---
+
+### [`keystone/state_machine_library.py`](keystone/state_machine_library.py)
+> *File-backed animation state machine libraries for editors and AI clients.*
+
+**Size**: `140` lines (`5032` bytes)
+
+**Classes:**
+- `class StateMachineEntry` - *One library file and its state summary, or why it could not load.*
+  - Method `.describe()` - *Return a JSON-safe entry for editor and AI documents.*
+- `class StateMachineLibrary` - *Discover, save and load ``.kstate`` machines in one directory.*
+  - Method `.__init__(directory)`
+  - Method `.path_for(name)` - *Return the safe file path for one library name.*
+  - Method `.save(name, machine)` - *Write one state machine atomically.*
+  - Method `.load(name)` - *Load one machine or raise KeyError when the entry is absent.*
+  - Method `.delete(name)` - *Move one entry to the library trash and return its former path.*
+  - Method `.trash()` - *Return recoverable deleted entries.*
+  - Method `.restore(trash_name)` - *Restore one trashed entry and return its summary.*
+  - Method `.entry(name)` - *Load one entry's summary, capturing load failures as ``error``.*
+  - Method `.entries()` - *Return every ``.kstate`` file in stable name order.*
 
 ---
 
@@ -1764,14 +1785,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `445` lines (`20212` bytes)
+**Size**: `518` lines (`22298` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2359` lines (`104984` bytes)
+**Size**: `2487` lines (`111247` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3227,6 +3248,21 @@
 
 ---
 
+### [`tests/test_state_machine_library.py`](tests/test_state_machine_library.py)
+> *Tests for file-backed animation state machine libraries.*
+
+**Size**: `104` lines (`3491` bytes)
+
+**Classes:**
+- `class StateMachineLibraryTest`
+  - Method `.test_save_load_entries_delete_and_restore()`
+  - Method `.test_bad_files_and_inputs()`
+
+**Functions:**
+- `def _machine()`
+
+---
+
 ### [`tests/test_swarm_fixes.py`](tests/test_swarm_fixes.py)
 > *Swarm regression pins: one failing-first test per verified Stage-3 fix.*
 
@@ -3326,7 +3362,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `4148` lines (`174310` bytes)
+**Size**: `4335` lines (`180962` bytes)
 
 **Classes:**
 - `class Health`
@@ -3406,6 +3442,7 @@
   - Method `.test_editor_reload_assets_rebinds_scene_and_history()`
   - Method `.test_editor_preview_animation_and_undo()`
   - Method `.test_editor_animation_library_round_trip()`
+  - Method `.test_editor_state_machine_library_and_preview()`
   - Method `.test_editor_material_library_save_assign_and_reload()`
   - Method `.test_editor_component_lifecycle_play_mode()`
   - Method `.test_editor_component_authoring_and_scene_round_trip()`
@@ -3421,5 +3458,6 @@
 
 **Functions:**
 - `def _triangle_gltf()`
+- `def _state_machine_document()`
 
 ---

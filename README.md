@@ -256,23 +256,23 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 - **Scene graph**: nodes with stable IDs, tags, layers, typed components, local/world transforms, visibility, cycle-safe parenting, queries and cached GPU meshes.
 - **Prefabs**: capture subtrees, persist versioned `.kprefab` files through the asset registry, and instantiate deterministic copies with explicit or scene IDs.
 - **Assets**: immutable `MeshData` with optional UVs and vertex colors, cube/plane/cone/cylinder/sphere primitives, OBJ loading, and `TextureData` with PNG/checker sources.
-- **Textured PBR materials**: `Material` combines Blinn-Phong specular/shininess with metallic, roughness and emissive; textures sample RGBA with wrapping/mipmaps; glTF PBR survives import; material graphs add `pbr`.
+- **PBR materials**: `Material` combines Blinn-Phong specular/shininess with metallic/roughness/emissive; textures wrap/mipmap RGBA; glTF PBR survives import; material graphs add `pbr`.
 - **Fixed-step runtime**: `FixedStepClock` releases whole steps with a bounded catch-up budget; the headless path advances one step per frame for deterministic tests.
 - **Action input**: rebindable `InputMap` bindings expose `forward`, `right`, `up`, `look_yaw`, `look_pitch`, `pressed` and `held` across action contexts; no direct GLFW access.
 - **Audio core**: synth (`sine`, `square`, `noise`), named-bus `Mixer` with deterministic mixdown, mono 16-bit WAV IO and `audio_report()`; no hardware.
-- **Animation core**: keyframe `Track`/`AnimationClip`, looping, crossfades, timed events, `apply_pose()`, linear-blend skinning (CPU + GPU), JSON round trips, `animation_report()` and parameter-driven state machines.
+- **Animation**: keyframe `Track`/`AnimationClip`, looping, crossfades, events, `apply_pose()`, CPU/GPU linear-blend skinning, JSON round trips, reports and parameter-driven state machines.
 - **Replay runner**: `run_log()`/`verify_log()` replay a `CommandLog`, and `--replay` audits logs.
 - **Particles**: seeded CPU emitters with forces, swept collision, bursts, culling and JSON reports; HUD/inspector counts; one GPU billboard each.
 - **Physics**: ray/AABB/sphere queries, sphere pushout, spatial-grid broadphase, AABB movement with gravity/ground, trigger tracking and filtered raycasts.
 - **Replay and persistence**: `ActionState` command logs, stable hashes and atomic JSON writes with `.bak` snapshots.
 - **Plugin loading**: `load_game("package.module:Factory")` validates the five-op contract at startup.
 - **No-GL simulation**: `run_simulation()` and `--simulate` drive `GameModule.update()` directly with JSON action scripts and hashes.
-- **AI discovery and testing**: `--describe` exposes actions, capabilities, schemas and snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; `testing`/`agents`/`playtest` add helpers, action validation, observations and seeded bots.
+- **AI discovery and testing**: `--describe` exposes actions, capabilities, schemas and snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; helpers add action validation, observations and seeded bots.
 - **Visual regression gate**: `--compare-baseline baseline.json` re-renders, compares hashes, stats and nodes, and exits non-zero on change. `--diff-out diff.png` writes a changed-pixel diff.
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip loading, changed-pixel counts, bbox and visual diff.
 - **Frame reports for AI analysis**: `--report` writes schema-11 JSON with image hashes, pixel stats, content box, palette, camera, projected content, FX counts and UI metadata.
 - **Human overlay**: game-agnostic HUD with status, FPS, frame, time and profiler lines, plus help/pause menu; 5×7 font, no asset. Games add HUD via `draw_ui(canvas, state)`.
-- **Web console and WebGL viewer**: `--serve` starts a stdlib JSON API (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/editor`, `/api/simulate`); a scene editor covers hierarchy, node/asset/component authoring, transforms, undo, prefabs and play/snapshot; Scene/Game views, grid/snap/pivot, animation/material libraries, drag/drop hierarchy, material lifecycle/textures, asset pipeline/usages, startup, timeline, validation, layout and build.
+- **Web console and WebGL viewer**: `--serve` exposes a stdlib JSON API (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/editor`, `/api/simulate`) and a scene editor for hierarchy, node/asset/component authoring, transforms, undo, prefabs, play/snapshot, Scene/Game views, grid/snap/pivot, animation/materials, hierarchy drag/drop, assets/usages, startup, timeline, validation, layout and build.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code.
 
 ## 🤖 AI Testing & Frame Analysis
@@ -366,6 +366,7 @@ keystone/
 │   ├── animation.py          <- clips, controller and pose reports
 │   ├── animation_state.py    <- parameter-driven state machine transitions
 │   ├── animation_library.py  <- file-backed .kanim clip library
+│   ├── state_machine_library.py <- file-backed .kstate machine library
 │   ├── app.py                <- Engine loop
 │   ├── audio.py              <- synth clips, mixer and WAV I/O
 │   ├── batch.py              <- static batch planning, world-space and rig merge
@@ -490,6 +491,7 @@ keystone/
 │   ├── test_animation.py     <- clips, blending and timed events
 │   ├── test_animation_state.py <- state transitions, triggers and round trips
 │   ├── test_animation_library.py <- clip library save, load, delete and restore
+│   ├── test_state_machine_library.py <- .kstate library save/delete/restore
 │   ├── test_material_library.py <- material library save, load, register and textures
 │   ├── test_skinning.py      <- skin math, GPU path, glTF
 │   ├── test_sprites.py       <- sprite math, report, sample fixture

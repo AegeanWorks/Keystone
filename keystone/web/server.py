@@ -15,6 +15,7 @@ from urllib.parse import urlparse
 
 from keystone.animation import AnimationClip, apply_pose
 from keystone.animation_library import AnimationLibrary
+from keystone.animation_state import AnimationStateMachine
 from keystone.assets import AssetRegistry
 from keystone.component_codec import validate_component_types
 from keystone.headless import run_simulation
@@ -38,6 +39,7 @@ from keystone.scene import Node, Scene
 from keystone.scene_diff import diff_scene_documents
 from keystone.scene_library import SceneLibrary
 from keystone.scene_snapshot import restore_scene, scene_to_dict
+from keystone.state_machine_library import StateMachineLibrary
 from keystone.web.editor import (
     EDITOR_ACTIONS,
     EditorHistory,
@@ -127,6 +129,9 @@ SCENE_NEUTRAL_ACTIONS = frozenset(
         "save_animation",
         "delete_animation",
         "restore_animation",
+        "save_state_machine",
+        "delete_state_machine",
+        "restore_state_machine",
         "save_material",
         "delete_material",
         "restore_material",
@@ -259,6 +264,7 @@ class GameSession:
         self.last_asset_usages: dict[str, object] | None = None
         self.last_revert: dict[str, object] | None = None
         self.last_build: dict[str, object] | None = None
+        self.last_state_machine_preview: dict[str, object] | None = None
         self.scene_dirty = False
         self.saved_scene = initial_scene
         self._prefab_edit_original_history: EditorHistory | None = None
@@ -285,6 +291,9 @@ class GameSession:
         self.animation_library: AnimationLibrary | None = None
         if animation_dir is not None:
             self.animation_library = AnimationLibrary(animation_dir)
+        self.state_machine_library: StateMachineLibrary | None = None
+        if animation_dir is not None:
+            self.state_machine_library = StateMachineLibrary(animation_dir)
         self.material_library: MaterialLibrary | None = None
         if material_dir is not None:
             self.material_library = MaterialLibrary(
@@ -792,6 +801,20 @@ class GameSession:
             if self.animation_library is not None
             else []
         )
+        document["state_machines"] = (
+            [
+                entry.describe()
+                for entry in self.state_machine_library.entries()
+            ]
+            if self.state_machine_library is not None
+            else []
+        )
+        document["trash"]["state_machines"] = (
+            self.state_machine_library.trash()
+            if self.state_machine_library is not None
+            else []
+        )
+        document["state_machine_preview"] = self.last_state_machine_preview
         document["trash"]["materials"] = (
             self.material_library.trash()
             if self.material_library is not None
@@ -854,6 +877,7 @@ class GameSession:
         self.last_asset_usages = None
         self.last_revert = None
         self.last_build = None
+        self.last_state_machine_preview = None
         with self.lock:
             scene = self._scene_locked()
             try:
@@ -1134,6 +1158,110 @@ class GameSession:
                     if self.animation_library is None:
                         raise ValueError("no animation library is configured")
                     self.animation_library.restore(payload.get("trash"))
+                elif action == "save_state_machine":
+                    if self.state_machine_library is None:
+                        raise ValueError(
+                            "no state machine library is configured"
+                        )
+                    name = payload.get("name")
+                    if not isinstance(name, str) or not name.strip():
+                        raise ValueError(
+                            "state machine name must be a non-blank string"
+                        )
+                    data = payload.get("machine")
+                    if not isinstance(data, dict):
+                        raise TypeError(
+                            "save_state_machine machine must be a JSON object"
+                        )
+                    machine = AnimationStateMachine.from_dict(data)
+                    self.state_machine_library.save(name, machine)
+                elif action == "delete_state_machine":
+                    if self.state_machine_library is None:
+                        raise ValueError(
+                            "no state machine library is configured"
+                        )
+                    self.state_machine_library.delete(payload.get("name"))
+                elif action == "restore_state_machine":
+                    if self.state_machine_library is None:
+                        raise ValueError(
+                            "no state machine library is configured"
+                        )
+                    self.state_machine_library.restore(payload.get("trash"))
+                elif action == "preview_state_machine":
+                    if self.state_machine_library is None:
+                        raise ValueError(
+                            "no state machine library is configured"
+                        )
+                    name = payload.get("name")
+                    if not isinstance(name, str) or not name.strip():
+                        raise ValueError(
+                            "preview_state_machine name must be a non-blank string"
+                        )
+                    machine = self.state_machine_library.load(name)
+                    parameters = payload.get("parameters", {})
+                    if not isinstance(parameters, dict):
+                        raise TypeError(
+                            "preview_state_machine parameters must be a JSON object"
+                        )
+                    for key, value in parameters.items():
+                        machine.set_parameter(key, value)
+                    triggers = payload.get("triggers", [])
+                    if not isinstance(triggers, list) or any(
+                        not isinstance(item, str) or not item.strip()
+                        for item in triggers
+                    ):
+                        raise ValueError(
+                            "preview_state_machine triggers must be a list of non-blank strings"
+                        )
+                    for trigger in triggers:
+                        machine.set_trigger(trigger)
+                    frames = payload.get("frames", 1)
+                    if (
+                        isinstance(frames, bool)
+                        or not isinstance(frames, int)
+                        or not 1 <= frames <= 10_000
+                    ):
+                        raise ValueError(
+                            "preview_state_machine frames must be an integer between 1 and 10000"
+                        )
+                    step = payload.get("step", 1.0 / 60.0)
+                    if (
+                        isinstance(step, bool)
+                        or not isinstance(step, (int, float))
+                        or not math.isfinite(step)
+                        or step <= 0.0
+                    ):
+                        raise ValueError(
+                            "preview_state_machine step must be a positive finite number"
+                        )
+                    record = payload.get("record", True)
+                    if not isinstance(record, bool):
+                        raise TypeError(
+                            "preview_state_machine record must be a boolean"
+                        )
+                    pose: dict = {}
+                    for _ in range(frames):
+                        pose = machine.advance(float(step))
+                    if record:
+                        updated = self._apply_history(
+                            scene, lambda: apply_pose(scene, pose)
+                        )
+                    else:
+                        updated = apply_pose(scene, pose)
+                        self.last_diff = None
+                    self.last_state_machine_preview = {
+                        "name": name,
+                        "frames": frames,
+                        "step": round(float(step), 6),
+                        "current": machine.current,
+                        "parameters": dict(
+                            sorted(machine.parameters.items())
+                        ),
+                        "events": list(machine.events),
+                        "updated": list(updated),
+                        "record": record,
+                        "report": machine.report(),
+                    }
                 elif action == "save_material":
                     if self.material_library is None:
                         raise ValueError("no material library is configured")

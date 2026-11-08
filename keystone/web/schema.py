@@ -118,6 +118,48 @@ EDITOR_EXAMPLES = {
         "action": "restore_animation",
         "trash": "bob.deadbeef.kanim",
     },
+    "save_state_machine": {
+        "action": "save_state_machine",
+        "name": "locomotion",
+        "machine": {
+            "schema": 1,
+            "states": [
+                {
+                    "name": "idle",
+                    "clip": {
+                        "schema": 1,
+                        "name": "idle",
+                        "position": {},
+                        "rotation": {},
+                        "scale": {},
+                        "events": [],
+                    },
+                    "loop": True,
+                    "speed": 1.0,
+                }
+            ],
+            "transitions": [],
+            "parameters": {},
+            "current": "idle",
+        },
+    },
+    "delete_state_machine": {
+        "action": "delete_state_machine",
+        "name": "locomotion",
+    },
+    "restore_state_machine": {
+        "action": "restore_state_machine",
+        "trash": "locomotion.deadbeef.kstate",
+    },
+    "preview_state_machine": {
+        "action": "preview_state_machine",
+        "name": "locomotion",
+        "parameters": {"speed": 1.0},
+        "triggers": [],
+        "frames": 1,
+        "step": 0.0167,
+        "record": True,
+    },
     "save_material": {
         "action": "save_material",
         "name": "gold",
@@ -283,6 +325,36 @@ EDITOR_SCHEMA = {
         "restore_animation": ["trash"],
         "animation": ["name", "duration", "track_count", "source", "error"],
         "animation_preview": ["name", "time", "updated", "track_count", "source", "record"],
+        "save_state_machine": ["name", "machine"],
+        "delete_state_machine": ["name"],
+        "restore_state_machine": ["trash"],
+        "preview_state_machine": [
+            "name",
+            "parameters",
+            "triggers",
+            "frames",
+            "step",
+            "record",
+        ],
+        "state_machine_entry": [
+            "name",
+            "states",
+            "transitions",
+            "current",
+            "source",
+            "error",
+        ],
+        "state_machine_preview": [
+            "name",
+            "frames",
+            "step",
+            "current",
+            "parameters",
+            "events",
+            "updated",
+            "record",
+            "report",
+        ],
         "material_entry": [
             "name",
             "source",
@@ -419,6 +491,7 @@ EDITOR_SCHEMA = {
         "schema 48 adds project_assets inventory and forget_asset, which removes an unused manifest entry and registry record while keeping the source file",
         "schema 49 adds build_project for project-relative runnable exports with BUILD.json summaries",
         "schema 50 adds asset_usages, which reports live-scene, registry, prefab and saved-scene references for one asset id or project path",
+        "schema 51 adds the .kstate state machine library with save/delete/restore actions and fixed-step preview_state_machine pose application",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

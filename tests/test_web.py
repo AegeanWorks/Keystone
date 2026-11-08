@@ -13,6 +13,12 @@ from pathlib import Path
 from typing import ClassVar
 
 from keystone import web
+from keystone.animation import AnimationClip, Track
+from keystone.animation_state import (
+    AnimationState,
+    AnimationStateMachine,
+    AnimationTransition,
+)
 from keystone.math3d import Vec3
 from keystone.prefab import Prefab
 from keystone.primitives import cube
@@ -58,6 +64,48 @@ def _triangle_gltf():
             }
         ],
     }
+
+
+def _state_machine_document():
+    idle = AnimationState(
+        "idle",
+        AnimationClip(
+            name="idle",
+            position_tracks=(
+                (
+                    "cube-0",
+                    Track(
+                        times=(0.0, 1.0),
+                        values=(Vec3(0, 0, 0), Vec3(0, 0.5, 0)),
+                    ),
+                ),
+            ),
+        ),
+    )
+    run = AnimationState(
+        "run",
+        AnimationClip(
+            name="run",
+            position_tracks=(
+                (
+                    "cube-0",
+                    Track(
+                        times=(0.0, 1.0),
+                        values=(Vec3(2, 0, 0), Vec3(2, 0.5, 0)),
+                    ),
+                ),
+            ),
+        ),
+    )
+    return AnimationStateMachine(
+        [idle, run],
+        [
+            AnimationTransition(
+                "idle", "run", "speed", "greater", 0.5, 0.0
+            )
+        ],
+        {"speed": 0.0},
+    ).to_dict()
 
 
 @dataclass(frozen=True)
@@ -3381,6 +3429,123 @@ class WebServerTest(unittest.TestCase):
                 )
             self.assertEqual(caught.exception.status, 400)
 
+    def test_editor_state_machine_library_and_preview(self):
+        with tempfile.TemporaryDirectory() as directory:
+            animation_dir = Path(directory) / "animations"
+            session = GameSession(CubeDemo(), animation_dir=animation_dir)
+            document = _state_machine_document()
+            saved = session.editor_action(
+                {
+                    "action": "save_state_machine",
+                    "name": "locomotion",
+                    "machine": document,
+                }
+            )
+            self.assertTrue(
+                (animation_dir / "locomotion.kstate").is_file()
+            )
+            entry = next(
+                item
+                for item in saved["state_machines"]
+                if item["name"] == "locomotion"
+            )
+            self.assertEqual(entry["states"], 2)
+            self.assertEqual(entry["transitions"], 1)
+
+            previewed = session.editor_action(
+                {
+                    "action": "preview_state_machine",
+                    "name": "locomotion",
+                    "parameters": {"speed": 1.0},
+                    "frames": 2,
+                    "step": 0.1,
+                }
+            )
+            preview = previewed["state_machine_preview"]
+            self.assertEqual(preview["current"], "run")
+            self.assertEqual(preview["frames"], 2)
+            self.assertAlmostEqual(preview["step"], 0.1, places=4)
+            self.assertIn("cube-0", preview["updated"])
+            self.assertEqual(previewed["history"]["undo"], 1)
+            moved = next(
+                node
+                for node in previewed["nodes"]
+                if node["id"] == "cube-0"
+            )
+            self.assertAlmostEqual(
+                moved["transform"]["position"][0], 2.0, places=4
+            )
+
+            before = previewed["history"]["undo"]
+            unrecorded = session.editor_action(
+                {
+                    "action": "preview_state_machine",
+                    "name": "locomotion",
+                    "parameters": {"speed": 1.0},
+                    "frames": 1,
+                    "step": 0.1,
+                    "record": False,
+                }
+            )
+            self.assertFalse(
+                unrecorded["state_machine_preview"]["record"]
+            )
+            self.assertEqual(unrecorded["history"]["undo"], before)
+
+            deleted = session.editor_action(
+                {"action": "delete_state_machine", "name": "locomotion"}
+            )
+            self.assertEqual(deleted["state_machines"], [])
+            trash = deleted["trash"]["state_machines"]
+            self.assertEqual(trash[0]["name"], "locomotion")
+            restored = session.editor_action(
+                {
+                    "action": "restore_state_machine",
+                    "trash": trash[0]["trash"],
+                }
+            )
+            self.assertIn(
+                "locomotion",
+                {item["name"] for item in restored["state_machines"]},
+            )
+
+            bad = dict(document)
+            bad["schema"] = 99
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "save_state_machine",
+                        "name": "bad",
+                        "machine": bad,
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "preview_state_machine", "name": "missing"}
+                )
+            self.assertEqual(caught.exception.status, 404)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "preview_state_machine",
+                        "name": "locomotion",
+                        "frames": 0,
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+
+            standalone = GameSession(CubeDemo())
+            with self.assertRaises(WebProblem) as caught:
+                standalone.editor_action(
+                    {
+                        "action": "save_state_machine",
+                        "name": "locomotion",
+                        "machine": document,
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+
     def test_editor_material_library_save_assign_and_reload(self):
         with tempfile.TemporaryDirectory() as directory:
             material_dir = Path(directory) / "materials"
@@ -3660,6 +3825,17 @@ class WebServerTest(unittest.TestCase):
             "animation-delete",
             "animation-restore",
             "animation-state",
+            "state-machine-json",
+            "state-machine-name",
+            "state-machine-names",
+            "state-machine-parameters",
+            "state-machine-triggers",
+            "state-machine-frames",
+            "state-machine-save",
+            "state-machine-preview",
+            "state-machine-delete",
+            "state-machine-restore",
+            "state-machine-state",
             "node-parent",
             "node-create",
             "node-duplicate",
@@ -3943,6 +4119,17 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("save_animation", script)
         self.assertIn("delete_animation", script)
         self.assertIn("restore_animation", script)
+        self.assertIn("saveStateMachine", script)
+        self.assertIn("previewStateMachine", script)
+        self.assertIn("deleteStateMachine", script)
+        self.assertIn("restoreStateMachine", script)
+        self.assertIn("save_state_machine", script)
+        self.assertIn("preview_state_machine", script)
+        self.assertIn("delete_state_machine", script)
+        self.assertIn("restore_state_machine", script)
+        self.assertIn("state_machine_preview", script)
+        self.assertIn("state-machine-state", script)
+        self.assertIn("fillStateMachineDatalist", script)
         self.assertIn("animation_preview", script)
         self.assertIn("playFrames", script)
         self.assertIn("set_node", script)

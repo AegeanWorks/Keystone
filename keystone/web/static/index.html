@@ -70,6 +70,22 @@
           <button id="animation-restore" type="button">Restore clip</button>
         </div>
         <div id="animation-state" class="hint">No animation preview.</div>
+        <label class="stack" for="state-machine-json">Animation state machine JSON</label>
+        <textarea id="state-machine-json" spellcheck="false" rows="6">{}</textarea>
+        <div class="field-grid">
+          <label>State machine name <input id="state-machine-name" type="text" list="state-machine-names"></label>
+          <label>Parameters JSON <input id="state-machine-parameters" type="text" value="{}"></label>
+          <label>Triggers (comma) <input id="state-machine-triggers" type="text" placeholder="jump, attack"></label>
+          <label>Frames <input id="state-machine-frames" type="number" min="1" step="1" value="1"></label>
+        </div>
+        <datalist id="state-machine-names"></datalist>
+        <div class="buttons">
+          <button id="state-machine-save" type="button">Save state machine</button>
+          <button id="state-machine-preview" type="button">Preview state</button>
+          <button id="state-machine-delete" type="button">Delete state machine</button>
+          <button id="state-machine-restore" type="button">Restore state machine</button>
+        </div>
+        <div id="state-machine-state" class="hint">No state machine preview.</div>
         <div class="field-grid">
           <label>Node name <input id="node-name" type="text" value="node"></label>
           <label>Parent

@@ -35,6 +35,17 @@ const elements = {
   animationDelete: document.getElementById("animation-delete"),
   animationRestore: document.getElementById("animation-restore"),
   animationState: document.getElementById("animation-state"),
+  stateMachineJson: document.getElementById("state-machine-json"),
+  stateMachineName: document.getElementById("state-machine-name"),
+  stateMachineNames: document.getElementById("state-machine-names"),
+  stateMachineParameters: document.getElementById("state-machine-parameters"),
+  stateMachineTriggers: document.getElementById("state-machine-triggers"),
+  stateMachineFrames: document.getElementById("state-machine-frames"),
+  stateMachineSave: document.getElementById("state-machine-save"),
+  stateMachinePreview: document.getElementById("state-machine-preview"),
+  stateMachineDelete: document.getElementById("state-machine-delete"),
+  stateMachineRestore: document.getElementById("state-machine-restore"),
+  stateMachineState: document.getElementById("state-machine-state"),
   nodeCreate: document.getElementById("node-create"),
   nodeDuplicate: document.getElementById("node-duplicate"),
   nodeDelete: document.getElementById("node-delete"),
@@ -547,11 +558,27 @@ function fillPathDatalist(list, paths) {
   }
 }
 
+function fillStateMachineDatalist(list, entries) {
+  list.replaceChildren();
+  for (const entry of entries) {
+    const option = document.createElement("option");
+    option.value = entry.name;
+    option.label = entry.error
+      ? `${entry.name} (error)`
+      : `${entry.name} · ${entry.states ?? "?"} states`;
+    list.append(option);
+  }
+}
+
 function renderLibraryOptions(editor) {
   fillDatalist(elements.sceneNames, editor.scenes || []);
   fillDatalist(elements.prefabNames, editor.prefabs || []);
   fillDatalist(elements.animationNames, editor.animations || []);
   fillDatalist(elements.materialNames, editor.materials || []);
+  fillStateMachineDatalist(
+    elements.stateMachineNames,
+    editor.state_machines || [],
+  );
 }
 
 function fillAssetSelect(select, kind, assets, useFilter = true) {
@@ -950,6 +977,11 @@ function showEditor(editor) {
     ? `Previewed ${animationPreview.name} at ${animationPreview.time}s · ` +
       `${animationPreview.updated.length} nodes`
     : "No animation preview.";
+  const statePreview = editor.state_machine_preview;
+  elements.stateMachineState.textContent = statePreview
+    ? `Previewed ${statePreview.name} · ${statePreview.current} · ` +
+      `${statePreview.frames} frames · ${statePreview.updated.length} nodes`
+    : "No state machine preview.";
   syncAnimationTimeline(editor);
   if (!busy) {
     updatePlayButtons(play);
@@ -2029,6 +2061,102 @@ async function restoreAnimation() {
   );
 }
 
+async function saveStateMachine() {
+  const name = elements.stateMachineName.value.trim();
+  if (!name) {
+    throw new Error("Enter a state machine name before saving.");
+  }
+  let machine;
+  try {
+    machine = JSON.parse(elements.stateMachineJson.value || "{}");
+  } catch (error) {
+    throw new Error(`State machine JSON: ${error.message}`);
+  }
+  if (!machine || typeof machine !== "object" || Array.isArray(machine)) {
+    throw new Error("State machine JSON must be an object.");
+  }
+  await editorAction(
+    { action: "save_state_machine", name, machine },
+    `saving state machine ${name}`,
+  );
+}
+
+async function previewStateMachine() {
+  const name = elements.stateMachineName.value.trim();
+  if (!name) {
+    throw new Error("Enter a saved state machine name.");
+  }
+  let parameters;
+  try {
+    parameters = JSON.parse(elements.stateMachineParameters.value || "{}");
+  } catch (error) {
+    throw new Error(`Parameters JSON: ${error.message}`);
+  }
+  if (
+    !parameters ||
+    typeof parameters !== "object" ||
+    Array.isArray(parameters)
+  ) {
+    throw new Error("Parameters JSON must be an object.");
+  }
+  const triggers = elements.stateMachineTriggers.value
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const frames = Number(elements.stateMachineFrames.value);
+  if (!Number.isInteger(frames) || frames < 1 || frames > 10000) {
+    throw new Error(
+      "State machine frames must be an integer between 1 and 10000.",
+    );
+  }
+  const editor = await editorAction(
+    {
+      action: "preview_state_machine",
+      name,
+      parameters,
+      triggers,
+      frames,
+    },
+    `previewing state machine ${name}`,
+  );
+  await refreshScene(false);
+  const preview = editor.state_machine_preview;
+  if (preview) {
+    show({
+      ok: true,
+      action: "preview_state_machine",
+      state_machine_preview: preview,
+    });
+  }
+}
+
+async function deleteStateMachine() {
+  const name = elements.stateMachineName.value.trim();
+  if (!name) {
+    throw new Error("Enter the state machine name to delete.");
+  }
+  await editorAction(
+    { action: "delete_state_machine", name },
+    `deleting state machine ${name}`,
+  );
+}
+
+async function restoreStateMachine() {
+  const entry = (
+    (editorState &&
+      editorState.trash &&
+      editorState.trash.state_machines) ||
+    []
+  )[0];
+  if (!entry) {
+    throw new Error("No trashed state machine is available.");
+  }
+  await editorAction(
+    { action: "restore_state_machine", trash: entry.trash },
+    "restoring state machine",
+  );
+}
+
 async function applyNodeProperties() {
   if (!editorState || !editorState.selection) {
     throw new Error("Select a node before editing its properties.");
@@ -2788,6 +2916,16 @@ elements.animationPlay.addEventListener("click", () => run(toggleAnimationPlay))
 elements.animationSave.addEventListener("click", () => run(saveAnimation));
 elements.animationDelete.addEventListener("click", () => run(deleteAnimation));
 elements.animationRestore.addEventListener("click", () => run(restoreAnimation));
+elements.stateMachineSave.addEventListener("click", () => run(saveStateMachine));
+elements.stateMachinePreview.addEventListener("click", () =>
+  run(previewStateMachine),
+);
+elements.stateMachineDelete.addEventListener("click", () =>
+  run(deleteStateMachine),
+);
+elements.stateMachineRestore.addEventListener("click", () =>
+  run(restoreStateMachine),
+);
 elements.animationTime.addEventListener("input", () => {
   stopAnimationPlay();
   const time = Number(elements.animationTime.value);
