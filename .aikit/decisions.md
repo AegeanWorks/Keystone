@@ -1184,3 +1184,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Animation preview accepted only inline clip JSON, so authored clips could not be saved, listed, or reused between editor sessions.
 - **Decision**: Add `AnimationLibrary` over `.kanim` documents in a project `animations/` directory, with save/load/delete/restore/trash and stable entries. Add `--animation-dir`, default it to `DIR/animations` for projects, and expose the inventory in `/api/editor`. Add `save_animation`, `delete_animation` and `restore_animation`; `preview_animation` now accepts a library `name` or inline `clip` and reports its source. The console adds a clip-name field, datalist, save/delete/restore controls and preview-by-name. Bump the editor schema to 38.
 - **Consequences**: 775 tests green; library round trips, cross-session reload, preview by name, delete/restore, missing-library errors and ambiguous preview payloads are covered. Clip names are portable file stems, save is an asset write rather than scene undo, and there is no rename/duplicate or timeline keyframe editor yet.
+
+### ADR-145: Workspace layout persistence
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The browser editor forgot its Scene camera, view mode, projection, grid and snap settings on every reload, unlike Unity/Unreal workspaces.
+- **Decision**: Store a schema-free layout snapshot in browser `localStorage` under a per-game key. Snapshots contain the editor camera target/distance/yaw/pitch, Scene/Game mode, projection preset, grid and snap. Camera drags, wheel zoom, reset/focus and the viewport toggles schedule a debounced save; the console restores the layout after the first scene and editor load, and a Reset layout button clears the record and restores defaults. Storage failures are ignored and malformed records fall back to defaults. No API or schema change.
+- **Consequences**: 775 tests green; static viewer/console coverage verifies snapshots, restoration, debouncing and reset wiring. Layout is per browser and game name, Game view still re-derives its camera from the live scene, and Reset layout is local rather than a server operation.

@@ -124,6 +124,7 @@ const elements = {
   gridToggle: document.getElementById("grid-toggle"),
   snapToggle: document.getElementById("snap-toggle"),
   projectionMode: document.getElementById("projection-mode"),
+  layoutReset: document.getElementById("layout-reset"),
   gizmoMove: document.getElementById("gizmo-move"),
   gizmoRotate: document.getElementById("gizmo-rotate"),
   gizmoScale: document.getElementById("gizmo-scale"),
@@ -139,6 +140,7 @@ let playLoopTimer = null;
 let playLoopBusy = false;
 let playLoopLast = 0;
 let wasPlaying = false;
+let layoutTimer = null;
 let gizmoSpace = "world";
 let boxSelect = false;
 
@@ -164,6 +166,7 @@ try {
   updateViewModeButton(viewer.viewMode);
   viewer.onProjectionMode = updateProjectionButton;
   updateProjectionButton(viewer.viewPreset);
+  viewer.onLayoutChange = scheduleLayoutSave;
 } catch (error) {
   elements.viewerStatus.textContent = `Viewer unavailable: ${error.message}`;
 }
@@ -1067,6 +1070,76 @@ function toggleProjection() {
   setStatus(`projection: ${next}`);
 }
 
+function layoutKey() {
+  const game = (elements.game.textContent || "game").trim() || "game";
+  return `keystone.layout.v1:${game}`;
+}
+
+function scheduleLayoutSave() {
+  if (layoutTimer !== null) {
+    window.clearTimeout(layoutTimer);
+  }
+  layoutTimer = window.setTimeout(saveLayout, 250);
+}
+
+function saveLayout() {
+  layoutTimer = null;
+  if (!viewer) {
+    return;
+  }
+  try {
+    window.localStorage.setItem(
+      layoutKey(),
+      JSON.stringify(viewer.layoutSnapshot()),
+    );
+  } catch {
+    // Storage can be unavailable; layout persistence is optional.
+  }
+}
+
+function restoreLayout() {
+  if (!viewer) {
+    return;
+  }
+  let layout = null;
+  try {
+    layout = JSON.parse(window.localStorage.getItem(layoutKey()) || "null");
+  } catch {
+    layout = null;
+  }
+  if (!layout || typeof layout !== "object") {
+    return;
+  }
+  viewer.applyLayout(layout);
+  updateViewModeButton(viewer.viewMode);
+  updateProjectionButton(viewer.viewPreset);
+  elements.gridToggle.textContent =
+    `Grid: ${viewer.gridEnabled ? "on" : "off"}`;
+  elements.snapToggle.textContent =
+    `Snap: ${viewer.snapEnabled ? "on" : "off"}`;
+}
+
+function resetLayout() {
+  if (!viewer) {
+    return;
+  }
+  try {
+    window.localStorage.removeItem(layoutKey());
+  } catch {
+    // ignore unavailable storage
+  }
+  viewer.setViewMode("scene");
+  viewer.setProjectionPreset("persp");
+  viewer.setGrid(true);
+  viewer.setSnap(false);
+  viewer.resetCamera();
+  updateViewModeButton(viewer.viewMode);
+  updateProjectionButton(viewer.viewPreset);
+  elements.gridToggle.textContent = "Grid: on";
+  elements.snapToggle.textContent = "Snap: off";
+  setStatus("layout reset");
+}
+
 function toggleGizmoSpace() {
   gizmoSpace = gizmoSpace === "world" ? "local" : "world";
   if (viewer) {
@@ -1882,6 +1955,7 @@ async function init() {
     elements.game.textContent = description.game;
     const scene = await refreshScene(false);
     await refreshEditor(false);
+    restoreLayout();
     show({
       schema: description.schema,
       game: description.game,
@@ -2009,6 +2083,7 @@ elements.viewMode.addEventListener("click", () => run(toggleViewMode));
 elements.gridToggle.addEventListener("click", toggleGrid);
 elements.snapToggle.addEventListener("click", toggleSnap);
 elements.projectionMode.addEventListener("click", toggleProjection);
+elements.layoutReset.addEventListener("click", resetLayout);
 elements.viewFocus.addEventListener("click", () => {
   if (viewer && editorState && (editorState.selection_count || 0) > 0) {
     if ((editorState.selection_count || 0) > 1) {

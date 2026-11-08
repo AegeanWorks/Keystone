@@ -523,6 +523,7 @@ export class SceneViewer {
     this.onProjectionMode = null;
     this.editorCameraState = null;
     this.onViewMode = null;
+    this.onLayoutChange = null;
     this.pointerStart = [0, 0];
     this.pointerMoved = false;
     this.lastPointer = [0, 0];
@@ -628,6 +629,7 @@ export class SceneViewer {
       if (wasClick) {
         this.selectAt(event.clientX, event.clientY, event);
       }
+      this.notifyLayoutChange();
     });
     this.canvas.addEventListener("pointercancel", () => {
       this.cancelGizmoDrag();
@@ -655,6 +657,7 @@ export class SceneViewer {
           Math.min(500, this.cameraState.distance * factor),
         );
         this.render();
+        this.notifyLayoutChange();
       },
       { passive: false },
     );
@@ -705,11 +708,13 @@ export class SceneViewer {
   setGrid(enabled) {
     this.gridEnabled = Boolean(enabled);
     this.render();
+    this.notifyLayoutChange();
     return this.gridEnabled;
   }
 
   setSnap(enabled) {
     this.snapEnabled = Boolean(enabled);
+    this.notifyLayoutChange();
     return this.snapEnabled;
   }
 
@@ -790,6 +795,7 @@ export class SceneViewer {
       this.onViewMode(this.viewMode);
     }
     this.render();
+    this.notifyLayoutChange();
     return this.viewMode;
   }
 
@@ -822,7 +828,86 @@ export class SceneViewer {
       this.onProjectionMode(this.viewPreset);
     }
     this.render();
+    this.notifyLayoutChange();
     return this.viewPreset;
+  }
+
+  layoutSnapshot() {
+    const state =
+      this.viewMode === "game" && this.editorCameraState
+        ? this.editorCameraState
+        : this.cameraState;
+    return {
+      camera: state
+        ? {
+            target: [...state.target],
+            distance: state.distance,
+            yaw: state.yaw,
+            pitch: state.pitch,
+          }
+        : null,
+      viewMode: this.viewMode,
+      projection: this.viewPreset,
+      grid: this.gridEnabled,
+      snap: this.snapEnabled,
+    };
+  }
+
+  applyLayout(layout) {
+    if (!layout || typeof layout !== "object") {
+      return false;
+    }
+    const camera = layout.camera;
+    if (camera && typeof camera === "object") {
+      const target =
+        Array.isArray(camera.target) && camera.target.length === 3
+          ? camera.target.map(Number)
+          : null;
+      const distance = Number(camera.distance);
+      const yaw = Number(camera.yaw);
+      const pitch = Number(camera.pitch);
+      if (
+        target &&
+        target.every((value) => Number.isFinite(value)) &&
+        Number.isFinite(distance) &&
+        distance >= 0.5 &&
+        distance <= 500 &&
+        Number.isFinite(yaw) &&
+        Number.isFinite(pitch)
+      ) {
+        this.cameraState = { target, distance, yaw, pitch };
+      }
+    }
+    this.gridEnabled = Boolean(layout.grid);
+    this.snapEnabled = Boolean(layout.snap);
+    this.viewMode = layout.viewMode === "game" ? "game" : "scene";
+    const projection = ["persp", "top", "front", "side"].includes(
+      layout.projection,
+    )
+      ? layout.projection
+      : "persp";
+    this.viewPreset = projection;
+    this.projectionMode =
+      projection === "persp" ? "perspective" : "ortho";
+    if (this.viewMode === "game") {
+      this.editorCameraState = this.cameraState
+        ? {
+            target: [...this.cameraState.target],
+            distance: this.cameraState.distance,
+            yaw: this.cameraState.yaw,
+            pitch: this.cameraState.pitch,
+          }
+        : null;
+      this.cameraState = this.cameraStateFromScene(this.scene);
+    }
+    this.render();
+    return true;
+  }
+
+  notifyLayoutChange() {
+    if (typeof this.onLayoutChange === "function") {
+      this.onLayoutChange();
+    }
   }
 
   resetCamera() {
@@ -835,6 +920,7 @@ export class SceneViewer {
       }
     }
     this.render();
+    this.notifyLayoutChange();
   }
 
   setSelected(nodeId) {
@@ -951,6 +1037,7 @@ export class SceneViewer {
       Math.min(12.0, this.cameraState.distance),
     );
     this.render();
+    this.notifyLayoutChange();
   }
 
   setBoxSelect(enabled) {
@@ -1134,6 +1221,7 @@ export class SceneViewer {
       Math.min(12.0, this.cameraState.distance),
     );
     this.render();
+    this.notifyLayoutChange();
   }
 
   cameraBasis() {
