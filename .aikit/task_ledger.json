@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-animation-keys-v1",
+    "task_id": "keystone-layer-visibility-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794125905.5194201,
+    "updated_at": 1794126389.1554976,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794125905.9321089
+    "completed_at": 1794126389.392423
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-material-texture-picker-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Material texture picker implemented: material panel lists registry texture assets in a select independent of the asset filter, preserves unregistered texture ids as missing options, previews the chosen texture from asset metadata and clears the preview when absent; no API/schema change; 798 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, describe schema 50, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794123057.0089843,
-      "timestamp_str": "2026-11-08 10:30:57",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-material-texture-picker-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-material-texture-picker-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794123057.3812997,
-      "timestamp_str": "2026-11-08 10:30:57",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-animation-state-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan a deterministic parameter-driven animation state machine core",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794123165.8407996,
-      "timestamp_str": "2026-11-08 10:32:45",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "The engine has clip playback and crossfades but no state machine, so games and AI clients must reimplement state, transitions and trigger handling.",
-        "benefits": "A validated AnimationStateMachine exposes states, parameter transitions, triggers, crossfade durations, clip events and JSON round trips for deterministic game and AI authoring.",
-        "risks": "contract: new core module schema 1 and public exports; dependency: animation controller; concurrency: pure synchronous; state: invalid transitions, duplicate names, trigger consumption, loop/speed changes, duplicate clip names, serialization drift.",
-        "mitigation": "Validate state/transition/parameter shapes, evaluate transitions in declaration order, consume triggers on entry, use the existing deterministic controller, and add validation/transition/trigger/serialization/event tests."
-      },
-      "plan_digest": "0f98678895ed0eb21b7dc170e38b835e4d591049063a1b81bf6a69591976d472"
-    },
     {
       "task_id": "keystone-animation-state-v1",
       "phase": "in_progress",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794125905.9321103,
       "timestamp_str": "2026-11-08 11:18:25",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-layer-visibility-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan server-backed layer visibility toggles for the scene editor and viewer",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794125940.7227528,
+      "timestamp_str": "2026-11-08 11:19:00",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "Scenes with many layers cannot hide unrelated nodes, and there is no AI-readable layer inventory or visibility state.",
+        "benefits": "The editor document exposes layer counts and hidden layers, set_layer_visible toggles them without scene edits, and the console/viewer filter hidden layers in render and picking.",
+        "risks": "contract: editor schema 56 and one action; dependency: none; concurrency: editor lock; state: empty/unknown layer names, hidden selection, picking/pivot filtering, viewer resync.",
+        "mitigation": "Validate name/boolean, keep visibility session-only and neutral to history, render toggles from counts, filter render/picking/pivots, and add toggle/static tests."
+      },
+      "plan_digest": "08dd0ca85127f30df20737100538473bb696e10e30be0ccd24f59e82f226175c"
+    },
+    {
+      "task_id": "keystone-layer-visibility-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Layer visibility implemented: editor document layers inventory (name,count) and session hidden_layers; set_layer_visible toggles without scene/history edits; viewer filters hidden layers from scene render, picking, marquee bounds and pivots while game view stays unclipped; console checkbox toggles; schema 56; 812 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, describe schema 56, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794126389.1554976,
+      "timestamp_str": "2026-11-08 11:26:29",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-layer-visibility-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-layer-visibility-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794126389.392424,
+      "timestamp_str": "2026-11-08 11:26:29",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

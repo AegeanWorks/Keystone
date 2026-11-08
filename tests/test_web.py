@@ -645,6 +645,46 @@ class WebServerTest(unittest.TestCase):
         self.assertEqual(caught.exception.status, 400)
         self.assertEqual(session.editor()["history"]["undo"], 0)
 
+    def test_editor_layer_visibility(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        default = next(
+            layer for layer in editor["layers"] if layer["name"] == "default"
+        )
+        self.assertGreater(default["count"], 0)
+        self.assertEqual(editor["hidden_layers"], [])
+
+        hidden = session.editor_action(
+            {
+                "action": "set_layer_visible",
+                "name": "default",
+                "visible": False,
+            }
+        )
+        self.assertEqual(hidden["hidden_layers"], ["default"])
+        self.assertEqual(len(hidden["nodes"]), len(editor["nodes"]))
+        self.assertEqual(hidden["layers"], editor["layers"])
+
+        shown = session.editor_action(
+            {
+                "action": "set_layer_visible",
+                "name": "default",
+                "visible": True,
+            }
+        )
+        self.assertEqual(shown["hidden_layers"], [])
+
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action(
+                {"action": "set_layer_visible", "name": "", "visible": False}
+            )
+        self.assertEqual(caught.exception.status, 400)
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action(
+                {"action": "set_layer_visible", "name": "default", "visible": 1}
+            )
+        self.assertEqual(caught.exception.status, 400)
+
     def test_editor_copy_paste_selection(self):
         session = GameSession(CubeDemo())
         editor = session.editor()
@@ -4086,6 +4126,7 @@ class WebServerTest(unittest.TestCase):
         for control in (
             "hierarchy",
             "hierarchy-filter",
+            "layer-toggles",
             "asset-filter",
             "play-start",
             "play-pause",
@@ -4310,6 +4351,11 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("nudgeSelection", script)
         self.assertIn("ArrowLeft", script)
         self.assertIn("hierarchyFilter", script)
+        self.assertIn("renderLayerToggles", script)
+        self.assertIn("setLayerVisible", script)
+        self.assertIn("set_layer_visible", script)
+        self.assertIn("hidden_layers", script)
+        self.assertIn("setHiddenLayers", script)
         self.assertIn("assetFilter", script)
         self.assertIn("assign_asset", script)
         self.assertIn("assignSelectionAssets", script)

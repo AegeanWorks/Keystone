@@ -9,8 +9,8 @@
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
 - **Total Top-Level Functions**: `402`
-- **Total Class Methods**: `1441`
-- **Total Source Lines**: `37825`
+- **Total Class Methods**: `1442`
+- **Total Source Lines**: `37908`
 
 ---
 
@@ -1462,7 +1462,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `86` lines (`1886` bytes)
+**Size**: `87` lines (`1911` bytes)
 
 ---
 
@@ -1793,14 +1793,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `561` lines (`23982` bytes)
+**Size**: `569` lines (`24316` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2626` lines (`117685` bytes)
+**Size**: `2654` lines (`118939` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3370,7 +3370,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `4639` lines (`193204` bytes)
+**Size**: `4685` lines (`194926` bytes)
 
 **Classes:**
 - `class Health`
@@ -3406,6 +3406,7 @@
   - Method `.test_editor_asset_metadata()`
   - Method `.test_editor_asset_inventory_and_assignment()`
   - Method `.test_editor_assign_assets_to_selection()`
+  - Method `.test_editor_layer_visibility()`
   - Method `.test_editor_copy_paste_selection()`
   - Method `.test_editor_prefab_capture_and_insert()`
   - Method `.test_editor_prefab_instance_revert_and_apply()`

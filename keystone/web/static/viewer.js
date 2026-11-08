@@ -481,6 +481,7 @@ export class SceneViewer {
     this.gridEnabled = true;
     this.snapEnabled = false;
     this.snapSteps = { translate: 0.25, rotate: 15.0, scale: 0.1 };
+    this.hiddenLayers = new Set();
     this.grid = this.buildGridVaos();
     this.pivotIcon = this.buildGizmoVao({
       positions: new Float32Array([
@@ -719,6 +720,17 @@ export class SceneViewer {
     this.render();
     this.notifyLayoutChange();
     return this.gridEnabled;
+  }
+
+  setHiddenLayers(layers) {
+    this.hiddenLayers = new Set(Array.isArray(layers) ? layers : []);
+    this.updateNodeBounds();
+    this.render();
+    return this.hiddenLayers.size;
+  }
+
+  isLayerHidden(layer) {
+    return this.hiddenLayers.has(layer || "default");
   }
 
   setSnap(enabled) {
@@ -1293,6 +1305,9 @@ export class SceneViewer {
     const identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
     for (const node of this.scene.nodes || []) {
       if (node.id === "root") {
+        continue;
+      }
+      if (this.isLayerHidden(node.layer)) {
         continue;
       }
       const mesh = node.mesh ? meshes[node.mesh] : null;
@@ -2083,6 +2098,9 @@ export class SceneViewer {
 
     for (const node of scene.nodes) {
       if (!node.visible || !node.mesh) {
+        continue;
+      }
+      if (this.viewMode === "scene" && this.isLayerHidden(node.layer)) {
         continue;
       }
       const mesh = this.meshes.get(node.mesh);

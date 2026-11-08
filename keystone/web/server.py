@@ -124,6 +124,7 @@ SCENE_NEUTRAL_ACTIONS = frozenset(
     {
         "select",
         "select_many",
+        "set_layer_visible",
         "copy_selection",
         "play_start",
         "play_step",
@@ -243,6 +244,7 @@ class GameSession:
         self._built = False
         self.selected_id: str | None = None
         self.selected_ids: list[str] = []
+        self.hidden_layers: set[str] = set()
         self.prefabs: dict[str, Prefab] = {}
         self.clipboard: Prefab | None = None
         self.history = EditorHistory()
@@ -797,6 +799,17 @@ class GameSession:
         document["asset_usages"] = self.last_asset_usages
         document["asset_reload"] = self.last_asset_reload
         document["startup_scene"] = self.startup_scene
+        layer_counts: dict[str, int] = {}
+        for node in scene.traverse():
+            if node is scene.root:
+                continue
+            layer_name = node.layer or "default"
+            layer_counts[layer_name] = layer_counts.get(layer_name, 0) + 1
+        document["layers"] = [
+            {"name": name, "count": count}
+            for name, count in sorted(layer_counts.items())
+        ]
+        document["hidden_layers"] = sorted(self.hidden_layers)
         document["clipboard"] = (
             {
                 "count": len(self.clipboard.roots),
@@ -964,6 +977,21 @@ class GameSession:
                             else:
                                 result.append(node_id)
                     self._set_selected_ids(result)
+                elif action == "set_layer_visible":
+                    name = payload.get("name")
+                    if not isinstance(name, str) or not name.strip():
+                        raise ValueError(
+                            "layer name must be a non-blank string"
+                        )
+                    visible = payload.get("visible")
+                    if not isinstance(visible, bool):
+                        raise TypeError(
+                            "layer visible must be a boolean"
+                        )
+                    if visible:
+                        self.hidden_layers.discard(name)
+                    else:
+                        self.hidden_layers.add(name)
                 elif action == "transform":
                     node = find_node(scene, payload.get("id"))
 

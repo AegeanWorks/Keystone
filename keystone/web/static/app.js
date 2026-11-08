@@ -11,6 +11,7 @@ const elements = {
   refresh: document.getElementById("refresh"),
   hierarchy: document.getElementById("hierarchy"),
   hierarchyFilter: document.getElementById("hierarchy-filter"),
+  layerToggles: document.getElementById("layer-toggles"),
   assetFilter: document.getElementById("asset-filter"),
   nodeName: document.getElementById("node-name"),
   nodeParent: document.getElementById("node-parent"),
@@ -621,6 +622,34 @@ function renderAssets(editor) {
   fillAssetSelect(elements.materialTexture, "texture", assets, false);
 }
 
+function renderLayerToggles(editor) {
+  const layers = editor.layers || [];
+  const hidden = new Set(editor.hidden_layers || []);
+  elements.layerToggles.replaceChildren();
+  if (!layers.length) {
+    elements.layerToggles.textContent = "No layers.";
+    return;
+  }
+  for (const layer of layers) {
+    const label = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = !hidden.has(layer.name);
+    input.addEventListener("change", () =>
+      run(() => setLayerVisible(layer.name, input.checked)),
+    );
+    label.append(input, ` ${layer.name} (${layer.count})`);
+    elements.layerToggles.append(label);
+  }
+}
+
+async function setLayerVisible(name, visible) {
+  await editorAction(
+    { action: "set_layer_visible", name, visible },
+    `${visible ? "showing" : "hiding"} layer ${name}`,
+  );
+}
+
 function fillAssets(selection) {
   elements.meshAsset.value = selection ? selection.mesh || "" : "";
   elements.materialAsset.value = selection ? selection.material || "" : "";
@@ -924,6 +953,7 @@ function showEditor(editor) {
       editor.selected_ids ||
         (editor.selection ? [editor.selection.id] : []),
     );
+    viewer.setHiddenLayers(editor.hidden_layers || []);
   }
   elements.sceneSettings.value = JSON.stringify(
     editor.scene_settings || {},
@@ -932,6 +962,7 @@ function showEditor(editor) {
   );
   fillSceneSettings(editor.scene_settings || {});
   renderHierarchy(editor);
+  renderLayerToggles(editor);
   renderLibraryOptions(editor);
   renderAssets(editor);
   renderComponentTypes(editor);

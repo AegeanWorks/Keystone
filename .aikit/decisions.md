@@ -1384,3 +1384,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Clips could be previewed, sampled, scrubbed and saved, but the editor could not add or remove keyframes, so animation authoring stopped at external JSON.
 - **Decision**: Add `set_animation_key`/`remove_animation_key` for library `.kanim` clips. They target the selected node and one position/rotation/scale channel at a non-negative time; values default to the node's current transform. Set replaces a key within `1e-6` or inserts it sorted, remove drops the key and empty tracks, and both save the clip atomically and return an `animation_key` report. Add console channel selector and Set key/Remove key controls. Bump the editor schema to 55.
 - **Consequences**: Web tests cover insert/replace/sorted times, current-transform defaults, explicit values, preview, removal, empty-track cleanup and error cases. Key edits write library assets and are not scene-undoable; the browser must preview separately to see the authored pose.
+
+### ADR-170: Layer visibility toggles
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Scenes with many layers could not hide unrelated nodes, and there was no AI-readable layer inventory or visibility state.
+- **Decision**: Add a `layers` inventory (`name`, `count`) and session-only `hidden_layers` to the editor document, plus `set_layer_visible`. Hidden layers remain in the scene document but the viewer filters them from scene-view rendering, picking, marquee bounds and pivots; game view ignores the filter. The console renders checkbox toggles. Bump the editor schema to 56.
+- **Consequences**: Web tests cover counts, hide/show, node preservation and invalid inputs; static tests cover the toggle container and viewer wiring. Visibility is not persisted to layouts or project files, and hiding a layer does not clear a selection inside it.

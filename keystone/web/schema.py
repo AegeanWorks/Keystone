@@ -18,6 +18,11 @@ EDITOR_EXAMPLES = {
         "ids": ["cube-0", "floor"],
         "mode": "add",
     },
+    "set_layer_visible": {
+        "action": "set_layer_visible",
+        "name": "default",
+        "visible": False,
+    },
     "transform": {
         "action": "transform",
         "id": "cube-0",
@@ -294,6 +299,8 @@ EDITOR_SCHEMA = {
         "node": ["id", "name", "parent_id", "children", "visible", "selected", "tags", "layer", "components", "component_data", "mesh", "material", "prefab_link", "scene_group", "transform", "world"],
         "selection": ["selected_ids", "selection_count"],
         "select_many": ["ids", "mode"],
+        "set_layer_visible": ["name", "visible"],
+        "layer": ["name", "count"],
         "transform_selection": ["position", "rotation", "scale", "pivot", "group_rotation", "group_scale"],
         "set_selection_properties": ["name", "visible", "tags", "layer"],
         "set_selection_transform": ["position", "rotation", "scale"],
@@ -535,6 +542,7 @@ EDITOR_SCHEMA = {
         "schema 53 adds assign_asset_selection for shared mesh/material assignment across the selected nodes in one undo entry",
         "schema 54 adds copy_selection/paste_nodes using a detached prefab clipboard and a clipboard document report",
         "schema 55 adds set_animation_key/remove_animation_key for library clip track authoring at a time",
+        "schema 56 adds a layer inventory plus set_layer_visible, with editor-only hidden layers filtered by the viewer",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }
