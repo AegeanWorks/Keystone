@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `139`
-- **Total Classes**: `220`
-- **Total Top-Level Functions**: `372`
-- **Total Class Methods**: `1361`
-- **Total Source Lines**: `33068`
+- **Total Python Modules**: `141`
+- **Total Classes**: `223`
+- **Total Top-Level Functions**: `376`
+- **Total Class Methods**: `1373`
+- **Total Source Lines**: `33649`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `655` lines (`35242` bytes)
+**Size**: `663` lines (`35791` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -899,6 +899,32 @@
 
 ---
 
+### [`keystone/material_library.py`](keystone/material_library.py)
+> *File-backed material libraries for editors, tools and AI clients.*
+
+**Size**: `276` lines (`10318` bytes)
+
+**Classes:**
+- `class MaterialEntry` - *One library file and its material summary, or why it could not load.*
+  - Method `.describe()` - *Return a JSON-safe entry for editor and AI documents.*
+- `class MaterialLibrary` - *Discover, save and load ``.kmaterial`` files in one directory.*
+  - Method `.__init__(directory, registry)`
+  - Method `.asset_id(name)` - *Return the registry id used for a saved material.*
+  - Method `.path_for(name)` - *Return the safe file path for one library name.*
+  - Method `.save(name, material)` - *Write one material atomically.*
+  - Method `.load(name)` - *Load one material or raise KeyError when the entry is absent.*
+  - Method `.entry(name)` - *Load one entry's summary, capturing load failures as ``error``.*
+  - Method `.entries()` - *Return every ``.kmaterial`` file in stable name order.*
+  - Method `.register_all(registry)` - *Register every loadable material; invalid entries stay reported.*
+
+**Functions:**
+- `def _vec3(value, label)`
+- `def _number(value, label)`
+- `def material_from_document(data, registry)` - *Build a validated Material from one JSON-safe document.*
+- `def material_to_document(name, material, registry)` - *Return a JSON-safe material document, resolving its texture id.*
+
+---
+
 ### [`keystone/math3d.py`](keystone/math3d.py)
 > *Column-major 3D math primitives shared by the scene, camera and GPU layers.*
 
@@ -1195,7 +1221,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `544` lines (`20584` bytes)
+**Size**: `550` lines (`20887` bytes)
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -1393,7 +1419,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `63` lines (`1345` bytes)
+**Size**: `65` lines (`1389` bytes)
 
 ---
 
@@ -1572,7 +1598,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `2331` lines (`82949` bytes)
+**Size**: `2333` lines (`83078` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1689,20 +1715,20 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `322` lines (`15246` bytes)
+**Size**: `358` lines (`16207` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1648` lines (`72144` bytes)
+**Size**: `1731` lines (`76034` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
   - Method `.__init__(status, why, fix)`
 - `class GameSession` - *One in-memory game guarded by a lock for concurrent HTTP requests.*
-  - Method `.__init__(game, prefab_dir, scene_dir, animation_dir, initial_scene)`
+  - Method `.__init__(game, prefab_dir, scene_dir, animation_dir, material_dir, initial_scene)`
   - Property `.name`
   - Property `.selected_ids`
   - Method `.selected_ids(value)`
@@ -1756,8 +1782,8 @@
 **Functions:**
 - `def _copy_scene_settings(source, target)` - *Copy camera and environment settings without copying scene nodes.*
 - `def _enabled(value)`
-- `def create_server(game, host, port, prefab_dir, scene_dir, animation_dir, initial_scene)` - *Create a bound server; port 0 asks the OS for a free port.*
-- `def serve(game, host, port, prefab_dir, scene_dir, animation_dir, initial_scene)` - *Run the local console until interrupted.*
+- `def create_server(game, host, port, prefab_dir, scene_dir, animation_dir, material_dir, initial_scene)` - *Create a bound server; port 0 asks the OS for a free port.*
+- `def serve(game, host, port, prefab_dir, scene_dir, animation_dir, material_dir, initial_scene)` - *Run the local console until interrupted.*
 
 ---
 
@@ -2444,6 +2470,18 @@
 
 **Functions:**
 - `def _node(node_id, kind, *, params, inputs)`
+
+---
+
+### [`tests/test_material_library.py`](tests/test_material_library.py)
+> *Tests for file-backed material libraries.*
+
+**Size**: `55` lines (`2049` bytes)
+
+**Classes:**
+- `class MaterialLibraryTest`
+  - Method `.test_save_load_register_and_texture()`
+  - Method `.test_invalid_names_and_missing_entries()`
 
 ---
 
@@ -3203,7 +3241,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `3141` lines (`132459` bytes)
+**Size**: `3254` lines (`137002` bytes)
 
 **Classes:**
 - `class Health`
@@ -3274,6 +3312,7 @@
   - Method `.test_editor_play_state_reports_hook_errors()`
   - Method `.test_editor_preview_animation_and_undo()`
   - Method `.test_editor_animation_library_round_trip()`
+  - Method `.test_editor_material_library_save_assign_and_reload()`
   - Method `.test_editor_component_lifecycle_play_mode()`
   - Method `.test_editor_component_authoring_and_scene_round_trip()`
   - Method `.test_editor_static_controls_and_index()`

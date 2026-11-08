@@ -102,6 +102,20 @@ const elements = {
   transformApply: document.getElementById("transform-apply"),
   meshAsset: document.getElementById("mesh-asset"),
   materialAsset: document.getElementById("material-asset"),
+  materialName: document.getElementById("material-name"),
+  materialNames: document.getElementById("material-names"),
+  materialColor: document.getElementById("material-color"),
+  materialMetallic: document.getElementById("material-metallic"),
+  materialRoughness: document.getElementById("material-roughness"),
+  materialEmissive: document.getElementById("material-emissive"),
+  materialSpecular: document.getElementById("material-specular"),
+  materialShininess: document.getElementById("material-shininess"),
+  materialChecker: document.getElementById("material-checker"),
+  materialTexture: document.getElementById("material-texture"),
+  materialSave: document.getElementById("material-save"),
+  materialAssign: document.getElementById("material-assign"),
+  materialClear: document.getElementById("material-clear"),
+  materialState: document.getElementById("material-state"),
   assignAsset: document.getElementById("assign-asset"),
   assetInfo: document.getElementById("asset-info"),
   assetPreview: document.getElementById("asset-preview"),
@@ -194,7 +208,9 @@ function setBusy(value) {
     elements.sceneSave, elements.sceneLoad, elements.sceneDiff, elements.sceneRename,
     elements.sceneDuplicate, elements.sceneDelete, elements.sceneRestore,
     elements.sceneSettingsApply, elements.cameraSettingsApply,
-    elements.environmentSettingsApply, elements.assignAsset, elements.playStart,
+    elements.environmentSettingsApply, elements.assignAsset,
+    elements.materialSave, elements.materialAssign, elements.materialClear,
+    elements.playStart,
     elements.playPause, elements.playResume, elements.playStep, elements.playStop, elements.componentSet, elements.componentRemove,
     elements.animationPreview, elements.animationSample,
     elements.animationSave, elements.animationDelete, elements.animationRestore,
@@ -401,6 +417,7 @@ function renderLibraryOptions(editor) {
   fillDatalist(elements.sceneNames, editor.scenes || []);
   fillDatalist(elements.prefabNames, editor.prefabs || []);
   fillDatalist(elements.animationNames, editor.animations || []);
+  fillDatalist(elements.materialNames, editor.materials || []);
 }
 
 function fillAssetSelect(select, kind, assets) {
@@ -438,6 +455,37 @@ function renderAssets(editor) {
 function fillAssets(selection) {
   elements.meshAsset.value = selection ? selection.mesh || "" : "";
   elements.materialAsset.value = selection ? selection.material || "" : "";
+}
+
+function fillMaterialForm(editor) {
+  const selection = editor.selection;
+  const materialId = selection ? selection.material : null;
+  const asset = (editor.assets || []).find((item) => item.id === materialId);
+  const metadata = (asset && asset.metadata) || {};
+  const entry = (editor.materials || []).find(
+    (item) => `material.${item.name}` === materialId,
+  );
+  elements.materialName.value = entry
+    ? entry.name
+    : materialId
+      ? String(materialId).replace(/^material\./, "")
+      : "";
+  elements.materialColor.value = (
+    metadata.color || [0.78, 0.78, 0.82]
+  ).join(", ");
+  elements.materialMetallic.value = metadata.metallic ?? 0;
+  elements.materialRoughness.value = metadata.roughness ?? 0.7;
+  elements.materialEmissive.value = (
+    metadata.emissive || [0, 0, 0]
+  ).join(", ");
+  elements.materialSpecular.value = metadata.specular ?? 0.35;
+  elements.materialShininess.value = metadata.shininess ?? 32;
+  elements.materialChecker.value = metadata.checker_scale ?? 0;
+  elements.materialTexture.value =
+    metadata.texture_id || (entry && entry.texture) || "";
+  elements.materialState.textContent = materialId
+    ? `Selected ${materialId}`
+    : "No material selected.";
 }
 
 function assetSummary(assetId) {
@@ -698,6 +746,7 @@ function showEditor(editor) {
     : "No prefab instance selected";
   renderPrefabOverrides(editor);
   fillAssets(editor.selection);
+  fillMaterialForm(editor);
   updateAssetInfo();
   fillComponentData(editor.selection);
   renderComponentFields(editor, editor.selection);
@@ -1643,6 +1692,62 @@ async function assignAssets() {
   await refreshScene(false);
 }
 
+async function saveMaterial() {
+  const name = elements.materialName.value.trim();
+  if (!name) {
+    throw new Error("Enter a material name before saving.");
+  }
+  const color = readVector("materialColor", 3, "Material color");
+  const emissive = readVector("materialEmissive", 3, "Material emissive");
+  const metallic = readNumber("materialMetallic", "Material metallic");
+  const roughness = readNumber("materialRoughness", "Material roughness");
+  const specular = readNumber("materialSpecular", "Material specular");
+  const shininess = readNumber("materialShininess", "Material shininess");
+  const checker = readNumber("materialChecker", "Material checker");
+  const texture = elements.materialTexture.value.trim() || null;
+  await editorAction(
+    {
+      action: "save_material",
+      name,
+      color,
+      metallic,
+      roughness,
+      emissive,
+      specular,
+      shininess,
+      checker_scale: checker,
+      texture,
+    },
+    `saving material ${name}`,
+  );
+}
+
+async function assignMaterial() {
+  if (!editorState || !editorState.selection) {
+    throw new Error("Select a node before assigning a material.");
+  }
+  const name = elements.materialName.value.trim();
+  if (!name) {
+    throw new Error("Enter a material name before assigning.");
+  }
+  await editorAction(
+    { action: "assign_material", id: editorState.selection.id, name },
+    `assigning material ${name}`,
+  );
+  await refreshScene(false);
+}
+
+async function clearMaterial() {
+  if (!editorState || !editorState.selection) {
+    throw new Error("Select a node before clearing its material.");
+  }
+  await editorAction(
+    { action: "assign_material", id: editorState.selection.id, name: null },
+    "clearing material",
+  );
+  await refreshScene(false);
+}
+
 async function setComponent() {
   if (!editorState || !editorState.selection) {
     throw new Error("Select a node before editing components.");
@@ -2128,6 +2233,9 @@ elements.assetFilter.addEventListener("input", () => {
 elements.meshAsset.addEventListener("change", updateAssetInfo);
 elements.materialAsset.addEventListener("change", updateAssetInfo);
 elements.assignAsset.addEventListener("click", () => run(assignAssets));
+elements.materialSave.addEventListener("click", () => run(saveMaterial));
+elements.materialAssign.addEventListener("click", () => run(assignMaterial));
+elements.materialClear.addEventListener("click", () => run(clearMaterial));
 elements.componentSet.addEventListener("click", () => run(setComponent));
 elements.componentRemove.addEventListener("click", () => run(removeComponent));
 elements.componentType.addEventListener("change", () => {

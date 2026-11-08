@@ -1192,3 +1192,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The browser editor forgot its Scene camera, view mode, projection, grid and snap settings on every reload, unlike Unity/Unreal workspaces.
 - **Decision**: Store a schema-free layout snapshot in browser `localStorage` under a per-game key. Snapshots contain the editor camera target/distance/yaw/pitch, Scene/Game mode, projection preset, grid and snap. Camera drags, wheel zoom, reset/focus and the viewport toggles schedule a debounced save; the console restores the layout after the first scene and editor load, and a Reset layout button clears the record and restores defaults. Storage failures are ignored and malformed records fall back to defaults. No API or schema change.
 - **Consequences**: 775 tests green; static viewer/console coverage verifies snapshots, restoration, debouncing and reset wiring. Layout is per browser and game name, Game view still re-derives its camera from the live scene, and Reset layout is local rather than a server operation.
+
+### ADR-146: File-backed material library and editor
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Materials are core PBR assets, but the editor could only assign materials created in game code; it could not author, save or reuse material assets.
+- **Decision**: Add `MaterialLibrary` over `.kmaterial` JSON documents with save/load/entries/register-all and texture-id resolution. Add `--material-dir`, default it to `DIR/materials`, and expose the inventory in `/api/editor`. Register saved materials as `material.<name>` after the game scene builds but before scene/prefab libraries load. Add `save_material` (writes and registers) and `assign_material` (applies or clears a node material under one undo entry). The console edits color, metallic, roughness, emissive, specular, shininess, checker and texture id and can save, assign or clear. Bump the editor schema to 39.
+- **Consequences**: 778 tests green; library round trips, texture resolution, registry registration, assignment/undo, cross-session reload, missing-library errors and missing-material errors are covered. Delete/restore and material graphs remain future work, saving is an asset write rather than scene undo, and material registration depends on the game exposing an AssetRegistry.

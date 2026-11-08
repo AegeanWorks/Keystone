@@ -206,6 +206,25 @@
         </div>
         <pre id="asset-info" class="hint">No registry assets selected.</pre>
         <img id="asset-preview" class="asset-preview" alt="Selected texture preview" hidden>
+        <label class="stack">Material library</label>
+        <div class="field-grid">
+          <label>Name <input id="material-name" type="text" list="material-names"></label>
+          <label>Color <input id="material-color" type="text" placeholder="0.8, 0.8, 0.8"></label>
+          <label>Metallic <input id="material-metallic" type="number" min="0" max="1" step="0.05" value="0"></label>
+          <label>Roughness <input id="material-roughness" type="number" min="0" max="1" step="0.05" value="0.7"></label>
+          <label>Emissive <input id="material-emissive" type="text" placeholder="0, 0, 0"></label>
+          <label>Specular <input id="material-specular" type="number" min="0" step="0.05" value="0.35"></label>
+          <label>Shininess <input id="material-shininess" type="number" min="0.1" step="1" value="32"></label>
+          <label>Checker <input id="material-checker" type="number" min="0" step="0.1" value="0"></label>
+          <label>Texture id <input id="material-texture" type="text" placeholder="optional"></label>
+        </div>
+        <datalist id="material-names"></datalist>
+        <div class="buttons">
+          <button id="material-save" type="button">Save material</button>
+          <button id="material-assign" type="button">Assign to selected</button>
+          <button id="material-clear" type="button">Clear material</button>
+        </div>
+        <div id="material-state" class="hint">No material selected.</div>
         <div class="field-grid">
           <label>Component type <select id="component-type"></select></label>
         </div>

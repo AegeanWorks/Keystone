@@ -1113,6 +1113,7 @@ class WebServerTest(unittest.TestCase):
                     "prefab_dir": prefab_dir.as_posix(),
                     "scene_dir": None,
                     "animation_dir": None,
+                    "material_dir": None,
                 },
             )
             self.assertEqual(saved["prefabs"][0]["source"], path.as_posix())
@@ -2607,6 +2608,98 @@ class WebServerTest(unittest.TestCase):
                 )
             self.assertEqual(caught.exception.status, 400)
 
+    def test_editor_material_library_save_assign_and_reload(self):
+        with tempfile.TemporaryDirectory() as directory:
+            material_dir = Path(directory) / "materials"
+            session = GameSession(CubeDemo(), material_dir=material_dir)
+            editor = session.editor()
+            cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+            original_material = cube["material"]
+
+            saved = session.editor_action(
+                {
+                    "action": "save_material",
+                    "name": "gold",
+                    "color": [1.0, 0.8, 0.2],
+                    "metallic": 1.0,
+                    "roughness": 0.3,
+                    "emissive": [0.1, 0.0, 0.0],
+                }
+            )
+            self.assertTrue((material_dir / "gold.kmaterial").is_file())
+            entry = next(
+                item for item in saved["materials"] if item["name"] == "gold"
+            )
+            self.assertEqual(entry["color"], [1.0, 0.8, 0.2])
+            self.assertEqual(entry["metallic"], 1.0)
+            registry = session.game.assets
+            self.assertIsNotNone(registry.get("material.gold"))
+
+            assigned = session.editor_action(
+                {"action": "assign_material", "id": cube["id"], "name": "gold"}
+            )
+            node = next(
+                item for item in assigned["nodes"] if item["id"] == cube["id"]
+            )
+            self.assertEqual(node["material"], "material.gold")
+            asset = next(
+                item
+                for item in assigned["assets"]
+                if item["id"] == "material.gold"
+            )
+            self.assertEqual(asset["metadata"]["metallic"], 1.0)
+            self.assertEqual(asset["metadata"]["color"], [1.0, 0.8, 0.2])
+
+            undone = session.editor_action({"action": "undo"})
+            node = next(
+                item for item in undone["nodes"] if item["id"] == cube["id"]
+            )
+            self.assertEqual(node["material"], original_material)
+
+            reloaded = GameSession(CubeDemo(), material_dir=material_dir)
+            self.assertIn(
+                "gold",
+                {item["name"] for item in reloaded.editor()["materials"]},
+            )
+            self.assertIsNotNone(reloaded.game.assets.get("material.gold"))
+            reassigned = reloaded.editor_action(
+                {"action": "assign_material", "id": cube["id"], "name": "gold"}
+            )
+            node = next(
+                item
+                for item in reassigned["nodes"]
+                if item["id"] == cube["id"]
+            )
+            self.assertEqual(node["material"], "material.gold")
+
+            cleared = session.editor_action(
+                {"action": "assign_material", "id": cube["id"], "name": None}
+            )
+            node = next(
+                item for item in cleared["nodes"] if item["id"] == cube["id"]
+            )
+            self.assertIsNone(node["material"])
+
+            standalone = GameSession(CubeDemo())
+            with self.assertRaises(WebProblem) as caught:
+                standalone.editor_action(
+                    {
+                        "action": "save_material",
+                        "name": "gold",
+                        "color": [1.0, 1.0, 1.0],
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "assign_material",
+                        "id": cube["id"],
+                        "name": "missing",
+                    }
+                )
+            self.assertEqual(caught.exception.status, 404)
+
     def test_editor_component_lifecycle_play_mode(self):
         session = GameSession(LifecycleDemo())
         editor = session.editor()
@@ -2824,6 +2917,20 @@ class WebServerTest(unittest.TestCase):
             "prefab-link",
             "mesh-asset",
             "material-asset",
+            "material-name",
+            "material-names",
+            "material-color",
+            "material-metallic",
+            "material-roughness",
+            "material-emissive",
+            "material-specular",
+            "material-shininess",
+            "material-checker",
+            "material-texture",
+            "material-save",
+            "material-assign",
+            "material-clear",
+            "material-state",
             "assign-asset",
             "asset-info",
             "asset-preview",
@@ -2870,6 +2977,12 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("hierarchyFilter", script)
         self.assertIn("assetFilter", script)
         self.assertIn("assign_asset", script)
+        self.assertIn("saveMaterial", script)
+        self.assertIn("assignMaterial", script)
+        self.assertIn("clearMaterial", script)
+        self.assertIn("save_material", script)
+        self.assertIn("assign_material", script)
+        self.assertIn("fillMaterialForm", script)
         self.assertIn("fillDatalist", script)
         self.assertIn("setSelected", script)
         self.assertIn("selected_ids", script)

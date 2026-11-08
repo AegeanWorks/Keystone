@@ -20,6 +20,7 @@ from keystone.component_codec import validate_component_types
 from keystone.headless import run_simulation
 from keystone.input import ActionState
 from keystone.lifecycle import ComponentRuntime
+from keystone.material_library import MaterialLibrary, material_from_document
 from keystone.plugin import GameModule, describe_game
 from keystone.prefab import Prefab
 from keystone.prefab_library import PrefabLibrary
@@ -163,6 +164,7 @@ class GameSession:
         prefab_dir: str | Path | None = None,
         scene_dir: str | Path | None = None,
         animation_dir: str | Path | None = None,
+        material_dir: str | Path | None = None,
         initial_scene: str | None = None,
     ) -> None:
         self.game = game
@@ -207,6 +209,12 @@ class GameSession:
         self.animation_library: AnimationLibrary | None = None
         if animation_dir is not None:
             self.animation_library = AnimationLibrary(animation_dir)
+        self.material_library: MaterialLibrary | None = None
+        if material_dir is not None:
+            self.material_library = MaterialLibrary(
+                material_dir, registry=self._registry_locked()
+            )
+        self._materials_registered = False
         self.initial_scene = initial_scene
         self._initial_scene_loaded = False
         if initial_scene is not None:
@@ -293,6 +301,11 @@ class GameSession:
             self.prefab_library.registry = registry
         if self.scene_library is not None:
             self.scene_library.registry = registry
+        if self.material_library is not None:
+            self.material_library.registry = registry
+            if not self._materials_registered:
+                self.material_library.register_all()
+                self._materials_registered = True
         if self.initial_scene is not None and not self._initial_scene_loaded:
             self.scene_library.load_into(self.initial_scene, scene)
             self._initial_scene_loaded = True
@@ -584,6 +597,11 @@ class GameSession:
             if self.animation_library is not None
             else []
         )
+        document["materials"] = (
+            [entry.describe() for entry in self.material_library.entries()]
+            if self.material_library is not None
+            else []
+        )
         document["workspace"] = {
             "prefab_dir": (
                 self.prefab_library.directory.as_posix()
@@ -598,6 +616,11 @@ class GameSession:
             "animation_dir": (
                 self.animation_library.directory.as_posix()
                 if self.animation_library is not None
+                else None
+            ),
+            "material_dir": (
+                self.material_library.directory.as_posix()
+                if self.material_library is not None
                 else None
             ),
         }
@@ -890,6 +913,62 @@ class GameSession:
                     if self.animation_library is None:
                         raise ValueError("no animation library is configured")
                     self.animation_library.restore(payload.get("trash"))
+                elif action == "save_material":
+                    if self.material_library is None:
+                        raise ValueError("no material library is configured")
+                    registry = self._registry_locked()
+                    if registry is None:
+                        raise ValueError("save_material needs an AssetRegistry")
+                    name = payload.get("name")
+                    if not isinstance(name, str) or not name.strip():
+                        raise ValueError(
+                            "material name must be a non-blank string"
+                        )
+                    data = dict(payload)
+                    data.pop("action", None)
+                    data["name"] = name
+                    material = material_from_document(data, registry)
+                    entry = self.material_library.save(name, material)
+                    registry.register(
+                        self.material_library.asset_id(name),
+                        material,
+                        kind="material",
+                        source=entry.path,
+                        replace=True,
+                    )
+                elif action == "assign_material":
+                    node_id = payload.get("id") or self.selected_id
+                    if node_id is None:
+                        raise ValueError(
+                            "select a node before assigning a material"
+                        )
+                    node = find_node(scene, node_id)
+                    name = payload.get("name")
+
+                    def apply_material() -> None:
+                        if name in (None, ""):
+                            node.material = None
+                            return
+                        if self.material_library is None:
+                            raise ValueError(
+                                "no material library is configured"
+                            )
+                        registry = self._registry_locked()
+                        if registry is None:
+                            raise ValueError(
+                                "assign_material needs an AssetRegistry"
+                            )
+                        record = registry.require(
+                            self.material_library.asset_id(name)
+                        )
+                        if record.kind != "material":
+                            raise ValueError(
+                                f"asset {record.id!r} is not a material"
+                            )
+                        node.material = record.payload
+
+                    self._apply_history(scene, apply_material)
+                    self.selected_id = node.id
                 elif action == "set_component":
                     node = find_node(scene, payload.get("id"))
                     self._apply_history(
@@ -1590,6 +1669,7 @@ def create_server(
     prefab_dir: str | Path | None = None,
     scene_dir: str | Path | None = None,
     animation_dir: str | Path | None = None,
+    material_dir: str | Path | None = None,
     initial_scene: str | None = None,
 ) -> KeystoneHTTPServer:
     """Create a bound server; port 0 asks the OS for a free port."""
@@ -1602,6 +1682,7 @@ def create_server(
             prefab_dir=prefab_dir,
             scene_dir=scene_dir,
             animation_dir=animation_dir,
+            material_dir=material_dir,
             initial_scene=initial_scene,
         ),
     )
@@ -1614,6 +1695,7 @@ def serve(
     prefab_dir: str | Path | None = None,
     scene_dir: str | Path | None = None,
     animation_dir: str | Path | None = None,
+    material_dir: str | Path | None = None,
     initial_scene: str | None = None,
 ) -> int:
     """Run the local console until interrupted."""
@@ -1625,6 +1707,7 @@ def serve(
             prefab_dir=prefab_dir,
             scene_dir=scene_dir,
             animation_dir=animation_dir,
+            material_dir=material_dir,
             initial_scene=initial_scene,
         )
     except OSError as exc:

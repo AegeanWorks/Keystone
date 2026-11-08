@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-layout-persistence-v1",
+    "task_id": "keystone-material-editor-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794113060.2876577,
+    "updated_at": 1794114015.1053104,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794113060.6877198
+    "completed_at": 1794114015.2894766
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-prefab-override-panel-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan a console panel for per-field prefab override inspection, revert and apply",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794108324.6403062,
-      "timestamp_str": "2026-11-08 06:25:24",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "The API reports per-field prefab overrides, but the console hides them, so resolving an override still requires hand-written API calls.",
-        "benefits": "Each instance/node/field row shows template and instance values with Revert and Apply buttons, making prefab divergence visible and resolvable in the editor.",
-        "risks": "contract: UI-only, no API/schema change; dependency: none; concurrency: editor lock; state: DOM safety for arbitrary values, group errors, asset-write apply, undoable revert, busy guards.",
-        "mitigation": "Render with textContent and createElement, keep per-field actions on existing endpoints, refresh the scene after each action, and add static console regressions."
-      },
-      "plan_digest": "9504bf47f2a241532c5647f00b1c2e4b415d111dbe3b07bf3270d6e2f04f3fd2"
-    },
-    {
-      "task_id": "keystone-prefab-override-panel-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Prefab override panel implemented: instance groups with errors, per-node/field template-to-instance rows, Revert/Apply buttons on existing actions, safe DOM rendering and scene refresh; 765 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 35, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794108722.8351626,
-      "timestamp_str": "2026-11-08 06:32:02",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-prefab-override-panel-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-prefab-override-panel-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794108723.0858905,
-      "timestamp_str": "2026-11-08 06:32:03",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-scene-settings-v1",
       "phase": "in_progress",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794113060.6877222,
       "timestamp_str": "2026-11-08 07:44:20",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-material-editor-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan a file-backed material library and editor assignment workflow",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794113125.7604716,
+      "timestamp_str": "2026-11-08 07:45:25",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "Materials are core PBR assets, but the editor can only assign registry materials created in code; it cannot author, save or reuse material assets.",
+        "benefits": "save_material writes .kmaterial files and registers material.<name> for rendering, assign_material applies a saved material to a node with undo, and the console edits color/metallic/roughness/emissive fields.",
+        "risks": "contract: editor schema 39 and two new actions; dependency: none; concurrency: editor lock; state: registry registration before scene loads, texture id resolution, undo assign, name safety, malformed files.",
+        "mitigation": "Register saved materials at session start before scene loading, resolve textures through the registry, validate through Material, save atomically, assign under history, and add library/assignment/reload regressions."
+      },
+      "plan_digest": "28774942f711df4bf567815e779eaf8d45939d124912a5cb0909f76ac2513d7f"
+    },
+    {
+      "task_id": "keystone-material-editor-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Material library/editor implemented: .kmaterial save/load/register-all with texture ids, --material-dir and project materials default, registration after scene build before library loads, materials inventory/workspace, save_material/assign_material with undo/clear, console color/metallic/roughness/emissive/specular/shininess/checker/texture controls, schema 39; 778 tests green, Ruff clean, hygiene clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 39, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794114015.1053104,
+      "timestamp_str": "2026-11-08 08:00:15",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-material-editor-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-material-editor-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794114015.2894778,
+      "timestamp_str": "2026-11-08 08:00:15",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

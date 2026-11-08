@@ -516,8 +516,10 @@ def _asset_metadata(registry: object | None, kind: object, payload: object) -> d
             "metallic": payload.metallic,
             "roughness": payload.roughness,
             "emissive": [payload.emissive.x, payload.emissive.y, payload.emissive.z],
+            "checker_scale": payload.checker_scale,
             "has_texture": texture is not None,
             "texture": texture,
+            "texture_id": _payload_id(registry, payload.texture, "texture"),
         }
     if kind == "texture" and isinstance(payload, TextureData):
         return _texture_metadata(payload)
