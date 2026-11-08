@@ -224,7 +224,7 @@ The overlay contains:
 - an interactive pause menu with `Resume`, `Hide HUD` and `Quit`, navigable by keyboard or mouse;
 - a centered pause banner.
 
-`keystone.ui` is split into an embedded 5×7 font, a clipped screen-space `Canvas`, small panel/button widgets, a pure `PauseMenu` state machine and `HumanOverlay`; `keystone.gpu.ui_renderer` uploads the canvas as one alpha-blended draw call. A game's optional `draw_ui(canvas, state)` hook draws into the same canvas. A headless report that includes `--ui` measures the same pixels a person sees.
+`keystone.ui` splits into an embedded 5×7 font, a clipped screen-space `Canvas`, panel/button widgets, a pure `PauseMenu` state machine and `HumanOverlay`; `keystone.gpu.ui_renderer` uploads the canvas as one alpha-blended draw call. A game's optional `draw_ui(canvas, state)` hook draws into the same canvas, so a headless `--ui` report measures the pixels a person sees.
 
 ## 🌐 Web Console, JSON API and WebGL Viewer
 
@@ -235,7 +235,7 @@ python -m keystone --serve --port 8899 --game package.module:Factory
 
 The console binds to `127.0.0.1:8000` by default and serves a browser dashboard plus the same AI-facing JSON used by the CLI. It uses only the Python standard library and vanilla JavaScript; there is no npm build, CDN or extra runtime dependency.
 
-The dashboard can inspect the game contract, run the same action scripts as `--simulate`, refresh the live scene, and preview the exported scene in a WebGL2 viewer with textured materials, vertex colors, directional and point lights, fog and the sample checker floor. The browser viewer is an inspection approximation; the OpenGL renderer remains the pixel authority.
+The dashboard can inspect the game contract, run the same action scripts as `--simulate`, refresh the live scene, and preview it in a WebGL2 viewer with textures, vertex colors, lights and fog. The browser viewer is an inspection approximation; the OpenGL renderer remains the pixel authority.
 
 | Endpoint | Method | Purpose |
 |---|---|---|
@@ -272,7 +272,7 @@ The API sends CORS headers so local AI clients can call it directly. Keep the de
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip loading, changed-pixel counts, bbox and visual diff.
 - **Frame reports for AI analysis**: `--report` writes schema-11 JSON with image hashes, pixel stats, content box, palette, camera, projected content, FX counts and UI metadata.
 - **Human overlay**: game-agnostic HUD with status, FPS, frame, time and profiler lines, plus help/pause menu; 5×7 font, no asset. Games add HUD via `draw_ui(canvas, state)`.
-- **Web console and WebGL viewer**: `--serve` exposes a stdlib JSON API (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/editor`, `/api/simulate`) and a scene editor for hierarchy, node/asset/component authoring, transforms, undo, prefabs, play/snapshot, Views, grid, animation/materials, hierarchy drag/drop/copy-paste/locking/bookmarks, assets, startup, timeline, validation, layers, layout, build.
+- **Web console and WebGL viewer**: `--serve` exposes a stdlib JSON API (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/editor`, `/api/simulate`) and a scene editor for hierarchy, node/asset/component authoring, transforms, undo, prefabs, play/snapshot, views, grid, animation/materials, drag-drop/copy-paste/locking, assets, validation, layers, layout and build.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code.
 
 ## 🤖 AI Testing & Frame Analysis
@@ -518,6 +518,8 @@ keystone/
 │   ├── test_plugin.py        <- GameModule contract and loader
 │   ├── test_replay.py        <- command log and hashes
 │   ├── test_serialization.py <- atomic JSON persistence
+│   ├── test_component_codec.py <- typed component JSON codec
+│   ├── test_library_trash.py <- recoverable library deletes
 │   ├── test_headless.py      <- no-GL simulation and action scripts
 │   ├── test_analysis.py      <- frame stats, projection, report diff
 │   ├── test_testing.py       <- deterministic helpers
