@@ -21,13 +21,17 @@ from keystone.animation_state import (
     AnimationStateMachine,
     AnimationTransition,
 )
+from keystone.assets import AssetRegistry
+from keystone.geometry import Material
 from keystone.math3d import Vec3
+from keystone.png import write_png
 from keystone.prefab import Prefab
 from keystone.primitives import cube
 from keystone.project import create_project, load_project
 from keystone.samples import CubeDemo
 from keystone.scene import Node, Scene, Transform
 from keystone.schema import EDITOR_ACTIONS, EDITOR_SCHEMA_VERSION
+from keystone.web.editor import reload_scene_assets
 from keystone.web.scene import SCENE_SCHEMA, scene_document
 from keystone.web.schema import EDITOR_SCHEMA
 from keystone.web.server import GameSession, WebProblem, create_server
@@ -4284,6 +4288,29 @@ class WebServerTest(unittest.TestCase):
                 session.game.scene.find_by_id(crate_id).mesh,
                 record.payload,
             )
+
+    def test_editor_reload_rebinds_registry_material_textures(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "texture.png"
+            write_png(path, 2, 2, b"\x00" * 16)
+            registry = AssetRegistry()
+            texture = registry.register_file("texture.test", path)
+            material = Material(
+                color=Vec3(1.0, 1.0, 1.0), texture=texture.payload
+            )
+            registry.register("material.test", material, kind="material")
+            scene = Scene()
+            node = Node("surface", id="surface", material=material)
+            scene.add(node)
+
+            write_png(path, 2, 2, b"\xff" * 16)
+            report = reload_scene_assets(scene, registry)
+            new_texture = registry.require("texture.test").payload
+            new_material = registry.require("material.test").payload
+            self.assertIsNot(new_material, material)
+            self.assertIs(new_material.texture, new_texture)
+            self.assertIs(node.material, new_material)
+            self.assertGreaterEqual(report["registry_rebound"], 1)
 
     def test_editor_preview_animation_and_undo(self):
         session = GameSession(CubeDemo())

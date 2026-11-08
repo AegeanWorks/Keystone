@@ -1031,6 +1031,25 @@ def reload_scene_assets(
         if old is None or current is None or old.payload is current.payload:
             continue
         replacements[id(old.payload)] = current.payload
+    registry_rebound = 0
+    for record in list(registry):
+        if record.kind != "material" or not isinstance(
+            record.payload, Material
+        ):
+            continue
+        material, changed = _rebind_payload(record.payload, replacements)
+        if not changed:
+            continue
+        registry.register(
+            record.id,
+            material,
+            kind=record.kind,
+            source=record.source,
+            dependencies=record.dependencies,
+            replace=True,
+        )
+        replacements[id(record.payload)] = material
+        registry_rebound += 1
     rebound = sum(
         _rebind_node_assets(node, replacements) for node in scene.traverse()
     )
@@ -1064,6 +1083,7 @@ def reload_scene_assets(
         "history_rebound": history_rebound,
         "prefab_rebound": prefab_rebound,
         "clipboard_rebound": clipboard_rebound,
+        "registry_rebound": registry_rebound,
     }
 
 

@@ -9,8 +9,8 @@
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
 - **Total Top-Level Functions**: `420`
-- **Total Class Methods**: `1471`
-- **Total Source Lines**: `39954`
+- **Total Class Methods**: `1472`
+- **Total Source Lines**: `40002`
 
 ---
 
@@ -1666,7 +1666,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `3173` lines (`112629` bytes)
+**Size**: `3193` lines (`113278` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1816,7 +1816,7 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `603` lines (`25586` bytes)
+**Size**: `604` lines (`25637` bytes)
 
 ---
 
@@ -3401,7 +3401,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `5663` lines (`233100` bytes)
+**Size**: `5690` lines (`234391` bytes)
 
 **Classes:**
 - `class Health`
@@ -3497,6 +3497,7 @@
   - Method `.test_editor_build_project()`
   - Method `.test_editor_reload_assets_rebinds_scene_and_history()`
   - Method `.test_editor_reload_rebinds_unchanged_payload_identity()`
+  - Method `.test_editor_reload_rebinds_registry_material_textures()`
   - Method `.test_editor_preview_animation_and_undo()`
   - Method `.test_editor_animation_library_round_trip()`
   - Method `.test_editor_state_machine_library_and_preview()`

@@ -1552,3 +1552,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->18 audit found that hiding a layer removed its nodes from the viewport but left them in `selected_ids`. Inspector edits and gizmos could therefore continue to act on invisible nodes.
 - **Decision**: When `set_layer_visible` hides a layer, filter the current selection to nodes whose layer remains visible and update the primary selection through `_set_selected_ids`. Showing the layer again does not restore the pruned selection. Add a two-layer selection regression.
 - **Consequences**: Selection and hidden-layer state stay coherent across editor documents. Hiding a layer is still session-only and neutral to scene dirtiness; existing viewer filtering is unchanged.
+
+### ADR-191: Commit audit rebinds registry material textures on reload
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->21 audit found that asset reload rebound scene nodes, history, cached prefabs, clipboard and inline node materials, but left registry material records pointing at the old texture object. A future node assigned from the registry could render with stale texture data.
+- **Decision**: Before rebinding scene payloads, walk registry material records, replace any inline texture found in the reload map, re-register the material payload and add the old-material-to-new-material mapping so scene, history, prefab and clipboard references converge on the same object. Report `registry_rebound`. Add a texture-file reload regression that checks registry material, node material and texture identities.
+- **Consequences**: Texture hot reload now reaches every material owner, not only live scene nodes. The report grows by one count; failed or missing textures still keep last-good payloads.

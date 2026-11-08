@@ -480,6 +480,7 @@ EDITOR_SCHEMA = {
             "history_rebound",
             "prefab_rebound",
             "clipboard_rebound",
+            "registry_rebound",
         ],
         "forget_asset": ["path"],
         "forgotten_asset": [
@@ -562,7 +563,7 @@ EDITOR_SCHEMA = {
         "schema 41 adds a preview_animation record flag for record-free playback frames",
         "schema 42 adds validate_scene, returning structured errors/warnings for missing assets, dangling prefab links and naming issues",
         "schema 43 adds import_asset for project-relative .obj/.png/.kprefab files, appending them to keystone.json and registering project:<path>",
-        "schema 44 adds reload_assets, which refreshes file-backed assets, rebinds scene, history, cached prefab and clipboard payloads and reports reloaded/failed/missing/rebound counts",
+        "schema 44 adds reload_assets, which refreshes file-backed assets, rebinds scene, history, cached prefab, clipboard and registry material payloads and reports reloaded/failed/missing/rebound counts",
         "schema 45 adds import_gltf, which imports project .gltf/.glb scenes as prefabs, registers gltf.<name>.* assets and records the source in keystone.json",
         "schema 46 adds set_startup_scene and a startup_scene document field for project-relative default scene selection",
         "schema 47 adds saved_scene/scene_dirty tracking and revert_scene, which reloads the saved scene and clears history and selection",
