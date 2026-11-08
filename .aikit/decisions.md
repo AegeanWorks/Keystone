@@ -1624,3 +1624,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->45 audit found that `revert_prefab` checked only the selected instance root before replacing the whole group, so a locked child could be deleted by reverting its unlocked parent.
 - **Decision**: Use the subtree lock check for `revert_prefab`, matching delete actions and refresh. Add a regression that locks a child, selects the instance root, and asserts revert returns 400 while the child remains.
 - **Consequences**: Prefab revert preserves locked descendants. Apply remains read-only for the scene and is unchanged.
+
+### ADR-200: Commit audit protects locked descendants from prefab apply
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->End audit found that `apply_prefab` checked only the selected instance root before writing the whole group into the prefab library. A locked child could be baked into the template and its lock protection bypassed.
+- **Decision**: Use `_ensure_subtree_unlocked_locked` for `apply_prefab`, matching prefab revert, delete and refresh. Add a regression that locks a child and asserts applying its unlocked parent returns 400.
+- **Consequences**: Prefab apply now honors locks anywhere in the captured group. The action remains outside scene undo because it writes the prefab library.

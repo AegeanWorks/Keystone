@@ -864,6 +864,31 @@ class WebServerTest(unittest.TestCase):
             session.game.scene.find_by_id(child_id)
         )
 
+    def test_editor_locked_descendant_blocks_prefab_apply(self):
+        session = GameSession(CubeDemo())
+        parent = session.editor_action(
+            {"action": "create_node", "name": "parent"}
+        )["selection"]["id"]
+        child = session.editor_action(
+            {"action": "create_node", "name": "child", "parent": parent}
+        )["selection"]["id"]
+        session.editor_action({"action": "select", "id": parent})
+        session.editor_action({"action": "save_prefab", "name": "rig"})
+        session.editor_action(
+            {"action": "insert_prefab", "name": "rig", "instance": "a"}
+        )
+        child_id = f"a:{child}"
+        session.editor_action(
+            {"action": "set_nodes_locked", "ids": [child_id], "locked": True}
+        )
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action(
+                {"action": "apply_prefab", "id": "a:" + parent}
+            )
+        self.assertEqual(caught.exception.status, 400)
+        self.assertIn(child_id, caught.exception.why)
+        self.assertIsNotNone(session.game.scene.find_by_id(child_id))
+
     def test_editor_copy_paste_selection(self):
         session = GameSession(CubeDemo())
         editor = session.editor()
