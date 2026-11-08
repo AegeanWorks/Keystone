@@ -62,6 +62,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--new", type=Path, default=None, metavar="DIR", help="scaffold a new Keystone game project")
     parser.add_argument("--project", type=Path, default=None, metavar="PATH", help="open a keystone.json project directory or file")
     parser.add_argument("--validate-project", action="store_true", help="validate project assets, scenes and prefabs and exit")
+    parser.add_argument("--export", type=Path, default=None, metavar="DIR", help="package --project into a runnable directory")
     parser.add_argument("--name", default=None, help="project name for --new (default: directory name)")
     parser.add_argument("--force", action="store_true", help="allow --new to write into a non-empty directory")
     parser.add_argument("--describe", action="store_true", help="print the game capability/action/snapshot schema")
@@ -123,7 +124,7 @@ def main(argv: list[str] | None = None) -> int:
             or args.culling or args.no_culling or args.start_paused or args.serve
             or args.host is not None or args.port is not None or args.prefab_dir is not None
             or args.scene_dir is not None or args.scene is not None or args.out is not None
-            or args.validate_project
+            or args.validate_project or args.export is not None
             or args.report is not None or args.game != "keystone.samples:CubeDemo"
         )
         if incompatible:
@@ -147,8 +148,54 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.name is not None:
         parser.error("--name requires --new")
-    if args.force:
-        parser.error("--force requires --new")
+    if args.force and args.new is None and args.export is None:
+        parser.error("--force requires --new or --export")
+    if args.export is not None:
+        if args.project is None:
+            parser.error("--export requires --project")
+        if (
+            args.describe or args.headless or args.simulate
+            or args.verify_determinism or args.expect_hash is not None
+            or args.compare_baseline is not None or args.diff_out is not None
+            or args.actions is not None or args.replay is not None
+            or args.playtest or args.policy != "random" or args.seed != 0
+            or args.script is not None or args.transcript_out is not None
+            or args.trace or args.frames or args.size != (960, 540)
+            or args.ui or args.no_ui or args.shadows or args.no_shadows
+            or args.srgb or args.no_srgb or args.post or args.no_post
+            or args.bloom or args.no_bloom or args.sprites or args.no_sprites
+            or args.culling or args.no_culling or args.start_paused
+            or args.serve or args.host is not None or args.port is not None
+            or args.prefab_dir is not None or args.scene_dir is not None
+            or args.scene is not None or args.out is not None
+            or args.report is not None or args.validate_project
+        ):
+            parser.error("--export is a standalone project command")
+        from keystone.export import export_project
+
+        try:
+            result = export_project(args.project, args.export, force=args.force)
+        except Exception as exc:  # noqa: BLE001 - CLI reports Why/Fix
+            print("Keystone could not export the project.", file=sys.stderr)
+            message = str(exc)
+            if "Why:" in message and "Fix:" in message:
+                print(message, file=sys.stderr)
+            else:
+                print(f"Why: {message}", file=sys.stderr)
+                print(
+                    "Fix: run --validate-project, choose a writable empty "
+                    "directory, or pass --force.",
+                    file=sys.stderr,
+                )
+            return 1
+        target = Path(args.export).resolve()
+        print(f"Exported {result['project']['name']!r} to {target}")
+        print(
+            f"Files: {result['summary']['files']} "
+            f"({result['summary']['bytes']} bytes)"
+        )
+        print(f"Run: python {target / 'run.py'} --simulate --frames 1")
+        return 0
     if args.validate_project and args.project is None:
         parser.error("--validate-project requires --project")
     if args.validate_project and (

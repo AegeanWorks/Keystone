@@ -26,6 +26,14 @@ python -m keystone --project my-game --simulate --frames 120
 
 `--new` creates `keystone.json`, a five-operation game module, a README, a `.gitignore`, `prefabs/` and `scenes/` library directories, plus starter `scenes/main.kscene` and `prefabs/cube.kprefab` content. The generated game exposes `self.assets = AssetRegistry()` and `self.component_types = {}` for editor authoring. `--project` accepts the project directory or the manifest file, adds the project directory to the import path, validates the game contract and uses the manifest's `game` spec unless `--game` overrides it. `--scene NAME` opens a saved scene for `--serve`, `--simulate`, `--headless`, `--replay`, `--playtest`, `--verify-determinism` or a windowed run when `--project` or `--scene-dir` supplies the library; `--describe` is the only run it cannot accompany. `--project DIR --validate-project` performs a non-destructive check of game assets, manifest/glTF assets, scene files and prefab files, prints a schema-1 JSON report and exits 1 on any error. Relative `.obj`, `.png`, `.kprefab`, `.gltf` and `.glb` paths in the manifest `assets` list are imported when the game exposes `self.assets = AssetRegistry()`: regular assets use `project:<relative-path>`, glTF/GLB scenes become `<project>/prefabs/<stem>.kprefab` with `gltf.<stem>.*` mesh/material/texture ids, and prefabs import after their dependencies regardless of manifest order; bad paths fail with `Why:`/`Fix:` text. `--describe` includes a `project` object with the resolved directory and manifest when `--project` is used.
 
+## 1c. Package a project
+
+```bash
+python -m keystone --project my-game --export build/my-game
+```
+
+`--export` validates the game, assets, scenes and prefabs, then writes a runnable bundle: the runtime project files, a vendored `keystone` package under `vendor/keystone`, `run.py`, `requirements.txt`, `EXPORT.md` and a schema-1 `BUILD.json` with every file's size and SHA-256. The bundle refuses a non-empty destination unless `--force` is passed and runs with `python run.py --simulate --frames 1` or `python run.py`; runtime dependencies still install from `requirements.txt`.
+
 ## 2. Simulate without OpenGL
 
 ```bash

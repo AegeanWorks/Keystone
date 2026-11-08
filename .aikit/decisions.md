@@ -1160,3 +1160,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Play mode exposed frames and component lifecycle but not the game's own snapshot or status, so inspecting runtime state required a separate simulation.
 - **Decision**: Add `status` and `snapshot` to the play document while play is active, with `status_error` and `snapshot_error` when a game hook fails. Snapshots are JSON-checked before exposure; stopped play returns both as null. The console renders the play document as JSON under a live snapshot panel. Bump the editor schema to 36.
 - **Consequences**: 767 tests green; active/stopped shapes, JSON snapshots and failing hooks are covered. Snapshot calls run under the editor lock on each editor document refresh, game hooks remain foreign code, and non-JSON snapshots surface as errors rather than breaking the API.
+
+### ADR-142: Deterministic project export bundles
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Projects could be created and opened, but shipping a game still required manual file copying and no build artifact recorded what was packaged.
+- **Decision**: Add `--export DIR` for `--project`. Export loads and validates the project game, assets, scenes and prefabs, then copies runtime project files while excluding caches, tests, docs and a local engine source tree. It vendors the installed `keystone` package under `vendor/keystone`, writes `run.py`, `requirements.txt` and `EXPORT.md`, and finishes with a schema-1 `BUILD.json` containing sorted relative paths, sizes and SHA-256 hashes plus scene/prefab/file totals. A non-empty destination is refused unless `--force` is passed; the destination may sit inside the project because its subtree is excluded from the copy.
+- **Consequences**: 771 tests green; bundle structure, hashes, launcher execution, force behavior, CLI output, validation failures and development-file exclusion are covered. The bundle still needs the pinned runtime dependencies, game modules with same-named imports can share `sys.modules` during validation, and export is a copy operation rather than a standalone executable build.

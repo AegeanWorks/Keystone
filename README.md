@@ -25,6 +25,10 @@ Games plug in through one five-operation contract. Keystone ships a **cube demo*
   python -m keystone --new my-game
   python -m keystone --project my-game
   ```
+- **Package a project**:
+  ```bash
+  python -m keystone --project my-game --export build/my-game
+  ```
 - **Open the local web console and WebGL viewer**:
   ```bash
   python -m keystone --serve
@@ -391,6 +395,7 @@ keystone/
 │   ├── math3d.py             <- Vec3, Mat4, Quat (column-major, OpenGL-ready)
 │   ├── camera.py             <- perspective camera
 │   ├── project.py           <- manifests, scaffolding and --project loading
+│   ├── export.py            <- deterministic runnable project bundles
 │   ├── prefab.py            <- deterministic subtree templates
 │   ├── prefab_library.py    <- file-backed prefab library
 │   ├── library_trash.py      <- recoverable library deletes
@@ -471,6 +476,7 @@ keystone/
 │   ├── test_physics.py       <- rays, AABB, sphere queries and raycasts
 │   ├── test_broadphase.py    <- spatial-grid queries, updates and pairs
 │   ├── test_project.py      <- manifest, scaffold and --project workflow
+│   ├── test_export.py       <- export bundle structure, hashes and launcher
 │   ├── test_prefab.py       <- prefab capture, IDs and isolation
 │   ├── test_prefab_library.py <- prefab library save, load and errors
 │   ├── test_particles.py     <- seeded emitters, forces and reports
@@ -584,15 +590,7 @@ snapshot = history.undo()
 
 ## 🗺️ Core Roadmap
 
-1. ~~Scene identity/ECS.~~ Done in v0.19.0.
-2. ~~Broadphase/character/triggers.~~ Done in v0.21.0.
-3. ~~Assets~~ v0.22.0; ~~material graphs~~ v0.23.0; ~~glTF~~ v0.24.0; ~~GLB~~ v0.26.0; ~~PBR core~~ v0.27.0.
-4. Renderer PBR, batches, instancing, shadows, sRGB, post, bloom and diffusion shipped through v0.44.0; post chain remains.
-5. ~~Input persistence~~ v0.27.0; ~~contexts/audio mixer~~ v0.28.0; live playback out of scope.
-6. ~~Animation core~~ in v0.29.0; ~~blending/events~~ in v0.30.0; ~~skinning~~ in v0.41.0; ~~CPU particles~~ in v0.31.0; ~~GPU sprites~~ in v0.42.0, bounce/friction/kill in v0.43.0.
-6. ~~Schema versioning~~ v0.25.0; ~~replay runner~~ v0.30.0.
-7. ~~Profiler HUD~~ in v0.27.0; ~~web inspector~~ in v0.28.0-0.30.0 (batches, merge, assets) plus ~~instancing~~ in v0.32.0; editor/HUD hooks remain.
-8. ~~AI adapters~~ in v0.27.0 (`keystone.agents`).
+Scene identity, physics, assets, PBR, batching, animation, particles, replay, AI adapters and profiling shipped through v0.45.0; the remaining renderer work is the full post chain, and editor hooks continue.
 
 Games are external modules; they are not added to this repository.
 

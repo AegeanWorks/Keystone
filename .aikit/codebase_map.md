@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `135`
-- **Total Classes**: `216`
-- **Total Top-Level Functions**: `365`
-- **Total Class Methods**: `1343`
-- **Total Source Lines**: `32101`
+- **Total Python Modules**: `137`
+- **Total Classes**: `217`
+- **Total Top-Level Functions**: `372`
+- **Total Class Methods**: `1347`
+- **Total Source Lines**: `32520`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `597` lines (`32106` bytes)
+**Size**: `644` lines (`34650` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -356,6 +356,22 @@
 - `def model_visible(mesh, model, planes)` - *Return True when a mesh under an affine model matrix survives culling.*
 - `def node_visible(node, planes)` - *Return True when a scene node survives frustum culling.*
 - `def cull_scene(scene, width, height)` - *Return python ``id()`` values of frustum-visible nodes.*
+
+---
+
+### [`keystone/export.py`](keystone/export.py)
+> *Deterministic runnable project bundles for Keystone games.*
+
+**Size**: `224` lines (`6740` bytes)
+
+**Functions:**
+- `def _within(path, root)`
+- `def _sha256(path)`
+- `def _copy_project(context, target)`
+- `def _copy_engine(target)`
+- `def _write_export_docs(context, target)`
+- `def _build_manifest(context, target)`
+- `def export_project(project, destination, *, force)` - *Validate a project and write a runnable, hashed export bundle.*
 
 ---
 
@@ -2133,6 +2149,20 @@
 **Functions:**
 - `def _scene_with_cubes()`
 - `def _skinned_quad()`
+
+---
+
+### [`tests/test_export.py`](tests/test_export.py)
+> *Tests for deterministic project export bundles.*
+
+**Size**: `148` lines (`6207` bytes)
+
+**Classes:**
+- `class ProjectExportTest`
+  - Method `.test_export_bundle_structure_hashes_and_launcher()`
+  - Method `.test_export_refuses_non_empty_target_and_force_overwrites()`
+  - Method `.test_export_cli_and_validation_failures()`
+  - Method `.test_export_excludes_development_files_and_nested_target()`
 
 ---
 
