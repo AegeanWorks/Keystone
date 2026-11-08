@@ -10,7 +10,7 @@
 
 A game-agnostic 3D engine core in Python: OpenGL 3.3 PBR rendering, scene graph, meshes/OBJ, fixed-step loop, rebindable input, animation, particles, audio, collision, replay, atomic saves, batch planning/merging, and a HUD/profiler overlay.
 
-Games plug in through one five-operation contract. Keystone ships a **cube demo** only as a smoke test; it contains no combat, puzzles, procedural worlds or other genre rules. External game modules live outside this package and load with `--game package.module:Factory`. Games may also add an optional `draw_ui(canvas, state)` hook for their own HUD.
+Games plug in through one five-operation contract. Keystone ships a **cube demo** only as a smoke test; it contains no combat, puzzles, procedural worlds or other genre rules. External game modules live outside this package and load with `--game package.module:Factory`. Games may also add an optional `draw_ui(canvas, state)` HUD hook.
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
@@ -152,7 +152,7 @@ events = TriggerTracker().update(body.box(), [TriggerVolume("door", AABB(Vec3(0,
 hit = raycast(Ray(Vec3(), Vec3(0, 0, 1)), [("wall", wall)])
 ```
 
-`SpatialGrid` keeps a uniform grid of AABB proxies with exact overlaps in insertion order; `cell_size` trades speed, not correctness. `CharacterController` moves an AABB body with wish velocity, gravity, wall/floor response, stair step-up, slope-limited climb and platform carry; capsules and solvers excluded. `TriggerTracker` reports sorted `entered`/`exited` tuples and an immutable `active` set; `raycast()` returns the nearest hit with an optional filter.
+`SpatialGrid` keeps a uniform grid of AABB proxies with exact overlaps in insertion order; `cell_size` trades speed, not correctness. `CharacterController` moves an AABB body with wish velocity, gravity, wall/floor response, stair step-up, slope-limited climb and platform carry; capsules and solvers are excluded. `TriggerTracker` reports sorted `entered`/`exited` tuples and an immutable `active` set; `raycast()` returns the nearest filtered hit.
 
 ### Optional game UI
 
@@ -293,7 +293,7 @@ python -m keystone --headless --frames 1 --size 1280x720 \
   --out frame.png --report current.json --compare-baseline baseline.json
 ```
 
-The first command runs the scenario twice and exits 0 only when both hashes match. The second renders, writes the current report, compares it with the baseline and exits non-zero when the image changed. The diff includes luminance/content deltas and changed/added/removed nodes. Add `--diff-out diff.png` for a visual pixel diff with changed-pixel count, ratio, bbox and mean/max delta. `--expect-hash <32-hex>` pins a known final hash for either simulation mode.
+The first command runs the scenario twice and exits 0 only when both hashes match. The second renders, writes the current report, compares it with the baseline and exits non-zero when the image changed. The diff includes luminance/content deltas and changed/added/removed nodes. `--diff-out diff.png` adds a visual pixel diff. `--expect-hash <32-hex>` pins a known final hash for either simulation mode.
 
 See [`docs/AI_GUIDE.md`](docs/AI_GUIDE.md) for the complete workflow.
 
@@ -466,7 +466,8 @@ keystone/
 │   └── screenshots/          <- approved HUD + console keepers
 ├── docs/
 │   ├── ARCHITECTURE.md       <- core layers and contract
-│   └── AI_GUIDE.md           <- discover, simulate and verify
+│   ├── AI_GUIDE.md           <- discover, simulate and verify
+│   └── IMPLICIT_STATE_AUDIT.md <- state-machine audit
 ├── tests/
 │   ├── test_math3d.py        <- math core
 │   ├── test_scene.py         <- hierarchy, camera and lights
@@ -557,7 +558,7 @@ Engine
 - `GameModule` is a five-method Protocol; `ActionState`/`HudState` are frozen DTOs.
 - `CommandLog`/`stable_hash()` fingerprint deterministic frames; `write_json_atomic()` uses temp+fsync+replace.
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the dependency rules, module responsibilities, acceptance criteria and core roadmap.
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for dependency rules and roadmap; [`docs/IMPLICIT_STATE_AUDIT.md`](docs/IMPLICIT_STATE_AUDIT.md) records the state-machine audit.
 
 ## 📦 Asset Registry and Hot Reload
 
@@ -600,7 +601,7 @@ snapshot = history.undo()
 
 ## 🗺️ Core Roadmap
 
-Scene identity, physics, assets, PBR, batching, animation, particles, replay, AI adapters and profiling shipped through v0.45.0; the remaining renderer work is the full post chain, and editor hooks continue.
+Scene identity, physics, assets, PBR, batching, animation, particles, replay and AI adapters shipped through v0.45.0; the remaining renderer work is the full post chain, and editor hooks continue.
 
 Games are external modules; they are not added to this repository.
 
