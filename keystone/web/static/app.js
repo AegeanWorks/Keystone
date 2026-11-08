@@ -128,6 +128,8 @@ const elements = {
   importPath: document.getElementById("import-path"),
   importAsset: document.getElementById("import-asset"),
   importState: document.getElementById("import-state"),
+  reloadAssets: document.getElementById("reload-assets"),
+  reloadState: document.getElementById("reload-state"),
   componentType: document.getElementById("component-type"),
   componentFields: document.getElementById("component-fields"),
   componentHint: document.getElementById("component-hint"),
@@ -948,6 +950,12 @@ function showEditor(editor) {
       "Enter a project-relative .obj, .png or .kprefab path.";
   }
   elements.importAsset.disabled = !projectDir;
+  const reload = editor.asset_reload;
+  elements.reloadState.textContent = reload
+    ? `${reload.ok ? "OK" : "Attention"} · ${reload.checked} checked · ` +
+      `${reload.reloaded.length} reloaded · ${reload.rebound} rebound · ` +
+      `${reload.failed.length} failed · ${reload.missing.length} missing`
+    : "No assets reloaded.";
   if (!busy) {
     elements.editorUndo.disabled = history.undo === 0;
     elements.editorRedo.disabled = history.redo === 0;
@@ -1986,6 +1994,14 @@ async function importAsset() {
   }
 }
 
+async function reloadAssets() {
+  const editor = await editorAction({ action: "reload_assets" }, "reloading assets");
+  const reload = editor.asset_reload;
+  if (reload) {
+    show({ ok: reload.ok, action: "reload_assets", asset_reload: reload });
+  }
+}
+
 async function saveMaterial() {
   const name = elements.materialName.value.trim();
   if (!name) {
@@ -2620,6 +2636,7 @@ elements.meshAsset.addEventListener("change", updateAssetInfo);
 elements.materialAsset.addEventListener("change", updateAssetInfo);
 elements.assignAsset.addEventListener("click", () => run(assignAssets));
 elements.importAsset.addEventListener("click", () => run(importAsset));
+elements.reloadAssets.addEventListener("click", () => run(reloadAssets));
 elements.materialSave.addEventListener("click", () => run(saveMaterial));
 elements.materialAssign.addEventListener("click", () => run(assignMaterial));
 elements.materialClear.addEventListener("click", () => run(clearMaterial));

@@ -272,7 +272,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip loading, changed-pixel counts, bbox and visual diff.
 - **Frame reports for AI analysis**: `--report` writes schema-11 JSON with image hashes, pixel stats, content box, palette, camera, projected content, FX counts and UI metadata.
 - **Human overlay**: game-agnostic HUD with status, FPS, frame, time and profiler lines, plus help/pause menu; 5×7 font, no asset. Games add HUD via `draw_ui(canvas, state)`.
-- **Web console and WebGL viewer**: `--serve` starts a stdlib JSON API sharing the CLI contract (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/editor`, `/api/simulate`); a scene editor exposes hierarchy, node/asset/component authoring, transforms, undo, prefab edit, multi-root and play/snapshot; Scene/Game views, grid/snap/pivot icons/animation/material libraries, hierarchy drag/drop/collapse, material lifecycle, project asset import, timeline, validation, snap steps, layout restore.
+- **Web console and WebGL viewer**: `--serve` starts a stdlib JSON API sharing the CLI contract (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/editor`, `/api/simulate`); a scene editor exposes hierarchy, node/asset/component authoring, transforms, undo, prefab edit, multi-root and play/snapshot; Scene/Game views, grid/snap/pivot icons/animation/material libraries, hierarchy drag/drop/collapse, material lifecycle, project asset import/reload, timeline, validation, snap steps, layout restore.
 - **Game-agnostic core**: no combat, light-lock, weave, network, space or expedition code.
 
 ## 🤖 AI Testing & Frame Analysis
@@ -283,7 +283,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 python -m keystone --describe
 ```
 
-Includes the game name, actions, snapshot and 32 capability keys.
+Includes game name, actions, snapshot and 32 capability keys.
 
 ### Verify determinism and visual regressions
 

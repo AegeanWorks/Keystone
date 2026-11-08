@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `141`
 - **Total Classes**: `223`
-- **Total Top-Level Functions**: `378`
-- **Total Class Methods**: `1382`
-- **Total Source Lines**: `34312`
+- **Total Top-Level Functions**: `382`
+- **Total Class Methods**: `1384`
+- **Total Source Lines**: `34540`
 
 ---
 
@@ -1423,7 +1423,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `69` lines (`1478` bytes)
+**Size**: `70` lines (`1499` bytes)
 
 ---
 
@@ -1602,7 +1602,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `2430` lines (`86418` bytes)
+**Size**: `2533` lines (`90224` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1613,6 +1613,7 @@
   - Method `.undo(scene, steps)` - *Restore up to `steps` earlier states and return how many were undone.*
   - Method `.redo(scene, steps)` - *Restore up to `steps` redone states and return how many were redone.*
   - Method `.clear()`
+  - Method `.rebind_assets(replacements)` - *Swap reloaded asset payloads in every undo and redo snapshot.*
   - Method `._push(entry)`
   - Method `._append_undo(entry)`
 
@@ -1640,8 +1641,12 @@
 - `def _snapshot_nodes(scene)`
 - `def _node_from_snapshot(data)`
 - `def _restore_nodes(scene, snapshot)`
+- `def _rebind_payload(payload, replacements)` - *Return a reloaded payload (or a material with a reloaded texture).*
+- `def _rebind_node_assets(node, replacements)`
+- `def _rebind_snapshot_nodes(nodes, replacements)`
 - `def _scene_snapshot(scene)`
 - `def _restore_scene_state(scene, snapshot)`
+- `def reload_scene_assets(scene, registry, history)` - *Reload changed file-backed assets and rebind scene plus history payloads.*
 - `def _history_label(label)`
 - `def _history_steps(steps)`
 - `def _component_documents(node)`
@@ -1720,14 +1725,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `382` lines (`17440` bytes)
+**Size**: `395` lines (`17901` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1854` lines (`81997` bytes)
+**Size**: `1869` lines (`82723` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3250,7 +3255,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `3491` lines (`146597` bytes)
+**Size**: `3587` lines (`150539` bytes)
 
 **Classes:**
 - `class Health`
@@ -3321,6 +3326,7 @@
   - Method `.test_editor_play_state_reports_hook_errors()`
   - Method `.test_editor_validate_scene_reports_issues()`
   - Method `.test_editor_import_asset_updates_manifest_and_registry()`
+  - Method `.test_editor_reload_assets_rebinds_scene_and_history()`
   - Method `.test_editor_preview_animation_and_undo()`
   - Method `.test_editor_animation_library_round_trip()`
   - Method `.test_editor_material_library_save_assign_and_reload()`

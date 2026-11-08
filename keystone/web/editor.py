@@ -11,9 +11,10 @@ import base64
 import copy
 import math
 from collections.abc import Callable, Mapping
-from dataclasses import MISSING, fields, is_dataclass
+from dataclasses import MISSING, fields, is_dataclass, replace
 from typing import NamedTuple, TypeVar
 
+from keystone.assets import AssetRegistry
 from keystone.camera import MAX_PITCH
 from keystone.component_codec import (
     ComponentTypes,
@@ -57,6 +58,7 @@ __all__ = [
     "editor_document",
     "find_node",
     "insert_prefab",
+    "reload_scene_assets",
     "remove_component",
     "reparent_node",
     "save_prefab",
@@ -660,6 +662,54 @@ def _restore_nodes(scene: Scene, snapshot: list[dict[str, object]]) -> None:
     list(scene.traverse())
 
 
+def _rebind_payload(
+    payload: object, replacements: Mapping[int, object]
+) -> tuple[object, bool]:
+    """Return a reloaded payload (or a material with a reloaded texture)."""
+    replacement = replacements.get(id(payload))
+    if replacement is not None:
+        return replacement, replacement is not payload
+    if isinstance(payload, Material) and payload.texture is not None:
+        texture = replacements.get(id(payload.texture))
+        if texture is not None:
+            return replace(payload, texture=texture), True
+    return payload, False
+
+
+def _rebind_node_assets(node: Node, replacements: Mapping[int, object]) -> int:
+    rebound = 0
+    mesh, changed = _rebind_payload(node.mesh, replacements)
+    if changed:
+        node.mesh = mesh
+        rebound += 1
+    material, changed = _rebind_payload(node.material, replacements)
+    if changed:
+        node.material = material
+        rebound += 1
+    return rebound
+
+
+def _rebind_snapshot_nodes(
+    nodes: list[object], replacements: Mapping[int, object]
+) -> int:
+    rebound = 0
+    for data in nodes:
+        if not isinstance(data, dict):
+            continue
+        mesh, changed = _rebind_payload(data.get("mesh"), replacements)
+        if changed:
+            data["mesh"] = mesh
+            rebound += 1
+        material, changed = _rebind_payload(data.get("material"), replacements)
+        if changed:
+            data["material"] = material
+            rebound += 1
+        children = data.get("children")
+        if isinstance(children, list):
+            rebound += _rebind_snapshot_nodes(children, replacements)
+    return rebound
+
+
 def _scene_snapshot(scene: Scene) -> dict[str, object]:
     return {
         "nodes": _snapshot_nodes(scene),
@@ -777,6 +827,17 @@ class EditorHistory:
         self._undo.clear()
         self._redo.clear()
 
+    def rebind_assets(self, replacements: Mapping[int, object]) -> int:
+        """Swap reloaded asset payloads in every undo and redo snapshot."""
+        if not isinstance(replacements, Mapping):
+            raise TypeError("asset replacements must be a mapping")
+        rebound = 0
+        for entry in (*self._undo, *self._redo):
+            nodes = entry.snapshot.get("nodes")
+            if isinstance(nodes, list):
+                rebound += _rebind_snapshot_nodes(nodes, replacements)
+        return rebound
+
     def _push(self, entry: _HistoryEntry) -> None:
         self._append_undo(entry)
         self._redo.clear()
@@ -785,6 +846,48 @@ class EditorHistory:
         self._undo.append(entry)
         if len(self._undo) > self._limit:
             self._undo.pop(0)
+
+
+def reload_scene_assets(
+    scene: Scene,
+    registry: AssetRegistry,
+    history: EditorHistory | None = None,
+) -> dict[str, object]:
+    """Reload changed file-backed assets and rebind scene plus history payloads."""
+    if not isinstance(scene, Scene):
+        raise TypeError("asset reload target must be a Scene")
+    if not isinstance(registry, AssetRegistry):
+        raise TypeError("asset reload needs an AssetRegistry")
+    if history is not None and not isinstance(history, EditorHistory):
+        raise TypeError("history must be an EditorHistory or None")
+    before = {record.id: record for record in registry}
+    report = registry.refresh()
+    replacements: dict[int, object] = {}
+    for asset_id in report.reloaded:
+        old = before.get(asset_id)
+        current = registry.get(asset_id)
+        if old is None or current is None or old.payload is current.payload:
+            continue
+        replacements[id(old.payload)] = current.payload
+    rebound = sum(
+        _rebind_node_assets(node, replacements) for node in scene.traverse()
+    )
+    history_rebound = (
+        history.rebind_assets(replacements) if history is not None else 0
+    )
+    return {
+        "schema": 1,
+        "ok": report.ok,
+        "checked": report.checked,
+        "reloaded": list(report.reloaded),
+        "unchanged": list(report.unchanged),
+        "failed": [
+            {"id": asset_id, "error": error} for asset_id, error in report.failed
+        ],
+        "missing": list(report.missing),
+        "rebound": rebound,
+        "history_rebound": history_rebound,
+    }
 
 
 def _history_label(label: object) -> str:

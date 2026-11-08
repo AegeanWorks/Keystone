@@ -47,6 +47,7 @@ from keystone.web.editor import (
     find_node,
     insert_prefab,
     refresh_prefab_instances,
+    reload_scene_assets,
     remove_component,
     rename_prefab_links,
     reparent_node,
@@ -193,6 +194,7 @@ class GameSession:
         self.last_animation_preview: dict[str, object] | None = None
         self.last_validation: dict[str, object] | None = None
         self.last_import: dict[str, object] | None = None
+        self.last_asset_reload: dict[str, object] | None = None
         self._prefab_edit_original_history: EditorHistory | None = None
         self._prefab_edit_original_selection: list[str] = []
         self._scene_override: Scene | None = None
@@ -597,6 +599,7 @@ class GameSession:
         document["animation_preview"] = self.last_animation_preview
         document["validation"] = self.last_validation
         document["imported_asset"] = self.last_import
+        document["asset_reload"] = self.last_asset_reload
         document["animations"] = (
             [entry.describe() for entry in self.animation_library.entries()]
             if self.animation_library is not None
@@ -663,6 +666,7 @@ class GameSession:
         self.last_animation_preview = None
         self.last_validation = None
         self.last_import = None
+        self.last_asset_reload = None
         with self.lock:
             scene = self._scene_locked()
             try:
@@ -1398,6 +1402,17 @@ class GameSession:
                             str(exc),
                             "choose a file that exists inside the project directory",
                         ) from exc
+                elif action == "reload_assets":
+                    registry = self._registry_locked()
+                    if registry is None:
+                        raise WebProblem(
+                            400,
+                            "asset reload needs an AssetRegistry",
+                            "expose self.assets = AssetRegistry() in the game module",
+                        )
+                    self.last_asset_reload = reload_scene_assets(
+                        scene, registry, self.history
+                    )
                 elif action == "undo":
                     steps = payload.get("steps", 1)
                     if (

@@ -2571,6 +2571,96 @@ class WebServerTest(unittest.TestCase):
             finally:
                 server.server_close()
 
+    def test_editor_reload_assets_rebinds_scene_and_history(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name="reload-demo")
+            assets = root / "assets"
+            assets.mkdir()
+            source = assets / "crate.obj"
+            source.write_text(
+                "v 0 0 0\nv 1 0 0\nv 0 1 0\nvn 0 0 1\nf 1//1 2//1 3//1\n",
+                encoding="utf-8",
+            )
+            session = GameSession(CubeDemo(), project_dir=root)
+            session.editor_action(
+                {"action": "import_asset", "path": "assets/crate.obj"}
+            )
+            created = session.editor_action(
+                {
+                    "action": "create_node",
+                    "name": "crate",
+                    "mesh": "project:assets/crate.obj",
+                }
+            )
+            crate_id = next(
+                node["id"] for node in created["nodes"] if node["name"] == "crate"
+            )
+            crate = session.game.scene.find_by_id(crate_id)
+            self.assertIsNotNone(crate)
+            old_mesh = crate.mesh
+            session.editor_action(
+                {
+                    "action": "transform",
+                    "id": crate_id,
+                    "position": [1.0, 2.0, 3.0],
+                }
+            )
+
+            source.write_text(
+                "v 0 0 0\nv 2 0 0\nv 0 2 0\nv 0 0 2\nvn 0 0 1\n"
+                "f 1//1 2//1 3//1\nf 1//1 3//1 4//1\n",
+                encoding="utf-8",
+            )
+            reloaded_editor = session.editor_action({"action": "reload_assets"})
+            reload = reloaded_editor["asset_reload"]
+            self.assertTrue(reload["ok"])
+            self.assertEqual(reload["checked"], 1)
+            self.assertIn("project:assets/crate.obj", reload["reloaded"])
+            self.assertGreaterEqual(reload["rebound"], 1)
+            self.assertGreaterEqual(reload["history_rebound"], 1)
+            record = session.game.assets.require("project:assets/crate.obj")
+            self.assertIs(crate.mesh, record.payload)
+            self.assertIsNot(crate.mesh, old_mesh)
+
+            session.editor_action({"action": "undo"})
+            restored = session.game.scene.find_by_id(crate_id)
+            self.assertIsNotNone(restored)
+            self.assertIs(restored.mesh, record.payload)
+
+            source.write_text("not a mesh", encoding="utf-8")
+            failed = session.editor_action({"action": "reload_assets"})[
+                "asset_reload"
+            ]
+            self.assertFalse(failed["ok"])
+            self.assertTrue(failed["failed"])
+            self.assertIs(
+                session.game.scene.find_by_id(crate_id).mesh, record.payload
+            )
+
+            source.unlink()
+            missing = session.editor_action({"action": "reload_assets"})[
+                "asset_reload"
+            ]
+            self.assertFalse(missing["ok"])
+            self.assertIn("project:assets/crate.obj", missing["missing"])
+            self.assertIs(
+                session.game.scene.find_by_id(crate_id).mesh, record.payload
+            )
+            self.assertIsNone(
+                session.editor_action(
+                    {"action": "select", "id": crate_id}
+                )["asset_reload"]
+            )
+
+            bare = GameSession(CubeDemo())
+            bare.editor()
+            bare.game.assets = None
+            with self.assertRaises(WebProblem) as caught:
+                bare.editor_action({"action": "reload_assets"})
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("AssetRegistry", caught.exception.why)
+
     def test_editor_preview_animation_and_undo(self):
         session = GameSession(CubeDemo())
         editor = session.editor()
@@ -3135,6 +3225,8 @@ class WebServerTest(unittest.TestCase):
             "import-path",
             "import-asset",
             "import-state",
+            "reload-assets",
+            "reload-state",
             "component-type",
             "component-fields",
             "component-hint",
@@ -3178,6 +3270,10 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("import_asset", script)
         self.assertIn("imported_asset", script)
         self.assertIn("import-state", script)
+        self.assertIn("reloadAssets", script)
+        self.assertIn("reload_assets", script)
+        self.assertIn("asset_reload", script)
+        self.assertIn("reload-state", script)
         self.assertIn("fillSceneSettings", script)
         self.assertIn("applyCameraSettings", script)
         self.assertIn("applyEnvironmentSettings", script)
