@@ -1504,3 +1504,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: Moving baseline seeding out of `apply_prefab_instance` fixed apply rollback and nested-group preservation, but `save_prefab_edit` still captured the edit scene without rebasing it. After a successful save, the isolated edit scene reported every saved name/transform as an override against the old baseline.
 - **Decision**: Call `seed_prefab_instance_baselines` on the edit scene after the prefab library write succeeds. Add assertions that a saved prefab edit reports zero overrides while remaining dirty until the save.
 - **Consequences**: The edit scene reflects its saved prefab immediately, and a failed write still leaves the edit baseline untouched. The direct apply action already uses the same post-write rebase helper.
+
+### ADR-185: Commit audit restores replaced glTF assets on failed re-import
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->3 audit found that a failed glTF re-import rolled back only registry ids that did not exist before the attempt. Existing `gltf.<name>.*` ids replaced during the partial import stayed bound to the new payloads, so the old prefab file could resolve to a half-imported material, mesh or texture.
+- **Decision**: Snapshot every `AssetRecord` before `import_gltf_prefab`, remove ids added by the failed attempt, and re-register every changed or missing old record with its original payload, kind, source and dependencies. Restore non-prefab records before prefabs so dependency resolution sees the old graph. Add a regression that changes a glTF material, forces `Prefab.from_scene` to fail after registration, and asserts old payload identities and digests return.
+- **Consequences**: Failed glTF imports are registry-atomic even when they overwrite a previously imported scene. The manifest rollback is unchanged, and the helper only runs on the failure path.

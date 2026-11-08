@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
-- **Total Top-Level Functions**: `413`
-- **Total Class Methods**: `1461`
-- **Total Source Lines**: `39359`
+- **Total Top-Level Functions**: `414`
+- **Total Class Methods**: `1462`
+- **Total Source Lines**: `39430`
 
 ---
 
@@ -1260,7 +1260,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `803` lines (`30232` bytes)
+**Size**: `823` lines (`30878` bytes)
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -1283,6 +1283,7 @@
 - `def import_project_assets(context, registry, component_types)` - *Load every manifest asset into an existing registry.*
 - `def import_project_asset(context, registry, value, component_types)` - *Import one editor-selected file and append it to the project manifest.*
 - `def forget_project_asset(context, registry, value)` - *Remove one project asset path from the manifest and registry.*
+- `def _restore_registry_records(registry, before)` - *Restore every record replaced or added by a failed import.*
 - `def import_project_gltf(context, registry, prefab_library, value, name)` - *Import a project glTF/GLB scene as a prefab and record its source.*
 - `def attach_project_assets(game, context, component_types, prefab_library)` - *Import manifest assets, including glTF scenes as prefab entries.*
 - `def validate_project(context, game)` - *Validate project assets, scenes and prefabs without writing project files.*
@@ -2436,7 +2437,7 @@
 ### [`tests/test_gltf_import.py`](tests/test_gltf_import.py)
 > *Tests for glTF/GLB prefab import and project attachment.*
 
-**Size**: `230` lines (`9553` bytes)
+**Size**: `281` lines (`11640` bytes)
 
 **Classes:**
 - `class GltfPrefabImportTest`
@@ -2446,6 +2447,7 @@
 - `class ProjectGltfEditorImportTest`
   - Method `.test_project_gltf_import_updates_manifest_and_prefab_library()`
   - Method `.test_project_gltf_import_rejects_bad_sources_and_rolls_back()`
+  - Method `.test_project_gltf_reimport_failure_restores_replaced_assets()`
 - `class ProjectGltfAttachmentTest`
   - Method `.test_project_attachment_imports_gltf_prefab_and_assets()`
 

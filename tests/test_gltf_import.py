@@ -6,9 +6,11 @@ import struct
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from keystone.assets import AssetRegistry
 from keystone.gltf_import import import_gltf_prefab, is_gltf_asset
+from keystone.prefab import Prefab
 from keystone.prefab_library import PrefabLibrary
 from keystone.project import (
     ProjectManifest,
@@ -195,6 +197,55 @@ class ProjectGltfEditorImportTest(unittest.TestCase):
             self.assertEqual(named["prefab"], "custom-name")
             self.assertTrue(
                 (root / "prefabs" / "custom-name.kprefab").is_file()
+            )
+
+    def test_project_gltf_reimport_failure_restores_replaced_assets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name="gltf-rollback")
+            assets = root / "assets"
+            assets.mkdir()
+            source = assets / "model.gltf"
+            source.write_text(
+                json.dumps(_triangle_gltf()), encoding="utf-8"
+            )
+            registry = AssetRegistry()
+            library = PrefabLibrary(root / "prefabs", registry=registry)
+            context = load_project(root)
+            import_project_gltf(
+                context, registry, library, "assets/model.gltf"
+            )
+            before = {record.id: record for record in registry}
+            old_prefab = library.load("model")
+
+            changed = _triangle_gltf()
+            changed["materials"][0]["pbrMetallicRoughness"][
+                "baseColorFactor"
+            ] = [0.9, 0.1, 0.1, 1.0]
+            source.write_text(json.dumps(changed), encoding="utf-8")
+            with patch.object(
+                Prefab,
+                "from_scene",
+                side_effect=RuntimeError("prefab build failed"),
+            ), self.assertRaises(RuntimeError):
+                import_project_gltf(
+                    context, registry, library, "assets/model.gltf"
+                )
+
+            self.assertEqual(
+                {record.id for record in registry}, set(before)
+            )
+            for asset_id, record in before.items():
+                restored = registry.require(asset_id)
+                self.assertIs(restored.payload, record.payload)
+                self.assertEqual(restored.sha256, record.sha256)
+            loaded = library.load("model")
+            self.assertIs(
+                loaded.roots[0].mesh,
+                registry.require("gltf.model.mesh.0").payload,
+            )
+            self.assertIs(
+                old_prefab.roots[0].mesh, loaded.roots[0].mesh
             )
 
 

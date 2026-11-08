@@ -411,6 +411,27 @@ def forget_project_asset(
     }
 
 
+def _restore_registry_records(
+    registry: AssetRegistry,
+    before: Mapping[str, AssetRecord],
+) -> None:
+    """Restore every record replaced or added by a failed import."""
+    current = {record.id: record for record in registry}
+    for asset_id in set(current) - set(before):
+        registry.remove(asset_id)
+    for old in sorted(before.values(), key=lambda item: item.kind == "prefab"):
+        if registry.get(old.id) is old:
+            continue
+        registry.register(
+            old.id,
+            old.payload,
+            kind=old.kind,
+            source=old.source,
+            dependencies=old.dependencies,
+            replace=True,
+        )
+
+
 def import_project_gltf(
     context: ProjectContext,
     registry: AssetRegistry,
@@ -446,7 +467,7 @@ def import_project_gltf(
             assets=(*context.manifest.assets, normalized),
         )
         save_project(context.directory, manifest)
-    before = set(registry.ids())
+    before = {record.id: record for record in registry}
     try:
         prefab = import_gltf_prefab(
             target, registry, prefab_library, name=selected
@@ -454,8 +475,7 @@ def import_project_gltf(
     except Exception:
         if not duplicate:
             save_project(context.directory, context.manifest)
-        for asset_id in tuple(set(registry.ids()) - before):
-            registry.remove(asset_id)
+        _restore_registry_records(registry, before)
         raise
     assets = sorted(
         asset_id

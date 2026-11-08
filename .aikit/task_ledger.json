@@ -1,67 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-prefab-edit-baseline-v1",
+    "task_id": "keystone-commit-audit-v3-1to3",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794141078.2761855,
+    "updated_at": 1794141688.6509004,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
     "continuations": [],
-    "completed_at": 1794141079.4157233
+    "completed_at": 1794141689.338996
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-commit-audit-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[run 5/6] Audited commits 1-15: found zero-speed targets could never finish crossfades because blend elapsed was speed-scaled; blend time now uses wall dt, with zero-speed and wall-duration regressions; full AIKit 6/6 passed; commit and publish next",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794133579.6237984,
-      "timestamp_str": "2026-11-08 13:26:19",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-commit-audit-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[run 6/6] Audited commits 1-End: found child nodes of locked parents reported unlocked while edits were rejected; node_document now uses ancestor-aware lock resolution, with a locked-child regression; full AIKit 6/6 passed; commit and publish next",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794133941.4398015,
-      "timestamp_str": "2026-11-08 13:32:21",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-commit-audit-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-commit-audit-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794134170.372805,
-      "timestamp_str": "2026-11-08 13:36:10",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-prefab-propagation-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/5] Plan: merge-preserving prefab instance refresh, regression tests, console control, docs and full gate",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794135820.1386137,
-      "timestamp_str": "2026-11-08 14:03:40",
-      "agent": "opencode:keystone",
-      "impact_assessment": {
-        "why": "Prefab edits currently propagate to existing instances only by discarding every instance edit; keep_overrides skips overridden instances entirely, so authored per-instance values block template updates. Unity/Unreal-style propagation should update template-owned fields while retaining field-level overrides.",
-        "benefits": "Authors can update a prefab once and refresh every instance without losing per-instance names, transforms, assets or components; AI clients get explicit preserved/dropped override counts and one-step undo.",
-        "risks": "contract: refresh_prefab_instances keep_overrides semantics and result keys change; dependency: none beyond the existing registry and prefab mapping; concurrency: editor actions remain under the session lock; state: undo snapshots and prefab library files must stay consistent if merge fails.",
-        "mitigation": "Keep default refresh unchanged, make merge atomic inside the existing history transaction, validate every override before mutation, add failing-first web tests for preserve/drop/undo and refresh the schema/docs/ADR."
-      },
-      "plan_digest": "f5a70a2fb103aff8b49fa792973d52506c5f677da71fdde489d3264df0758a96"
-    },
     {
       "task_id": "keystone-prefab-propagation-v1",
       "phase": "phase 3",
@@ -294,6 +244,64 @@
       "status": "completed",
       "timestamp": 1794141079.4157255,
       "timestamp_str": "2026-11-08 15:31:19",
+      "agent": "opencode:keystone"
+    },
+    {
+      "task_id": "keystone-commit-audit-v3-1to3",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: start the next cumulative cycle at range 1->3 and audit asset import, hot reload and glTF import for a new finding",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794141502.7496889,
+      "timestamp_str": "2026-11-08 15:38:22",
+      "agent": "opencode:keystone",
+      "impact_assessment": {
+        "why": "The cumulative cycle restarted at its beginning. Range 1->3 contains asset hot reload and glTF import, and a failed re-import currently replaces existing derived records without restoring them.",
+        "benefits": "Failed glTF re-imports become registry-atomic, so old prefabs cannot resolve to half-imported payloads.",
+        "risks": "contract: import_gltf failure path only; dependency: existing AssetRegistry records; concurrency: session lock unchanged; state: manifest, prefab file and replaced records.",
+        "mitigation": "Make the rollback failing-first, snapshot records before import, restore old payloads after removing new ids, and run the full 6/6 gate before pushing."
+      },
+      "plan_digest": "5b9d5a74d64014d82da2462bf54d627132b01aa2a76d2c4e8ee0da2c85139074"
+    },
+    {
+      "task_id": "keystone-commit-audit-v3-1to3",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/3] Snapshot and restore replaced glTF-derived records on failed re-import; regression forces prefab build failure after registration",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794141688.001454,
+      "timestamp_str": "2026-11-08 15:41:28",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "state": "implementation and regression green",
+        "next": "record the gate result and push"
+      }
+    },
+    {
+      "task_id": "keystone-commit-audit-v3-1to3",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Range 1->3 gate passes 6/6 after restoring replaced records on failed glTF re-import; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794141688.6509004,
+      "timestamp_str": "2026-11-08 15:41:28",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "next": "commit and push range 1->3, then continue the cycle at 1->6",
+        "evidence": "full 6/6 gate green"
+      }
+    },
+    {
+      "task_id": "keystone-commit-audit-v3-1to3",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-commit-audit-v3-1to3' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794141689.338998,
+      "timestamp_str": "2026-11-08 15:41:29",
       "agent": "opencode:keystone"
     }
   ]
