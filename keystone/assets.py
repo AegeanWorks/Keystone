@@ -181,9 +181,10 @@ class AssetRegistry:
         return record
 
     def _refresh_order(self) -> tuple[str, ...]:
-        """Order sources so current dependencies reload before their dependants."""
+        """Order sources so dependencies and new leaf edges reload first."""
         pending = set(self._sources)
         order: list[str] = []
+        priority = {"mesh": 0, "texture": 0, "material": 1, "prefab": 2}
         while pending:
             ready = sorted(
                 (
@@ -195,7 +196,7 @@ class AssetRegistry:
                     )
                 ),
                 key=lambda item: (
-                    self._records[item].kind == "prefab",
+                    priority.get(self._records[item].kind, 0),
                     item,
                 ),
             )

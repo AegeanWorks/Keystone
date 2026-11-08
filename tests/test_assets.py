@@ -504,6 +504,42 @@ class AssetFileSourceTest(unittest.TestCase):
                 prefab_record.payload.roots[0].mesh, mesh_record.payload
             )
 
+    def test_refresh_orders_new_material_texture_edges_first(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            texture_path = root / "grid.png"
+            material_path = root / "coat.material"
+            write_png(texture_path, 2, 2, FIRST_PIXELS)
+            material_path.write_text("first", encoding="utf-8")
+            registry = AssetRegistry()
+            registry.register_file("zzz.texture", texture_path)
+            changed = {"value": False}
+
+            def load_material(path):
+                if changed["value"]:
+                    return Material(
+                        texture=registry.require("zzz.texture").payload
+                    )
+                return Material()
+
+            registry.register_file(
+                "aaa.material",
+                material_path,
+                kind="material",
+                loader=load_material,
+            )
+            write_png(texture_path, 2, 2, SECOND_PIXELS)
+            material_path.write_text("second", encoding="utf-8")
+            changed["value"] = True
+            _touch(texture_path)
+            _touch(material_path)
+
+            report = registry.refresh()
+            self.assertTrue(report.ok)
+            texture = registry.require("zzz.texture")
+            material = registry.require("aaa.material")
+            self.assertIs(material.payload.texture, texture.payload)
+
     def test_register_prefab_file_with_component_types(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "hero.kprefab"

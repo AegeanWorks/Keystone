@@ -1584,3 +1584,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->30 audit found that `apply_prefab_override` rebased instance baselines before the prefab library write. If the write failed, the template stayed old but the override diff disappeared, so clients could no longer see or revert it.
 - **Decision**: Snapshot every node baseline before applying an override, and restore all baselines if template construction or the library write raises. Add a regression that patches `PrefabLibrary.save` to fail and asserts the old template and override report remain.
 - **Consequences**: Failed override applies are metadata-atomic. Successful applies still rebase all affected instances and assign the updated prefab cache only after persistence.
+
+### ADR-195: Commit audit orders new material-texture edges first
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->33 audit found that the prefab-last ordering fix still left new material-to-texture edges unresolved: both kinds are non-prefab, so a changed material that newly references a changed texture could load first by id.
+- **Decision**: Order ready sources by kind priority: mesh/texture first, materials next, prefabs last, then id. Existing dependency edges still win. Add a loader-based regression where a material starts with no texture, then starts referencing a changed texture file.
+- **Consequences**: New material-texture edges now resolve against fresh texture payloads. Prefab and material new-edge cases are covered; a prefab that newly depends on another prefab remains bounded by the old graph.

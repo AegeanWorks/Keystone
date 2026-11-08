@@ -9,8 +9,8 @@
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
 - **Total Top-Level Functions**: `420`
-- **Total Class Methods**: `1476`
-- **Total Source Lines**: `40143`
+- **Total Class Methods**: `1477`
+- **Total Source Lines**: `40180`
 
 ---
 
@@ -225,7 +225,7 @@
 ### [`keystone/assets.py`](keystone/assets.py)
 > *Game-agnostic asset registry with stable ids, content hashes and dependencies.*
 
-**Size**: `435` lines (`16776` bytes)
+**Size**: `436` lines (`16847` bytes)
 
 **Classes:**
 - `class AssetRecord` - *One registered asset: a stable id, kind, immutable payload and content digest.*
@@ -238,7 +238,7 @@
   - Method `.__iter__()`
   - Method `.register(asset_id, payload, *, kind, source, dependencies, replace)` - *Register one asset, inferring its kind from the payload when omitted.*
   - Method `.register_file(asset_id, path, *, kind, loader, dependencies, component_types, replace)` - *Load a .obj, .png or .kprefab file and bind it for hot reload.*
-  - Method `._refresh_order()` - *Order sources so current dependencies reload before their dependants.*
+  - Method `._refresh_order()` - *Order sources so dependencies and new leaf edges reload first.*
   - Method `.refresh()` - *Re-read every changed source and report reloaded, unchanged, failed and missing ids.*
   - Method `.get(asset_id)` - *Return one record, or None when the id is not registered.*
   - Method `.require(asset_id)` - *Return one record or raise a KeyError naming the missing asset.*
@@ -2124,7 +2124,7 @@
 ### [`tests/test_assets.py`](tests/test_assets.py)
 > *Unit tests for the asset registry: identity, digests and dependencies.*
 
-**Size**: `576` lines (`25811` bytes)
+**Size**: `612` lines (`27239` bytes)
 
 **Classes:**
 - `class PrefabHealth`
@@ -2156,6 +2156,7 @@
   - Method `.test_register_prefab_file_and_refresh()`
   - Method `.test_refresh_reloads_dependencies_before_dependants()`
   - Method `.test_refresh_orders_new_prefab_dependencies_first()`
+  - Method `.test_refresh_orders_new_material_texture_edges_first()`
   - Method `.test_register_prefab_file_with_component_types()`
   - Method `.test_prefab_file_requires_registered_assets()`
   - Method `.test_clear_and_remove_drop_sources()`
