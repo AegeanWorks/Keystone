@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
-- **Total Top-Level Functions**: `402`
+- **Total Top-Level Functions**: `403`
 - **Total Class Methods**: `1451`
-- **Total Source Lines**: `38342`
+- **Total Source Lines**: `38378`
 
 ---
 
@@ -1663,7 +1663,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `2684` lines (`95410` bytes)
+**Size**: `2694` lines (`95736` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1719,6 +1719,7 @@
 - `def _history_label(label)`
 - `def _history_steps(steps)`
 - `def _component_documents(node)`
+- `def _node_locked(node, locked_ids)` - *Whether a node or one of its ancestors is currently locked.*
 - `def node_document(node, selected_id, registry, selected_ids, locked_ids)`
 - `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, component_schema_documents, play_state, diff, trash, selected_ids, prefab_edit, locked_ids)`
 - `def find_node(scene, node_id)`
@@ -3376,7 +3377,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `4875` lines (`201895` bytes)
+**Size**: `4901` lines (`202702` bytes)
 
 **Classes:**
 - `class Health`

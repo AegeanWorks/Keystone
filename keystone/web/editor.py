@@ -1061,6 +1061,16 @@ def _component_documents(node: Node) -> list[dict[str, object]]:
     return documents
 
 
+def _node_locked(node: Node, locked_ids: set[str] | None) -> bool:
+    """Whether a node or one of its ancestors is currently locked."""
+    current: Node | None = node
+    while current is not None:
+        if locked_ids and current.id in locked_ids:
+            return True
+        current = current.parent
+    return False
+
+
 def node_document(
     node: Node,
     selected_id: str | None,
@@ -1081,7 +1091,7 @@ def node_document(
         "parent_id": node.parent.id if node.parent is not None and node.parent.id else None,
         "children": [child.id for child in node.children],
         "visible": node.visible,
-        "locked": node.id in (locked_ids or set()),
+        "locked": _node_locked(node, locked_ids),
         "selected": node.id in selected,
         "tags": sorted(node.tags),
         "layer": node.layer,

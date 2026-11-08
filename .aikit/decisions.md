@@ -1448,3 +1448,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1→15 audit found that crossfade progress advanced by `dt * playback speed`. A state with speed 0 could therefore start a crossfade that never completed, leaving the controller permanently blending.
 - **Decision**: Advance `_blend_elapsed` by wall `dt` while playback speed continues to scale clip time. Add a zero-speed target transition test and adjust the existing non-unit-speed crossfade test to wall-clock duration.
 - **Consequences**: Crossfades now always take their declared wall-clock duration regardless of clip speed; non-unit-speed playback still changes sampled pose time. No schema or API change.
+
+### ADR-178: Commit audit reports inherited node locks
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1→End audit found that `node_document` marked only directly locked ids, while edit checks walked ancestors. A child of a locked parent appeared unlocked but could not be edited.
+- **Decision**: Add an ancestor-aware `_node_locked` helper and use it for every node document's `locked` flag. Add a regression that creates a child under a locked parent, asserts the child reports locked, and confirms its transform is rejected.
+- **Consequences**: Lock indicators now match enforcement for descendants. Locks remain session-only and `refresh_prefab_instances` remains outside lock enforcement.

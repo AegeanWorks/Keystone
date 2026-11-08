@@ -5,23 +5,12 @@
     "last_phase": "in_progress",
     "active_phase": 4,
     "status": "in_progress",
-    "updated_at": 1794133579.6237984,
+    "updated_at": 1794133941.4398015,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-copy-paste-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Multi-selection copy/paste implemented: copy_selection captures top-level selected nodes as a detached clipboard prefab with folding/shared-parent validation; paste_nodes instantiates fresh IDs under the selected node or explicit parent in one undo entry and selects the roots; clipboard report and console Copy/Paste controls; schema 54; 810 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, describe schema 54, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794125229.132179,
-      "timestamp_str": "2026-11-08 11:07:09",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-copy-paste-v1",
       "phase": "completed",
@@ -259,6 +248,17 @@
       "status": "in_progress",
       "timestamp": 1794133579.6237984,
       "timestamp_str": "2026-11-08 13:26:19",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-commit-audit-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[run 6/6] Audited commits 1-End: found child nodes of locked parents reported unlocked while edits were rejected; node_document now uses ancestor-aware lock resolution, with a locked-child regression; full AIKit 6/6 passed; commit and publish next",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794133941.4398015,
+      "timestamp_str": "2026-11-08 13:32:21",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

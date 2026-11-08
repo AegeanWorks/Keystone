@@ -706,6 +706,32 @@ class WebServerTest(unittest.TestCase):
         ]
         self.assertTrue(all(node["locked"] for node in locked_nodes))
 
+        created = session.editor_action(
+            {
+                "action": "create_node",
+                "name": "locked-child",
+                "parent": ids[0],
+            }
+        )
+        child_id = next(
+            node["id"]
+            for node in created["nodes"]
+            if node["name"] == "locked-child"
+        )
+        child = next(
+            node for node in created["nodes"] if node["id"] == child_id
+        )
+        self.assertTrue(child["locked"])
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action(
+                {
+                    "action": "transform",
+                    "id": child_id,
+                    "position": [2.0, 0.0, 0.0],
+                }
+            )
+        self.assertEqual(caught.exception.status, 400)
+
         for payload in (
             {
                 "action": "transform_selection",
