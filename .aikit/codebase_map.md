@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `135`
 - **Total Classes**: `216`
-- **Total Top-Level Functions**: `362`
-- **Total Class Methods**: `1332`
-- **Total Source Lines**: `31333`
+- **Total Top-Level Functions**: `363`
+- **Total Class Methods**: `1337`
+- **Total Source Lines**: `31619`
 
 ---
 
@@ -1356,7 +1356,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `55` lines (`1149` bytes)
+**Size**: `58` lines (`1217` bytes)
 
 ---
 
@@ -1535,7 +1535,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `2227` lines (`79410` bytes)
+**Size**: `2229` lines (`79496` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1579,7 +1579,7 @@
 - `def _history_steps(steps)`
 - `def _component_documents(node)`
 - `def node_document(node, selected_id, registry, selected_ids)`
-- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, component_schema_documents, play_state, diff, trash, selected_ids)`
+- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, component_schema_documents, play_state, diff, trash, selected_ids, prefab_edit)`
 - `def find_node(scene, node_id)`
 - `def create_node(scene, payload, parent, registry)` - *Create, validate and attach one node from an editor payload.*
 - `def delete_node(scene, node)` - *Detach one node subtree or its whole prefab instance and return the parent.*
@@ -1650,14 +1650,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `254` lines (`12411` bytes)
+**Size**: `260` lines (`12839` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1298` lines (`56942` bytes)
+**Size**: `1458` lines (`63422` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1680,6 +1680,10 @@
   - Method `._history_label_for(action, payload)`
   - Method `._apply_history(scene, operation)`
   - Method `._batch_locked(scene, payload)`
+  - Method `._prefab_edit_document()`
+  - Method `._edit_prefab_locked(name)`
+  - Method `._save_prefab_edit_locked(scene)`
+  - Method `._close_prefab_edit_locked(scene, save)`
   - Method `._ensure_prefab_locked(name)`
   - Method `._lifecycle_state()`
   - Method `._editor_locked(scene)`
@@ -1709,6 +1713,7 @@
   - Method `._send(status, body, content_type, extra_headers)`
 
 **Functions:**
+- `def _copy_scene_settings(source, target)` - *Copy camera and environment settings without copying scene nodes.*
 - `def _enabled(value)`
 - `def create_server(game, host, port, prefab_dir, scene_dir, initial_scene)` - *Create a bound server; port 0 asks the OS for a free port.*
 - `def serve(game, host, port, prefab_dir, scene_dir, initial_scene)` - *Run the local console until interrupted.*
@@ -3131,7 +3136,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `2548` lines (`107207` bytes)
+**Size**: `2663` lines (`112243` bytes)
 
 **Classes:**
 - `class Health`
@@ -3177,6 +3182,7 @@
   - Method `.test_editor_apply_prefab_override_persists_library()`
   - Method `.test_editor_batch_can_revert_prefab_instance()`
   - Method `.test_editor_prefab_library_persists_and_reloads()`
+  - Method `.test_editor_prefab_edit_mode_round_trip()`
   - Method `.test_editor_library_rename_and_delete()`
   - Method `.test_editor_library_trash_and_restore()`
   - Method `.test_editor_library_duplicate()`

@@ -864,6 +864,7 @@ def editor_document(
     diff: dict[str, object] | None = None,
     trash: dict[str, list[dict[str, str]]] | None = None,
     selected_ids: list[str] | None = None,
+    prefab_edit: dict[str, object] | None = None,
 ) -> dict:
     ordered_ids = list(
         dict.fromkeys(
@@ -935,6 +936,7 @@ def editor_document(
         ),
         "diff": diff,
         "trash": trash if trash is not None else {"prefabs": [], "scenes": []},
+        "prefab_edit": prefab_edit,
         "actions": list(EDITOR_ACTIONS),
         "history": (
             history.describe()

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import math
 import sys
@@ -64,6 +65,49 @@ from keystone.web.schema import EDITOR_SCHEMA, SCENE_SCHEMA, WEB_API_VERSION
 MAX_BODY = 1_000_000
 MAX_FRAMES = 1_000_000
 MAX_BATCH_ACTIONS = 100
+PREFAB_EDIT_BLOCKED = frozenset(
+    {
+        "play_start",
+        "play_step",
+        "play_pause",
+        "play_resume",
+        "play_stop",
+        "save_prefab",
+        "apply_prefab",
+        "revert_prefab",
+        "rename_prefab",
+        "duplicate_prefab",
+        "delete_prefab",
+        "restore_prefab",
+        "save_scene",
+        "load_scene",
+        "add_scene",
+        "unload_scene",
+        "save_scene_group",
+        "diff_scene",
+        "rename_scene",
+        "duplicate_scene",
+        "delete_scene",
+        "restore_scene",
+    }
+)
+
+
+def _copy_scene_settings(source: Scene, target: Scene) -> None:
+    """Copy camera and environment settings without copying scene nodes."""
+    target.camera = copy.deepcopy(source.camera)
+    target.light = copy.deepcopy(source.light)
+    target.point_light = copy.deepcopy(source.point_light)
+    target.shadow = copy.deepcopy(source.shadow)
+    target.color = copy.deepcopy(source.color)
+    target.post = copy.deepcopy(source.post)
+    target.bloom = copy.deepcopy(source.bloom)
+    target.sprite = copy.deepcopy(source.sprite)
+    target.culling = copy.deepcopy(source.culling)
+    target.ambient = copy.deepcopy(source.ambient)
+    target.background = copy.deepcopy(source.background)
+    target.sky = copy.deepcopy(source.sky)
+    target.fog_density = source.fog_density
 BATCH_ACTIONS = frozenset(
     {
         "transform",
@@ -129,6 +173,12 @@ class GameSession:
         self.playing = False
         self.play_frames = 0
         self.play_paused = False
+        self.prefab_edit: dict[str, object] | None = None
+        self._prefab_edit_dirty = False
+        self._prefab_edit_original_history: EditorHistory | None = None
+        self._prefab_edit_original_selection: list[str] = []
+        self._scene_override: Scene | None = None
+        self._scene_before_prefab: Scene | None = None
         self.lifecycle: ComponentRuntime | None = None
         self._play_snapshot: dict | None = None
         self.last_diff: dict[str, object] | None = None
@@ -217,7 +267,11 @@ class GameSession:
             return result
 
     def _scene_locked(self) -> Scene:
-        scene = getattr(self.game, "scene", None)
+        scene = self._scene_override
+        if scene is None:
+            scene = self._scene_before_prefab
+        if scene is None:
+            scene = getattr(self.game, "scene", None)
         if not isinstance(scene, Scene) or (not self._built and not scene.root.children):
             scene = self.game.build_scene()
             self._built = True
@@ -276,6 +330,8 @@ class GameSession:
             result = self.history.apply(
                 scene, operation, label=self._history_label
             )
+        if self.prefab_edit is not None:
+            self._prefab_edit_dirty = True
         self.last_diff = None
         return result
 
@@ -307,6 +363,95 @@ class GameSession:
             raise
         finally:
             self._batch_depth -= 1
+        if self.prefab_edit is not None:
+            self._prefab_edit_dirty = True
+
+    def _prefab_edit_document(self) -> dict[str, object] | None:
+        if self.prefab_edit is None:
+            return None
+        roots = self.prefab_edit.get("roots")
+        root_ids = list(roots) if isinstance(roots, list) else []
+        return {
+            "name": str(self.prefab_edit.get("name", "")),
+            "roots": root_ids,
+            "root_count": len(root_ids),
+            "dirty": self._prefab_edit_dirty,
+        }
+
+    def _edit_prefab_locked(self, name: object) -> Scene:
+        if self.prefab_edit is not None:
+            raise ValueError("prefab edit mode is already active")
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("prefab name must be a non-blank string")
+        self._ensure_prefab_locked(name)
+        original_scene = self._scene_locked()
+        isolated = Scene()
+        _copy_scene_settings(original_scene, isolated)
+        roots = insert_prefab(isolated, self.prefabs, name, None, "edit")
+        if not roots:
+            raise ValueError("prefab has no roots")
+        self._scene_before_prefab = original_scene
+        self._scene_override = isolated
+        self.prefab_edit = {
+            "name": name,
+            "roots": [root.id for root in roots],
+        }
+        self._prefab_edit_original_history = self.history
+        self._prefab_edit_original_selection = self.selected_ids
+        self._prefab_edit_dirty = False
+        self.history = EditorHistory()
+        self._set_selected_ids([roots[0].id])
+        self.last_diff = None
+        return isolated
+
+    def _save_prefab_edit_locked(self, scene: Scene) -> Prefab:
+        if self.prefab_edit is None:
+            raise ValueError("prefab edit mode is not active")
+        roots = self.prefab_edit.get("roots")
+        if not isinstance(roots, list) or not roots:
+            raise ValueError("prefab edit scene has no roots")
+        node = scene.find_by_id(roots[0])
+        if node is None:
+            raise KeyError("prefab edit root is missing")
+        name = str(self.prefab_edit.get("name", ""))
+        link = node.prefab_link
+        if link is None or link.name != name:
+            raise ValueError(
+                "prefab edit root is no longer linked to the edited prefab"
+            )
+        previous = self.prefabs.get(name)
+        prefab = apply_prefab_instance(scene, node, self.prefabs)
+        try:
+            if self.prefab_library is not None:
+                self.prefab_library.save(prefab.name, prefab)
+        except Exception:
+            if previous is None:
+                self.prefabs.pop(name, None)
+            else:
+                self.prefabs[name] = previous
+            raise
+        self.prefabs[prefab.name] = prefab
+        self._prefab_edit_dirty = False
+        return prefab
+
+    def _close_prefab_edit_locked(self, scene: Scene, save: bool) -> Scene:
+        if self.prefab_edit is None:
+            raise ValueError("prefab edit mode is not active")
+        if save:
+            self._save_prefab_edit_locked(scene)
+        original_history = self._prefab_edit_original_history
+        original_selection = list(self._prefab_edit_original_selection)
+        self._scene_override = None
+        self.prefab_edit = None
+        self._prefab_edit_original_history = None
+        self._prefab_edit_original_selection = []
+        self._prefab_edit_dirty = False
+        self.history = (
+            original_history if original_history is not None else EditorHistory()
+        )
+        self._set_selected_ids(original_selection)
+        self.last_diff = None
+        return self._scene_locked()
 
     def _ensure_prefab_locked(self, name: object) -> None:
         if not isinstance(name, str) or not name.strip():
@@ -378,6 +523,7 @@ class GameSession:
                 ),
             },
             selected_ids=self.selected_ids,
+            prefab_edit=self._prefab_edit_document(),
         )
         document["game"] = self.name
         document["workspace"] = {
@@ -421,6 +567,11 @@ class GameSession:
                     "play_stop",
                 ):
                     raise ValueError("play mode is active; stop it before editing")
+                if self.prefab_edit is not None and action in PREFAB_EDIT_BLOCKED:
+                    raise ValueError(
+                        f"{action} is not available while editing a prefab; "
+                        "close prefab edit first"
+                    )
                 if action == "batch":
                     self._batch_locked(scene, payload)
                 elif action == "select":
@@ -729,6 +880,15 @@ class GameSession:
                     if self.scene_library is None:
                         raise ValueError("no scene library is configured")
                     self.scene_library.restore(payload.get("trash"))
+                elif action == "edit_prefab":
+                    scene = self._edit_prefab_locked(payload.get("name"))
+                elif action == "save_prefab_edit":
+                    self._save_prefab_edit_locked(scene)
+                elif action == "close_prefab_edit":
+                    save = payload.get("save", False)
+                    if not isinstance(save, bool):
+                        raise TypeError("close_prefab_edit save must be a boolean")
+                    scene = self._close_prefab_edit_locked(scene, save)
                 elif action == "save_prefab":
                     node_id = payload.get("id") or self.selected_id
                     if node_id is None:

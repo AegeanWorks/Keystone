@@ -94,6 +94,9 @@ EDITOR_EXAMPLES = {
     "duplicate_node": {"action": "duplicate_node", "id": "cube-0", "name": "cube-copy"},
     "reparent_node": {"action": "reparent_node", "id": "prop", "parent": "cube-0"},
     "save_prefab": {"action": "save_prefab", "id": "cube-0", "name": "cube"},
+    "edit_prefab": {"action": "edit_prefab", "name": "cube"},
+    "save_prefab_edit": {"action": "save_prefab_edit"},
+    "close_prefab_edit": {"action": "close_prefab_edit", "save": False},
     "insert_prefab": {
         "action": "insert_prefab",
         "name": "cube",
@@ -155,6 +158,8 @@ EDITOR_SCHEMA = {
         "set_selection_transform": ["position", "rotation", "scale"],
         "selection_summary": ["count", "mixed", "name", "visible", "tags", "layer", "transform"],
         "prefab_instance": ["id", "name", "instance"],
+        "prefab_edit": ["name", "roots", "root_count", "dirty"],
+        "close_prefab_edit": ["save"],
         "scene_group": ["id", "name", "parent_id", "node_count", "roots"],
         "transform": ["position", "rotation", "scale"],
         "set_node": ["id", "name", "visible", "tags", "layer"],
@@ -228,6 +233,7 @@ EDITOR_SCHEMA = {
         "schema 30 adds source camera/environment and container-transform scene group metadata plus save_scene_group save-as",
         "schema 31 adds named undo/redo history entries, newest-first undo_stack/redo_stack labels and multi-step undo/redo",
         "schema 32 adds play_pause/play_resume and a paused flag for real-time play mode",
+        "schema 33 adds isolated prefab edit mode: edit_prefab, save_prefab_edit and close_prefab_edit with a prefab_edit document",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

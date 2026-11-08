@@ -61,6 +61,11 @@ const elements = {
   prefabDuplicate: document.getElementById("prefab-duplicate"),
   prefabDelete: document.getElementById("prefab-delete"),
   prefabRestore: document.getElementById("prefab-restore"),
+  prefabEditState: document.getElementById("prefab-edit-state"),
+  prefabEdit: document.getElementById("prefab-edit"),
+  prefabEditSave: document.getElementById("prefab-edit-save"),
+  prefabEditClose: document.getElementById("prefab-edit-close"),
+  prefabEditDiscard: document.getElementById("prefab-edit-discard"),
   position: document.getElementById("position"),
   rotation: document.getElementById("rotation"),
   scale: document.getElementById("scale"),
@@ -151,6 +156,8 @@ function setBusy(value) {
     elements.prefabSave, elements.prefabInsert, elements.prefabRename,
     elements.prefabRevert, elements.prefabApply,
     elements.prefabDuplicate, elements.prefabDelete, elements.prefabRestore,
+    elements.prefabEdit, elements.prefabEditSave, elements.prefabEditClose,
+    elements.prefabEditDiscard,
     elements.transformApply, elements.editorRefresh,
   ]) {
     button.disabled = value;
@@ -163,6 +170,7 @@ function setBusy(value) {
     elements.editorUndo.disabled = history.undo === 0;
     elements.editorRedo.disabled = history.redo === 0;
     updatePlayButtons(editorState && editorState.play);
+    updatePrefabEditButtons(editorState && editorState.prefab_edit);
   }
 }
 
@@ -171,6 +179,14 @@ function updatePlayButtons(play) {
   const paused = Boolean(play && play.paused);
   elements.playPause.disabled = !active || paused;
   elements.playResume.disabled = !active || !paused;
+}
+
+function updatePrefabEditButtons(prefabEdit) {
+  const active = Boolean(prefabEdit);
+  elements.prefabEdit.disabled = active;
+  elements.prefabEditSave.disabled = !active;
+  elements.prefabEditClose.disabled = !active;
+  elements.prefabEditDiscard.disabled = !active;
 }
 
 async function api(path, options = {}) {
@@ -632,6 +648,14 @@ function showEditor(editor) {
   if (!busy) {
     updatePlayButtons(play);
   }
+  const prefabEdit = editor.prefab_edit;
+  elements.prefabEditState.textContent = prefabEdit
+    ? `Editing prefab ${prefabEdit.name} · ${prefabEdit.root_count} roots` +
+      `${prefabEdit.dirty ? " · unsaved" : ""}`
+    : "Scene editing";
+  if (!busy) {
+    updatePrefabEditButtons(prefabEdit);
+  }
   const selectionSummary = editor.selection_summary || {
     count: 0,
     mixed: [],
@@ -1010,6 +1034,34 @@ async function applyPrefabInstance() {
     { action: "apply_prefab", id: editorState.selection.id },
     "applying prefab instance",
   );
+}
+
+async function editPrefab() {
+  const link =
+    editorState && editorState.selection
+      ? editorState.selection.prefab_link
+      : null;
+  const name = (link && link.name) || elements.prefabName.value.trim();
+  if (!name) {
+    throw new Error("Select a prefab instance or enter a prefab name.");
+  }
+  await editorAction(
+    { action: "edit_prefab", name },
+    `editing prefab ${name}`,
+  );
+  await refreshScene(false);
+}
+
+async function savePrefabEdit() {
+  await editorAction({ action: "save_prefab_edit" }, "saving prefab edit");
+}
+
+async function closePrefabEdit(save) {
+  await editorAction(
+    { action: "close_prefab_edit", save },
+    save ? "saving and closing prefab edit" : "discarding prefab edit",
+  );
+  await refreshScene(false);
 }
 
 function readPlayActions() {
@@ -1619,6 +1671,10 @@ elements.prefabRestore.addEventListener("click", () => run(restorePrefab));
 elements.prefabInsert.addEventListener("click", () => run(insertPrefab));
 elements.prefabRevert.addEventListener("click", () => run(revertPrefabInstance));
 elements.prefabApply.addEventListener("click", () => run(applyPrefabInstance));
+elements.prefabEdit.addEventListener("click", () => run(editPrefab));
+elements.prefabEditSave.addEventListener("click", () => run(savePrefabEdit));
+elements.prefabEditClose.addEventListener("click", () => run(() => closePrefabEdit(true)));
+elements.prefabEditDiscard.addEventListener("click", () => run(() => closePrefabEdit(false)));
 elements.gizmoMove.addEventListener("click", () => setGizmoMode("translate"));
 elements.gizmoRotate.addEventListener("click", () => setGizmoMode("rotate"));
 elements.gizmoScale.addEventListener("click", () => setGizmoMode("scale"));

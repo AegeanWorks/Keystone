@@ -1128,6 +1128,112 @@ class WebServerTest(unittest.TestCase):
             entries = {entry["name"]: entry for entry in third.editor()["prefabs"]}
             self.assertIsNotNone(entries["broken"]["error"])
 
+    def test_editor_prefab_edit_mode_round_trip(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefab_dir = Path(directory) / "prefabs"
+            session = GameSession(CubeDemo(), prefab_dir=prefab_dir)
+            editor = session.editor()
+            cube = next(node for node in editor["nodes"] if node["name"] == "cube-0")
+            session.editor_action({"action": "select", "id": cube["id"]})
+            session.editor_action({"action": "save_prefab", "name": "hero"})
+            session.editor_action({"action": "create_node", "name": "before-enter"})
+            before = session.editor()
+            before_undo = before["history"]["undo"]
+
+            opened = session.editor_action({"action": "edit_prefab", "name": "hero"})
+            self.assertEqual(opened["prefab_edit"]["name"], "hero")
+            self.assertEqual(opened["prefab_edit"]["root_count"], 1)
+            self.assertFalse(opened["prefab_edit"]["dirty"])
+            self.assertEqual(opened["history"]["undo"], 0)
+            self.assertEqual(
+                opened["scene_settings"]["camera"],
+                before["scene_settings"]["camera"],
+            )
+            root = opened["selection"]
+            self.assertEqual(root["prefab_link"]["name"], "hero")
+            self.assertNotIn(
+                "before-enter", {node["name"] for node in opened["nodes"]}
+            )
+
+            edited = session.editor_action(
+                {
+                    "action": "set_node",
+                    "id": root["id"],
+                    "name": "hero-edited",
+                }
+            )
+            self.assertTrue(edited["prefab_edit"]["dirty"])
+            self.assertEqual(edited["selection"]["name"], "hero-edited")
+            session.editor_action(
+                {
+                    "action": "transform",
+                    "id": root["id"],
+                    "position": [4.0, 5.0, 6.0],
+                }
+            )
+
+            for payload in (
+                {"action": "save_scene", "name": "blocked"},
+                {"action": "play_start"},
+                {
+                    "action": "rename_prefab",
+                    "name": "hero",
+                    "new_name": "blocked",
+                },
+            ):
+                with self.assertRaises(WebProblem) as caught:
+                    session.editor_action(payload)
+                self.assertEqual(caught.exception.status, 400)
+
+            saved = session.editor_action({"action": "save_prefab_edit"})
+            self.assertFalse(saved["prefab_edit"]["dirty"])
+            self.assertTrue((prefab_dir / "hero.kprefab").is_file())
+            self.assertEqual(session.prefabs["hero"].roots[0].name, "hero-edited")
+
+            session.editor_action(
+                {
+                    "action": "transform",
+                    "id": root["id"],
+                    "position": [9.0, 9.0, 9.0],
+                }
+            )
+            discarded = session.editor_action(
+                {"action": "close_prefab_edit", "save": False}
+            )
+            self.assertIsNone(discarded["prefab_edit"])
+            self.assertEqual(discarded["history"]["undo"], before_undo)
+            self.assertIn(
+                "before-enter", {node["name"] for node in discarded["nodes"]}
+            )
+            self.assertEqual(discarded["selection"]["name"], "before-enter")
+
+            reopened = session.editor_action({"action": "edit_prefab", "name": "hero"})
+            root = reopened["selection"]
+            self.assertEqual(root["name"], "hero-edited")
+            self.assertEqual(root["transform"]["position"], [4.0, 5.0, 6.0])
+            session.editor_action(
+                {"action": "set_node", "id": root["id"], "name": "hero-final"}
+            )
+            closed = session.editor_action(
+                {"action": "close_prefab_edit", "save": True}
+            )
+            self.assertIsNone(closed["prefab_edit"])
+            self.assertEqual(session.prefabs["hero"].roots[0].name, "hero-final")
+
+            reloaded = GameSession(CubeDemo(), prefab_dir=prefab_dir)
+            inserted = reloaded.editor_action(
+                {"action": "insert_prefab", "name": "hero", "instance": "fresh"}
+            )
+            self.assertEqual(inserted["selection"]["name"], "hero-final")
+
+            for payload in (
+                {"action": "save_prefab_edit"},
+                {"action": "close_prefab_edit", "save": False},
+            ):
+                with self.assertRaises(WebProblem) as caught:
+                    session.editor_action(payload)
+                self.assertEqual(caught.exception.status, 400)
+
     def test_editor_library_rename_and_delete(self):
         with tempfile.TemporaryDirectory() as directory:
             prefab_dir = Path(directory) / "prefabs"
@@ -2286,6 +2392,11 @@ class WebServerTest(unittest.TestCase):
             "prefab-restore",
             "prefab-revert",
             "prefab-apply",
+            "prefab-edit",
+            "prefab-edit-save",
+            "prefab-edit-close",
+            "prefab-edit-discard",
+            "prefab-edit-state",
             "prefab-link",
             "mesh-asset",
             "material-asset",
@@ -2337,6 +2448,10 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("historyStepCount", script)
         self.assertIn("undo_stack", script)
         self.assertIn("redo_stack", script)
+        self.assertIn("edit_prefab", script)
+        self.assertIn("save_prefab_edit", script)
+        self.assertIn("close_prefab_edit", script)
+        self.assertIn("updatePrefabEditButtons", script)
         self.assertIn("applyGizmoSelectionTransform", script)
         self.assertIn("applyGizmoSelectionRotation", script)
         self.assertIn("applyGizmoSelectionScale", script)
