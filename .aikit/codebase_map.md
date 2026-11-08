@@ -9,8 +9,8 @@
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
 - **Total Top-Level Functions**: `411`
-- **Total Class Methods**: `1457`
-- **Total Source Lines**: `39117`
+- **Total Class Methods**: `1458`
+- **Total Source Lines**: `39153`
 
 ---
 
@@ -1810,7 +1810,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2788` lines (`124807` bytes)
+**Size**: `2790` lines (`124913` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3386,7 +3386,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `5247` lines (`216821` bytes)
+**Size**: `5281` lines (`218325` bytes)
 
 **Classes:**
 - `class Health`
@@ -3470,6 +3470,7 @@
   - Method `.test_editor_scene_dirty_and_revert()`
   - Method `.test_editor_startup_scene_persists_and_clears()`
   - Method `.test_editor_startup_scene_follows_rename_and_delete()`
+  - Method `.test_editor_startup_rename_failure_restores_saved_scene()`
   - Method `.test_editor_forget_asset_and_project_inventory()`
   - Method `.test_editor_asset_usages_and_saved_references()`
   - Method `.test_editor_build_project()`

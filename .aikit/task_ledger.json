@@ -5,30 +5,12 @@
     "last_phase": "phase 4",
     "active_phase": 4,
     "status": "in_progress",
-    "updated_at": 1794138616.6861756,
+    "updated_at": 1794139274.2690852,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
     "continuations": []
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-camera-bookmarks-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan named scene-view camera bookmarks persisted per game in localStorage",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794127523.9988782,
-      "timestamp_str": "2026-11-08 11:45:23",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "The editor camera can be reset or focused, but recurring inspection views must be recreated manually every session.",
-        "benefits": "Save/apply/delete named camera snapshots with console controls and per-game storage; bookmarks restore target, distance, yaw and pitch.",
-        "risks": "contract: UI-only, no API/schema change; dependency: viewer camera state and localStorage; concurrency: none; state: malformed storage, missing camera, option preservation, game key changes.",
-        "mitigation": "Validate snapshots in the viewer, guard localStorage parsing, key bookmarks by game, preserve selection, and add static regressions."
-      },
-      "plan_digest": "e90f57f68d701b68bcd95d455b3867cdb3789d450751d8b321faba71c1138608"
-    },
     {
       "task_id": "keystone-camera-bookmarks-v1",
       "phase": "in_progress",
@@ -280,6 +262,21 @@
       "handoff": {
         "next": "commit and push range 1->21, then start range 1->24",
         "evidence": "reload test green, full 6/6 gate green"
+      }
+    },
+    {
+      "task_id": "keystone-commit-audit-v2",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/4] Range 1->24: restore saved_scene when startup-scene rename rollback fires; regression forces manifest failure; 6/6 gate passed; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794139274.2690852,
+      "timestamp_str": "2026-11-08 15:01:14",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "next": "commit and push range 1->24, then start range 1->27",
+        "evidence": "startup tests green, full 6/6 gate green"
       }
     }
   ]

@@ -12,6 +12,7 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import ClassVar
+from unittest.mock import patch
 
 from keystone import web
 from keystone.animation import AnimationClip, Track
@@ -3509,6 +3510,39 @@ class WebServerTest(unittest.TestCase):
             )
             self.assertIsNone(deleted["startup_scene"])
             self.assertIsNone(load_project(root).manifest.startup_scene)
+
+    def test_editor_startup_rename_failure_restores_saved_scene(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name="startup-rollback")
+            session = GameSession(
+                CubeDemo(),
+                project_dir=root,
+                scene_dir=root / "scenes",
+            )
+            session.editor_action({"action": "save_scene", "name": "level"})
+            session.editor_action(
+                {"action": "set_startup_scene", "name": "level"}
+            )
+            with patch(
+                "keystone.web.server.set_project_startup_scene",
+                side_effect=ValueError("manifest write failed"),
+            ), self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "rename_scene",
+                        "name": "level",
+                        "new_name": "level-alt",
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertEqual(session.saved_scene, "level")
+            self.assertEqual(session.startup_scene, "level")
+            self.assertTrue((root / "scenes" / "level.kscene").is_file())
+            self.assertFalse((root / "scenes" / "level-alt.kscene").exists())
+            self.assertEqual(
+                load_project(root).manifest.startup_scene, "level"
+            )
 
     def test_editor_forget_asset_and_project_inventory(self):
         with tempfile.TemporaryDirectory() as directory:

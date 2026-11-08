@@ -1472,3 +1472,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->21 audit found that `reload_scene_assets` rebound scene nodes and undo/redo snapshots after a same-content asset reload, but not the session's cached `Prefab` templates or clipboard. Inserting or refreshing a prefab could therefore reintroduce the stale mesh/material object that the reload had just replaced.
 - **Decision**: Extend `reload_scene_assets` with optional `prefabs` and `clipboard` inputs, rebind node payloads inside every cached template and the clipboard through `_rebind_prefab_assets`, and report `prefab_rebound` and `clipboard_rebound`. Keep the existing `rebound` and `history_rebound` keys. Add a regression that saves a prefab and copies the selection before an unchanged reload, then asserts both caches and a newly inserted instance use the reloaded payload.
 - **Consequences**: Same-content reloads now keep every editor-owned payload reference consistent. The report grows by two counts; callers that omit the new inputs keep the old behavior and fields. Prefab library files still store asset ids, so disk round trips were already safe.
+
+### ADR-181: Commit audit restores saved-scene state after rename rollback
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->24 audit found that a startup-scene rename updates `saved_scene` before writing the project manifest. If the manifest write fails, the file rename is rolled back but `saved_scene` still names the rolled-back file, so dirty/revert state points at a missing scene.
+- **Decision**: Capture the previous `saved_scene` before the library rename and restore it in the manifest-failure path before rolling the file back. Add a regression that forces `set_project_startup_scene` to fail and asserts the file, startup scene, saved scene and manifest all return to the original name.
+- **Consequences**: Failed startup renames are now atomic from the editor's point of view. Successful renames and renames unrelated to the startup scene are unchanged; the fix adds no API or schema surface.

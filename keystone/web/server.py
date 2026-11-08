@@ -1752,6 +1752,7 @@ class GameSession:
                     if self.scene_library is None:
                         raise ValueError("no scene library is configured")
                     old = payload.get("name")
+                    old_saved = self.saved_scene
                     entry = self.scene_library.rename(
                         old, payload.get("new_name")
                     )
@@ -1767,6 +1768,7 @@ class GameSession:
                                 context, entry.name
                             )
                         except (OSError, TypeError, ValueError):
+                            self.saved_scene = old_saved
                             try:
                                 self.scene_library.rename(
                                     entry.name, old
