@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-scene-dirty-v1",
+    "task_id": "keystone-asset-forget-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794120975.5706196,
+    "updated_at": 1794121582.285332,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794120975.892436
+    "completed_at": 1794121582.608241
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-scene-validation-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Scene validation implemented: validate_scene report with missing mesh/material assets, dangling prefab links, blank/duplicate names, empty scene groups, no-registry warning, counts/node count, reset between actions, console Validate scene readout, schema 42; 780 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 42, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794117486.8551977,
-      "timestamp_str": "2026-11-08 08:58:06",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-scene-validation-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-scene-validation-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794117487.0577745,
-      "timestamp_str": "2026-11-08 08:58:07",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-snap-steps-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan editable translate/rotate/scale snap increments persisted with the workspace layout",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794117505.9347227,
-      "timestamp_str": "2026-11-08 08:58:25",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Snap rounding is hard-coded to 0.25 units, 15 degrees and 0.1 scale, so authors cannot match a project grid or angle convention.",
-        "benefits": "Three numeric controls set positive snap increments, all gizmo rounding uses them, and the values persist and reset with the workspace layout.",
-        "risks": "contract: UI-only, no API/schema change; dependency: none; concurrency: editor lock; state: invalid or zero increments, layout migration, reset defaults, wheel/translate/rotate/scale paths.",
-        "mitigation": "Validate finite positive increments, fall back to defaults, include them in layout snapshots/restoration, route every snap path through the stored values, and add static regressions."
-      },
-      "plan_digest": "149a21994f03a13b2f809e8580fd1e70a7d8f0dde62b0e3000ad5c8ffe656e89"
-    },
     {
       "task_id": "keystone-snap-steps-v1",
       "phase": "in_progress",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794120975.8924375,
       "timestamp_str": "2026-11-08 09:56:15",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-asset-forget-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan project asset inventory and forget-from-project with in-use protection",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794121011.9546416,
+      "timestamp_str": "2026-11-08 09:56:51",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "Imported assets can be added and reloaded but never removed from keystone.json or the registry, so discarded experiments accumulate without an inventory.",
+        "benefits": "The editor exposes project_assets, forget_asset removes a manifest entry and registry record only when nothing uses it, keeps the source file for re-import, and the console gets a Forget asset control and path suggestions.",
+        "risks": "contract: editor schema 48 and one action; dependency: project context and AssetRegistry; concurrency: editor lock; state: scene node references, material textures, registry dependencies, in-memory prefab payloads, glTF-derived assets, manifest rollback, external file retention.",
+        "mitigation": "Check scene payloads, registered material textures, registry dependencies and in-memory prefab references before writing, reject glTF-derived sources with guidance, save the manifest atomically before unregistering and roll it back on failure, and keep files on disk."
+      },
+      "plan_digest": "3e583d09d06e8d1e41d72d72c6fb20aef90e8da7e758c887310b6549d6cf2cc6"
+    },
+    {
+      "task_id": "keystone-asset-forget-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Project asset inventory and forget implemented: project_assets document list, forget_asset removes .obj/.png/.kprefab manifest entries atomically and unregisters records while keeping files, blocks scene/material/dependency/cached-prefab usage, rejects glTF/unsupported/traversal with guidance, console Forget asset control and path datalist; 796 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, describe schema 48, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794121582.285332,
+      "timestamp_str": "2026-11-08 10:06:22",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-asset-forget-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-asset-forget-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794121582.6082432,
+      "timestamp_str": "2026-11-08 10:06:22",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

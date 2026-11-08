@@ -2860,6 +2860,99 @@ class WebServerTest(unittest.TestCase):
             self.assertEqual(caught.exception.status, 400)
             self.assertIn("--scene-dir", caught.exception.fix)
 
+    def test_editor_forget_asset_and_project_inventory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name="forget-demo")
+            assets = root / "assets"
+            assets.mkdir()
+            source = assets / "cube.obj"
+            source.write_text(
+                "v 0 0 0\nv 1 0 0\nv 0 1 0\nvn 0 0 1\nf 1//1 2//1 3//1\n",
+                encoding="utf-8",
+            )
+            session = GameSession(
+                CubeDemo(),
+                project_dir=root,
+                prefab_dir=root / "prefabs",
+            )
+            imported_editor = session.editor_action(
+                {"action": "import_asset", "path": "assets/cube.obj"}
+            )
+            self.assertIn("assets/cube.obj", imported_editor["project_assets"])
+
+            forgotten_editor = session.editor_action(
+                {"action": "forget_asset", "path": "assets/cube.obj"}
+            )
+            forgotten = forgotten_editor["forgotten_asset"]
+            self.assertEqual(forgotten["path"], "assets/cube.obj")
+            self.assertEqual(forgotten["asset"], "project:assets/cube.obj")
+            self.assertTrue(forgotten["removed"])
+            self.assertEqual(forgotten["count"], 0)
+            self.assertEqual(forgotten_editor["project_assets"], [])
+            self.assertNotIn(
+                "project:assets/cube.obj",
+                {asset["id"] for asset in forgotten_editor["assets"]},
+            )
+            self.assertEqual(load_project(root).manifest.assets, ())
+            self.assertTrue(source.is_file())
+            self.assertIsNone(
+                session.editor_action({"action": "select", "id": None})[
+                    "forgotten_asset"
+                ]
+            )
+
+            restored = session.editor_action(
+                {"action": "import_asset", "path": "assets/cube.obj"}
+            )
+            self.assertEqual(restored["imported_asset"]["count"], 1)
+            created = session.editor_action(
+                {
+                    "action": "create_node",
+                    "name": "crate",
+                    "mesh": "project:assets/cube.obj",
+                }
+            )
+            crate_id = next(
+                node["id"] for node in created["nodes"] if node["name"] == "crate"
+            )
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "forget_asset", "path": "assets/cube.obj"}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn(crate_id, caught.exception.why)
+
+            session.editor_action({"action": "select", "id": crate_id})
+            session.editor_action({"action": "save_prefab", "name": "crate"})
+            session.editor_action({"action": "delete_node", "id": crate_id})
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "forget_asset", "path": "assets/cube.obj"}
+                )
+            self.assertIn("prefab 'crate'", caught.exception.why)
+
+            (assets / "model.gltf").write_text("{}", encoding="utf-8")
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "forget_asset", "path": "assets/model.gltf"}
+                )
+            self.assertIn("glTF", caught.exception.why)
+
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "forget_asset", "path": "../escape.obj"}
+                )
+            self.assertEqual(caught.exception.status, 400)
+
+            bare = GameSession(CubeDemo())
+            with self.assertRaises(WebProblem) as caught:
+                bare.editor_action(
+                    {"action": "forget_asset", "path": "assets/cube.obj"}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("--project", caught.exception.fix)
+
     def test_editor_reload_assets_rebinds_scene_and_history(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "project"
@@ -3519,6 +3612,8 @@ class WebServerTest(unittest.TestCase):
             "import-path",
             "import-asset",
             "import-state",
+            "project-assets",
+            "forget-asset",
             "reload-assets",
             "reload-state",
             "component-type",
@@ -3575,6 +3670,11 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("import-state", script)
         self.assertIn("import_gltf", script)
         self.assertIn("imported_gltf", script)
+        self.assertIn("forgetAsset", script)
+        self.assertIn("forget_asset", script)
+        self.assertIn("forgotten_asset", script)
+        self.assertIn("project_assets", script)
+        self.assertIn("project-assets", script)
         self.assertIn("reloadAssets", script)
         self.assertIn("reload_assets", script)
         self.assertIn("asset_reload", script)

@@ -133,6 +133,8 @@ const elements = {
   importPath: document.getElementById("import-path"),
   importAsset: document.getElementById("import-asset"),
   importState: document.getElementById("import-state"),
+  projectAssets: document.getElementById("project-assets"),
+  forgetAsset: document.getElementById("forget-asset"),
   reloadAssets: document.getElementById("reload-assets"),
   reloadState: document.getElementById("reload-state"),
   componentType: document.getElementById("component-type"),
@@ -525,6 +527,15 @@ function fillDatalist(list, entries) {
     option.label = entry.error
       ? `${entry.name} (error)`
       : `${entry.name} · ${entry.node_count ?? "?"} nodes`;
+    list.append(option);
+  }
+}
+
+function fillPathDatalist(list, paths) {
+  list.replaceChildren();
+  for (const path of paths) {
+    const option = document.createElement("option");
+    option.value = path;
     list.append(option);
   }
 }
@@ -943,7 +954,10 @@ function showEditor(editor) {
     : "Not validated.";
   const imported = editor.imported_asset;
   const importedGltf = editor.imported_gltf;
+  const forgotten = editor.forgotten_asset;
   const projectDir = editor.workspace && editor.workspace.project_dir;
+  const projectCount = (editor.project_assets || []).length;
+  fillPathDatalist(elements.projectAssets, editor.project_assets || []);
   if (importedGltf) {
     elements.importState.textContent =
       `${importedGltf.duplicate ? "Reimported" : "Imported"} glTF ` +
@@ -954,14 +968,21 @@ function showEditor(editor) {
     elements.importState.textContent =
       `${imported.duplicate ? "Refreshed" : "Imported"} ${imported.path} · ` +
       `${imported.asset} (${imported.kind}) · ${imported.count} project assets`;
+  } else if (forgotten) {
+    elements.importState.textContent =
+      `Forgot ${forgotten.path} · ` +
+      `${forgotten.removed ? "unregistered" : "manifest only"} · ` +
+      `${forgotten.count} project assets · source kept`;
   } else if (!projectDir) {
     elements.importState.textContent =
       "Open a project with --project to import .obj, .png, .kprefab, .gltf or .glb files.";
   } else {
     elements.importState.textContent =
-      "Enter a project-relative .obj, .png, .kprefab, .gltf or .glb path.";
+      `Enter a project-relative .obj, .png, .kprefab, .gltf or .glb path. ` +
+      `${projectCount} project assets listed.`;
   }
   elements.importAsset.disabled = !projectDir;
+  elements.forgetAsset.disabled = !projectDir;
   const reload = editor.asset_reload;
   elements.reloadState.textContent = reload
     ? `${reload.ok ? "OK" : "Attention"} · ${reload.checked} checked · ` +
@@ -2033,6 +2054,21 @@ async function reloadAssets() {
   }
 }
 
+async function forgetAsset() {
+  const path = elements.importPath.value.trim();
+  if (!path) {
+    throw new Error("Enter a project-relative asset path to forget.");
+  }
+  const editor = await editorAction(
+    { action: "forget_asset", path },
+    `forgetting ${path}`,
+  );
+  const forgotten = editor.forgotten_asset;
+  if (forgotten) {
+    show({ ok: true, action: "forget_asset", forgotten_asset: forgotten });
+  }
+}
+
 async function saveMaterial() {
   const name = elements.materialName.value.trim();
   if (!name) {
@@ -2705,6 +2741,7 @@ elements.materialAsset.addEventListener("change", updateAssetInfo);
 elements.assignAsset.addEventListener("click", () => run(assignAssets));
 elements.importAsset.addEventListener("click", () => run(importAsset));
 elements.reloadAssets.addEventListener("click", () => run(reloadAssets));
+elements.forgetAsset.addEventListener("click", () => run(forgetAsset));
 elements.materialSave.addEventListener("click", () => run(saveMaterial));
 elements.materialAssign.addEventListener("click", () => run(assignMaterial));
 elements.materialClear.addEventListener("click", () => run(clearMaterial));

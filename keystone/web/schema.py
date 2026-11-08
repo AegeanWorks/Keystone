@@ -203,6 +203,7 @@ EDITOR_EXAMPLES = {
         "name": "model",
     },
     "reload_assets": {"action": "reload_assets"},
+    "forget_asset": {"action": "forget_asset", "path": "assets/crate.obj"},
     "rename_scene": {"action": "rename_scene", "name": "level", "new_name": "level-alt"},
     "duplicate_scene": {
         "action": "duplicate_scene",
@@ -336,6 +337,8 @@ EDITOR_SCHEMA = {
             "rebound",
             "history_rebound",
         ],
+        "forget_asset": ["path"],
+        "forgotten_asset": ["path", "asset", "removed", "count"],
         "asset": ["id", "kind", "sha256", "source", "dependencies", "metadata"],
         "component_types": ["name"],
         "component_schema": ["fields"],
@@ -392,6 +395,7 @@ EDITOR_SCHEMA = {
         "schema 45 adds import_gltf, which imports project .gltf/.glb scenes as prefabs, registers gltf.<name>.* assets and records the source in keystone.json",
         "schema 46 adds set_startup_scene and a startup_scene document field for project-relative default scene selection",
         "schema 47 adds saved_scene/scene_dirty tracking and revert_scene, which reloads the saved scene and clears history and selection",
+        "schema 48 adds project_assets inventory and forget_asset, which removes an unused manifest entry and registry record while keeping the source file",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

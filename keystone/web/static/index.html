@@ -225,13 +225,15 @@
         </div>
         <pre id="asset-info" class="hint">No registry assets selected.</pre>
         <img id="asset-preview" class="asset-preview" alt="Selected texture preview" hidden>
-        <label class="stack" for="import-path">Import project asset</label>
+        <label class="stack" for="import-path">Import or forget project asset</label>
         <div class="field-grid">
-          <label>Relative path <input id="import-path" type="text" placeholder="assets/crate.obj"></label>
+          <label>Relative path <input id="import-path" type="text" list="project-assets" placeholder="assets/crate.obj"></label>
         </div>
+        <datalist id="project-assets"></datalist>
         <div class="buttons">
           <button id="import-asset" type="button">Import asset</button>
           <button id="reload-assets" type="button">Reload assets</button>
+          <button id="forget-asset" type="button">Forget asset</button>
         </div>
         <div id="import-state" class="hint">Open a project with --project to import assets.</div>
         <div id="reload-state" class="hint">No assets reloaded.</div>

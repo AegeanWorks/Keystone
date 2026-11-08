@@ -20,6 +20,7 @@ from keystone.project import (
     PROJECT_SCHEMA_VERSION,
     ProjectManifest,
     create_project,
+    forget_project_asset,
     import_project_asset,
     import_project_assets,
     load_project,
@@ -259,6 +260,69 @@ class ProjectScaffoldTest(unittest.TestCase):
                     load_project(root), BrokenRegistry(), "assets/cube.obj"
                 )
             self.assertEqual(load_project(root).manifest.assets, ())
+
+    def test_forget_asset_removes_manifest_and_registry_but_keeps_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name=self._name())
+            assets = root / "assets"
+            assets.mkdir()
+            source = assets / "cube.obj"
+            source.write_text(OBJ_TEXT, encoding="utf-8")
+            registry = AssetRegistry()
+            import_project_asset(load_project(root), registry, "assets/cube.obj")
+            report = forget_project_asset(
+                load_project(root), registry, "assets/cube.obj"
+            )
+            self.assertEqual(report["path"], "assets/cube.obj")
+            self.assertEqual(report["asset"], "project:assets/cube.obj")
+            self.assertTrue(report["removed"])
+            self.assertEqual(report["count"], 0)
+            self.assertEqual(load_project(root).manifest.assets, ())
+            self.assertNotIn("project:assets/cube.obj", registry.ids())
+            self.assertTrue(source.is_file())
+
+            restored = import_project_asset(
+                load_project(root), registry, "assets/cube.obj"
+            )
+            self.assertFalse(restored["duplicate"])
+            self.assertEqual(
+                load_project(root).manifest.assets, ("assets/cube.obj",)
+            )
+
+    def test_forget_asset_rejects_unsupported_and_rolls_back(self):
+        class BrokenRegistry(AssetRegistry):
+            def remove(self, asset_id):
+                raise OSError("registry is read-only")
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            create_project(root, name=self._name())
+            assets = root / "assets"
+            assets.mkdir()
+            (assets / "cube.obj").write_text(OBJ_TEXT, encoding="utf-8")
+            registry = AssetRegistry()
+            import_project_asset(load_project(root), registry, "assets/cube.obj")
+            for value, message in (
+                ("../escape.obj", "inside the project"),
+                ("assets/missing.obj", "not listed"),
+                ("assets/model.gltf", "glTF"),
+                ("assets/data.bin", "unsupported"),
+            ):
+                (assets / "data.bin").write_bytes(b"x")
+                with self.assertRaisesRegex(ValueError, message):
+                    forget_project_asset(load_project(root), registry, value)
+
+            broken = BrokenRegistry()
+            import_project_asset(load_project(root), broken, "assets/cube.obj")
+            with self.assertRaisesRegex(OSError, "read-only"):
+                forget_project_asset(
+                    load_project(root), broken, "assets/cube.obj"
+                )
+            self.assertEqual(
+                load_project(root).manifest.assets, ("assets/cube.obj",)
+            )
+            self.assertIn("project:assets/cube.obj", broken.ids())
 
     def test_project_assets_import_prefab_dependencies_first(self):
         with tempfile.TemporaryDirectory() as directory:

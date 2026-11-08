@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `141`
 - **Total Classes**: `224`
-- **Total Top-Level Functions**: `385`
-- **Total Class Methods**: `1392`
-- **Total Source Lines**: `35320`
+- **Total Top-Level Functions**: `386`
+- **Total Class Methods**: `1396`
+- **Total Source Lines**: `35653`
 
 ---
 
@@ -1224,7 +1224,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `724` lines (`27271` bytes)
+**Size**: `784` lines (`29488` bytes)
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -1245,6 +1245,7 @@
 - `def resolve_project_asset(context, value)` - *Resolve one asset path and prove it stays inside the project.*
 - `def import_project_assets(context, registry, component_types)` - *Load every manifest asset into an existing registry.*
 - `def import_project_asset(context, registry, value, component_types)` - *Import one editor-selected file and append it to the project manifest.*
+- `def forget_project_asset(context, registry, value)` - *Remove one project asset path from the manifest and registry.*
 - `def import_project_gltf(context, registry, prefab_library, value, name)` - *Import a project glTF/GLB scene as a prefab and record its source.*
 - `def attach_project_assets(game, context, component_types, prefab_library)` - *Import manifest assets, including glTF scenes as prefab entries.*
 - `def validate_project(context, game)` - *Validate project assets, scenes and prefabs without writing project files.*
@@ -1425,7 +1426,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `73` lines (`1563` bytes)
+**Size**: `74` lines (`1583` bytes)
 
 ---
 
@@ -1727,14 +1728,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `418` lines (`18983` bytes)
+**Size**: `422` lines (`19317` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2077` lines (`91681` bytes)
+**Size**: `2181` lines (`96499` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1752,6 +1753,7 @@
   - Method `._scene_locked()`
   - Method `.scene()`
   - Method `._registry_locked()`
+  - Method `._asset_usage_locked(scene, registry, asset_id)` - *Return human-readable references that block removing one asset.*
   - Method `._parent_locked(scene, value)`
   - Method `._prefab_entries_locked()`
   - Method `._history_label_for(action, payload)`
@@ -2827,7 +2829,7 @@
 ### [`tests/test_project.py`](tests/test_project.py)
 > *Tests for project manifests, scaffolding and the --project CLI path.*
 
-**Size**: `548` lines (`23125` bytes)
+**Size**: `612` lines (`26077` bytes)
 
 **Classes:**
 - `class ProjectManifestTest`
@@ -2845,6 +2847,8 @@
   - Method `.test_editor_import_appends_manifest_and_registers()`
   - Method `.test_editor_import_rejects_unsafe_and_unsupported_sources()`
   - Method `.test_editor_import_rolls_back_manifest_on_registration_failure()`
+  - Method `.test_forget_asset_removes_manifest_and_registry_but_keeps_file()`
+  - Method `.test_forget_asset_rejects_unsupported_and_rolls_back()`
   - Method `.test_project_assets_import_prefab_dependencies_first()`
   - Method `.test_project_game_imports_manifest_assets()`
   - Method `.test_project_assets_reject_unsafe_missing_and_unknown()`
@@ -3263,7 +3267,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `3892` lines (`163159` bytes)
+**Size**: `3992` lines (`167528` bytes)
 
 **Classes:**
 - `class Health`
@@ -3337,6 +3341,7 @@
   - Method `.test_editor_import_gltf_generates_prefab()`
   - Method `.test_editor_scene_dirty_and_revert()`
   - Method `.test_editor_startup_scene_persists_and_clears()`
+  - Method `.test_editor_forget_asset_and_project_inventory()`
   - Method `.test_editor_reload_assets_rebinds_scene_and_history()`
   - Method `.test_editor_preview_animation_and_undo()`
   - Method `.test_editor_animation_library_round_trip()`

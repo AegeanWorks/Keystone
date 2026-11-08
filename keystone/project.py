@@ -35,6 +35,7 @@ __all__ = [
     "ProjectManifest",
     "attach_project_assets",
     "create_project",
+    "forget_project_asset",
     "import_project_asset",
     "import_project_assets",
     "import_project_gltf",
@@ -329,6 +330,65 @@ def import_project_asset(
         "kind": record.kind,
         "duplicate": duplicate,
         "count": len(manifest.assets),
+    }
+
+
+def forget_project_asset(
+    context: ProjectContext,
+    registry: AssetRegistry,
+    value: str | Path,
+) -> dict[str, object]:
+    """Remove one project asset path from the manifest and registry.
+
+    The source file stays on disk, so importing the same path restores it.
+    Callers should check scene and prefab references before removing.
+    """
+    if not isinstance(context, ProjectContext):
+        raise TypeError("project context must be a ProjectContext")
+    if not isinstance(registry, AssetRegistry):
+        raise TypeError("project asset removal needs an AssetRegistry")
+    identifier = project_asset_id(value)
+    normalized = identifier.removeprefix("project:")
+    if is_gltf_asset(normalized):
+        raise ValueError(
+            f"glTF/GLB sources cannot be forgotten from the editor: {normalized}.\n"
+            "Why: glTF imports generate prefab-library files and gltf.<name>.* assets.\n"
+            "Fix: remove the path from keystone.json and delete the generated prefab manually."
+        )
+    if Path(normalized).suffix.lower() not in IMPORTABLE_SUFFIXES:
+        raise ValueError(
+            f"unsupported asset format for project removal: {normalized}.\n"
+            "Fix: forget .obj, .png or .kprefab assets."
+        )
+    assets = tuple(
+        item
+        for item in context.manifest.assets
+        if Path(item).as_posix() != normalized
+    )
+    if len(assets) == len(context.manifest.assets):
+        raise ValueError(
+            f"asset {normalized!r} is not listed in keystone.json"
+        )
+    manifest = ProjectManifest(
+        name=context.manifest.name,
+        game=context.manifest.game,
+        description=context.manifest.description,
+        assets=assets,
+        startup_scene=context.manifest.startup_scene,
+    )
+    save_project(context.directory, manifest)
+    record = registry.get(identifier)
+    try:
+        if record is not None:
+            registry.remove(identifier)
+    except Exception:
+        save_project(context.directory, context.manifest)
+        raise
+    return {
+        "path": normalized,
+        "asset": identifier,
+        "removed": record is not None,
+        "count": len(assets),
     }
 
 

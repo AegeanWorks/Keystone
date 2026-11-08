@@ -25,9 +25,11 @@ from keystone.plugin import GameModule, describe_game
 from keystone.prefab import Prefab
 from keystone.prefab_library import PrefabLibrary
 from keystone.project import (
+    forget_project_asset,
     import_project_asset,
     import_project_gltf,
     load_project,
+    project_asset_id,
     set_project_startup_scene,
 )
 from keystone.replay import FIXED_STEP
@@ -87,6 +89,7 @@ PREFAB_EDIT_BLOCKED = frozenset(
         "play_stop",
         "save_prefab",
         "import_gltf",
+        "forget_asset",
         "revert_scene",
         "refresh_prefab_instances",
         "apply_prefab",
@@ -140,6 +143,7 @@ SCENE_NEUTRAL_ACTIONS = frozenset(
         "import_asset",
         "import_gltf",
         "reload_assets",
+        "forget_asset",
         "rename_scene",
         "duplicate_scene",
         "delete_scene",
@@ -230,10 +234,12 @@ class GameSession:
         self.component_types = component_types
         self.project_dir = None
         self.startup_scene: str | None = None
+        self.project_assets: tuple[str, ...] = ()
         if project_dir is not None:
             project_context = load_project(project_dir)
             self.project_dir = project_context.directory
             self.startup_scene = project_context.manifest.startup_scene
+            self.project_assets = project_context.manifest.assets
         self.playing = False
         self.play_frames = 0
         self.play_paused = False
@@ -245,6 +251,7 @@ class GameSession:
         self.last_import: dict[str, object] | None = None
         self.last_gltf_import: dict[str, object] | None = None
         self.last_asset_reload: dict[str, object] | None = None
+        self.last_forgotten_asset: dict[str, object] | None = None
         self.last_revert: dict[str, object] | None = None
         self.scene_dirty = False
         self.saved_scene = initial_scene
@@ -381,6 +388,41 @@ class GameSession:
     def _registry_locked(self) -> AssetRegistry | None:
         registry = getattr(self.game, "assets", None)
         return registry if isinstance(registry, AssetRegistry) else None
+
+    def _asset_usage_locked(
+        self,
+        scene: Scene,
+        registry: AssetRegistry,
+        asset_id: str,
+    ) -> list[str]:
+        """Return human-readable references that block removing one asset."""
+        record = registry.get(asset_id)
+        if record is None:
+            return []
+        payload = record.payload
+        usage: list[str] = []
+        for node in scene.traverse():
+            if node.mesh is payload:
+                usage.append(f"node {node.id!r} mesh")
+            if node.material is payload:
+                usage.append(f"node {node.id!r} material")
+            if getattr(node.material, "texture", None) is payload:
+                usage.append(f"node {node.id!r} material texture")
+        for item in registry:
+            if item.id == asset_id:
+                continue
+            if asset_id in item.dependencies:
+                usage.append(f"asset {item.id!r} dependency")
+            if getattr(item.payload, "texture", None) is payload:
+                usage.append(f"asset {item.id!r} texture")
+        for prefab in self.prefabs.values():
+            try:
+                references = prefab.asset_ids(registry)
+            except (KeyError, TypeError, ValueError):
+                continue
+            if asset_id in references:
+                usage.append(f"prefab {prefab.name!r}")
+        return usage
 
     def _parent_locked(self, scene: Scene, value: object) -> Node | None:
         if value in (None, "", "root"):
@@ -653,8 +695,10 @@ class GameSession:
         document["validation"] = self.last_validation
         document["imported_asset"] = self.last_import
         document["imported_gltf"] = self.last_gltf_import
+        document["forgotten_asset"] = self.last_forgotten_asset
         document["asset_reload"] = self.last_asset_reload
         document["startup_scene"] = self.startup_scene
+        document["project_assets"] = list(self.project_assets)
         document["saved_scene"] = self.saved_scene
         document["scene_dirty"] = self.scene_dirty
         document["revert"] = self.last_revert
@@ -726,6 +770,7 @@ class GameSession:
         self.last_import = None
         self.last_gltf_import = None
         self.last_asset_reload = None
+        self.last_forgotten_asset = None
         self.last_revert = None
         with self.lock:
             scene = self._scene_locked()
@@ -1549,6 +1594,11 @@ class GameSession:
                             str(exc),
                             "choose a file that exists inside the project directory",
                         ) from exc
+                    if not self.last_import["duplicate"]:
+                        self.project_assets = (
+                            *self.project_assets,
+                            str(self.last_import["path"]),
+                        )
                 elif action == "import_gltf":
                     if self.project_dir is None:
                         raise WebProblem(
@@ -1605,6 +1655,11 @@ class GameSession:
                         ) from exc
                     self.last_gltf_import = report
                     self.prefabs.pop(str(report["prefab"]), None)
+                    if not report["duplicate"]:
+                        self.project_assets = (
+                            *self.project_assets,
+                            str(report["path"]),
+                        )
                 elif action == "reload_assets":
                     registry = self._registry_locked()
                     if registry is None:
@@ -1616,6 +1671,55 @@ class GameSession:
                     self.last_asset_reload = reload_scene_assets(
                         scene, registry, self.history
                     )
+                elif action == "forget_asset":
+                    if self.project_dir is None:
+                        raise WebProblem(
+                            400,
+                            "asset removal needs a project directory",
+                            "start the console with python -m keystone --project <dir> --serve",
+                        )
+                    registry = self._registry_locked()
+                    if registry is None:
+                        raise WebProblem(
+                            400,
+                            "asset removal needs an AssetRegistry",
+                            "expose self.assets = AssetRegistry() in the game module",
+                        )
+                    value = payload.get("path")
+                    if not isinstance(value, str) or not value.strip():
+                        raise ValueError(
+                            "forget path must be a non-blank project-relative string"
+                        )
+                    try:
+                        identifier = project_asset_id(value)
+                    except (TypeError, ValueError) as exc:
+                        raise WebProblem(
+                            400,
+                            str(exc),
+                            "use a project-relative asset path",
+                        ) from exc
+                    usage = self._asset_usage_locked(scene, registry, identifier)
+                    if usage:
+                        raise WebProblem(
+                            400,
+                            "asset is still used by: "
+                            + ", ".join(sorted(set(usage))),
+                            "remove or reassign those references before forgetting the asset",
+                        )
+                    try:
+                        context = load_project(self.project_dir)
+                    except (OSError, TypeError, ValueError) as exc:
+                        raise WebProblem(
+                            400,
+                            f"could not load the project manifest: {exc}",
+                            "check keystone.json and restore a valid manifest",
+                        ) from exc
+                    self.last_forgotten_asset = forget_project_asset(
+                        context, registry, value
+                    )
+                    updated = load_project(self.project_dir)
+                    self.project_assets = updated.manifest.assets
+                    self.startup_scene = updated.manifest.startup_scene
                 elif action == "undo":
                     steps = payload.get("steps", 1)
                     if (
