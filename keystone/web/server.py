@@ -36,6 +36,7 @@ from keystone.web.editor import (
     component_schemas,
     create_node,
     delete_node,
+    delete_selection,
     duplicate_node,
     editor_document,
     find_node,
@@ -50,7 +51,9 @@ from keystone.web.editor import (
     set_component,
     set_node_properties,
     set_scene,
+    toggle_selection_visible,
     transform_from_payload,
+    transform_selection,
     unload_scene,
 )
 from keystone.web.scene import scene_document
@@ -115,6 +118,7 @@ class GameSession:
         self._batch_depth = 0
         self._built = False
         self.selected_id: str | None = None
+        self.selected_ids: list[str] = []
         self.prefabs: dict[str, Prefab] = {}
         self.history = EditorHistory()
         component_types = validate_component_types(getattr(game, "component_types", None))
@@ -148,6 +152,33 @@ class GameSession:
     @property
     def name(self) -> str:
         return getattr(self.game, "name", "game")
+
+    @property
+    def selected_ids(self) -> list[str]:
+        return list(self._selected_ids)
+
+    @selected_ids.setter
+    def selected_ids(self, value: list[str]) -> None:
+        self._set_selected_ids(value)
+
+    def _set_selected_ids(self, ids: list[str]) -> None:
+        seen: set[str] = set()
+        ordered: list[str] = []
+        for node_id in ids:
+            if node_id not in seen:
+                seen.add(node_id)
+                ordered.append(node_id)
+        self._selected_ids = ordered
+        self._selected_id = ordered[0] if ordered else None
+
+    @property
+    def selected_id(self) -> str | None:
+        return self._selected_id
+
+    @selected_id.setter
+    def selected_id(self, value: str | None) -> None:
+        self._selected_id = value
+        self._selected_ids = [] if value is None else [value]
 
     def describe(self) -> dict:
         with self.lock:
@@ -251,7 +282,7 @@ class GameSession:
                     f"batch actions[{index}] {action!r} is not allowed; "
                     f"use {', '.join(sorted(BATCH_ACTIONS))}"
                 )
-        before = self.selected_id
+        before = self.selected_ids
         self._batch_depth += 1
         try:
             self.history.apply(
@@ -259,7 +290,7 @@ class GameSession:
                 lambda: [self.editor_action(item) for item in actions],
             )
         except Exception:
-            self.selected_id = before
+            self._set_selected_ids(before)
             raise
         finally:
             self._batch_depth -= 1
@@ -279,8 +310,18 @@ class GameSession:
         return {"active": False, "frame": 0, "started": 0, "hooks": []}
 
     def _editor_locked(self, scene: Scene) -> dict:
-        if self.selected_id is not None and scene.find_by_id(self.selected_id) is None:
-            self.selected_id = None
+        existing = [
+            node_id
+            for node_id in self._selected_ids
+            if scene.find_by_id(node_id) is not None
+        ]
+        if (
+            not existing
+            and self._selected_id is not None
+            and scene.find_by_id(self._selected_id) is not None
+        ):
+            existing = [self._selected_id]
+        self._set_selected_ids(existing)
         scene_entries = (
             self.scene_library.describe() if self.scene_library is not None else None
         )
@@ -322,6 +363,7 @@ class GameSession:
                     else []
                 ),
             },
+            selected_ids=self.selected_ids,
         )
         document["game"] = self.name
         document["workspace"] = {
@@ -355,7 +397,12 @@ class GameSession:
         with self.lock:
             scene = self._scene_locked()
             try:
-                if self.playing and action not in ("select", "play_step", "play_stop"):
+                if self.playing and action not in (
+                    "select",
+                    "select_many",
+                    "play_step",
+                    "play_stop",
+                ):
                     raise ValueError("play mode is active; stop it before editing")
                 if action == "batch":
                     self._batch_locked(scene, payload)
@@ -368,6 +415,42 @@ class GameSession:
                         self.selected_id = node_id
                     else:
                         raise ValueError("select id must be a string or null")
+                elif action == "select_many":
+                    ids = payload.get("ids")
+                    mode = payload.get("mode", "replace")
+                    if not isinstance(ids, list) or any(
+                        not isinstance(item, str) or not item.strip()
+                        for item in ids
+                    ):
+                        raise ValueError(
+                            "select_many ids must be a list of non-blank strings"
+                        )
+                    if mode not in ("replace", "add", "remove", "toggle"):
+                        raise ValueError(
+                            "select_many mode must be replace, add, remove or toggle"
+                        )
+                    for node_id in ids:
+                        find_node(scene, node_id)
+                    current = self.selected_ids
+                    if mode == "replace":
+                        result = list(ids)
+                    elif mode == "add":
+                        result = current + [
+                            node_id for node_id in ids if node_id not in current
+                        ]
+                    elif mode == "remove":
+                        removed = set(ids)
+                        result = [
+                            node_id for node_id in current if node_id not in removed
+                        ]
+                    else:
+                        result = list(current)
+                        for node_id in ids:
+                            if node_id in result:
+                                result.remove(node_id)
+                            else:
+                                result.append(node_id)
+                    self._set_selected_ids(result)
                 elif action == "transform":
                     node = find_node(scene, payload.get("id"))
 
@@ -376,6 +459,26 @@ class GameSession:
 
                     self._apply_history(scene, apply_transform)
                     self.selected_id = node.id
+                elif action == "transform_selection":
+                    self._apply_history(
+                        scene,
+                        lambda: transform_selection(
+                            scene, self.selected_ids, payload
+                        ),
+                    )
+                elif action == "toggle_selection_visible":
+                    self._apply_history(
+                        scene,
+                        lambda: toggle_selection_visible(
+                            scene, self.selected_ids
+                        ),
+                    )
+                elif action == "delete_selection":
+                    parent = self._apply_history(
+                        scene,
+                        lambda: delete_selection(scene, self.selected_ids),
+                    )
+                    self.selected_id = None if parent is scene.root else parent.id
                 elif action == "set_node":
                     node = find_node(scene, payload.get("id"))
                     self._apply_history(

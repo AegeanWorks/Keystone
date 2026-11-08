@@ -774,16 +774,22 @@ def node_document(
     node: Node,
     selected_id: str | None,
     registry: object | None = None,
+    selected_ids: set[str] | None = None,
 ) -> dict:
     transform = node.transform
     rotation = transform.rotation
+    selected = (
+        selected_ids
+        if selected_ids is not None
+        else ({selected_id} if selected_id is not None else set())
+    )
     return {
         "id": node.id,
         "name": node.name,
         "parent_id": node.parent.id if node.parent is not None and node.parent.id else None,
         "children": [child.id for child in node.children],
         "visible": node.visible,
-        "selected": node.id == selected_id,
+        "selected": node.id in selected,
         "tags": sorted(node.tags),
         "layer": node.layer,
         "components": sorted(component_type.__name__ for component_type in node.components),
@@ -819,8 +825,20 @@ def editor_document(
     play_state: dict[str, object] | None = None,
     diff: dict[str, object] | None = None,
     trash: dict[str, list[dict[str, str]]] | None = None,
+    selected_ids: list[str] | None = None,
 ) -> dict:
-    nodes = [node_document(node, selected_id, registry) for node in scene.traverse()]
+    ordered_ids = list(
+        dict.fromkeys(
+            selected_ids
+            if selected_ids is not None
+            else ([selected_id] if selected_id is not None else [])
+        )
+    )
+    selected_set = set(ordered_ids)
+    nodes = [
+        node_document(node, selected_id, registry, selected_set)
+        for node in scene.traverse()
+    ]
     selection = next((node for node in nodes if node["id"] == selected_id), None)
     prefab_instances = [
         {"id": node.id, **node.prefab_link.to_dict()}
@@ -846,6 +864,8 @@ def editor_document(
         "game": None,
         "roots": [node.id for node in scene.root.children],
         "selection": selection,
+        "selected_ids": ordered_ids,
+        "selection_count": len(ordered_ids),
         "nodes": nodes,
         "prefab_instances": prefab_instances,
         "prefab_instance_count": prefab_instance_count,
@@ -1648,3 +1668,178 @@ def save_scene_group(scene: Scene, node: Node, library: SceneLibrary) -> str:
         temp.add(_clone_scene_node(child))
     library.save(group.name, temp)
     return group.name
+
+
+def _top_level_selected(scene: Scene, ids: list[str]) -> list[Node]:
+    wanted = set(ids)
+    selected_nodes: list[Node] = []
+    seen: set[str] = set()
+    for node_id in ids:
+        if node_id in seen:
+            continue
+        seen.add(node_id)
+        node = scene.find_by_id(node_id)
+        if node is None:
+            raise KeyError(f"no node {node_id!r}")
+        if node is scene.root:
+            raise ValueError("cannot edit the scene root")
+        selected_ancestor = False
+        ancestor = node.parent
+        while ancestor is not None and ancestor is not scene.root:
+            if ancestor.id in wanted:
+                selected_ancestor = True
+                break
+            ancestor = ancestor.parent
+        if not selected_ancestor:
+            selected_nodes.append(node)
+    return selected_nodes
+
+
+def _parent_linear_inverse(node: Node) -> tuple[tuple[float, ...], ...]:
+    if node.parent is None:
+        return ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))
+    matrix = list(node.parent.world_matrix().flat())
+    a, b, c = matrix[0], matrix[4], matrix[8]
+    d, e, f = matrix[1], matrix[5], matrix[9]
+    g, h, i = matrix[2], matrix[6], matrix[10]
+    determinant = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g)
+    if abs(determinant) < 1e-12:
+        raise ValueError("cannot move a node below a zero-scale parent")
+    inverse = 1.0 / determinant
+    return (
+        (
+            (e * i - f * h) * inverse,
+            (c * h - b * i) * inverse,
+            (b * f - c * e) * inverse,
+        ),
+        (
+            (f * g - d * i) * inverse,
+            (a * i - c * g) * inverse,
+            (c * d - a * f) * inverse,
+        ),
+        (
+            (d * h - e * g) * inverse,
+            (b * g - a * h) * inverse,
+            (a * e - b * d) * inverse,
+        ),
+    )
+
+
+def transform_selection(
+    scene: Scene,
+    ids: list[str],
+    payload: Mapping[str, object],
+) -> list[Node]:
+    """Apply a world position delta and/or local rotation/scale deltas."""
+    if not isinstance(scene, Scene):
+        raise TypeError("transform_selection target must be a Scene")
+    if not ids:
+        raise ValueError("select at least one node")
+    if not isinstance(payload, Mapping):
+        raise TypeError("transform_selection payload must be a mapping")
+    unknown = sorted(set(payload) - {"action", "position", "rotation", "scale"})
+    if unknown:
+        raise ValueError(
+            f"transform_selection has unknown fields: {', '.join(unknown)}"
+        )
+    fields = [name for name in ("position", "rotation", "scale") if name in payload]
+    if not fields:
+        raise ValueError("transform_selection needs position, rotation or scale")
+    position = (
+        _finite_array(payload["position"], 3, "selection position")
+        if "position" in payload
+        else None
+    )
+    rotation = (
+        _finite_array(payload["rotation"], 4, "selection rotation")
+        if "rotation" in payload
+        else None
+    )
+    scale = (
+        _finite_array(payload["scale"], 3, "selection scale")
+        if "scale" in payload
+        else None
+    )
+    rotation_delta = (
+        Quat(rotation[3], rotation[0], rotation[1], rotation[2]).normalized()
+        if rotation is not None
+        else None
+    )
+    nodes = _top_level_selected(scene, ids)
+    for node in nodes:
+        transform = node.transform
+        position_value = transform.position
+        rotation_value = transform.rotation
+        scale_value = transform.scale
+        if position is not None:
+            inverse = _parent_linear_inverse(node)
+            local = [
+                inverse[0][0] * position[0]
+                + inverse[0][1] * position[1]
+                + inverse[0][2] * position[2],
+                inverse[1][0] * position[0]
+                + inverse[1][1] * position[1]
+                + inverse[1][2] * position[2],
+                inverse[2][0] * position[0]
+                + inverse[2][1] * position[1]
+                + inverse[2][2] * position[2],
+            ]
+            position_value = Vec3(
+                position_value.x + local[0],
+                position_value.y + local[1],
+                position_value.z + local[2],
+            )
+        if rotation_delta is not None:
+            rotation_value = (rotation_value * rotation_delta).normalized()
+        if scale is not None:
+            scale_value = Vec3(
+                scale_value.x * scale[0],
+                scale_value.y * scale[1],
+                scale_value.z * scale[2],
+            )
+        node.transform = Transform(position_value, rotation_value, scale_value)
+    return nodes
+
+
+def toggle_selection_visible(scene: Scene, ids: list[str]) -> list[Node]:
+    """Flip the visibility of every selected node in one operation."""
+    if not isinstance(scene, Scene):
+        raise TypeError("toggle_selection_visible target must be a Scene")
+    if not ids:
+        raise ValueError("select at least one node")
+    nodes: list[Node] = []
+    seen: set[str] = set()
+    for node_id in ids:
+        if node_id in seen:
+            continue
+        seen.add(node_id)
+        node = scene.find_by_id(node_id)
+        if node is None:
+            raise KeyError(f"no node {node_id!r}")
+        if node is scene.root:
+            raise ValueError("cannot edit the scene root")
+        nodes.append(node)
+    for node in nodes:
+        node.visible = not node.visible
+    return nodes
+
+
+def delete_selection(scene: Scene, ids: list[str]) -> Node:
+    """Delete all top-level selected nodes and return a surviving parent."""
+    if not isinstance(scene, Scene):
+        raise TypeError("delete_selection target must be a Scene")
+    if not ids:
+        raise ValueError("select at least one node")
+    roots = _top_level_selected(scene, ids)
+    deleted_parent: Node | None = None
+    seen_links: set[PrefabLink] = set()
+    for node in roots:
+        if node.parent is None:
+            continue
+        link = node.prefab_link
+        if link is not None:
+            if link in seen_links:
+                continue
+            seen_links.add(link)
+        deleted_parent = delete_node(scene, node)
+    return deleted_parent if deleted_parent is not None else scene.root

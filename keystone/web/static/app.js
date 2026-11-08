@@ -23,6 +23,7 @@ const elements = {
   nodeCreate: document.getElementById("node-create"),
   nodeDuplicate: document.getElementById("node-duplicate"),
   nodeDelete: document.getElementById("node-delete"),
+  selectionToggleVisible: document.getElementById("selection-toggle-visible"),
   nodeReparent: document.getElementById("node-reparent"),
   nodeVisible: document.getElementById("node-visible"),
   nodeTags: document.getElementById("node-tags"),
@@ -92,9 +93,12 @@ let gizmoSpace = "world";
 
 try {
   viewer = new SceneViewer(elements.canvas);
-  viewer.onSelect = (nodeId) => run(() => selectNode(nodeId));
+  viewer.onSelect = (nodeId, modifiers) =>
+    run(() => selectViewportNode(nodeId, modifiers || {}));
   viewer.onTransform = (axis, delta) =>
     run(() => applyGizmoTransform(axis, delta));
+  viewer.onTransformSelection = (delta) =>
+    run(() => applyGizmoSelectionTransform(delta));
   viewer.onRotate = (axis, degrees) =>
     run(() => applyGizmoRotation(axis, degrees));
   viewer.onScale = (axis, factor) =>
@@ -122,6 +126,7 @@ function setBusy(value) {
     elements.step, elements.run, elements.simulate, elements.refresh,
     elements.nodeCreate, elements.nodeDuplicate, elements.nodeDelete, elements.nodeReparent,
     elements.nodeProperties,
+    elements.selectionToggleVisible,
     elements.sceneSave, elements.sceneLoad, elements.sceneDiff, elements.sceneRename,
     elements.sceneDuplicate, elements.sceneDelete, elements.sceneRestore,
     elements.sceneSettingsApply, elements.assignAsset, elements.playStart,
@@ -211,6 +216,8 @@ function editorSummary(editor) {
           prefab_link: editor.selection.prefab_link,
         }
       : null,
+    selected_ids: editor.selected_ids,
+    selection_count: editor.selection_count,
     prefabs: editor.prefabs,
     scenes: editor.scenes,
     scene_group_count: editor.scene_group_count,
@@ -282,9 +289,12 @@ function renderHierarchy(editor) {
       `${"  ".repeat(nodeDepth(node, byId))}${node.name || "(root)"} · ${node.id}${badge}`;
     elements.hierarchy.append(option);
   }
-  const values = Array.from(elements.hierarchy.options).map((option) => option.value);
-  if (editor.selection && values.includes(editor.selection.id)) {
-    elements.hierarchy.value = editor.selection.id;
+  const selected = new Set(
+    editor.selected_ids ||
+      (editor.selection ? [editor.selection.id] : []),
+  );
+  for (const option of elements.hierarchy.options) {
+    option.selected = selected.has(option.value);
   }
   renderParentOptions(editor, byId);
 }
@@ -543,7 +553,13 @@ function fillTransform(selection) {
 function showEditor(editor) {
   editorState = editor;
   if (viewer) {
-    viewer.setSelected(editor.selection ? editor.selection.id : null);
+    viewer.setSelectedIds(
+      editor.selected_ids ||
+        (editor.selection ? [editor.selection.id] : []),
+    );
+    if ((editor.selection_count || 0) > 1) {
+      viewer.setGizmoMode("translate");
+    }
   }
   elements.sceneSettings.value = JSON.stringify(
     editor.scene_settings || {},
@@ -579,7 +595,8 @@ function showEditor(editor) {
     `${editor.prefab_override_count ?? 0} overrides · ` +
     `${editor.scene_group_count ?? 0} scenes · ` +
     `undo ${history.undo} / redo ${history.redo} · ` +
-    `selected ${editor.selection ? editor.selection.id : "none"}`;
+    `selected ${editor.selection_count ?? (editor.selection ? 1 : 0)}` +
+    `${editor.selection ? ` (${editor.selection.id})` : ""}`;
   if (!busy) {
     elements.editorUndo.disabled = history.undo === 0;
     elements.editorRedo.disabled = history.redo === 0;
@@ -623,8 +640,38 @@ async function selectNode(nodeId) {
   await editorAction({ action: "select", id: nodeId }, "selecting node");
 }
 
+async function selectMany(ids, mode = "replace") {
+  await editorAction(
+    { action: "select_many", ids, mode },
+    "selecting nodes",
+  );
+}
+
+async function selectViewportNode(nodeId, modifiers) {
+  const additive = Boolean(modifiers.shift || modifiers.ctrl || modifiers.meta);
+  if (nodeId === null) {
+    if (!additive) {
+      await selectNode(null);
+    }
+    return;
+  }
+  if (additive) {
+    await selectMany([nodeId], "toggle");
+  } else {
+    await selectNode(nodeId);
+  }
+}
+
 async function nudgeSelection(delta) {
   if (!editorState || !editorState.selection) {
+    return;
+  }
+  if ((editorState.selection_count || 1) > 1) {
+    await editorAction(
+      { action: "transform_selection", position: delta },
+      "nudging selection",
+    );
+    await refreshScene(false);
     return;
   }
   const current = editorState.selection.transform.position;
@@ -681,6 +728,14 @@ async function applyGizmoTransform(axis, delta) {
   await editorAction(
     { action: "transform", id: selection.id, position },
     `moving node on ${axis.toUpperCase()}`,
+  );
+  await refreshScene(false);
+}
+
+async function applyGizmoSelectionTransform(delta) {
+  await editorAction(
+    { action: "transform_selection", position: delta },
+    "moving selection",
   );
   await refreshScene(false);
 }
@@ -749,6 +804,9 @@ async function applyGizmoScale(axis, factor) {
 }
 
 function setGizmoMode(mode) {
+  if (editorState && (editorState.selection_count || 0) > 1) {
+    mode = "translate";
+  }
   if (viewer) {
     viewer.setGizmoMode(mode);
   }
@@ -1081,13 +1139,21 @@ async function duplicateNode() {
   await refreshScene(false);
 }
 
-async function deleteNode() {
-  if (!editorState || !editorState.selection) {
-    throw new Error("Select a node before deleting it.");
+async function deleteSelection() {
+  if (!editorState || !(editorState.selected_ids || []).length) {
+    throw new Error("Select at least one node before deleting.");
+  }
+  await editorAction({ action: "delete_selection" }, "deleting selection");
+  await refreshScene(false);
+}
+
+async function toggleSelectionVisible() {
+  if (!editorState || !(editorState.selected_ids || []).length) {
+    throw new Error("Select at least one node before toggling visibility.");
   }
   await editorAction(
-    { action: "delete_node", id: editorState.selection.id },
-    "deleting node",
+    { action: "toggle_selection_visible" },
+    "toggling selection visibility",
   );
   await refreshScene(false);
 }
@@ -1261,14 +1327,18 @@ document.addEventListener("keydown", (event) => {
     );
     return;
   }
-  if (event.key === "Delete" && editorState.selection) {
+  if (event.key === "Delete" && (editorState.selection_count || 0) > 0) {
     event.preventDefault();
-    run(deleteNode);
+    run(deleteSelection);
     return;
   }
-  if (key === "f" && editorState.selection && viewer) {
+  if (key === "f" && (editorState.selection_count || 0) > 0 && viewer) {
     event.preventDefault();
-    viewer.focusNode(editorState.selection.id);
+    if ((editorState.selection_count || 0) > 1) {
+      viewer.focusSelection();
+    } else {
+      viewer.focusNode(editorState.selection.id);
+    }
     return;
   }
   if (event.key === "Escape") {
@@ -1283,8 +1353,12 @@ elements.viewReset.addEventListener("click", () => {
   }
 });
 elements.viewFocus.addEventListener("click", () => {
-  if (viewer && editorState && editorState.selection) {
-    viewer.focusNode(editorState.selection.id);
+  if (viewer && editorState && (editorState.selection_count || 0) > 0) {
+    if ((editorState.selection_count || 0) > 1) {
+      viewer.focusSelection();
+    } else {
+      viewer.focusNode(editorState.selection.id);
+    }
   }
 });
 elements.step.addEventListener("click", () => run(() => simulate(1)));
@@ -1292,7 +1366,12 @@ elements.run.addEventListener("click", () => run(() => simulate(60)));
 elements.simulate.addEventListener("click", () => run(() => simulate()));
 elements.refresh.addEventListener("click", () => run(() => refreshScene(true)));
 elements.editorRefresh.addEventListener("click", () => run(() => refreshEditor(true)));
-elements.hierarchy.addEventListener("change", () => run(() => selectNode(elements.hierarchy.value)));
+elements.hierarchy.addEventListener("change", () => {
+  const ids = Array.from(elements.hierarchy.selectedOptions).map(
+    (option) => option.value,
+  );
+  run(() => selectMany(ids, "replace"));
+});
 elements.transformApply.addEventListener("click", () => run(applyTransform));
 elements.playStart.addEventListener("click", () => run(playStart));
 elements.playStep.addEventListener("click", () => run(playStep));
@@ -1318,7 +1397,10 @@ elements.componentType.addEventListener("change", () => {
 });
 elements.nodeCreate.addEventListener("click", () => run(createNode));
 elements.nodeDuplicate.addEventListener("click", () => run(duplicateNode));
-elements.nodeDelete.addEventListener("click", () => run(deleteNode));
+elements.nodeDelete.addEventListener("click", () => run(deleteSelection));
+elements.selectionToggleVisible.addEventListener("click", () =>
+  run(toggleSelectionVisible),
+);
 elements.nodeReparent.addEventListener("click", () => run(reparentNode));
 elements.nodeProperties.addEventListener("click", () => run(applyNodeProperties));
 elements.editorUndo.addEventListener("click", () => run(undoEditor));

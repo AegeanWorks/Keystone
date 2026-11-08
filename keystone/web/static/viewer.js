@@ -407,6 +407,7 @@ export class SceneViewer {
     this.textures = new Map();
     this.scene = null;
     this.selectedId = null;
+    this.selectedIds = new Set();
     this.cameraState = null;
     this.nodeBounds = new Map();
     this.dragging = false;
@@ -490,7 +491,7 @@ export class SceneViewer {
         this.canvas.releasePointerCapture(event.pointerId);
       }
       if (wasClick) {
-        this.selectAt(event.clientX, event.clientY);
+        this.selectAt(event.clientX, event.clientY, event);
       }
     });
     this.canvas.addEventListener("pointercancel", () => {
@@ -560,7 +561,22 @@ export class SceneViewer {
   }
 
   setSelected(nodeId) {
-    this.selectedId = nodeId || null;
+    this.setSelectedIds(nodeId ? [nodeId] : []);
+  }
+
+  setSelectedIds(ids) {
+    const selected = [];
+    const seen = new Set();
+    for (const nodeId of ids || []) {
+      if (typeof nodeId === "string" && !seen.has(nodeId)) {
+        seen.add(nodeId);
+        selected.push(nodeId);
+      }
+    }
+    this.selectedIds = new Set(selected);
+    this.selectedId = selected[0] || null;
+    this.cancelGizmoDrag();
+    this.hoverAxis = null;
     this.render();
   }
 
@@ -601,6 +617,62 @@ export class SceneViewer {
       return null;
     }
     return (this.scene.nodes || []).find((node) => node.id === this.selectedId) || null;
+  }
+
+  selectedNodes() {
+    if (!this.scene || !this.selectedIds.size) {
+      return [];
+    }
+    return (this.scene.nodes || []).filter((node) => this.selectedIds.has(node.id));
+  }
+
+  selectionRoots() {
+    const byId = new Map(
+      (this.scene ? this.scene.nodes || [] : []).map((node) => [node.id, node]),
+    );
+    return this.selectedNodes().filter((node) => {
+      let parentId = node.parent_id;
+      while (parentId) {
+        if (this.selectedIds.has(parentId)) {
+          return false;
+        }
+        const parent = byId.get(parentId);
+        parentId = parent ? parent.parent_id : null;
+      }
+      return true;
+    });
+  }
+
+  selectionOrigin() {
+    const roots = this.selectionRoots();
+    if (!roots.length) {
+      return null;
+    }
+    const origin = [0, 0, 0];
+    for (const node of roots) {
+      const world = node.world || [];
+      origin[0] += world[12] || 0;
+      origin[1] += world[13] || 0;
+      origin[2] += world[14] || 0;
+    }
+    return origin.map((value) => value / roots.length);
+  }
+
+  focusSelection() {
+    if (!this.scene) {
+      return;
+    }
+    const origin = this.selectionOrigin();
+    if (!origin) {
+      return;
+    }
+    this.ensureCamera(this.scene);
+    this.cameraState.target = origin;
+    this.cameraState.distance = Math.max(
+      2.0,
+      Math.min(12.0, this.cameraState.distance),
+    );
+    this.render();
   }
 
   focusNode(nodeId) {
@@ -709,7 +781,7 @@ export class SceneViewer {
     };
   }
 
-  selectAt(clientX, clientY) {
+  selectAt(clientX, clientY, event = null) {
     const ray = this.rayAt(clientX, clientY);
     if (!ray) {
       return;
@@ -724,7 +796,11 @@ export class SceneViewer {
       }
     }
     if (typeof this.onSelect === "function") {
-      this.onSelect(bestId);
+      this.onSelect(bestId, {
+        shift: Boolean(event && event.shiftKey),
+        ctrl: Boolean(event && event.ctrlKey),
+        meta: Boolean(event && event.metaKey),
+      });
     }
   }
 
@@ -735,7 +811,10 @@ export class SceneViewer {
       z: [0.36, 0.58, 0.97],
     };
     const node = this.selectedNode();
-    if (this.gizmoMode === "translate" && this.gizmoSpace === "world") {
+    if (
+      this.selectedIds.size > 1 ||
+      (this.gizmoMode === "translate" && this.gizmoSpace === "world")
+    ) {
       return [
         {
           name: "x",
@@ -787,20 +866,21 @@ export class SceneViewer {
   }
 
   gizmoAt(clientX, clientY) {
-    if (!this.editable || !this.scene || !this.selectedId) {
+    if (!this.editable || !this.scene || !this.selectedIds.size) {
       return null;
     }
-    const node = this.selectedNode();
     const matrix = this.viewProjectionMatrix();
-    if (!node || !matrix) {
+    if (!matrix) {
       return null;
     }
     const rect = this.canvas.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) {
       return null;
     }
-    const world = node.world || [];
-    const origin = [world[12] || 0, world[13] || 0, world[14] || 0];
+    const origin = this.selectionOrigin();
+    if (!origin) {
+      return null;
+    }
     const scale = this.gizmoScale(origin);
     const start = this.projectToScreen(origin, matrix, rect);
     if (!start) {
@@ -809,7 +889,7 @@ export class SceneViewer {
     let best = null;
     let bestDistance = 10.0;
     const handles = this.gizmoAxes();
-    if (this.gizmoMode === "rotate") {
+    if (this.gizmoMode === "rotate" && this.selectedIds.size === 1) {
       for (const handle of handles) {
         const distance = this.ringDistance(
           clientX,
@@ -954,18 +1034,38 @@ export class SceneViewer {
       .map((node) => ({ node, world: Array.from(node.world) }));
   }
 
+  previewBasesForSelection() {
+    const ids = new Set(this.selectionRoots().map((node) => node.id));
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const node of this.scene.nodes || []) {
+        if (node.parent_id && ids.has(node.parent_id) && !ids.has(node.id)) {
+          ids.add(node.id);
+          changed = true;
+        }
+      }
+    }
+    return (this.scene.nodes || [])
+      .filter((node) => ids.has(node.id))
+      .map((node) => ({ node, world: Array.from(node.world) }));
+  }
+
   beginGizmoDrag(axis, event) {
     if (!this.editable) {
       return false;
     }
-    const node = this.selectedNode();
+    const origin = this.selectionOrigin();
     const handle = this.gizmoAxes().find((item) => item.name === axis);
-    if (!node || !handle) {
+    if (!origin || !handle) {
       return false;
     }
-    const world = node.world || [];
-    const origin = [world[12] || 0, world[13] || 0, world[14] || 0];
-    if (this.gizmoMode === "rotate") {
+    const multi = this.selectedIds.size > 1;
+    const mode = multi ? "translate" : this.gizmoMode;
+    const bases = multi
+      ? this.previewBasesForSelection()
+      : this.previewBases(this.selectedId);
+    if (mode === "rotate") {
       const basis = this.ringBasis(handle.vector);
       const start = this.rotationVector(
         event.clientX,
@@ -985,7 +1085,8 @@ export class SceneViewer {
         basis,
         start,
         angle: 0,
-        bases: this.previewBases(node.id),
+        bases,
+        selection: false,
       };
     } else {
       const start = this.axisParameter(
@@ -998,14 +1099,15 @@ export class SceneViewer {
         return false;
       }
       this.gizmoDrag = {
-        mode: this.gizmoMode,
+        mode,
         axis,
         vector: handle.vector,
         origin,
         start,
         delta: [0, 0, 0],
         factor: 1,
-        bases: this.previewBases(node.id),
+        bases,
+        selection: multi,
       };
     }
     this.hoverAxis = axis;
@@ -1140,6 +1242,15 @@ export class SceneViewer {
     } else if (drag.mode === "scale") {
       if (drag.factor !== 1 && typeof this.onScale === "function") {
         this.onScale(drag.axis, drag.factor);
+      }
+    } else if (drag.selection) {
+      if (
+        (drag.delta[0] !== 0 ||
+          drag.delta[1] !== 0 ||
+          drag.delta[2] !== 0) &&
+        typeof this.onTransformSelection === "function"
+      ) {
+        this.onTransformSelection(drag.delta);
       }
     } else if (
       (drag.delta[0] !== 0 || drag.delta[1] !== 0 || drag.delta[2] !== 0) &&
@@ -1350,7 +1461,7 @@ export class SceneViewer {
       gl.uniform1f(this.uniforms.roughness, material.roughness ?? 0.7);
       gl.uniform3fv(this.uniforms.emissive, material.emissive || [0, 0, 0]);
       gl.uniform1f(this.uniforms.checker_scale, material.checker_scale || 0);
-      gl.uniform1f(this.uniforms.selected, node.id === this.selectedId ? 1 : 0);
+      gl.uniform1f(this.uniforms.selected, this.selectedIds.has(node.id) ? 1 : 0);
       const texture = material.texture ? this.textures.get(material.texture) : null;
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, texture || this.white);
@@ -1368,20 +1479,25 @@ export class SceneViewer {
     if (!this.editable) {
       return;
     }
-    const node = this.selectedNode();
-    if (!node) {
+    const nodes = this.selectedNodes();
+    if (!nodes.length) {
+      return;
+    }
+    const origin = this.selectionOrigin();
+    if (!origin) {
       return;
     }
     const gl = this.gl;
-    const world = node.world || [];
-    const origin = [world[12] || 0, world[13] || 0, world[14] || 0];
+    const multi = this.selectedIds.size > 1;
     const scale = this.gizmoScale(origin);
     const active = this.gizmoDrag ? this.gizmoDrag.axis : this.hoverAxis;
-    const geometry = this.gizmoMode === "rotate"
-      ? this.gizmoRing
-      : this.gizmoMode === "scale"
-        ? this.gizmoScaleHandle
-        : this.gizmoArrow;
+    const geometry = multi
+      ? this.gizmoArrow
+      : this.gizmoMode === "rotate"
+        ? this.gizmoRing
+        : this.gizmoMode === "scale"
+          ? this.gizmoScaleHandle
+          : this.gizmoArrow;
     gl.useProgram(this.gizmoProgram);
     gl.disable(gl.DEPTH_TEST);
     gl.disable(gl.CULL_FACE);

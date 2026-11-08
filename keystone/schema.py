@@ -4,11 +4,15 @@ from __future__ import annotations
 
 WEB_API_VERSION = 1
 SCENE_SCHEMA_VERSION = 2
-EDITOR_SCHEMA_VERSION = 25
+EDITOR_SCHEMA_VERSION = 26
 PREFAB_SCHEMA_VERSION = 2
 EDITOR_ACTIONS = (
     "select",
+    "select_many",
     "transform",
+    "transform_selection",
+    "toggle_selection_visible",
+    "delete_selection",
     "set_node",
     "set_scene",
     "batch",

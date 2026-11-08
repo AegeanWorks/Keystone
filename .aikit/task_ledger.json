@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-scene-groups-v1",
+    "task_id": "keystone-multi-selection-v1",
     "last_phase": "verification",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794099224.9124084,
+    "updated_at": 1794100404.407103,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794099225.3457336
+    "completed_at": 1794100404.8919947
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-scene-diff-prefab-links-v1",
-      "phase": "verification",
-      "phase_num": 4,
-      "description": "[2/2] Scene diffs report prefab_link changes with diff schema 2; 733 tests green, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794093882.0107248,
-      "timestamp_str": "2026-11-08 02:24:42",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-scene-diff-prefab-links-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-scene-diff-prefab-links-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794093882.3778033,
-      "timestamp_str": "2026-11-08 02:24:42",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-multi-root-prefabs-v1",
-      "phase": "planning",
-      "phase_num": 2,
-      "description": "[1/3] Plan multi-root prefab instance groups: link every inserted root, revert/apply whole groups, preserve sibling order",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794093953.06233,
-      "timestamp_str": "2026-11-08 02:25:53",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Only single-root prefabs get instance links, so multi-root prefabs cannot be reverted or applied as a unit.",
-        "benefits": "Every inserted root carries the prefab link, group revert restores the whole template in place, group apply captures all roots into a multi-root prefab, and each operation stays one undo entry.",
-        "risks": "contract: no REST or schema change; dependency: none; concurrency: existing editor lock; state: group roots must share a parent, sibling order must be preserved, and manual duplicates must not reuse a link.",
-        "mitigation": "Add a group helper that validates one parent, order roots by the parent's child list, clear links on manual node duplicates, and add insert/revert/apply/undo regressions."
-      },
-      "plan_digest": "d8fd51ea4176cebd44072e6bbd687830da4762b1ad6b63919745430b4b7e3c5e"
-    },
     {
       "task_id": "keystone-multi-root-prefabs-v1",
       "phase": "verification",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794099225.3457358,
       "timestamp_str": "2026-11-08 03:53:45",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-multi-selection-v1",
+      "phase": "planning",
+      "phase_num": 2,
+      "description": "[1/3] Plan multi-selection sets, batch transform/toggle/delete, console multi-select and group gizmo",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794099334.099559,
+      "timestamp_str": "2026-11-08 03:55:34",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "The editor supports only one selected node; Unity/Unreal-style batch authoring needs selection sets and batch actions.",
+        "benefits": "select_many builds ordered selection sets, transform_selection/toggle_selection_visible/delete_selection edit all selected nodes in one undo, the console supports multi-select, and the viewport highlights the set with a centroid translate gizmo.",
+        "risks": "contract: editor schema 26 and selection document shape; dependency: none; concurrency: editor lock; state: primary selection compatibility, parent/child selection deduplication, prefab group deletion, gizmo preview of shared subtrees, undo.",
+        "mitigation": "Keep selected_id as a single-selection-compatible primary, filter top-level selected roots for batch transform, dedupe groups for delete, preview only union subtrees, and add selection/batch/gizmo/undo tests."
+      },
+      "plan_digest": "07b52c67c149c854e9568f4727f712d3a072fd6bff2dbe62c7e6fe1ba166174d"
+    },
+    {
+      "task_id": "keystone-multi-selection-v1",
+      "phase": "verification",
+      "phase_num": 4,
+      "description": "[2/3] Multi-selection implemented: ordered selected_ids/selection_count, select_many modes, batch transform/toggle/delete with undo and top-level dedupe, hierarchy multi-select, Ctrl/Cmd viewport toggle, centroid translate gizmo; 755 tests green, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 26, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794100404.407103,
+      "timestamp_str": "2026-11-08 04:13:24",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-multi-selection-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-multi-selection-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794100404.8919966,
+      "timestamp_str": "2026-11-08 04:13:24",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

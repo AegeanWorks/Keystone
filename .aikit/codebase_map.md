@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `135`
 - **Total Classes**: `215`
-- **Total Top-Level Functions**: `345`
-- **Total Class Methods**: `1316`
-- **Total Source Lines**: `29893`
+- **Total Top-Level Functions**: `350`
+- **Total Class Methods**: `1323`
+- **Total Source Lines**: `30345`
 
 ---
 
@@ -1356,7 +1356,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `47` lines (`947` bytes)
+**Size**: `51` lines (`1049` bytes)
 
 ---
 
@@ -1535,7 +1535,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `1650` lines (`59740` bytes)
+**Size**: `1845` lines (`66555` bytes)
 
 **Classes:**
 - `class EditorHistory` - *Bounded in-memory undo/redo for scene and environment edits.*
@@ -1574,8 +1574,8 @@
 - `def _scene_snapshot(scene)`
 - `def _restore_scene_state(scene, snapshot)`
 - `def _component_documents(node)`
-- `def node_document(node, selected_id, registry)`
-- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, component_schema_documents, play_state, diff, trash)`
+- `def node_document(node, selected_id, registry, selected_ids)`
+- `def editor_document(scene, selected_id, prefabs, history, prefab_entries, scene_entries, registry, assets, component_types, component_schema_documents, play_state, diff, trash, selected_ids)`
 - `def find_node(scene, node_id)`
 - `def create_node(scene, payload, parent, registry)` - *Create, validate and attach one node from an editor payload.*
 - `def delete_node(scene, node)` - *Detach one node subtree or its whole prefab instance and return the parent.*
@@ -1611,6 +1611,11 @@
 - `def unload_scene(scene, node)` - *Remove one scene group container and return its former parent.*
 - `def _copy_scene_settings(source, target)`
 - `def save_scene_group(scene, node, library)` - *Write one scene group's children back to its library scene in place.*
+- `def _top_level_selected(scene, ids)`
+- `def _parent_linear_inverse(node)`
+- `def transform_selection(scene, ids, payload)` - *Apply a world position delta and/or local rotation/scale deltas.*
+- `def toggle_selection_visible(scene, ids)` - *Flip the visibility of every selected node in one operation.*
+- `def delete_selection(scene, ids)` - *Delete all top-level selected nodes and return a surviving parent.*
 
 ---
 
@@ -1631,14 +1636,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `211` lines (`10195` bytes)
+**Size**: `226` lines (`10853` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `1121` lines (`49686` bytes)
+**Size**: `1224` lines (`53693` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1646,6 +1651,11 @@
 - `class GameSession` - *One in-memory game guarded by a lock for concurrent HTTP requests.*
   - Method `.__init__(game, prefab_dir, scene_dir, initial_scene)`
   - Property `.name`
+  - Property `.selected_ids`
+  - Method `.selected_ids(value)`
+  - Method `._set_selected_ids(ids)`
+  - Property `.selected_id`
+  - Method `.selected_id(value)`
   - Method `.describe()`
   - Method `.simulate(frames, actions, step, trace)`
   - Method `._scene_locked()`
@@ -3105,7 +3115,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `1960` lines (`82493` bytes)
+**Size**: `2095` lines (`88032` bytes)
 
 **Classes:**
 - `class Health`
@@ -3157,6 +3167,8 @@
   - Method `.test_editor_initial_scene_loads_at_startup()`
   - Method `.test_editor_scene_library_persists_and_restores()`
   - Method `.test_editor_add_save_unload_scene_group()`
+  - Method `.test_editor_multi_selection_and_batch_actions()`
+  - Method `.test_editor_multi_selection_skips_selected_descendants()`
   - Method `.test_editor_scene_settings_and_undo()`
   - Method `.test_editor_batch_authoring_is_atomic()`
   - Method `.test_editor_node_property_editing()`

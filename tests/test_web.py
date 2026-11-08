@@ -1348,6 +1348,128 @@ class WebServerTest(unittest.TestCase):
             ids = [node["id"] for node in second["nodes"]]
             self.assertEqual(len(ids), len(set(ids)))
 
+    def test_editor_multi_selection_and_batch_actions(self):
+        session = GameSession(CubeDemo())
+        editor = session.editor()
+        roots = editor["roots"]
+        self.assertGreaterEqual(len(roots), 3)
+        first_id, second_id, third_id = roots[:3]
+        selected = session.editor_action(
+            {
+                "action": "select_many",
+                "ids": [first_id, second_id],
+                "mode": "replace",
+            }
+        )
+        self.assertEqual(selected["selected_ids"], [first_id, second_id])
+        self.assertEqual(selected["selection_count"], 2)
+        self.assertEqual(selected["selection"]["id"], first_id)
+        flags = {node["id"]: node["selected"] for node in selected["nodes"]}
+        self.assertTrue(flags[first_id])
+        self.assertTrue(flags[second_id])
+        added = session.editor_action(
+            {"action": "select_many", "ids": [third_id], "mode": "add"}
+        )
+        self.assertEqual(
+            added["selected_ids"], [first_id, second_id, third_id]
+        )
+        toggled = session.editor_action(
+            {
+                "action": "select_many",
+                "ids": [second_id, third_id],
+                "mode": "toggle",
+            }
+        )
+        self.assertEqual(toggled["selected_ids"], [first_id])
+        session.editor_action(
+            {
+                "action": "select_many",
+                "ids": [first_id, second_id],
+                "mode": "replace",
+            }
+        )
+        before = {
+            node["id"]: node["transform"]["position"]
+            for node in session.editor()["nodes"]
+        }
+        visibility = {
+            node["id"]: node["visible"]
+            for node in session.editor()["nodes"]
+        }
+        transformed = session.editor_action(
+            {"action": "transform_selection", "position": [1.0, 0.0, 0.0]}
+        )
+        moved = {
+            node["id"]: node["transform"]["position"]
+            for node in transformed["nodes"]
+        }
+        self.assertEqual(moved[first_id][0], before[first_id][0] + 1.0)
+        self.assertEqual(moved[second_id][0], before[second_id][0] + 1.0)
+        undone = session.editor_action({"action": "undo"})
+        restored = {
+            node["id"]: node["transform"]["position"]
+            for node in undone["nodes"]
+        }
+        self.assertEqual(restored[first_id], before[first_id])
+        self.assertEqual(restored[second_id], before[second_id])
+        toggled_visible = session.editor_action(
+            {"action": "toggle_selection_visible"}
+        )
+        toggled_flags = {
+            node["id"]: node["visible"]
+            for node in toggled_visible["nodes"]
+        }
+        self.assertEqual(toggled_flags[first_id], not visibility[first_id])
+        self.assertEqual(toggled_flags[second_id], not visibility[second_id])
+        session.editor_action({"action": "undo"})
+        deleted = session.editor_action({"action": "delete_selection"})
+        remaining = {node["id"] for node in deleted["nodes"]}
+        self.assertNotIn(first_id, remaining)
+        self.assertNotIn(second_id, remaining)
+        self.assertEqual(deleted["selected_ids"], [])
+        undone = session.editor_action({"action": "undo"})
+        restored_ids = {node["id"] for node in undone["nodes"]}
+        self.assertIn(first_id, restored_ids)
+        self.assertIn(second_id, restored_ids)
+
+    def test_editor_multi_selection_skips_selected_descendants(self):
+        session = GameSession(CubeDemo())
+        session.editor_action(
+            {"action": "create_node", "id": "multi-parent", "name": "parent"}
+        )
+        session.editor_action(
+            {
+                "action": "create_node",
+                "id": "multi-child",
+                "name": "child",
+                "parent": "multi-parent",
+                "position": [1.0, 0.0, 0.0],
+            }
+        )
+        session.editor_action(
+            {
+                "action": "select_many",
+                "ids": ["multi-parent", "multi-child"],
+                "mode": "replace",
+            }
+        )
+        result = session.editor_action(
+            {"action": "transform_selection", "position": [2.0, 0.0, 0.0]}
+        )
+        parent = next(
+            node for node in result["nodes"] if node["id"] == "multi-parent"
+        )
+        child = next(
+            node for node in result["nodes"] if node["id"] == "multi-child"
+        )
+        self.assertEqual(parent["transform"]["position"], [2.0, 0.0, 0.0])
+        self.assertEqual(child["transform"]["position"], [1.0, 0.0, 0.0])
+        undone = session.editor_action({"action": "undo"})
+        parent = next(
+            node for node in undone["nodes"] if node["id"] == "multi-parent"
+        )
+        self.assertEqual(parent["transform"]["position"], [0.0, 0.0, 0.0])
+
     def test_editor_scene_settings_and_undo(self):
         session = GameSession(CubeDemo())
         editor = session.editor()
@@ -1715,6 +1837,7 @@ class WebServerTest(unittest.TestCase):
             "node-create",
             "node-duplicate",
             "node-delete",
+            "selection-toggle-visible",
             "node-reparent",
             "node-visible",
             "node-tags",
@@ -1784,6 +1907,12 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("assign_asset", script)
         self.assertIn("fillDatalist", script)
         self.assertIn("setSelected", script)
+        self.assertIn("selected_ids", script)
+        self.assertIn("select_many", script)
+        self.assertIn("transform_selection", script)
+        self.assertIn("toggle_selection_visible", script)
+        self.assertIn("delete_selection", script)
+        self.assertIn("selectionToggleVisible", script)
         self.assertIn("onSelect", script)
         self.assertIn("isEditingTarget", script)
         self.assertIn("keydown", script)
@@ -1820,6 +1949,12 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("resetCamera", viewer_script)
         self.assertIn("focusNode", viewer_script)
         self.assertIn("setSelected", viewer_script)
+        self.assertIn("setSelectedIds", viewer_script)
+        self.assertIn("selectionOrigin", viewer_script)
+        self.assertIn("selectionRoots", viewer_script)
+        self.assertIn("previewBasesForSelection", viewer_script)
+        self.assertIn("focusSelection", viewer_script)
+        self.assertIn("onTransformSelection", viewer_script)
         self.assertIn("u_selected", viewer_script)
         self.assertIn("pointerdown", viewer_script)
         self.assertIn("shiftKey", viewer_script)

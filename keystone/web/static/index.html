@@ -37,7 +37,7 @@
         <h2>Scene editor</h2>
         <label class="stack" for="hierarchy">Hierarchy</label>
         <input id="hierarchy-filter" type="text" placeholder="Filter hierarchy">
-        <select id="hierarchy" size="8" aria-label="Scene hierarchy"></select>
+        <select id="hierarchy" size="8" multiple aria-label="Scene hierarchy"></select>
         <div class="buttons">
           <button id="play-start" type="button">Play</button>
           <button id="play-step" type="button">Step</button>
@@ -61,6 +61,7 @@
           <button id="node-create" type="button">Create node</button>
           <button id="node-duplicate" type="button">Duplicate</button>
           <button id="node-delete" type="button">Delete</button>
+          <button id="selection-toggle-visible" type="button">Toggle selected</button>
           <button id="node-reparent" type="button">Reparent</button>
         </div>
         <div class="field-grid">
