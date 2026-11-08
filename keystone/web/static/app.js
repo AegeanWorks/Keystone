@@ -58,6 +58,7 @@ const elements = {
   prefabApply: document.getElementById("prefab-apply"),
   prefabRefresh: document.getElementById("prefab-refresh"),
   prefabLink: document.getElementById("prefab-link"),
+  prefabOverrides: document.getElementById("prefab-overrides"),
   prefabRename: document.getElementById("prefab-rename"),
   prefabDuplicate: document.getElementById("prefab-duplicate"),
   prefabDelete: document.getElementById("prefab-delete"),
@@ -636,6 +637,7 @@ function showEditor(editor) {
   elements.prefabLink.textContent = link
     ? `Prefab instance ${link.name} (${link.instance})`
     : "No prefab instance selected";
+  renderPrefabOverrides(editor);
   fillAssets(editor.selection);
   updateAssetInfo();
   fillComponentData(editor.selection);
@@ -1109,6 +1111,85 @@ async function applyPrefabInstance() {
     { action: "apply_prefab", id: editorState.selection.id },
     "applying prefab instance",
   );
+}
+
+function overrideValue(value) {
+  if (value === null || value === undefined) {
+    return "\u2014";
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+function renderPrefabOverrides(editor) {
+  const groups = editor.prefab_overrides || [];
+  elements.prefabOverrides.replaceChildren();
+  if (!groups.length) {
+    const hint = document.createElement("div");
+    hint.className = "hint";
+    hint.textContent = "No prefab overrides.";
+    elements.prefabOverrides.append(hint);
+    return;
+  }
+  for (const group of groups) {
+    const container = document.createElement("div");
+    container.className = "override-group";
+    const title = document.createElement("div");
+    title.className = "override-title";
+    title.textContent = `${group.prefab} / ${group.instance}`;
+    container.append(title);
+    if (group.error) {
+      const error = document.createElement("div");
+      error.className = "hint";
+      error.textContent = group.error;
+      container.append(error);
+    }
+    for (const node of group.nodes || []) {
+      const fields = node.fields || {};
+      for (const field of Object.keys(fields).sort()) {
+        const values = fields[field];
+        const row = document.createElement("div");
+        row.className = "override-row";
+        const label = document.createElement("span");
+        label.textContent =
+          `${node.id} \u00b7 ${field}: ` +
+          `${overrideValue(values.template)} \u2192 ${overrideValue(values.instance)}`;
+        const revert = document.createElement("button");
+        revert.type = "button";
+        revert.textContent = "Revert";
+        revert.addEventListener("click", () =>
+          run(() => revertPrefabOverride(node.id, field)),
+        );
+        const apply = document.createElement("button");
+        apply.type = "button";
+        apply.textContent = "Apply";
+        apply.addEventListener("click", () =>
+          run(() => applyPrefabOverride(node.id, field)),
+        );
+        row.append(label, revert, apply);
+        container.append(row);
+      }
+    }
+    elements.prefabOverrides.append(container);
+  }
+}
+
+async function revertPrefabOverride(nodeId, field) {
+  await editorAction(
+    { action: "revert_prefab_override", id: nodeId, field },
+    `reverting ${field}`,
+  );
+  await refreshScene(false);
+}
+
+async function applyPrefabOverride(nodeId, field) {
+  await editorAction(
+    { action: "apply_prefab_override", id: nodeId, field },
+    `applying ${field}`,
+  );
+  await refreshScene(false);
 }
 
 async function refreshPrefabInstances() {

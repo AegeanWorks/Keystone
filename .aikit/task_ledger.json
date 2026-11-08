@@ -1,56 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-ortho-views-v1",
+    "task_id": "keystone-prefab-override-panel-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794108292.1794024,
+    "updated_at": 1794108722.8351626,
     "owner": "opencode:deepseek-v4.1-flash",
     "started_by": "opencode:deepseek-v4.1-flash",
     "continuations": [],
-    "completed_at": 1794108292.5649943
+    "completed_at": 1794108723.0858886
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-realtime-play-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Real-time play implemented: play_pause/play_resume actions, paused play state, paused stepping, guarded console loop with elapsed-frame batching, Step pauses a running loop, Pause/Resume buttons and Playing/Paused/Stopped label, schema 32; 762 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 32, AIKit 6/6; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794104864.1738658,
-      "timestamp_str": "2026-11-08 05:27:44",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-realtime-play-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-realtime-play-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794104864.4445007,
-      "timestamp_str": "2026-11-08 05:27:44",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
-    {
-      "task_id": "keystone-prefab-edit-mode-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan isolated prefab edit mode with save, discard and restore of the authored scene",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794104967.80209,
-      "timestamp_str": "2026-11-08 05:29:27",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "Prefabs can only be edited through an inserted instance, so changing a template requires scattering scene objects and the authored scene cannot be isolated from the edit.",
-        "benefits": "edit_prefab opens an isolated scene, normal node/component tools edit the template, save_prefab_edit writes the prefab library, and close restores the authored scene and its undo history.",
-        "risks": "contract: editor schema 33 and three new actions; dependency: none; concurrency: editor lock; state: scene object swap, history isolation, selection restore, nested links, dirty tracking, blocked scene/play actions, failed saves.",
-        "mitigation": "Use an explicit scene override plus saved original scene/history, capture roots through the existing multi-root prefab path, validate blocked actions, mark dirty on edits, and add open/edit/save/discard/history-isolation regressions."
-      },
-      "plan_digest": "4b1972a617312a21300c12860fef83e9b851b7ac8a05a6f3e2a500653c1b4364"
-    },
     {
       "task_id": "keystone-prefab-edit-mode-v1",
       "phase": "in_progress",
@@ -265,6 +226,45 @@
       "status": "completed",
       "timestamp": 1794108292.5649967,
       "timestamp_str": "2026-11-08 06:24:52",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-prefab-override-panel-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan a console panel for per-field prefab override inspection, revert and apply",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794108324.6403062,
+      "timestamp_str": "2026-11-08 06:25:24",
+      "agent": "opencode:deepseek-v4.1-flash",
+      "impact_assessment": {
+        "why": "The API reports per-field prefab overrides, but the console hides them, so resolving an override still requires hand-written API calls.",
+        "benefits": "Each instance/node/field row shows template and instance values with Revert and Apply buttons, making prefab divergence visible and resolvable in the editor.",
+        "risks": "contract: UI-only, no API/schema change; dependency: none; concurrency: editor lock; state: DOM safety for arbitrary values, group errors, asset-write apply, undoable revert, busy guards.",
+        "mitigation": "Render with textContent and createElement, keep per-field actions on existing endpoints, refresh the scene after each action, and add static console regressions."
+      },
+      "plan_digest": "9504bf47f2a241532c5647f00b1c2e4b415d111dbe3b07bf3270d6e2f04f3fd2"
+    },
+    {
+      "task_id": "keystone-prefab-override-panel-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Prefab override panel implemented: instance groups with errors, per-node/field template-to-instance rows, Revert/Apply buttons on existing actions, safe DOM rendering and scene refresh; 765 tests green, Ruff clean, node checks clean, determinism hash 772cac5232a0947b8f6d1914a5cf0cde, headless/describe schema 35, AIKit 6/6; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794108722.8351626,
+      "timestamp_str": "2026-11-08 06:32:02",
+      "agent": "opencode:deepseek-v4.1-flash"
+    },
+    {
+      "task_id": "keystone-prefab-override-panel-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-prefab-override-panel-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794108723.0858905,
+      "timestamp_str": "2026-11-08 06:32:03",
       "agent": "opencode:deepseek-v4.1-flash"
     }
   ]

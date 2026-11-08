@@ -1136,3 +1136,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The Scene view was perspective-only, so axis-aligned top/front/side authoring common in Unity and Unreal was unavailable.
 - **Decision**: Track a Scene-view projection mode and preset in `SceneViewer`. A projection button cycles Persp, Top, Front and Side (O shortcut). Orthographic presets reuse the editor camera state, orient yaw/pitch for the axis, and use a standard orthographic matrix sized by the camera distance; wheel zoom changes the orthographic height. Game view remains perspective, and grid, picking, box selection and gizmos continue through the same view-projection path. No API or schema change.
 - **Consequences**: 765 tests green; static viewer/console coverage verifies the projection matrix, presets, button and shortcut wiring. Presets snap the camera to world axes without an up-axis switch, orthographic size is tied to the orbit distance, and no separate per-viewport camera state is stored.
+
+### ADR-139: In-console prefab override panel
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The API reported per-field prefab overrides, but the console hid them, so resolving a divergence still required hand-written API calls.
+- **Decision**: Render `prefab_overrides` in the console as instance groups with errors, per-node/field rows showing template and instance values, and Revert/Apply buttons that call the existing `revert_prefab_override` and `apply_prefab_override` actions. Build the DOM with `textContent` and `createElement`, refresh the scene after each action, and keep the existing busy/run guard. No API or schema change.
+- **Consequences**: 765 tests green; static console coverage verifies the panel and both actions. Revert remains scene-undoable, Apply remains an asset write, and large component values wrap instead of expanding the panel width.

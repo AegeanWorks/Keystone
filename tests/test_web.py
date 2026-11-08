@@ -2583,6 +2583,7 @@ class WebServerTest(unittest.TestCase):
             "prefab-edit-close",
             "prefab-edit-discard",
             "prefab-edit-state",
+            "prefab-overrides",
             "prefab-link",
             "mesh-asset",
             "material-asset",
@@ -2646,6 +2647,9 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("refreshPrefabInstances", script)
         self.assertIn("prefab_refresh", script)
         self.assertIn("payload.ids", script)
+        self.assertIn("renderPrefabOverrides", script)
+        self.assertIn("revert_prefab_override", script)
+        self.assertIn("apply_prefab_override", script)
         self.assertIn("setViewMode", script)
         self.assertIn("toggleViewMode", script)
         self.assertIn("updateViewModeButton", script)
