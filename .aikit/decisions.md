@@ -1632,3 +1632,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->End audit found that `apply_prefab` checked only the selected instance root before writing the whole group into the prefab library. A locked child could be baked into the template and its lock protection bypassed.
 - **Decision**: Use `_ensure_subtree_unlocked_locked` for `apply_prefab`, matching prefab revert, delete and refresh. Add a regression that locks a child and asserts applying its unlocked parent returns 400.
 - **Consequences**: Prefab apply now honors locks anywhere in the captured group. The action remains outside scene undo because it writes the prefab library.
+
+### ADR-201: Deterministic 1D animation blend spaces
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: Keystone had clips, crossfades, events and state machines, but scalar-driven blends such as walk-to-run still needed game-side pose code. Unity/Unreal-style animation authoring needs a reusable blend primitive.
+- **Decision**: Add `BlendSample` and `BlendSpace1D`. Samples carry a clip and finite threshold; the space sorts thresholds, rejects duplicates and empty inputs, clamps outside the range, samples both neighbours at the same clip time and uses `blend_poses` for the linear in-between. Provide schema-1 `to_dict`/`from_dict`, a JSON-safe `report` and public package exports. Add unit tests for interpolation, clamping, ordering, serialization, reports and validation.
+- **Consequences**: Games and AI clients can drive a scalar animation blend deterministically. State-machine integration and editor authoring of blend spaces remain future work; the core API is additive and game-agnostic.

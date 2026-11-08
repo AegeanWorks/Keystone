@@ -158,7 +158,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Renderer | Implemented | OpenGL 3.3, sky, lights, PBR (metallic/roughness/emissive), fog, textures, readback, draw/triangle stats, static batch planning and world-space merge |
 | Runtime | Implemented | fixed clock, rebindable input with contexts and JSON persistence, loop, screenshots, profiler HUD with audio voices and animation clips |
 | Audio | Implemented | synth clips, named-bus mixer, deterministic mixdown, WAV I/O, audit reports |
-| Animation | Implemented | deterministic keyframe clips, looping controller, crossfade blending, timed events, pose application, JSON round trips, audit reports, parameter-driven state machines with triggers and crossfades, file-backed `.kstate` machines with rename/duplicate, fixed-step editor previews, load-to-editor authoring and library keyframe editing |
+| Animation | Implemented | deterministic keyframe clips, looping controller, crossfade blending, timed events, pose application, JSON round trips, audit reports, parameter-driven state machines with triggers and crossfades, 1D blend spaces, file-backed `.kstate` machines with rename/duplicate, fixed-step editor previews, load-to-editor authoring and library keyframe editing |
 | Particles | Implemented | deterministic CPU emitters and systems with gravity/drag, swept AABB collision with bounce, friction and contact-kill, burst emission, lifetime culling, JSON round trips, HUD/inspector/AI reports, plus one GPU point-sprite billboard per live particle |
 | Replay | Implemented | CommandLog runner and verifier without a window; --replay log.json with hash pinning |
 | Plugin | Implemented | GameModule + loader |

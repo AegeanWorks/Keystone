@@ -8,7 +8,7 @@
 
 ![Keystone engine sample](assets/engine.png)
 
-A small, game-agnostic 3D engine core in Python: OpenGL 3.3 PBR rendering, scene graph, meshes/OBJ, fixed-step loop, rebindable input, animation, particles, audio, collision, replay, atomic saves, batch planning/merging, and a HUD/profiler overlay with an embedded bitmap font.
+A game-agnostic 3D engine core in Python: OpenGL 3.3 PBR rendering, scene graph, meshes/OBJ, fixed-step loop, rebindable input, animation, particles, audio, collision, replay, atomic saves, batch planning/merging, and a HUD/profiler overlay.
 
 Games plug in through one five-operation contract. Keystone ships a **cube demo** only as a smoke test; it contains no combat, puzzles, procedural worlds or other genre rules. External game modules live outside this package and load with `--game package.module:Factory`. Games may also add an optional `draw_ui(canvas, state)` hook for their own HUD.
 
@@ -246,7 +246,7 @@ The dashboard can inspect the game contract, run the same action scripts as `--s
 | `/api/simulate` | `POST` | the same deterministic result as `--simulate`; body `{"frames": 60, "actions": [...], "step": 0.0167, "trace": false}` |
 | `/api` | `GET` | endpoint and schema index |
 
-The API sends CORS headers so a local AI client or frontend can call it directly. Keep the default loopback host; pass `--host 0.0.0.0` only for deliberate network exposure. The server never opens a GL context; prefab writes stay in the library.
+The API sends CORS headers so local AI clients can call it directly. Keep the default loopback host; pass `--host 0.0.0.0` for deliberate exposure. The server never opens a GL context.
 
 `/api/scene` exports the game's `self.scene` when it has one, so a live simulation is visible immediately. A game without that attribute gets a fresh `build_scene()` result; put the scene on `self.scene` for live state.
 
@@ -260,7 +260,7 @@ The API sends CORS headers so a local AI client or frontend can call it directly
 - **Fixed-step runtime**: `FixedStepClock` releases whole steps with a bounded catch-up budget; the headless path advances one step per frame for deterministic tests.
 - **Action input**: rebindable `InputMap` bindings expose `forward`, `right`, `up`, `look_yaw`, `look_pitch`, `pressed` and `held` across action contexts; no direct GLFW access.
 - **Audio core**: synth (`sine`, `square`, `noise`), named-bus `Mixer` with deterministic mixdown, mono 16-bit WAV IO and `audio_report()`; no hardware.
-- **Animation**: keyframe `Track`/`AnimationClip`, looping, crossfades, events, `apply_pose()`, CPU/GPU linear-blend skinning, JSON round trips, reports, keyframe authoring and state machines.
+- **Animation**: keyframe `Track`/`AnimationClip`, looping, crossfades, events, blend spaces, `apply_pose()`, CPU/GPU skinning, JSON round trips, reports, keyframe authoring and state machines.
 - **Replay runner**: `run_log()`/`verify_log()` replay a `CommandLog`, and `--replay` audits logs.
 - **Particles**: seeded CPU emitters with forces, swept collision, bursts, culling and JSON reports; HUD/inspector counts; one GPU billboard each.
 - **Physics**: ray/AABB/sphere queries, sphere pushout, spatial-grid broadphase, AABB movement with gravity/ground, trigger tracking and filtered raycasts.
@@ -364,6 +364,7 @@ keystone/
 │   ├── __main__.py           <- CLI: --game, headless frames, PNG
 │   ├── agents.py             <- AI adapters and audit trail
 │   ├── animation.py          <- clips, controller and pose reports
+│   ├── animation_blend.py    <- blend spaces
 │   ├── animation_state.py    <- parameter-driven state machine transitions
 │   ├── animation_library.py  <- file-backed .kanim clip library
 │   ├── state_machine_library.py <- file-backed .kstate machine library
@@ -489,6 +490,7 @@ keystone/
 │   ├── test_triggers.py      <- enter/exit tracking and multiple volumes
 │   ├── test_agents.py        <- AI adapters, validation and audit trail
 │   ├── test_animation.py     <- clips, blending and timed events
+│   ├── test_animation_blend.py <- blend spaces
 │   ├── test_animation_state.py <- state transitions, triggers and round trips
 │   ├── test_animation_library.py <- clip library save, load, delete and restore
 │   ├── test_state_machine_library.py <- .kstate library save/delete/restore

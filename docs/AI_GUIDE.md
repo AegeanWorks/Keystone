@@ -284,6 +284,15 @@ machine.set_parameter("speed", 1.0)
 apply_pose(CubeDemo().build_scene(), machine.advance(0.016))
 print(machine.report())
 
+# One-dimensional blend space: ordered clips blended by one scalar.
+from keystone import BlendSample, BlendSpace1D
+
+space = BlendSpace1D(
+    (BlendSample(clip, 0.0), BlendSample(eventful, 1.0))
+)
+print(space.sample(0.5, 0.0))
+print(space.report())
+
 from keystone.input import ActionState
 from keystone.replay import CommandLog, run_log
 

@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `145`
-- **Total Classes**: `231`
-- **Total Top-Level Functions**: `421`
-- **Total Class Methods**: `1481`
-- **Total Source Lines**: `40334`
+- **Total Python Modules**: `147`
+- **Total Classes**: `234`
+- **Total Top-Level Functions**: `424`
+- **Total Class Methods**: `1495`
+- **Total Source Lines**: `40607`
 
 ---
 
@@ -19,7 +19,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `181` lines (`3993` bytes)
+**Size**: `184` lines (`4095` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -119,6 +119,31 @@
 - `def blend_poses(first, second, factor)` - *Blend two sampled poses; factor 0 returns first, 1 returns second.*
 - `def apply_pose(scene, pose)` - *Write sampled Transforms onto nodes by id or name; return updated ids.*
 - `def animation_report(controller)`
+
+---
+
+### [`keystone/animation_blend.py`](keystone/animation_blend.py)
+> *Deterministic one-dimensional animation blend spaces.*
+
+**Size**: `154` lines (`5598` bytes)
+
+**Classes:**
+- `class BlendSample` - *One clip anchored at a scalar threshold.*
+  - Method `.__post_init__()`
+  - Method `.to_dict()`
+  - Method `.from_dict(data)`
+- `class BlendSpace1D` - *Ordered clips blended by one finite scalar parameter.*
+  - Method `.__post_init__()`
+  - Property `.thresholds`
+  - Property `.duration`
+  - Method `.sample(parameter, time)` - *Return a blended pose for one scalar parameter and clip time.*
+  - Method `.to_dict()`
+  - Method `.from_dict(data)`
+  - Method `.report()` - *Return a JSON-safe summary for AI clients and diagnostics.*
+
+**Functions:**
+- `def _finite(label, value)`
+- `def _schema(data)`
 
 ---
 
@@ -2014,6 +2039,23 @@
 
 **Functions:**
 - `def _vec_track(pairs)`
+
+---
+
+### [`tests/test_animation_blend.py`](tests/test_animation_blend.py)
+> *Unit tests for deterministic 1D animation blend spaces.*
+
+**Size**: `116` lines (`4050` bytes)
+
+**Classes:**
+- `class BlendSpaceTest`
+  - Method `.test_samples_and_clamps_parameter()`
+  - Method `.test_single_sample_and_reverse_order()`
+  - Method `.test_round_trip_and_report()`
+  - Method `.test_validation()`
+
+**Functions:**
+- `def _clip(name, x)`
 
 ---
 
