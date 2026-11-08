@@ -1925,6 +1925,99 @@ class WebServerTest(unittest.TestCase):
             any(node["name"] == "custom-arm" for node in refreshed["nodes"])
         )
 
+    def test_editor_apply_outer_prefab_keeps_nested_override_baseline(self):
+        session = GameSession(CubeDemo())
+        session.prefabs["inner"] = Prefab(
+            "inner",
+            (
+                Node(
+                    "inner",
+                    id="inner",
+                    transform=Transform(position=Vec3(0.0, 1.0, 0.0)),
+                ),
+            ),
+        )
+        session.editor_action(
+            {"action": "create_node", "id": "outer", "name": "outer"}
+        )
+        session.editor_action(
+            {
+                "action": "insert_prefab",
+                "name": "inner",
+                "parent": "outer",
+                "instance": "inner-1",
+            }
+        )
+        session.editor_action(
+            {"action": "save_prefab", "id": "outer", "name": "outer"}
+        )
+        session.editor_action({"action": "delete_node", "id": "outer"})
+        session.editor_action(
+            {"action": "insert_prefab", "name": "outer", "instance": "outer-1"}
+        )
+        nested_id = "outer-1.inner-1:inner"
+        session.editor_action(
+            {
+                "action": "transform",
+                "id": nested_id,
+                "position": [3.0, 1.0, 0.0],
+            }
+        )
+        applied = session.editor_action(
+            {"action": "apply_prefab", "id": "outer-1:outer"}
+        )
+        groups = {
+            group["instance"]: group
+            for group in applied["prefab_overrides"]
+        }
+        self.assertIn("outer-1.inner-1", groups)
+        fields = groups["outer-1.inner-1"]["nodes"][0]["fields"]
+        self.assertEqual(
+            fields["transform.position"],
+            {"template": [0.0, 1.0, 0.0], "instance": [3.0, 1.0, 0.0]},
+        )
+
+    def test_editor_apply_prefab_failure_keeps_override_baseline(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefab_dir = Path(directory) / "prefabs"
+            session = GameSession(CubeDemo(), prefab_dir=prefab_dir)
+            editor = session.editor()
+            cube = next(
+                node for node in editor["nodes"] if node["name"] == "cube-0"
+            )
+            session.editor_action({"action": "select", "id": cube["id"]})
+            session.editor_action({"action": "save_prefab", "name": "hero"})
+            session.editor_action(
+                {"action": "insert_prefab", "name": "hero", "instance": "a"}
+            )
+            session.editor_action(
+                {"action": "set_node", "id": "a:cube-0", "name": "custom"}
+            )
+            with patch.object(
+                session.prefab_library,
+                "save",
+                side_effect=OSError("disk full"),
+            ), self.assertRaises(OSError):
+                session.editor_action(
+                    {"action": "apply_prefab", "id": "a:cube-0"}
+                )
+            self.assertEqual(
+                session.prefabs["hero"].roots[0].name, "cube-0"
+            )
+            group = next(
+                item
+                for item in session.editor()["prefab_overrides"]
+                if item["instance"] == "a"
+            )
+            fields = next(
+                item
+                for item in group["nodes"]
+                if item["id"] == "a:cube-0"
+            )["fields"]
+            self.assertEqual(
+                fields["name"], {"template": "cube-0", "instance": "custom"}
+            )
+
     def test_editor_refresh_skips_locked_instance_groups(self):
         session = GameSession(CubeDemo())
         editor = session.editor()

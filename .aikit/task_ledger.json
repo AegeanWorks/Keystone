@@ -3,43 +3,15 @@
   "active_task": {
     "task_id": "keystone-commit-audit-v2",
     "last_phase": "phase 4",
-    "active_phase": 4,
-    "status": "in_progress",
-    "updated_at": 1794139899.1713135,
+    "active_phase": 5,
+    "status": "completed",
+    "updated_at": 1794140487.4873438,
     "owner": "opencode:keystone",
     "started_by": "opencode:keystone",
-    "continuations": []
+    "continuations": [],
+    "completed_at": 1794140489.629259
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-commit-audit-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan cumulative commit audits from commit 1 (bff5072) through commit 3/6/9/12/15/18 and End",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794128377.1593704,
-      "timestamp_str": "2026-11-08 11:59:37",
-      "agent": "opencode:deepseek-v4.1-flash",
-      "impact_assessment": {
-        "why": "The session added 18 feature commits without a cumulative review, so regressions and gaps may exist across interactions rather than inside single commits.",
-        "benefits": "Each cumulative range is inspected and tested; concrete fixes are committed and pushed after each pass, ending with a clean audited history.",
-        "risks": "contract: fixes touch editor reload, project manifests, core asset refresh and node documents; dependency: none new; concurrency: none; state: stale startup scenes, stale unchanged payloads, prefab dependency reload order, inherited lock UI, remote push.",
-        "mitigation": "Find and test one concrete issue per affected range, run targeted tests plus full AIKit gates, commit conventionally and push without force."
-      },
-      "plan_digest": "84640481909eb075e9a1e4112b595a7abea9a9af62991a297100611e686f3c71"
-    },
-    {
-      "task_id": "keystone-commit-audit-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[run 1/6] Audited commits 1-3 (bff5072..fd0ce7a): found unchanged-digest reload identity bug; reload_assets now rebinds unchanged payloads too, with a touched-.obj regression and asset_usages proof; full AIKit 6/6 passed; commit and push next",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794128697.1001728,
-      "timestamp_str": "2026-11-08 12:04:57",
-      "agent": "opencode:deepseek-v4.1-flash"
-    },
     {
       "task_id": "keystone-commit-audit-v1",
       "phase": "in_progress",
@@ -288,6 +260,31 @@
         "next": "commit and push range 1->27, then start range 1->30",
         "evidence": "locked refresh test green, full 6/6 gate green"
       }
+    },
+    {
+      "task_id": "keystone-commit-audit-v2",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[5/5] Range 1->30: preserve nested baselines on outer prefab apply and defer rebasing until the library write succeeds; two regressions; 6/6 gate passed; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794140487.4873438,
+      "timestamp_str": "2026-11-08 15:21:27",
+      "agent": "opencode:keystone",
+      "handoff": {
+        "next": "commit and push range 1->30, then report cycle complete at start-of-cycle End 2bffdb6",
+        "evidence": "nested apply and failed-write tests green, full 6/6 gate green"
+      }
+    },
+    {
+      "task_id": "keystone-commit-audit-v2",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-commit-audit-v2' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794140489.6292613,
+      "timestamp_str": "2026-11-08 15:21:29",
+      "agent": "opencode:keystone"
     }
   ]
 }

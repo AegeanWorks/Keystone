@@ -68,6 +68,7 @@ from keystone.web.editor import (
     save_prefab,
     save_prefab_nodes,
     save_scene_group,
+    seed_prefab_instance_baselines,
     set_clip_key,
     set_component,
     set_node_properties,
@@ -1969,8 +1970,8 @@ class GameSession:
                         raise ValueError("node is not a prefab instance")
                     previous = self.prefabs.get(link.name)
                     prefab = apply_prefab_instance(
-            scene, node, self.prefabs, self._registry_locked()
-        )
+                        scene, node, self.prefabs, self._registry_locked()
+                    )
                     if self.prefab_library is not None:
                         try:
                             self.prefab_library.save(link.name, prefab)
@@ -1980,6 +1981,9 @@ class GameSession:
                             else:
                                 self.prefabs[link.name] = previous
                             raise
+                    seed_prefab_instance_baselines(
+                        scene, node, self._registry_locked()
+                    )
                     self.selected_id = node.id
                 elif action == "revert_prefab_override":
                     node_id = payload.get("id") or self.selected_id

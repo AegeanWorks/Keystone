@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `145`
 - **Total Classes**: `231`
-- **Total Top-Level Functions**: `411`
-- **Total Class Methods**: `1459`
-- **Total Source Lines**: `39235`
+- **Total Top-Level Functions**: `413`
+- **Total Class Methods**: `1461`
+- **Total Source Lines**: `39354`
 
 ---
 
@@ -1663,7 +1663,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `3013` lines (`107168` bytes)
+**Size**: `3035` lines (`107881` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1741,12 +1741,14 @@
 - `def insert_prefab(scene, prefabs, name, parent, instance, registry)`
 - `def revert_prefab_instance(scene, node, prefabs, registry)` - *Replace the linked instance group with a fresh prefab template.*
 - `def apply_prefab_instance(scene, node, prefabs, registry)` - *Capture the linked instance group as the new prefab definition.*
+- `def seed_prefab_instance_baselines(scene, node, registry)` - *Rebase one applied group after its prefab write succeeds.*
 - `def rename_prefab_links(scene, old, new)` - *Point every instance link at a renamed prefab; return the updates made.*
 - `def _instance_groups(scene)`
 - `def _containing_instance_link(node)`
 - `def _map_prefab_nodes(prefab, roots)`
 - `def _node_override_values(node, registry)`
-- `def _seed_instance_baselines(roots, registry)` - *Record each instance node's current values as its override baseline.*
+- `def _seed_node_baselines(nodes, registry)` - *Record each supplied node's current values as its override baseline.*
+- `def _seed_instance_baselines(roots, registry)` - *Record a fresh instance subtree, including nested groups, as its baseline.*
 - `def _instance_nodes(roots)` - *Return instance nodes without descending into nested prefab groups.*
 - `def _ensure_prefab_baselines(scene, prefabs, registry)` - *Seed missing baselines for legacy or hand-built prefab instances.*
 - `def _capture_instance_overrides(roots, registry)` - *Capture field values that differ from each node's stored baseline.*
@@ -1810,7 +1812,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2791` lines (`124977` bytes)
+**Size**: `2795` lines (`125172` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3386,7 +3388,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `5350` lines (`220983` bytes)
+**Size**: `5443` lines (`224413` bytes)
 
 **Classes:**
 - `class Health`
@@ -3442,6 +3444,8 @@
   - Method `.test_editor_refresh_seeds_legacy_baselines_from_template()`
   - Method `.test_editor_refresh_merges_field_overrides()`
   - Method `.test_editor_refresh_drops_overrides_for_removed_template_nodes()`
+  - Method `.test_editor_apply_outer_prefab_keeps_nested_override_baseline()`
+  - Method `.test_editor_apply_prefab_failure_keeps_override_baseline()`
   - Method `.test_editor_refresh_skips_locked_instance_groups()`
   - Method `.test_editor_prefab_overrides_survive_scene_round_trip()`
   - Method `.test_editor_multi_root_prefab_save_from_selection()`

@@ -67,6 +67,7 @@ __all__ = [
     "save_prefab",
     "save_prefab_nodes",
     "scene_settings_document",
+    "seed_prefab_instance_baselines",
     "set_clip_key",
     "set_component",
     "set_node_properties",
@@ -1697,8 +1698,23 @@ def apply_prefab_instance(
     roots = _prefab_instance_roots(scene, link)
     prefab = Prefab.from_nodes(roots, name=link.name)
     prefabs[link.name] = prefab
-    _seed_instance_baselines(roots, registry)
     return prefab
+
+
+def seed_prefab_instance_baselines(
+    scene: Scene,
+    node: Node,
+    registry: object | None = None,
+) -> int:
+    """Rebase one applied group after its prefab write succeeds.
+
+    Nested groups keep their own baselines; only the applied group is rebased.
+    """
+    link = node.prefab_link
+    if link is None:
+        raise ValueError("node is not a prefab instance")
+    roots = _prefab_instance_roots(scene, link)
+    return _seed_node_baselines(_instance_nodes(roots), registry)
 
 
 def rename_prefab_links(scene: Scene, old: str, new: str) -> int:
@@ -1804,14 +1820,20 @@ def _node_override_values(
     return values
 
 
-def _seed_instance_baselines(roots: list[Node], registry: object | None) -> int:
-    """Record each instance node's current values as its override baseline."""
+def _seed_node_baselines(nodes: list[Node], registry: object | None) -> int:
+    """Record each supplied node's current values as its override baseline."""
     seeded = 0
-    for root in roots:
-        for node in root.traverse():
-            node.prefab_base = _node_override_values(node, registry)
-            seeded += 1
+    for node in nodes:
+        node.prefab_base = _node_override_values(node, registry)
+        seeded += 1
     return seeded
+
+
+def _seed_instance_baselines(roots: list[Node], registry: object | None) -> int:
+    """Record a fresh instance subtree, including nested groups, as its baseline."""
+    return _seed_node_baselines(
+        [node for root in roots for node in root.traverse()], registry
+    )
 
 
 def _instance_nodes(roots: list[Node]) -> list[Node]:

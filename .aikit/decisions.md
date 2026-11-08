@@ -1488,3 +1488,11 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Context**: The cumulative 1->27 audit found that `refresh_prefab_instances` still replaced every top-level instance of a prefab, including groups with locked nodes. That bypassed the lock protection added for transforms, deletes, asset/component edits and prefab revert/apply.
 - **Decision**: Add an optional `is_locked` predicate to `refresh_prefab_instances`. A group whose root or any descendant is locked is skipped before override capture, and the report gains `skipped_locked`. The server passes its ancestor-aware lock check. Add a regression that locks only a child of one instance, renames the prefab, refreshes, and asserts one group is skipped and the other updated; unlocking makes both refresh.
 - **Consequences**: Locked prefab instances now survive a bulk refresh while unlocked siblings still receive template changes. The action reports the skipped count instead of failing, so a mixed scene remains usable. Direct calls without `is_locked` keep the previous behavior.
+
+### ADR-183: Commit audit scopes prefab apply baselines to the applied group
+
+- **Date**: 2026-11-08
+- **Status**: Accepted
+- **Context**: The cumulative 1->30 audit found two problems in the new override baseline flow. Applying an outer prefab seeded baselines for every descendant, including nested prefab groups, which erased nested overrides. Applying also rebased baselines before the prefab library write, so a failed write left instance metadata pointing at a template that was never saved.
+- **Decision**: Remove baseline seeding from `apply_prefab_instance` and add `seed_prefab_instance_baselines`, which rebases only the applied group's own nodes and skips nested groups. The `apply_prefab` action calls it only after the library write succeeds. Add regressions for nested overrides surviving an outer apply and for a failed library write keeping the old template, baseline and override report.
+- **Consequences**: Nested instance overrides survive outer prefab applies, and failed applies are metadata-atomic. `apply_prefab_instance` is now a pure capture helper; callers that need baselines call the new helper after persistence.
