@@ -1,67 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-input-keys-diagnostics",
-    "last_phase": "phase 4",
+    "task_id": "keystone-readme-tree-v1",
+    "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794251414.0484576,
-    "owner": "commandcode:goal",
-    "started_by": "commandcode:goal",
+    "updated_at": 1794252321.029244,
+    "owner": "commandcode:keystone-console",
+    "started_by": "commandcode:keystone-console",
     "continuations": [],
-    "completed_at": 1794251420.7428434
+    "completed_at": 1794252329.0260086
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-report-rest-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-report-rest-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794176994.3718107,
-      "timestamp_str": "2026-11-09 01:29:54",
-      "agent": "commandcode:keystone-console"
-    },
-    {
-      "task_id": "keystone-f7-playtest-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan: verified F7 (the one untriaged report finding) true in all four parts by execution; implement the report's stated first slice - read-only on_frame/on_event observers plus an events frame map on run_bot, and load_policy with a --policy module:factory CLI form",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794204346.2984748,
-      "timestamp_str": "2026-11-09 09:05:46",
-      "agent": "commandcode:keystone-console",
-      "impact_assessment": {
-        "why": "run_bot had no per-frame hook, no evidence module existed, --policy accepted only three built-ins, and agents.observe is a snapshot adapter, so the consumer ships its own 739-line play harness and 107-line bot and core playtest stays unvalidated against real content.",
-        "benefits": "A game collects its own telemetry and registers its own bot policy without forking the runner.",
-        "risks": "contract: additive run_bot keywords and a broadened --policy value; dependency: none new; concurrency: none; state: no transcript or persisted format change.",
-        "mitigation": "Keep observers read-only, pin that the transcript and hash are identical with and without them, and run the full 6/6 gate plus the canonical simulate hash."
-      },
-      "plan_digest": "5b7d2f3bd7f6fd6cb3813b949cbee43ac56cd19d6ad21bed3f1f0054b1f4fb72"
-    },
-    {
-      "task_id": "keystone-f7-playtest-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Implemented and verified - run_bot on_frame/on_event/events observers proven neutral (identical hash, actions, final and snapshots with and without trace), load_policy plus --policy module:factory verified end to end 6/6; 976 tests pass; canonical simulate hash unchanged; pushed 81e58e5",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794204356.6696186,
-      "timestamp_str": "2026-11-09 09:05:56",
-      "agent": "commandcode:keystone-console"
-    },
-    {
-      "task_id": "keystone-f7-playtest-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[3/3] Project gate passes 6/6 on 81e58e5; branch clean and synced with origin/master; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794204363.253759,
-      "timestamp_str": "2026-11-09 09:06:03",
-      "agent": "commandcode:keystone-console"
-    },
     {
       "task_id": "keystone-f7-playtest-v1",
       "phase": "completed",
@@ -260,6 +210,56 @@
       "timestamp": 1794251420.7428463,
       "timestamp_str": "2026-11-09 22:10:20",
       "agent": "commandcode:goal"
+    },
+    {
+      "task_id": "keystone-readme-tree-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan: the unpushed 3c84b49 added a tracked tests/test_input_keys.py but omitted it from the README directory tree, so check --strict failed the guidelines gate with PRINCIPLE-005 R5 while the other five gates passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794252309.1601431,
+      "timestamp_str": "2026-11-09 22:25:09",
+      "agent": "commandcode:keystone-console",
+      "impact_assessment": {
+        "why": "The tree check is the only gate that compares the filesystem to the README, so a missing entry blocks delivery even though every test is green.",
+        "benefits": "Strict check and delivery work again, and a cold-starting agent can find the new test file from the README.",
+        "risks": "contract: none (documentation only); dependency: none; concurrency: the tree may be edited concurrently; state: README char budget.",
+        "mitigation": "Add one tree line, re-run update_knowledge_base --check, verify no merged bullets or unbalanced fences, and keep well under 32,500 chars."
+      },
+      "plan_digest": "c5d83f8d26281a7d914291f91f4a55252a60c7aa01b3b23c8b179405332411ae"
+    },
+    {
+      "task_id": "keystone-readme-tree-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Fixed and pushed - README lists test_input_keys.py, guidelines gate reports size/labels/tree/commands OK, README 31,143 chars, 6/6 strict gates pass, pushed 3c84b49 and c4c01da",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794252314.6150806,
+      "timestamp_str": "2026-11-09 22:25:14",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-readme-tree-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[3/3] Additional probes found no defects: canvas alignment (text_right lands exactly on the margin, text_center symmetric, truncation never overflows, line height linear, degenerate sizes rejected) and the live HTTP surface (four GET endpoints, 404 with error+fix JSON, 405 on wrong method, 400 on malformed JSON, 413 at the 1,000,000-byte body limit with the server still healthy, CORS present, /api/editor action round-trip over HTTP, clean shutdown); checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794252321.029244,
+      "timestamp_str": "2026-11-09 22:25:21",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-readme-tree-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-readme-tree-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794252329.0260136,
+      "timestamp_str": "2026-11-09 22:25:29",
+      "agent": "commandcode:keystone-console"
     }
   ]
 }
