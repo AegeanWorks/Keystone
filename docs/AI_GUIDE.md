@@ -145,6 +145,35 @@ The schema-11 report contains:
 - `ui` metadata (`visible`, `paused`, labels and buttons) or `null` for clean captures;
 - a stable report hash.
 
+### Reading `bbox` and resolving overlaps
+
+`bbox` is `[min_x, min_y, max_x, max_y]` in top-left pixels, clamped to the
+frame. It is the node's on-screen silhouette, so a surface that runs under the
+camera (a ground plane) spans the frame rather than collapsing to the line of
+its far edge. It is `null` only when no part of the node is in front of the
+camera.
+
+Boxes overlap when one object hides another, and the report has no per-pixel
+ownership. Resolve order from data that is already present: distance from
+`scene.camera.position` to the node's `world` point, nearest first. In the
+sample scene this puts `orb` (9.05) ahead of `cube-1` (9.41), which matches the
+render.
+
+```python
+width = report["image"]["width"]      # the scene may override --size
+height = report["image"]["height"]
+camera = report["scene"]["camera"]["position"]
+nodes = [n for n in report["scene"]["nodes"] if n["id"] != "root" and n["bbox"]]
+nearest_first = sorted(
+    nodes,
+    key=lambda n: sum((a - b) ** 2 for a, b in zip(n["world"], camera)),
+)
+```
+
+Use this to decide which label a pixel belongs to, and treat a node whose
+distance is far larger than its neighbour as the occluded one when boxes
+overlap.
+
 ## 6. Compare against a baseline
 
 ```bash
