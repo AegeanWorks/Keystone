@@ -45,6 +45,38 @@ class AnalysisTest(unittest.TestCase):
         self.assertGreater(stats["mean_luma"], 0.0)
         self.assertEqual(len(stats["grid_luma"]), 8)
 
+    def test_a_surface_crossing_the_near_plane_keeps_a_real_bbox(self):
+        """A floor under the camera must not collapse to a zero-height line.
+
+        Corners behind the near plane are outside ``ndc.z`` and used to be
+        dropped, so a large ground plane reported a bbox spanning only its far
+        edge. A vision model reading that would think the floor was a thin
+        line while it filled the lower half of the frame.
+        """
+        game = CubeDemo()
+        scene = game.build_scene()
+        pixels = bytes((0, 0, 0, 255)) * (96 * 64)
+        report = analyze_frame(scene, pixels, 96, 64)
+        nodes = {node["id"]: node for node in report["scene"]["nodes"]}
+
+        floor = nodes["floor"]
+        self.assertIsNotNone(floor["bbox"], "a visible floor needs a projected bbox")
+        min_x, min_y, max_x, max_y = floor["bbox"]
+        self.assertGreater(
+            max_y - min_y,
+            2.0,
+            f"floor bbox collapsed to a line: {floor['bbox']}",
+        )
+        self.assertGreater(max_x - min_x, 2.0, f"floor bbox has no width: {floor['bbox']}")
+
+        # The floor must reach into the lower part of the frame, where the
+        # ground actually renders, rather than hanging at the horizon.
+        self.assertGreater(max_y, 32.0, f"floor never reaches the image centre: {floor['bbox']}")
+        self.assertLessEqual(min_y, 32.0, f"floor should start at or above the horizon: {floor['bbox']}")
+
+        # Many nodes project; the floor contributes because it is in view.
+        self.assertGreaterEqual(report["scene"]["node_count"], 2)
+
     def test_scene_nodes_have_projected_screen_bounds(self):
         game = CubeDemo()
         scene = game.build_scene()

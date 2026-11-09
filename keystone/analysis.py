@@ -44,6 +44,7 @@ REPORT_SCHEMA = {
     "notes": [
         "grid_luma is an 8x8 backward-compatible luminance summary.",
         "screen and bbox are top-down image coordinates; screen may be null behind the camera.",
+        "bbox is the node's on-screen silhouette clamped to the frame, so it stays meaningful for a surface that crosses the near plane; it is null only when no part of the box is in front of the camera.",
         "hash covers image metadata, stats, projected nodes with identity/materials, shadows and ui when present, not visual quality.",
         "ui is null unless the human overlay was rendered; schema-2 added it.",
         "schema-3 adds material and texture metadata; schema-4 adds node id, tags, layer and components.",
@@ -189,21 +190,92 @@ def _node_report(scene: Scene, width: int, height: int) -> list[dict]:
                 for y in (low[1], high[1])
                 for z in (low[2], high[2])
             ]
-            projected = []
-            for corner in corners:
-                try:
-                    ndc = view_projection.project_point(corner)
-                    if -1.0 <= ndc.z <= 1.0:
-                        projected.append(((ndc.x + 1.0) * 0.5 * width, (1.0 - ndc.y) * 0.5 * height))
-                # hygiene: allow a corner on the projection plane; skip that corner
-                except ZeroDivisionError:
-                    continue
-            if projected:
-                xs = [point[0] for point in projected]
-                ys = [point[1] for point in projected]
-                entry["bbox"] = [round(min(xs), 2), round(min(ys), 2), round(max(xs), 2), round(max(ys), 2)]
+            entry["bbox"] = _projected_bbox(corners, view_projection, width, height)
         nodes.append(entry)
     return nodes
+
+
+def _clip_point(view_projection, point: Vec3) -> tuple[float, float, float, float]:
+    """Return homogeneous clip coordinates ``(x, y, z, w)`` for one world point."""
+    m = view_projection.m
+    x, y, z = point.x, point.y, point.z
+    return (
+        m[0] * x + m[4] * y + m[8] * z + m[12],
+        m[1] * x + m[5] * y + m[9] * z + m[13],
+        m[2] * x + m[6] * y + m[10] * z + m[14],
+        m[3] * x + m[7] * y + m[11] * z + m[15],
+    )
+
+
+def _to_screen(clip: tuple[float, float, float, float], width: int, height: int) -> tuple[float, float]:
+    """Map clip coordinates to top-down image pixels, clamped to the frame."""
+    x, y, _z, w = clip
+    screen_x = (x / w + 1.0) * 0.5 * width
+    screen_y = (1.0 - y / w) * 0.5 * height
+    return (
+        min(max(screen_x, 0.0), float(width)),
+        min(max(screen_y, 0.0), float(height)),
+    )
+
+
+#: Edge list of a box given corners indexed by the bits of (x, y, z).
+_BOX_EDGES = tuple(
+    (first, second)
+    for first in range(8)
+    for second in range(first + 1, 8)
+    if (first ^ second).bit_count() == 1
+)
+
+
+def _near_distance(clip: tuple[float, float, float, float]) -> float:
+    """Return how far a clip point sits in front of the near plane.
+
+    OpenGL clip space keeps ``-w <= z <= w``; the near plane is ``z == -w``,
+    so ``z + w`` is non-negative exactly when the point is at or in front of
+    it. Using ``w > 0`` instead would cut at the eye, where projection sends
+    points to infinity.
+    """
+    return clip[2] + clip[3]
+
+
+def _projected_bbox(
+    corners: list[Vec3], view_projection, width: int, height: int
+) -> list[float] | None:
+    """Return the on-screen box of a world AABB's silhouette, or None.
+
+    Corners behind the near plane cannot be projected: their ``w`` is
+    negative or zero, so dividing mirrors them or sends them to infinity.
+    Dropping them collapsed a ground plane to the zero-height line of its far
+    edge, which told a vision model the floor was a strip while it filled the
+    lower frame. Clipping each box edge against the near plane and projecting
+    the crossings keeps the real extent.
+    """
+    clips = [_clip_point(view_projection, corner) for corner in corners]
+    epsilon = 1e-9
+    points: list[tuple[float, float]] = []
+    for clip in clips:
+        if _near_distance(clip) >= 0.0 and clip[3] > epsilon:
+            points.append(_to_screen(clip, width, height))
+    for first, second in _BOX_EDGES:
+        clip_a, clip_b = clips[first], clips[second]
+        ahead_a = _near_distance(clip_a) >= 0.0
+        ahead_b = _near_distance(clip_b) >= 0.0
+        if ahead_a == ahead_b:
+            continue
+        # The edge crosses the near plane; clip space is linear in world space.
+        distance_a = _near_distance(clip_a)
+        distance_b = _near_distance(clip_b)
+        t = distance_a / (distance_a - distance_b)
+        crossing = tuple(
+            clip_a[index] + t * (clip_b[index] - clip_a[index]) for index in range(4)
+        )
+        if crossing[3] > epsilon:
+            points.append(_to_screen(crossing, width, height))
+    if not points:
+        return None
+    xs = [point[0] for point in points]
+    ys = [point[1] for point in points]
+    return [round(min(xs), 2), round(min(ys), 2), round(max(xs), 2), round(max(ys), 2)]
 
 
 def analyze_frame(

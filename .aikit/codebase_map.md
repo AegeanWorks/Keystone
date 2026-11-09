@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `155`
-- **Total Classes**: `249`
-- **Total Top-Level Functions**: `445`
-- **Total Class Methods**: `1617`
-- **Total Source Lines**: `43395`
+- **Total Python Modules**: `156`
+- **Total Classes**: `250`
+- **Total Top-Level Functions**: `450`
+- **Total Class Methods**: `1624`
+- **Total Source Lines**: `43580`
 
 ---
 
@@ -71,7 +71,7 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `558` lines (`23020` bytes)
+**Size**: `630` lines (`25903` bytes)
 
 **Functions:**
 - `def _enabled(value)`
@@ -79,6 +79,10 @@
 - `def _stats(pixels, width, height, background, flip)`
 - `def _material_report(material)`
 - `def _node_report(scene, width, height)`
+- `def _clip_point(view_projection, point)` - *Return homogeneous clip coordinates ``(x, y, z, w)`` for one world point.*
+- `def _to_screen(clip, width, height)` - *Map clip coordinates to top-down image pixels, clamped to the frame.*
+- `def _near_distance(clip)` - *Return how far a clip point sits in front of the near plane.*
+- `def _projected_bbox(corners, view_projection, width, height)` - *Return the on-screen box of a world AABB's silhouette, or None.*
 - `def analyze_frame(scene, pixels, width, height, image_path, ui, fx)`
 - `def _compare_ui(before, after)`
 - `def _shadows_of(report)`
@@ -2027,12 +2031,13 @@
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
-**Size**: `313` lines (`13244` bytes)
+**Size**: `345` lines (`14832` bytes)
 
 **Classes:**
 - `class Health`
 - `class AnalysisTest`
   - Method `.test_pixel_stats_and_content_bbox()`
+  - Method `.test_a_surface_crossing_the_near_plane_keeps_a_real_bbox()` - *A floor under the camera must not collapse to a zero-height line.*
   - Method `.test_scene_nodes_have_projected_screen_bounds()`
   - Method `.test_node_on_the_projection_plane_stays_in_the_report()`
   - Method `.test_material_and_texture_metadata_are_reported()`
@@ -3202,6 +3207,25 @@
   - Method `.test_cli_replay_and_playtest_use_a_saved_scene()`
   - Method `.test_validate_project_reports_clean_and_broken_content()`
   - Method `.test_cli_new_is_standalone_and_missing_project_has_why_fix()`
+
+---
+
+### [`tests/test_projected_bbox.py`](tests/test_projected_bbox.py)
+> *Direct tests for the projected-bbox clipping helper.*
+
+**Size**: `81` lines (`3388` bytes)
+
+**Classes:**
+- `class ProjectedBBoxTest` - *The bbox must describe on-screen extent, including near-plane crossings.*
+  - Method `.setUp()`
+  - Method `.test_fully_visible_box_projects_directly()`
+  - Method `.test_fully_offscreen_box_is_clamped_to_the_frame()`
+  - Method `.test_a_box_crossing_the_near_plane_keeps_its_extent()`
+  - Method `.test_no_corners_in_front_yields_none()`
+  - Method `.test_result_is_always_inside_the_frame()`
+
+**Functions:**
+- `def _corners(low, high)`
 
 ---
 

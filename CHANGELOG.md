@@ -94,3 +94,6 @@ changes that do not bump the release number yet.
   naming the failing step; previously every failure claimed the game factory
   was invalid, and a corrupt `--compare-baseline` report leaked a raw JSON
   decoder message.
+- A frame report's node `bbox` is now the on-screen silhouette clipped at the
+  near plane, so a ground plane under the camera spans the frame instead of
+  collapsing to the zero-height line of its far edge.

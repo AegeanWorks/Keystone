@@ -534,6 +534,7 @@ keystone/
 │   ├── test_version.py       <- version single-source drift guard
 │   ├── test_headless.py      <- no-GL simulation and action scripts
 │   ├── test_analysis.py      <- frame stats, projection, report diff
+│   ├── test_projected_bbox.py <- near-plane silhouette clipping
 │   ├── test_testing.py       <- deterministic helpers
 │   ├── test_samples.py       <- CubeDemo smoke test
 │   ├── test_boundary.py      <- no game modules/imports
