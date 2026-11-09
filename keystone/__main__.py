@@ -677,11 +677,7 @@ def main(argv: list[str] | None = None) -> int:
             print(message, file=sys.stderr)
         elif not started:
             print(f"Why: {message}", file=sys.stderr)
-            print(
-                "Fix: pass a valid 'package.module:Factory' with build_scene, update, "
-                "snapshot, actions and status methods.",
-                file=sys.stderr,
-            )
+            print(f"Fix: {_start_failure_hint(args)}", file=sys.stderr)
         else:
             print(f"Why: {message}", file=sys.stderr)
             print(f"Fix: {_run_failure_hint(args)}", file=sys.stderr)
@@ -689,6 +685,22 @@ def main(argv: list[str] | None = None) -> int:
     finally:
         if engine is not None:
             engine.close()
+
+
+def _start_failure_hint(args: argparse.Namespace) -> str:
+    """Name the fix for a failure that happened while loading the game."""
+    project = getattr(args, "project", None)
+    if project is not None:
+        # The spec came from keystone.json, so pointing at --game would be
+        # wrong: the caller never typed a factory string.
+        return (
+            f"check the 'game' field in {project}/keystone.json; it must name a "
+            "class the module defines, like 'package.module:Factory'"
+        )
+    return (
+        "pass a valid 'package.module:Factory' with build_scene, update, "
+        "snapshot, actions and status methods"
+    )
 
 
 def _read_comparison_report(path: str, role: str) -> dict:

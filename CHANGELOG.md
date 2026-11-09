@@ -97,3 +97,5 @@ changes that do not bump the release number yet.
 - A frame report's node `bbox` is now the on-screen silhouette clipped at the
   near plane, so a ground plane under the camera spans the frame instead of
   collapsing to the zero-height line of its far edge.
+- A `--project` load failure now points at the `game` field in `keystone.json`;
+  previously it advised passing `--game`, which the project already supplies.

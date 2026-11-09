@@ -7,6 +7,7 @@ replace a game module that was working fine.
 """
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -16,10 +17,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def run(args, timeout=300):
+def run(args, timeout=300, cwd=None):
+    # The scaffolded game imports keystone, so a temp working directory needs
+    # the package on the path even though the tests run from the repo root.
+    environment = dict(os.environ)
+    environment["PYTHONPATH"] = str(ROOT)
     return subprocess.run(
         [sys.executable, "-m", "keystone", *args],
-        cwd=ROOT, capture_output=True, text=True, timeout=timeout, check=False,
+        cwd=cwd or ROOT, capture_output=True, text=True, timeout=timeout,
+        check=False, env=environment,
     )
 
 
@@ -43,6 +49,46 @@ class CliFailureAdviceTest(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("could not start", result.stderr)
         self.assertIn("package.module:Factory", result.stderr)
+
+    def test_project_start_failure_points_at_keystone_json(self):
+        """With --project the caller never typed a factory string.
+
+        The scaffold pins "game": "<name>:Game" in keystone.json, so renaming
+        the class breaks the project. Telling that caller to "pass a valid
+        package.module:Factory" points at an argument they already supplied
+        indirectly; the field that needs editing is in the manifest.
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            work = Path(directory)
+            created = run(["--new", "demo"], cwd=work)
+            self.assertEqual(created.returncode, 0, created.stderr)
+            project = work / "demo"
+            module = project / "demo.py"
+            original = module.read_text(encoding="utf-8")
+            self.assertIn("class Game:", original)
+            module.write_text(
+                original.replace("class Game:", "class DemoGame:"), encoding="utf-8"
+            )
+
+            result = run(["--project", "demo", "--validate-project"], cwd=work)
+            self.assertEqual(result.returncode, 1)
+            output = result.stderr
+            self.assertIn("could not start", output)
+            self.assertIn("keystone.json", output)
+            self.assertIn("'game' field", output)
+            self.assertNotIn(
+                "pass a valid 'package.module:Factory'",
+                output,
+                "a --project caller should not be told to pass a factory",
+            )
+
+            # Fixing the manifest field is enough to recover.
+            manifest = project / "keystone.json"
+            config = json.loads(manifest.read_text(encoding="utf-8"))
+            config["game"] = "demo:DemoGame"
+            manifest.write_text(json.dumps(config, indent=2), encoding="utf-8")
+            recovered = run(["--project", "demo", "--validate-project"], cwd=work)
+            self.assertEqual(recovered.returncode, 0, recovered.stderr)
 
     def test_corrupt_baseline_names_the_report_not_the_game(self):
         broken = self.base / "broken.json"
