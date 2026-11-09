@@ -219,6 +219,15 @@ def scene_settings_document(scene: Scene) -> dict[str, object]:
                 if point is not None
                 else None
             ),
+            "point_lights": [
+                {
+                    "position": _vec3_list(light_item.position),
+                    "color": _vec3_list(light_item.color),
+                    "intensity": light_item.intensity,
+                    "radius": light_item.radius,
+                }
+                for light_item in scene.point_lights
+            ],
             "shadow": bool(scene.shadow.enabled),
             "color": bool(scene.color.enabled),
             "post": bool(scene.post.enabled),
@@ -294,6 +303,7 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
     fog_density = scene.fog_density
     light = scene.light
     point_light = scene.point_light
+    point_lights = list(scene.point_lights)
     shadow = scene.shadow.enabled
     color = scene.color.enabled
     post = scene.post.enabled
@@ -310,6 +320,7 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
                 "fog_density",
                 "light",
                 "point_light",
+                "point_lights",
                 "shadow",
                 "color",
                 "post",
@@ -359,6 +370,7 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
             raw = environment_payload["point_light"]
             if raw is None:
                 point_light = None
+                point_lights = []
             elif isinstance(raw, Mapping):
                 _unknown_keys(
                     raw,
@@ -388,8 +400,51 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
                     intensity=point_intensity,
                     radius=radius,
                 )
+                # The legacy single-light field writes through the list, so a
+                # script that sends only point_light keeps updating the scene.
+                point_lights = [point_light]
             else:
                 raise TypeError("environment point_light must be a mapping or null")
+        if "point_lights" in environment_payload:
+            raw_lights = environment_payload["point_lights"]
+            if raw_lights is None:
+                point_lights = []
+            elif isinstance(raw_lights, (list, tuple)):
+                parsed: list[PointLight] = []
+                for index, raw in enumerate(raw_lights):
+                    if not isinstance(raw, Mapping):
+                        raise TypeError(
+                            f"environment point_lights[{index}] must be a mapping"
+                        )
+                    _unknown_keys(
+                        raw,
+                        {"position", "color", "intensity", "radius"},
+                        f"environment point_lights[{index}]",
+                    )
+                    base = PointLight()
+                    parsed.append(
+                        PointLight(
+                            position=_payload_vec3(
+                                raw.get("position", list(base.position)),
+                                f"point_lights[{index}] position",
+                            ),
+                            color=_payload_vec3(
+                                raw.get("color", list(base.color)),
+                                f"point_lights[{index}] color",
+                            ),
+                            intensity=_finite_number(
+                                raw.get("intensity", base.intensity),
+                                f"point_lights[{index}] intensity",
+                            ),
+                            radius=_finite_number(
+                                raw.get("radius", base.radius),
+                                f"point_lights[{index}] radius",
+                            ),
+                        )
+                    )
+                point_lights = parsed
+            else:
+                raise TypeError("environment point_lights must be a list or null")
         toggles = {
             "shadow": (shadow, "shadow"),
             "color": (color, "color"),
@@ -423,7 +478,7 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
     scene.sky = sky
     scene.fog_density = fog_density
     scene.light = light
-    scene.point_light = point_light
+    scene.point_lights = point_lights
     scene.shadow = ShadowSettings(enabled=shadow)
     scene.color = ColorSettings(enabled=color)
     scene.post = PostSettings(enabled=post)
@@ -827,6 +882,7 @@ def _scene_snapshot(scene: Scene) -> dict[str, object]:
         },
         "light": scene.light,
         "point_light": scene.point_light,
+        "point_lights": list(scene.point_lights),
         "shadow": scene.shadow,
         "color": scene.color,
         "post": scene.post,
@@ -852,7 +908,7 @@ def _restore_scene_state(scene: Scene, snapshot: dict[str, object]) -> None:
     scene.camera.near = camera["near"]  # type: ignore[assignment]
     scene.camera.far = camera["far"]  # type: ignore[assignment]
     scene.light = snapshot["light"]  # type: ignore[assignment]
-    scene.point_light = snapshot["point_light"]  # type: ignore[assignment]
+    scene.point_lights = list(snapshot["point_lights"])  # type: ignore[arg-type]
     scene.shadow = snapshot["shadow"]  # type: ignore[assignment]
     scene.color = snapshot["color"]  # type: ignore[assignment]
     scene.post = snapshot["post"]  # type: ignore[assignment]
@@ -2653,7 +2709,7 @@ def _copy_scene_settings(source: Scene, target: Scene) -> None:
     target.camera.near = source.camera.near
     target.camera.far = source.camera.far
     target.light = source.light
-    target.point_light = source.point_light
+    target.point_lights = list(source.point_lights)
     target.shadow = source.shadow
     target.color = source.color
     target.post = source.post

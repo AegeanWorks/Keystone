@@ -237,6 +237,7 @@ def scene_to_dict(scene: Scene, registry: Any = None) -> dict[str, Any]:
             "fog_density": scene.fog_density,
             "light": _light_to_dict(scene.light),
             "point_light": _point_light_to_dict(scene.point_light) if scene.point_light else None,
+            "point_lights": [_point_light_to_dict(light) for light in scene.point_lights],
             "shadow": {"enabled": bool(getattr(scene.shadow, "enabled", True))},
             "color": {"enabled": bool(getattr(scene.color, "enabled", True))},
             "post": {"enabled": bool(getattr(scene.post, "enabled", True))},
@@ -315,6 +316,13 @@ def scene_from_dict(
             if not isinstance(point_light, Mapping):
                 raise TypeError("scene snapshot point_light must be a mapping")
             scene.point_light = _point_light_from_dict(point_light)
+        point_lights = environment.get("point_lights")
+        if point_lights is not None:
+            if not isinstance(point_lights, (list, tuple)):
+                raise TypeError("scene snapshot point_lights must be a list")
+            scene.point_lights = [
+                _point_light_from_dict(item) for item in point_lights
+            ]
         shadow = environment.get("shadow")
         if shadow is not None:
             if not isinstance(shadow, Mapping):
@@ -461,7 +469,7 @@ def restore_scene(
     target.camera.near = source.camera.near
     target.camera.far = source.camera.far
     target.light = source.light
-    target.point_light = source.point_light
+    target.point_lights = list(source.point_lights)
     target.shadow = source.shadow
     target.color = source.color
     target.post = source.post

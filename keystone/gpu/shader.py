@@ -80,6 +80,19 @@ class ShaderProgram:
     def set_vec3(self, name: str, vector: Vec3) -> None:
         GL.glUniform3f(self._location(name), vector.x, vector.y, vector.z)
 
+    def set_vec3_array(self, name: str, vectors: list[Vec3] | tuple[Vec3, ...]) -> None:
+        """Upload a vec3 array; the uniform is located by its ``[0]`` element."""
+        flat: list[float] = []
+        for vector in vectors:
+            flat.extend((vector.x, vector.y, vector.z))
+        if flat:
+            GL.glUniform3fv(self._location(f"{name}[0]"), len(vectors), flat)
+
+    def set_float_array(self, name: str, values: list[float] | tuple[float, ...]) -> None:
+        """Upload a float array; the uniform is located by its ``[0]`` element."""
+        if values:
+            GL.glUniform1fv(self._location(f"{name}[0]"), len(values), list(values))
+
     def set_float(self, name: str, value: float) -> None:
         GL.glUniform1f(self._location(name), value)
 

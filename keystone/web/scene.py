@@ -141,6 +141,15 @@ def scene_document(scene: Scene, game: str = "game") -> dict:
             if point_light is not None
             else None
         ),
+        "point_lights": [
+            {
+                "position": list(light.position),
+                "color": list(light.color),
+                "intensity": light.intensity,
+                "radius": light.radius,
+            }
+            for light in scene.point_lights
+        ],
         "atmosphere": {
             "ambient": list(scene.ambient),
             "background": list(scene.background),

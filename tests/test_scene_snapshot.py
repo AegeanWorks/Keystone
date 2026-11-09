@@ -218,6 +218,40 @@ class SceneSnapshotTest(unittest.TestCase):
         self.assertEqual(restored.light, scene.light)
         self.assertEqual(restored.point_light, scene.point_light)
 
+    def test_multiple_point_lights_round_trip_in_order(self):
+        scene = self._scene()
+        scene.point_lights = [
+            PointLight(position=Vec3(1.0, 0.0, 0.0), color=Vec3(1.0, 0.0, 0.0), radius=4.0),
+            PointLight(position=Vec3(-1.0, 1.0, 0.0), color=Vec3(0.0, 1.0, 0.0), radius=6.0),
+            PointLight(position=Vec3(0.0, 2.0, 1.0), color=Vec3(0.0, 0.0, 1.0), radius=8.0),
+        ]
+        document = scene_to_dict(scene)
+        self.assertEqual(len(document["environment"]["point_lights"]), 3)
+        restored = scene_from_dict(document)
+        self.assertEqual(restored.point_lights, scene.point_lights)
+        # The compatibility view still reports the first light.
+        self.assertEqual(restored.point_light, scene.point_lights[0])
+
+    def test_legacy_single_point_light_documents_still_load(self):
+        """A schema-6 file written before point_lights must keep its light."""
+        scene = self._scene()
+        scene.point_light = PointLight(position=Vec3(2.0, 1.0, 0.0), radius=5.0)
+        document = scene_to_dict(scene)
+        del document["environment"]["point_lights"]  # simulate an older writer
+        restored = scene_from_dict(document)
+        self.assertEqual(len(restored.point_lights), 1)
+        self.assertEqual(restored.point_lights[0].radius, 5.0)
+
+    def test_point_light_assignment_replaces_the_list(self):
+        scene = self._scene()
+        scene.point_lights = [PointLight(radius=1.0), PointLight(radius=2.0)]
+        scene.point_light = PointLight(radius=9.0)
+        self.assertEqual(len(scene.point_lights), 1)
+        self.assertEqual(scene.point_lights[0].radius, 9.0)
+        scene.point_light = None
+        self.assertEqual(scene.point_lights, [])
+        self.assertIsNone(scene.point_light)
+
     def test_older_schema_one_documents_keep_engine_defaults(self):
         scene = self._scene()
         document = scene_to_dict(scene)

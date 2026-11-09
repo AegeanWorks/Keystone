@@ -268,7 +268,7 @@ The API sends CORS headers so local AI clients can call it directly. Keep the de
 
 ## 🚀 Features
 
-- **OpenGL 3.3 renderer**: GLSL 330, PBR, shadows, sRGB, post grade, bloom, sprites and profiler stats.
+- **OpenGL 3.3 renderer**: GLSL 330, PBR, shadows, sRGB, post grade, bloom, sprites, up to 8 point lights, and profiler stats.
 - **Scene graph**: stable IDs, tags, layers, typed components, world transforms, queries and cached GPU meshes.
 - **Prefabs**: capture, versioned `.kprefab` persistence, deterministic instantiation and override-preserving refresh.
 - **Assets**: `MeshData`, primitives, streaming OBJ, PNG/checker `TextureData`, and an id/digest registry with hot reload plus core scene rebinding.

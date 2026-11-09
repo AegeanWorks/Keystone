@@ -29,6 +29,9 @@ from keystone.scene import Scene
 from keystone.skin import MAX_SKIN_BONES, bone_matrices
 from keystone.texture import TextureData
 
+#: Must match ``MAX_POINT_LIGHTS`` in FRAGMENT_SHADER; extra lights are dropped.
+MAX_POINT_LIGHTS = 8
+
 VERTEX_SHADER = """#version 330 core
 layout(location = 0) in vec3 a_position;
 layout(location = 1) in vec3 a_normal;
@@ -71,9 +74,11 @@ uniform vec3 u_ambient;
 uniform vec3 u_fog_color;
 uniform float u_fog_density;
 uniform float u_checker_scale;
-uniform vec3 u_point_pos;
-uniform vec3 u_point_color;
-uniform float u_point_radius;
+const int MAX_POINT_LIGHTS = 8;
+uniform int u_point_count;
+uniform vec3 u_point_pos[MAX_POINT_LIGHTS];
+uniform vec3 u_point_color[MAX_POINT_LIGHTS];
+uniform float u_point_radius[MAX_POINT_LIGHTS];
 uniform mat4 u_light_vp;
 uniform sampler2D u_shadow_map;
 uniform float u_shadow_bias;
@@ -155,23 +160,32 @@ void main() {
     vec3 light_color = u_light_color;
     vec3 emissive = u_emissive;
     vec3 fog_color = u_fog_color;
-    vec3 point_color = u_point_color;
     if (u_srgb_enabled > 0.5) {
         base_color = srgb_to_linear(base_color);
         ambient = srgb_to_linear(ambient);
         light_color = srgb_to_linear(light_color);
         emissive = srgb_to_linear(emissive);
         fog_color = srgb_to_linear(fog_color);
-        point_color = srgb_to_linear(point_color);
     }
     vec3 diffuse_color = base_color * (1.0 - u_metallic * 0.8);
     float shadow = shadow_factor(v_world);
     vec3 direct = (diffuse_color * light_color * diffuse + light_color * spec_strength) * shadow;
     vec3 color = diffuse_color * ambient + direct + emissive;
-    if (u_point_radius > 0.0) {
-        vec3 to_point = u_point_pos - v_world;
+    for (int index = 0; index < MAX_POINT_LIGHTS; ++index) {
+        if (index >= u_point_count) {
+            break;
+        }
+        float radius = u_point_radius[index];
+        if (radius <= 0.0) {
+            continue;
+        }
+        vec3 point_color = u_point_color[index];
+        if (u_srgb_enabled > 0.5) {
+            point_color = srgb_to_linear(point_color);
+        }
+        vec3 to_point = u_point_pos[index] - v_world;
         float point_distance = length(to_point);
-        float attenuation = max(0.0, 1.0 - point_distance / u_point_radius);
+        float attenuation = max(0.0, 1.0 - point_distance / radius);
         float point_diffuse = max(dot(normal, normalize(to_point)), 0.0);
         color += diffuse_color * point_color * attenuation * attenuation * point_diffuse;
     }
@@ -849,15 +863,20 @@ class Renderer:
         program.set_float("u_shadows_enabled", 1.0 if shadows_on else 0.0)
         program.set_float("u_srgb_enabled", 1.0 if srgb_on else 0.0)
         program.set_int("u_shadow_map", 1)
-        point = scene.point_light
-        if point is None:
-            program.set_vec3("u_point_pos", Vec3())
-            program.set_vec3("u_point_color", Vec3())
-            program.set_float("u_point_radius", 0.0)
+        lights = list(scene.point_lights)[:MAX_POINT_LIGHTS]
+        if not lights:
+            program.set_int("u_point_count", 0)
+            program.set_vec3_array("u_point_pos", ())
+            program.set_vec3_array("u_point_color", ())
+            program.set_float_array("u_point_radius", ())
         else:
-            program.set_vec3("u_point_pos", point.position)
-            program.set_vec3("u_point_color", point.color * point.intensity)
-            program.set_float("u_point_radius", point.radius)
+            program.set_int("u_point_count", len(lights))
+            program.set_vec3_array("u_point_pos", [light.position for light in lights])
+            program.set_vec3_array(
+                "u_point_color",
+                [light.color * light.intensity for light in lights],
+            )
+            program.set_float_array("u_point_radius", [light.radius for light in lights])
 
     def _apply_material(self, program: ShaderProgram, material: Material) -> None:
         program.set_vec3("u_color", material.color)

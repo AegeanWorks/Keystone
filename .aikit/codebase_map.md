@@ -9,8 +9,8 @@
 - **Total Python Modules**: `156`
 - **Total Classes**: `250`
 - **Total Top-Level Functions**: `452`
-- **Total Class Methods**: `1626`
-- **Total Source Lines**: `43693`
+- **Total Class Methods**: `1637`
+- **Total Source Lines**: `43944`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`156` module(s))
@@ -729,7 +729,7 @@
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
 > *Blinn-Phong forward renderer with fog, shadows and screenshot readback.*
 
-**Size**: `1166` lines (`46554` bytes)
+**Size**: `1185` lines (`47303` bytes)
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
@@ -774,7 +774,7 @@
 ### [`keystone/gpu/shader.py`](keystone/gpu/shader.py)
 > *GLSL program compilation, uniform upload and cleanup.*
 
-**Size**: `93` lines (`3634` bytes)
+**Size**: `106` lines (`4298` bytes)
 
 **Classes:**
 - `class ShaderProgram` - *A linked vertex/fragment program with cached uniform locations.*
@@ -787,6 +787,8 @@
   - Method `.set_mat3(name, values)`
   - Method `.set_vec2(name, x, y)`
   - Method `.set_vec3(name, vector)`
+  - Method `.set_vec3_array(name, vectors)` - *Upload a vec3 array; the uniform is located by its ``[0]`` element.*
+  - Method `.set_float_array(name, values)` - *Upload a float array; the uniform is located by its ``[0]`` element.*
   - Method `.set_float(name, value)`
   - Method `.set_int(name, value)`
   - Method `.release()`
@@ -1400,7 +1402,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `511` lines (`20083` bytes)
+**Size**: `525` lines (`20686` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -1444,6 +1446,8 @@
 - `class CullingSettings` - *Deterministic CPU view-frustum culling toggle (color pass only).*
 - `class Scene` - *Root node, identity allocation, queries, camera, lights and atmosphere.*
   - Method `.add(node)`
+  - Property `.point_light` - *The first point light, for scenes that carry exactly one.*
+  - Method `.point_light(value)`
   - Method `.traverse()`
   - Method `.query(*, name, tag, layer, component)` - *Return every node matching all supplied filters.*
   - Method `.find(*, name, tag, layer, component)` - *Return the first node matching all supplied filters.*
@@ -1504,7 +1508,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `483` lines (`20244` bytes)
+**Size**: `491` lines (`20692` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)` - *Serialize a vector as floats.*
@@ -1748,7 +1752,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `3182` lines (`112798` bytes)
+**Size**: `3238` lines (`115466` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1882,7 +1886,7 @@
 ### [`keystone/web/scene.py`](keystone/web/scene.py)
 > *Export a game-agnostic scene as a JSON document for the browser viewer.*
 
-**Size**: `153` lines (`5538` bytes)
+**Size**: `162` lines (`5827` bytes)
 
 **Functions:**
 - `def _enabled(value)`
@@ -1896,14 +1900,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `650` lines (`26967` bytes)
+**Size**: `651` lines (`27053` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2995` lines (`134364` bytes)
+**Size**: `2995` lines (`134366` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -3241,7 +3245,7 @@
 ### [`tests/test_renderer.py`](tests/test_renderer.py)
 > *Headless OpenGL integration tests for the Keystone renderer.*
 
-**Size**: `187` lines (`6947` bytes)
+**Size**: `243` lines (`9291` bytes)
 
 **Classes:**
 - `class RendererIntegrationTest`
@@ -3249,6 +3253,8 @@
   - Method `.test_zero_scale_node_does_not_abort_the_render()`
   - Method `.test_render_fills_the_center_with_a_lit_surface()`
   - Method `.test_empty_scene_draws_a_vertical_sky_gradient()`
+  - Method `.test_two_point_lights_both_contribute()` - *A second light must add energy, not replace the first.*
+  - Method `.test_more_point_lights_than_the_shader_allows_does_not_fail()`
   - Method `.test_point_light_lights_a_surface_when_the_sun_is_off()`
   - Method `.test_textured_plane_samples_the_texture()`
   - Method `.test_screenshot_is_a_real_png()`
@@ -3413,7 +3419,7 @@
 ### [`tests/test_scene_snapshot.py`](tests/test_scene_snapshot.py)
 > *Unit tests for versioned scene snapshots.*
 
-**Size**: `358` lines (`14228` bytes)
+**Size**: `392` lines (`16006` bytes)
 
 **Classes:**
 - `class Health`
@@ -3427,6 +3433,9 @@
   - Method `.test_round_trip_preserves_typed_components()`
   - Method `.test_components_require_a_type_map_and_supported_codec()`
   - Method `.test_round_trip_preserves_camera_lens_and_environment()`
+  - Method `.test_multiple_point_lights_round_trip_in_order()`
+  - Method `.test_legacy_single_point_light_documents_still_load()` - *A schema-6 file written before point_lights must keep its light.*
+  - Method `.test_point_light_assignment_replaces_the_list()`
   - Method `.test_older_schema_one_documents_keep_engine_defaults()`
   - Method `.test_rejects_duplicate_node_ids()`
   - Method `.test_rejects_unknown_parent_reference()`
@@ -3713,7 +3722,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `6154` lines (`252268` bytes)
+**Size**: `6195` lines (`254078` bytes)
 
 **Classes:**
 - `class Health`
@@ -3795,6 +3804,8 @@
   - Method `.test_editor_group_rotation_and_scale_around_selection_pivot()`
   - Method `.test_editor_scene_group_save_as_source_settings_and_transform()`
   - Method `.test_editor_scene_settings_and_undo()`
+  - Method `.test_set_scene_accepts_a_point_light_list()` - *The editor can author more than one lamp through the API.*
+  - Method `.test_set_scene_rejects_malformed_point_lights()`
   - Method `.test_editor_batch_authoring_is_atomic()`
   - Method `.test_editor_node_property_editing()`
   - Method `.test_editor_play_mode_restores_authored_scene()`

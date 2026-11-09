@@ -409,7 +409,7 @@ class Scene:
     root: Node = field(default_factory=_root_node)
     camera: PerspectiveCamera = field(default_factory=PerspectiveCamera)
     light: DirectionalLight = field(default_factory=DirectionalLight)
-    point_light: PointLight | None = None
+    point_lights: list[PointLight] = field(default_factory=list)
     shadow: ShadowSettings = field(default_factory=ShadowSettings)
     color: ColorSettings = field(default_factory=ColorSettings)
     post: PostSettings = field(default_factory=PostSettings)
@@ -428,6 +428,20 @@ class Scene:
         self._prepare(node)
         self.root.add_child(node)
         return node
+
+    @property
+    def point_light(self) -> PointLight | None:
+        """The first point light, for scenes that carry exactly one.
+
+        Kept as a single-slot view over ``point_lights`` so existing code that
+        reads or assigns ``scene.point_light`` still works. Assigning replaces
+        the whole list, which is what a one-light scene means.
+        """
+        return self.point_lights[0] if self.point_lights else None
+
+    @point_light.setter
+    def point_light(self, value: PointLight | None) -> None:
+        self.point_lights = [] if value is None else [value]
 
     def traverse(self) -> Iterator[Node]:
         self._prepare(self.root)

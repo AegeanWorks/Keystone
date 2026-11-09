@@ -102,3 +102,6 @@ changes that do not bump the release number yet.
 - An editor action that returns 400 now carries a `fix` matched to its cause
   (such as `--scene-dir` for a missing scene library) instead of the same
   transform-values hint for every failure.
+- A scene can now hold multiple point lights (`Scene.point_lights`, up to
+  eight lit at once). `scene.point_light` still reads and writes the first
+  light, so existing code is unchanged.

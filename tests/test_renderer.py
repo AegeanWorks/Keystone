@@ -71,6 +71,62 @@ class RendererIntegrationTest(unittest.TestCase):
         self.assertGreater(top[0], bottom[0])
         self.assertGreater(bottom[2], top[2])
 
+    def test_two_point_lights_both_contribute(self):
+        """A second light must add energy, not replace the first.
+
+        The scene used to hold one optional point light, so a second lamp
+        overwrote the first. Both colours must now reach the surface.
+        """
+
+        def lit(lights):
+            scene = Scene()
+            scene.ambient = Vec3(0.0, 0.0, 0.0)
+            scene.light = DirectionalLight(intensity=0.0)
+            scene.camera.position = Vec3(0.0, 0.0, 4.0)
+            scene.add(
+                Node("cube", mesh=cube(1.5), material=Material(color=Vec3(1.0, 1.0, 1.0)))
+            )
+            scene.point_lights = list(lights)
+            self.renderer.render(scene)
+            return bytes(self.renderer.read_pixels())
+
+        red = PointLight(
+            position=Vec3(-1.0, 0.0, 3.0), color=Vec3(1.0, 0.0, 0.0), radius=10.0
+        )
+        blue = PointLight(
+            position=Vec3(1.0, 0.0, 3.0), color=Vec3(0.0, 0.0, 1.0), radius=10.0
+        )
+
+        red_only = lit([red])
+        blue_only = lit([blue])
+        both = lit([red, blue])
+
+        self.assertNotEqual(both, red_only, "the second light must change the image")
+        self.assertNotEqual(both, blue_only, "the first light must still contribute")
+
+        # The centre of a white cube lit from both sides must carry both
+        # channels, which a single red or blue light cannot produce.
+        center = 24 * 64 * 4 + 32 * 4
+        red_channel, _green_channel, blue_channel, _alpha = both[center : center + 4]
+        self.assertGreater(red_channel, 0, "red light is missing from the mix")
+        self.assertGreater(blue_channel, 0, "blue light is missing from the mix")
+        self.assertGreater(
+            min(red_channel, blue_channel), 0, "both lights must reach the centre"
+        )
+
+    def test_more_point_lights_than_the_shader_allows_does_not_fail(self):
+        from keystone.gpu.renderer import MAX_POINT_LIGHTS
+
+        scene = Scene()
+        scene.camera.position = Vec3(0.0, 0.0, 4.0)
+        scene.add(Node("cube", mesh=cube(1.0)))
+        scene.point_lights = [
+            PointLight(position=Vec3(index * 0.2 - 1.0, 0.0, 3.0), radius=5.0)
+            for index in range(MAX_POINT_LIGHTS + 4)
+        ]
+        stats = self.renderer.render(scene)
+        self.assertGreater(stats["draw_calls"], 0)
+
     def test_point_light_lights_a_surface_when_the_sun_is_off(self):
         scene = Scene()
         scene.ambient = Vec3(0.0, 0.0, 0.0)

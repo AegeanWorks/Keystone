@@ -3299,6 +3299,47 @@ class WebServerTest(unittest.TestCase):
                 session.editor_action(payload)
             self.assertEqual(caught.exception.status, 400)
 
+    def test_set_scene_accepts_a_point_light_list(self):
+        """The editor can author more than one lamp through the API."""
+        session = GameSession(CubeDemo())
+        result = session.editor_action(
+            {
+                "action": "set_scene",
+                "environment": {
+                    "point_lights": [
+                        {"position": [1.0, 0.0, 0.0], "color": [1.0, 0.0, 0.0], "radius": 4.0},
+                        {"position": [-1.0, 1.0, 0.0], "color": [0.0, 0.0, 1.0], "radius": 6.0},
+                    ]
+                },
+            }
+        )
+        environment = result["scene_settings"]["environment"]
+        lights = environment["point_lights"]
+        self.assertEqual(len(lights), 2, "both lamps must be stored")
+        self.assertEqual(lights[0]["color"], [1.0, 0.0, 0.0])
+        self.assertEqual(lights[1]["radius"], 6.0)
+        # The single-light view still reports the first entry.
+        self.assertEqual(environment["point_light"]["radius"], 4.0)
+
+        cleared = session.editor_action(
+            {"action": "set_scene", "environment": {"point_lights": None}}
+        )
+        self.assertEqual(
+            cleared["scene_settings"]["environment"]["point_lights"], []
+        )
+
+    def test_set_scene_rejects_malformed_point_lights(self):
+        session = GameSession(CubeDemo())
+        for payload in (
+            {"point_lights": ["not a mapping"]},
+            {"point_lights": [{"radius": "wide"}]},
+            {"point_lights": [{"unknown": 1.0}]},
+            {"point_lights": 5},
+        ):
+            with self.subTest(payload=payload), self.assertRaises(WebProblem) as caught:
+                session.editor_action({"action": "set_scene", "environment": payload})
+            self.assertEqual(caught.exception.status, 400)
+
     def test_editor_batch_authoring_is_atomic(self):
         session = GameSession(CubeDemo())
         session.editor()

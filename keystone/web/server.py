@@ -181,7 +181,7 @@ def _copy_scene_settings(source: Scene, target: Scene) -> None:
     """Copy camera and environment settings without copying scene nodes."""
     target.camera = copy.deepcopy(source.camera)
     target.light = copy.deepcopy(source.light)
-    target.point_light = copy.deepcopy(source.point_light)
+    target.point_lights = copy.deepcopy(source.point_lights)
     target.shadow = copy.deepcopy(source.shadow)
     target.color = copy.deepcopy(source.color)
     target.post = copy.deepcopy(source.post)
