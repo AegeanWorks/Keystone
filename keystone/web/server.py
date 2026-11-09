@@ -233,6 +233,37 @@ class WebProblem(Exception):
         self.fix = fix
 
 
+def _action_fix(message: str) -> str:
+    """Turn one editor-action failure into the fix that actually applies.
+
+    A single generic hint used to answer every 400, so a missing scene library
+    was met with "send a valid editor action with finite transform values".
+    Each branch here names the thing the caller has to change.
+    """
+    if message.startswith("no ") and "library is configured" in message:
+        kind = message.split()[1]
+        return (
+            f"pass --{kind}-dir to --serve so the {kind} library exists, then retry"
+        )
+    if "library is required" in message:
+        return "pass --scene-dir to --serve so saved scenes can be opened"
+    if "play mode is active" in message:
+        return "send a play_stop action before editing"
+    if "play mode is not active" in message or "play mode is already active" in message:
+        return "send play_start, play_pause, play_resume or play_stop in the right order"
+    if "prefab edit mode" in message:
+        return "send edit_prefab or close_prefab_edit before this operation"
+    if message.startswith("select a node"):
+        return "send select_many with the node id first"
+    if "needs an AssetRegistry" in message:
+        return "give the game a self.assets AssetRegistry before saving materials"
+    if "batch actions" in message:
+        return f"send between 1 and {MAX_BATCH_ACTIONS} entries in 'actions'"
+    if "unknown editor action" in message:
+        return "GET /api/editor and use one of its listed actions"
+    return "send a valid editor action; check required fields and finite numbers"
+
+
 class GameSession:
     """One in-memory game guarded by a lock for concurrent HTTP requests."""
 
@@ -2539,7 +2570,7 @@ class GameSession:
                 raise WebProblem(
                     400,
                     str(exc),
-                    "send a valid editor action with finite transform values",
+                    _action_fix(str(exc)),
                 ) from exc
             if (
                 action not in SCENE_CLEAN_ACTIONS

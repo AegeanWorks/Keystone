@@ -99,3 +99,6 @@ changes that do not bump the release number yet.
   collapsing to the zero-height line of its far edge.
 - A `--project` load failure now points at the `game` field in `keystone.json`;
   previously it advised passing `--game`, which the project already supplies.
+- An editor action that returns 400 now carries a `fix` matched to its cause
+  (such as `--scene-dir` for a missing scene library) instead of the same
+  transform-values hint for every failure.

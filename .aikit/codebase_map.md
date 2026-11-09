@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `156`
 - **Total Classes**: `250`
-- **Total Top-Level Functions**: `451`
-- **Total Class Methods**: `1625`
-- **Total Source Lines**: `43638`
+- **Total Top-Level Functions**: `452`
+- **Total Class Methods**: `1626`
+- **Total Source Lines**: `43693`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`156` module(s))
@@ -1903,7 +1903,7 @@
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2964` lines (`132800` bytes)
+**Size**: `2995` lines (`134364` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -1969,6 +1969,7 @@
 **Functions:**
 - `def _copy_scene_settings(source, target)` - *Copy camera and environment settings without copying scene nodes.*
 - `def _enabled(value)`
+- `def _action_fix(message)` - *Turn one editor-action failure into the fix that actually applies.*
 - `def create_server(game, host, port, prefab_dir, scene_dir, animation_dir, material_dir, initial_scene, project_dir)` - *Create a bound server; port 0 asks the OS for a free port.*
 - `def serve(game, host, port, prefab_dir, scene_dir, animation_dir, material_dir, initial_scene, project_dir)` - *Run the local console until interrupted.*
 
@@ -3712,7 +3713,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `6130` lines (`251017` bytes)
+**Size**: `6154` lines (`252268` bytes)
 
 **Classes:**
 - `class Health`
@@ -3744,6 +3745,7 @@
   - Method `.test_simulate_endpoint_returns_a_deterministic_result()`
   - Method `.test_editor_hierarchy_selection_and_transform()`
   - Method `.test_editor_node_authoring_and_undo_redo()`
+  - Method `.test_editor_action_failure_fix_matches_the_cause()` - *A 400 must explain the failure it actually reported.*
   - Method `.test_editor_named_history_and_multi_step_undo()`
   - Method `.test_editor_asset_metadata()`
   - Method `.test_editor_asset_inventory_and_assignment()`

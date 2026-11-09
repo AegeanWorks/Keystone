@@ -470,6 +470,30 @@ class WebServerTest(unittest.TestCase):
         cube_now = next(node for node in editor["nodes"] if node["id"] == cube["id"])
         self.assertEqual(cube_now["parent_id"], "root")
 
+    def test_editor_action_failure_fix_matches_the_cause(self):
+        """A 400 must explain the failure it actually reported.
+
+        Every editor action used to answer with "send a valid editor action
+        with finite transform values", so a missing scene library was met with
+        transform advice. An AI following that would never fix the real cause.
+        """
+        session = GameSession(CubeDemo())
+
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action({"action": "save_scene", "name": "probe"})
+        problem = caught.exception
+        self.assertEqual(problem.status, 400)
+        self.assertIn("no scene library", problem.why)
+        self.assertIn("--scene-dir", problem.fix)
+        self.assertNotIn("finite transform values", problem.fix)
+
+        # The advice must be sufficient: with --scene-dir the same call works.
+        with tempfile.TemporaryDirectory() as directory:
+            session = GameSession(CubeDemo(), scene_dir=Path(directory))
+            saved = session.editor_action({"action": "save_scene", "name": "probe"})
+            self.assertIn("probe", [scene["name"] for scene in saved["scenes"]])
+            self.assertTrue((Path(directory) / "probe.kscene").is_file())
+
     def test_editor_named_history_and_multi_step_undo(self):
         session = GameSession(CubeDemo())
         editor = session.editor()
