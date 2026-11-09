@@ -826,6 +826,30 @@ class WebServerTest(unittest.TestCase):
                 "type": "Health",
                 "data": {},
             },
+            # Renaming, re-layering, re-tagging or hiding a locked node is an
+            # edit too; these two paths used to slip past the lock.
+            {
+                "action": "set_node",
+                "id": ids[0],
+                "name": "hijacked",
+            },
+            {
+                "action": "set_node",
+                "id": ids[0],
+                "layer": "secret",
+            },
+            {
+                "action": "set_node",
+                "id": ids[0],
+                "visible": False,
+            },
+            {
+                "action": "set_selection_properties",
+                "name": "bulk-renamed",
+                "tags": [],
+                "layer": "default",
+                "visible": True,
+            },
         ):
             with self.assertRaises(WebProblem) as caught:
                 session.editor_action(payload)

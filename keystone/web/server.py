@@ -1137,11 +1137,17 @@ class GameSession:
                     self.selected_id = None if parent is scene.root else parent.id
                 elif action == "set_node":
                     node = find_node(scene, payload.get("id"))
+                    self._ensure_unlocked_locked([node])
                     self._apply_history(
                         scene, lambda: set_node_properties(node, payload)
                     )
                     self.selected_id = node.id
                 elif action == "set_selection_properties":
+                    nodes = [
+                        find_node(scene, node_id)
+                        for node_id in self.selected_ids
+                    ]
+                    self._ensure_unlocked_locked(nodes)
                     self._apply_history(
                         scene,
                         lambda: set_selection_properties(

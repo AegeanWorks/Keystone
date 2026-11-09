@@ -78,3 +78,6 @@ changes that do not bump the release number yet.
   telemetry and named frame events without altering the transcript or hash.
 - `--policy package.module:factory` registers a game's own bot policy;
   `keystone.playtest.load_policy` resolves built-ins and module factories.
+- Locked editor nodes now also reject `set_node` and `set_selection_properties`;
+  previously a lock could be bypassed by renaming, re-layering, re-tagging,
+  hiding or bulk-editing the node.
