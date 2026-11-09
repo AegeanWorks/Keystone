@@ -19,6 +19,7 @@ from keystone.playtest import (
     canon,
     canon_hash,
     diff_transcripts,
+    load_policy,
     make_report,
     read_outcome,
     run_bot,
@@ -41,6 +42,70 @@ from tests.support_maze_game import (
 
 
 class TranscriptTest(unittest.TestCase):
+    def test_run_bot_reports_per_frame_telemetry_to_an_observer(self):
+        """A game must be able to collect its own frame data without forking the runner."""
+        seen = []
+
+        def on_frame(frame, action, snapshot):
+            seen.append((frame, action.forward, snapshot.get("time")))
+
+        transcript = run_bot(
+            FairMaze,
+            ScriptedPolicy([ActionState(forward=1.0)]),
+            frames=3,
+            seed=0,
+            on_frame=on_frame,
+        )
+        self.assertEqual(len(seen), 3)
+        self.assertEqual([item[0] for item in seen], [0, 1, 2])
+        self.assertTrue(all(item[1] == 1.0 for item in seen))
+        # The observer must not disturb the transcript or its hash.
+        plain = run_bot(
+            FairMaze,
+            ScriptedPolicy([ActionState(forward=1.0)]),
+            frames=3,
+            seed=0,
+        )
+        self.assertEqual(transcript["hash"], plain["hash"])
+        self.assertEqual(transcript["actions"], plain["actions"])
+
+    def test_run_bot_reports_events_to_the_observer(self):
+        events = []
+
+        def on_event(name, payload):
+            events.append((name, payload.get("frame")))
+
+        run_bot(
+            FairMaze,
+            ScriptedPolicy([ActionState(forward=1.0)]),
+            frames=2,
+            seed=0,
+            on_event=on_event,
+            events={"start": 0, "end": 1},
+        )
+        self.assertEqual([name for name, _ in events], ["start", "end"])
+
+    def test_run_bot_rejects_bad_observer_input(self):
+        policy = ScriptedPolicy([ActionState(forward=1.0)])
+        for kwargs in (
+            {"on_frame": 5},
+            {"on_event": "nope"},
+            {"events": ["start"]},
+        ):
+            with self.subTest(kwargs=kwargs), self.assertRaises(TypeError):
+                run_bot(FairMaze, policy, frames=1, seed=0, **kwargs)
+
+    def test_load_policy_accepts_builtins_and_module_factories(self):
+        self.assertIsInstance(load_policy("random"), RandomPolicy)
+        self.assertIsInstance(load_policy("greedy"), GreedyPolicy)
+        custom = load_policy("tests.support_policy:make_policy")
+        self.assertEqual(custom.name, "support-policy")
+
+    def test_load_policy_rejects_unknown_builtin_and_bad_specs(self):
+        for spec in ("unknown", "module:", ":Factory", "a:b:c", "", None):
+            with self.subTest(spec=spec), self.assertRaises((ValueError, TypeError)):
+                load_policy(spec)
+
     def test_outcome_vocabulary_covers_what_the_runner_emits(self):
         self.assertEqual(
             set(OUTCOMES),

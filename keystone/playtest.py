@@ -121,6 +121,9 @@ def run_bot(
     max_wall_seconds: float = 10.0,
     trace: bool = False,
     scene_loader: Callable[[Any, Scene], None] | None = None,
+    on_frame: Callable[[int, ActionState, Mapping[str, Any]], None] | None = None,
+    on_event: Callable[[str, dict[str, Any]], None] | None = None,
+    events: Mapping[str, int] | None = None,
 ) -> dict[str, Any]:
     """Play one seeded bot run headlessly and record the transcript.
 
@@ -129,6 +132,12 @@ def run_bot(
     that same seed plus same game means the same transcript. Exceeding
     ``max_wall_seconds`` or reaching a terminal ``outcome`` ends the
     run early with a reason instead of playing forever.
+
+    ``on_frame(frame, action, snapshot)`` receives every stepped frame and
+    ``on_event(name, payload)`` fires for the frame numbers named in
+    ``events``. Both are read-only observers: they cannot change the action
+    the policy chose, and the transcript, its actions and its hash are
+    identical with or without them.
     """
     if not callable(factory):
         raise TypeError("factory must be callable")
@@ -142,6 +151,18 @@ def run_bot(
         raise ValueError("max_wall_seconds must be positive")
     if scene_loader is not None and not callable(scene_loader):
         raise TypeError("scene_loader must be callable or None")
+    if on_frame is not None and not callable(on_frame):
+        raise TypeError("on_frame must be callable or None")
+    if on_event is not None and not callable(on_event):
+        raise TypeError("on_event must be callable or None")
+    if events is not None:
+        if not isinstance(events, Mapping):
+            raise TypeError("events must be a mapping of name to frame or None")
+        for name, frame in events.items():
+            if not isinstance(name, str) or not name.strip():
+                raise TypeError("event names must be non-blank strings")
+            if isinstance(frame, bool) or not isinstance(frame, int) or frame < 0:
+                raise TypeError("event frames must be non-negative integers")
     reset = getattr(policy, "reset", None)
     select = getattr(policy, "select", None)
     if not callable(reset) or not callable(select):
@@ -182,7 +203,11 @@ def run_bot(
         outcome = "unknown"
         timed_out = False
         steps_used = 0
-        for _ in range(frames):
+        # Frame numbers to event names; the same frame can carry several.
+        event_names: dict[int, list[str]] = {}
+        for name, frame_number in (events or {}).items():
+            event_names.setdefault(int(frame_number), []).append(name)
+        for frame_index in range(frames):
             if _time.monotonic() >= deadline:
                 timed_out = True
                 break
@@ -198,12 +223,31 @@ def run_bot(
             used.append(action.to_dict())
             update(step, action)
             steps_used += 1
-            outcome = read_outcome(snapshot())
+            post = snapshot()
+            outcome = read_outcome(post)
+            if on_frame is not None:
+                on_frame(
+                    frame_index,
+                    action,
+                    dict(post) if isinstance(post, Mapping) else {},
+                )
+            if on_event is not None and frame_index in event_names:
+                for name in event_names[frame_index]:
+                    on_event(
+                        name,
+                        {
+                            "frame": frame_index,
+                            "action": action.to_dict(),
+                            "snapshot": dict(post)
+                            if isinstance(post, Mapping)
+                            else {},
+                            "outcome": outcome,
+                        },
+                    )
             if trace:
-                final_of_frame = snapshot()
-                if not isinstance(final_of_frame, Mapping):
+                if not isinstance(post, Mapping):
                     raise TypeError("game snapshot() must return a mapping")
-                snapshots.append(copy.deepcopy(dict(final_of_frame)))
+                snapshots.append(copy.deepcopy(dict(post)))
             if outcome in TERMINAL_OUTCOMES:
                 break
         try:
@@ -415,6 +459,58 @@ class ScriptedPolicy:
         action = self._script[min(self._cursor, len(self._script) - 1)]
         self._cursor += 1
         return action
+
+
+BUILTIN_POLICIES = ("random", "greedy", "scripted")
+
+
+def load_policy(spec: object) -> BotPolicy:
+    """Resolve ``random``/``greedy``/``scripted`` or a ``module:Factory`` policy.
+
+    A game can register its own policy outside the engine and select it with
+    ``--policy package.module:factory``. The factory is called with no
+    arguments and must return an object exposing ``name``, ``reset(seed)`` and
+    ``select(snapshot, actions_spec, rng)``.
+    """
+    if not isinstance(spec, str) or not spec.strip():
+        raise TypeError("policy spec must be a non-blank string")
+    if spec in BUILTIN_POLICIES:
+        if spec == "random":
+            return RandomPolicy()
+        if spec == "greedy":
+            return GreedyPolicy()
+        raise ValueError(
+            "the scripted policy needs an action script; pass --script"
+        )
+    if spec.count(":") != 1:
+        raise ValueError(
+            f"unknown policy {spec!r}; use "
+            f"{', '.join(BUILTIN_POLICIES)} or 'package.module:factory'"
+        )
+    module_name, attribute = spec.split(":")
+    if not module_name or not attribute:
+        raise ValueError("a policy spec needs both a module and a factory")
+    from importlib import import_module
+
+    try:
+        module = import_module(module_name)
+    except ImportError as exc:
+        raise ValueError(
+            f"could not import policy module {module_name!r}: {exc}"
+        ) from exc
+    factory = getattr(module, attribute, None)
+    if not callable(factory):
+        raise TypeError(
+            f"{module_name!r} has no callable policy factory {attribute!r}"
+        )
+    policy = factory()
+    for method in ("reset", "select"):
+        if not callable(getattr(policy, method, None)):
+            raise TypeError(f"policy {spec!r} does not implement {method}()")
+    name = getattr(policy, "name", None)
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError(f"policy {spec!r} must expose a non-blank name")
+    return policy
 
 
 def make_report(

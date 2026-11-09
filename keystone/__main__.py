@@ -82,8 +82,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--actions", type=Path, default=None, help="JSON action list for --simulate/--verify-determinism")
     parser.add_argument("--replay", type=Path, default=None, help="replay a CommandLog JSON without OpenGL")
     parser.add_argument("--playtest", action="store_true", help="run a seeded bot policy without OpenGL")
-    parser.add_argument("--policy", choices=("random", "greedy", "scripted"), default="random",
-                        help="bot policy for --playtest (default: random)")
+    parser.add_argument("--policy", default="random",
+                        help="bot policy for --playtest: random, greedy, scripted or package.module:factory")
     parser.add_argument("--seed", type=_seed, default=0, help="bot seed for --playtest (default: 0)")
     parser.add_argument("--script", type=Path, default=None, help="JSON action list for the scripted --playtest policy")
     parser.add_argument("--transcript-out", type=Path, default=None, help="write the bot transcript JSON for --playtest")
@@ -350,6 +350,10 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--script requires --policy scripted")
     if args.policy == "scripted" and args.script is None:
         parser.error("--policy scripted requires --script")
+    if args.policy not in ("random", "greedy", "scripted") and ":" not in args.policy:
+        parser.error(
+            "--policy must be random, greedy, scripted or package.module:factory"
+        )
 
     project_context = None
     if args.project is not None:
@@ -522,9 +526,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.playtest:
             from keystone.headless import load_actions
             from keystone.playtest import (
-                GreedyPolicy,
-                RandomPolicy,
                 ScriptedPolicy,
+                load_policy,
                 make_report,
                 run_bot,
                 validate_fairness,
@@ -533,13 +536,11 @@ def main(argv: list[str] | None = None) -> int:
 
             if args.policy == "scripted":
                 script = load_actions(args.script)
-                policy: RandomPolicy | GreedyPolicy | ScriptedPolicy = ScriptedPolicy(script)
-                reference: list | None = list(script)
-            elif args.policy == "greedy":
-                policy = GreedyPolicy()
-                reference = None
+                policy = ScriptedPolicy(script)
+                reference = list(script)
             else:
-                policy = RandomPolicy()
+                # random, greedy, or an external package.module:factory policy.
+                policy = load_policy(args.policy)
                 reference = None
             frames = args.frames if args.frames else 120
             transcript = run_bot(

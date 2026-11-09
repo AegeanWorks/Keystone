@@ -95,9 +95,37 @@ Exit code 0 means the final hash matched; 1 means drift. `--verify-determinism` 
 python -m keystone --playtest --policy random --seed 7 --frames 120 \
   --transcript-out run.json --out report.json
 python -m keystone --playtest --policy scripted --script solution.json --frames 120
+python -m keystone --playtest --policy mygame.bot:make_policy --frames 120
 ```
 
-`--playtest` runs a seeded bot policy (`random`, `greedy`, `scripted`) headlessly through the same five operations as `--simulate`. The transcript wraps the exact `CommandLog` shape, so its hash pins with `--expect-hash` and replays with `--replay` like any simulation; `diff_transcripts()` reports the first divergent frame between two traced runs. The schema-1 report (`game`, `policy`, `seed`, `outcome`, `final`, `hash`, `coverage`, `fairness`) is the same JSON a thin web adapter emits from `POST /api/simulate` — browser driving stays out. Exit code is 1 when the validator rejects the configuration as `unfair` (spawn-terminal, nondeterministic, no witnessed win, or reference longer than the time limit), with reasons in `report.fairness.reasons`. Games opt into win/lose judgments with `outcome`/`score` snapshot keys; without them the verdict is `unknown`, never a false `fair`.
+`--playtest` runs a seeded bot policy (`random`, `greedy`, `scripted`, or a
+`package.module:factory` your game registers) headlessly through the same five
+operations as `--simulate`. The transcript wraps the exact `CommandLog` shape, so its hash pins with `--expect-hash` and replays with `--replay` like any simulation; `diff_transcripts()` reports the first divergent frame between two traced runs. The schema-1 report (`game`, `policy`, `seed`, `outcome`, `final`, `hash`, `coverage`, `fairness`) is the same JSON a thin web adapter emits from `POST /api/simulate` — browser driving stays out. Exit code is 1 when the validator rejects the configuration as `unfair` (spawn-terminal, nondeterministic, no witnessed win, or reference longer than the time limit), with reasons in `report.fairness.reasons`. Games opt into win/lose judgments with `outcome`/`score` snapshot keys; without them the verdict is `unknown`, never a false `fair`.
+
+A game can collect its own telemetry without forking the runner:
+
+```python
+from keystone.playtest import load_policy, run_bot
+
+def on_frame(frame, action, snapshot):
+    health = snapshot.get("health")
+    if health is not None and health <= 0:
+        print(f"died on frame {frame}")
+
+transcript = run_bot(
+    MyGame,
+    load_policy("mygame.bot:make_policy"),
+    frames=1800,
+    seed=7,
+    on_frame=on_frame,
+    on_event=lambda name, payload: print(name, payload["frame"]),
+    events={"wave": 300, "boss": 1200},
+)
+```
+
+Observers are read-only: `on_frame` and `on_event` cannot change the chosen
+action, and the transcript, actions, final snapshot and hash are identical with
+or without them, so evidence collection never disturbs a pinned run.
 
 ## 5. Render and analyze
 

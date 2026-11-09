@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `151`
-- **Total Classes**: `241`
-- **Total Top-Level Functions**: `438`
-- **Total Class Methods**: `1585`
-- **Total Source Lines**: `42656`
+- **Total Python Modules**: `152`
+- **Total Classes**: `242`
+- **Total Top-Level Functions**: `440`
+- **Total Class Methods**: `1590`
+- **Total Source Lines**: `42838`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `685` lines (`36824` bytes)
+**Size**: `686` lines (`36902` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -1161,7 +1161,7 @@
 ### [`keystone/playtest.py`](keystone/playtest.py)
 > *Seeded bot playtesting: transcripts, diffing, policies and fairness checks.*
 
-**Size**: `615` lines (`25842` bytes)
+**Size**: `711` lines (`30082` bytes)
 
 **Classes:**
 - `class BotPolicy` - *One seeded decision step over the five-operation game contract.*
@@ -1187,10 +1187,11 @@
 - `def read_outcome(snapshot)` - *Read the opportunistic outcome signal; ``unknown`` when absent.*
 - `def read_score(snapshot)` - *Read the opportunistic numeric score signal, if present.*
 - `def to_command_log(transcript)` - *Convert a transcript back to a replayable :class:`CommandLog`.*
-- `def run_bot(factory, policy, frames, seed, step, max_wall_seconds, trace, scene_loader)` - *Play one seeded bot run headlessly and record the transcript.*
+- `def run_bot(factory, policy, frames, seed, step, max_wall_seconds, trace, scene_loader, on_frame, on_event, events)` - *Play one seeded bot run headlessly and record the transcript.*
 - `def diff_transcripts(before, after)` - *Compare two transcripts: hash fast-path, then first divergence.*
 - `def _validate_actions_spec(spec)`
 - `def _sample_action(rng, axes, buttons)`
+- `def load_policy(spec)` - *Resolve ``random``/``greedy``/``scripted`` or a ``module:Factory`` policy.*
 - `def make_report(transcript, fairness)` - *Build the frozen schema-1 playtest report shared with web adapters.*
 - `def validate_fairness(factory, reference_actions, frames, seeds, step, max_states, max_wall_seconds, time_limit_frames, scene_loader)` - *Judge whether a configuration is winnable, with reasons.*
 
@@ -1986,6 +1987,19 @@
 - `def WalledMaze()`
 - `def HazardMaze()`
 - `def TightMaze()`
+
+---
+
+### [`tests/support_policy.py`](tests/support_policy.py)
+> *A tiny external policy used to prove --policy accepts module factories.*
+
+**Size**: `20` lines (`518` bytes)
+
+**Classes:**
+- `class SupportPolicy` - *A named random policy registered from outside the engine.*
+
+**Functions:**
+- `def make_policy()` - *Factory form, matching the ``module:Factory`` spec.*
 
 ---
 
@@ -2929,10 +2943,15 @@
 ### [`tests/test_playtest.py`](tests/test_playtest.py)
 > *Tests for the seeded bot playtester: transcripts, diffs, policies and fairness.*
 
-**Size**: `487` lines (`19989` bytes)
+**Size**: `552` lines (`22469` bytes)
 
 **Classes:**
 - `class TranscriptTest`
+  - Method `.test_run_bot_reports_per_frame_telemetry_to_an_observer()` - *A game must be able to collect its own frame data without forking the runner.*
+  - Method `.test_run_bot_reports_events_to_the_observer()`
+  - Method `.test_run_bot_rejects_bad_observer_input()`
+  - Method `.test_load_policy_accepts_builtins_and_module_factories()`
+  - Method `.test_load_policy_rejects_unknown_builtin_and_bad_specs()`
   - Method `.test_outcome_vocabulary_covers_what_the_runner_emits()`
   - Method `.test_read_outcome_round_trips_every_declared_outcome()`
   - Method `.test_timeout_is_reported_for_a_run_that_never_signals()`

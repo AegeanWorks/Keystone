@@ -72,3 +72,7 @@ changes that do not bump the release number yet.
   deterministic procedural textures with a seed.
 - `keystone.testing.scene_fingerprint` and `assert_scene_budget` let a testbed
   pin content and coarse budgets instead of exact node counts.
+- `run_bot(..., on_frame=, on_event=, events=)` reports read-only per-frame
+  telemetry and named frame events without altering the transcript or hash.
+- `--policy package.module:factory` registers a game's own bot policy;
+  `keystone.playtest.load_policy` resolves built-ins and module factories.
