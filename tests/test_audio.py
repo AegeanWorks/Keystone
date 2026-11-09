@@ -74,6 +74,44 @@ class AudioTest(unittest.TestCase):
             mixed.samples,
         )
 
+    def test_wav_round_trip_preserves_negative_and_positive_symmetry(self):
+        """A clip must decode with the same scale on both signs.
+
+        The reader once divided negatives by 32768 and positives by 32767
+        while the writer scaled both by 32767, so every negative sample came
+        back one step closer to zero and nothing detected it.
+        """
+        values = (-0.75, -0.5, -0.25, -0.1, 0.0, 0.1, 0.25, 0.5, 0.75)
+        clip = AudioClip(samples=values, sample_rate=22050, name="probe")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "sym.wav"
+            write_wav(path, clip)
+            loaded = read_wav(path)
+
+        # One 16-bit step; truncation can lose at most this much either way.
+        step = 1.0 / 32767
+        for original, got in zip(values, loaded.samples):
+            with self.subTest(value=original):
+                self.assertLessEqual(
+                    abs(got - original),
+                    step + 1e-9,
+                    f"{original} came back as {got}",
+                )
+
+        # The transform must be odd: decoding -x must mirror decoding +x.
+        for index, original in enumerate(values):
+            if original <= 0.0:
+                continue
+            negative = next(
+                i for i, value in enumerate(values) if value == -original
+            )
+            self.assertAlmostEqual(
+                loaded.samples[negative],
+                -loaded.samples[index],
+                places=6,
+                msg=f"asymmetric scaling at {original}",
+            )
+
     def test_wav_round_trip(self):
         clip = sine(440.0, 0.05, name="tone")
         with tempfile.TemporaryDirectory() as directory:

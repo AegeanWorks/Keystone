@@ -250,8 +250,17 @@ def read_wav(path: str | Path) -> AudioClip:
         raise ValueError(f"could not read WAV from {path}: truncated sample data")
     count = len(frames) // 2
     samples = struct.unpack(f"<{count}h", frames) if count else ()
-    return AudioClip(samples=tuple(value / 32768.0 if value < 0 else value / 32767.0 for value in samples),
-                     sample_rate=rate, name=Path(str(path)).stem)
+    # Scale both signs by the writer's full-scale factor so encode/decode is an
+    # odd function. Dividing negatives by 32768 (a common alternative) bends
+    # every negative sample toward zero while positives stay put, which is
+    # distortion, not quantization. Clamp because -32768 / 32767 exceeds 1.
+    return AudioClip(
+        samples=tuple(
+            max(-1.0, min(1.0, value / 32767.0)) for value in samples
+        ),
+        sample_rate=rate,
+        name=Path(str(path)).stem,
+    )
 
 
 def audio_report(clip: AudioClip, voices: int = 0, buses: dict | None = None) -> dict:

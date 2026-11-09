@@ -84,3 +84,6 @@ changes that do not bump the release number yet.
 - Scene snapshots and animation clips serialize every vector component as a
   float, so a document no longer changes textually across one save/load cycle
   when a consumer built a `Vec3`/`Quat` from ints.
+- WAV decoding scales both signs by 32767 and clamps to [-1, 1], so a round
+  trip is symmetric; negatives no longer drift toward zero while positives do
+  not, and full-scale +/-1.0 now round-trips exactly.

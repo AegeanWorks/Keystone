@@ -9,8 +9,8 @@
 - **Total Python Modules**: `153`
 - **Total Classes**: `245`
 - **Total Top-Level Functions**: `441`
-- **Total Class Methods**: `1597`
-- **Total Source Lines**: `43064`
+- **Total Class Methods**: `1598`
+- **Total Source Lines**: `43111`
 
 ---
 
@@ -308,7 +308,7 @@
 ### [`keystone/audio.py`](keystone/audio.py)
 > *Game-agnostic audio core: synth clips, bus mixer and WAV I/O.*
 
-**Size**: `279` lines (`12157` bytes)
+**Size**: `288` lines (`12484` bytes)
 
 **Classes:**
 - `class AudioClip` - *Immutable mono PCM clip in [-1, 1] with a fixed sample rate.*
@@ -2287,7 +2287,7 @@
 ### [`tests/test_audio.py`](tests/test_audio.py)
 > *Tests for the game-agnostic audio core.*
 
-**Size**: `177` lines (`7172` bytes)
+**Size**: `215` lines (`8767` bytes)
 
 **Classes:**
 - `class AudioTest`
@@ -2297,6 +2297,7 @@
   - Method `.test_mixer_applies_buses_and_renders()`
   - Method `.test_mix_clips_requires_shared_rate()`
   - Method `.test_mix_clips_clamps_once_at_the_end()`
+  - Method `.test_wav_round_trip_preserves_negative_and_positive_symmetry()` - *A clip must decode with the same scale on both signs.*
   - Method `.test_wav_round_trip()`
   - Method `.test_clip_json_round_trip()`
   - Method `.test_read_wav_accepts_full_scale_negative()`
