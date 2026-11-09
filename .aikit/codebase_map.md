@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `152`
-- **Total Classes**: `243`
-- **Total Top-Level Functions**: `440`
-- **Total Class Methods**: `1593`
-- **Total Source Lines**: `42955`
+- **Total Python Modules**: `153`
+- **Total Classes**: `245`
+- **Total Top-Level Functions**: `441`
+- **Total Class Methods**: `1597`
+- **Total Source Lines**: `43064`
 
 ---
 
@@ -95,7 +95,7 @@
 ### [`keystone/animation.py`](keystone/animation.py)
 > *Deterministic, game-agnostic animation: keyframe clips, sampling and control.*
 
-**Size**: `513` lines (`22885` bytes)
+**Size**: `531` lines (`23468` bytes)
 
 **Classes:**
 - `class Track` - *One keyframed channel: sorted times with Vec3 or Quat values.*
@@ -1489,10 +1489,10 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `472` lines (`19934` bytes)
+**Size**: `483` lines (`20244` bytes)
 
 **Functions:**
-- `def _vec3_to_list(value)`
+- `def _vec3_to_list(value)` - *Serialize a vector as floats.*
 - `def _vec3_from_value(value, label, default)`
 - `def _light_to_dict(light)`
 - `def _light_from_dict(data)`
@@ -3200,6 +3200,24 @@
   - Method `.test_strict_seed_and_frames_are_rejected()`
   - Method `.test_run_log_restores_global_random_state()`
   - Method `.test_run_log_replays_deterministically()`
+
+---
+
+### [`tests/test_round_trip_stability.py`](tests/test_round_trip_stability.py)
+> *Regression: a document must not change after one load/save cycle.*
+
+**Size**: `80` lines (`2851` bytes)
+
+**Classes:**
+- `class Health`
+- `class RoundTripStabilityTest` - *Vec3/Quat accept ints, so serializers must normalize them to floats.*
+  - Method `.test_scene_snapshot_is_stable_across_one_load()`
+  - Method `.test_scene_snapshot_lights_are_stable()`
+  - Method `.test_animation_clip_is_stable_across_one_load()`
+  - Method `.test_serialized_vectors_are_floats()`
+
+**Functions:**
+- `def _document(value)`
 
 ---
 

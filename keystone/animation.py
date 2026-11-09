@@ -86,13 +86,31 @@ class Track:
         return self.values[-1]  # type: ignore[return-value]
 
     def to_dict(self) -> dict:
+        # Emit floats: Vec3/Quat accept int components, but from_dict always
+        # rebuilds floats, so raw ints made a clip differ textually after one
+        # round trip.
         items = []
         for time, value in zip(self.times, self.values):
             if isinstance(value, Vec3):
-                items.append({"t": time, "v": [value.x, value.y, value.z]})
+                items.append(
+                    {
+                        "t": time,
+                        "v": [float(value.x), float(value.y), float(value.z)],
+                    }
+                )
             else:
                 assert isinstance(value, Quat)
-                items.append({"t": time, "q": [value.x, value.y, value.z, value.w]})
+                items.append(
+                    {
+                        "t": time,
+                        "q": [
+                            float(value.x),
+                            float(value.y),
+                            float(value.z),
+                            float(value.w),
+                        ],
+                    }
+                )
         return {"interpolation": self.interpolation, "keys": items}
 
     @classmethod

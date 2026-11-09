@@ -34,7 +34,13 @@ SCENE_SNAPSHOT_VERSION = 6
 
 
 def _vec3_to_list(value: Vec3) -> list[float]:
-    return [value.x, value.y, value.z]
+    """Serialize a vector as floats.
+
+    ``Vec3`` accepts int components, but the reader always builds floats, so
+    emitting raw ints made a document differ textually before and after one
+    load. Normalizing here keeps the two directions symmetric.
+    """
+    return [float(value.x), float(value.y), float(value.z)]
 
 
 def _vec3_from_value(value: Any, label: str, default: Vec3) -> Vec3:
@@ -88,9 +94,14 @@ def _transform_to_dict(transform: Any) -> dict[str, Any]:
     Transform(transform.position, transform.rotation, transform.scale)
     rotation = transform.rotation
     return {
-        "position": [transform.position.x, transform.position.y, transform.position.z],
-        "rotation": [rotation.x, rotation.y, rotation.z, rotation.w],
-        "scale": [transform.scale.x, transform.scale.y, transform.scale.z],
+        "position": _vec3_to_list(transform.position),
+        "rotation": [
+            float(rotation.x),
+            float(rotation.y),
+            float(rotation.z),
+            float(rotation.w),
+        ],
+        "scale": _vec3_to_list(transform.scale),
     }
 
 

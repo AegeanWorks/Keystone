@@ -81,3 +81,6 @@ changes that do not bump the release number yet.
 - Locked editor nodes now also reject `set_node` and `set_selection_properties`;
   previously a lock could be bypassed by renaming, re-layering, re-tagging,
   hiding or bulk-editing the node.
+- Scene snapshots and animation clips serialize every vector component as a
+  float, so a document no longer changes textually across one save/load cycle
+  when a consumer built a `Vec3`/`Quat` from ints.

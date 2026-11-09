@@ -126,7 +126,7 @@ assert scene.query(tag="player", layer="actors") == [hero]
 assert scene.query(component=Health) == [hero]
 ```
 
-IDs are allocated per scene (`node-1`, `node-2`, ...) on attach or first traversal. An explicit `id` is kept, a duplicate is rejected, and reparenting preserves it. `tags` are a set of strings, `layer` is one string, and each node holds one component per type. Queries are linear scans; an index can be added when a real workload needs it.
+IDs are allocated per scene (`node-1`, `node-2`, ...) on attach or first traversal. An explicit `id` is kept, a duplicate is rejected, and reparenting preserves it. `tags` are a set of strings, `layer` is one string, and each node holds one component per type. Queries are linear scans; an index can come later.
 
 ### Physics: broadphase, characters and triggers
 
@@ -152,7 +152,7 @@ events = TriggerTracker().update(body.box(), [TriggerVolume("door", AABB(Vec3(0,
 hit = raycast(Ray(Vec3(), Vec3(0, 0, 1)), [("wall", wall)])
 ```
 
-`SpatialGrid` keeps a uniform grid of AABB proxies with exact overlaps in insertion order; `cell_size` trades speed, not correctness. `CharacterController` moves an AABB body with wish velocity, gravity, wall/floor response, stair step-up, slope-limited climb and platform carry; capsules and solvers excluded. `TriggerTracker` reports sorted `entered`/`exited` tuples and an immutable `active` set; `raycast()` returns the nearest hit.
+`SpatialGrid` keeps a uniform grid of AABB proxies with exact overlaps in insertion order; `cell_size` trades speed, not correctness. `CharacterController` moves an AABB body with wish velocity, gravity, wall/floor response, stair step-up, slope-limited climb and platform carry; no capsules or solvers. `TriggerTracker` reports sorted `entered`/`exited` tuples and an immutable `active` set; `raycast()` returns the nearest hit.
 
 ### Optional game UI
 
@@ -261,19 +261,19 @@ The API sends CORS headers so local AI clients can call it directly. Keep the de
 - **Action input**: rebindable `InputMap` bindings expose `forward`, `right`, `up`, `look_yaw`, `look_pitch`, `pressed` and `held` across action contexts; no direct GLFW access.
 - **Audio core**: synth (`sine`, `square`, `noise`), named-bus `Mixer` with deterministic mixdown, mono 16-bit WAV IO and `audio_report()`; no hardware.
 - **Animation**: keyframe `Track`/`AnimationClip`, looping, crossfades, events, blend spaces, `apply_pose()`, CPU/GPU skinning, JSON round trips, reports, keyframe authoring and state machines.
-- **Replay runner**: `run_log()`/`verify_log()` replay a `CommandLog`, and `--replay` audits logs.
+- **Replay runner**: `run_log()`/`verify_log()` replay a `CommandLog`; `--replay` audits logs.
 - **Particles**: seeded CPU emitters with forces, swept collision, bursts, culling and JSON reports; HUD/inspector counts; one GPU billboard each.
 - **Physics**: ray/AABB/sphere queries, sphere pushout, spatial-grid broadphase, AABB movement with gravity/ground, trigger tracking and filtered raycasts.
 - **Replay and persistence**: `ActionState` command logs, stable hashes and atomic JSON writes with `.bak` snapshots.
 - **Plugin loading**: `load_game("package.module:Factory")` validates the five-op contract.
-- **No-GL simulation**: `run_simulation()` and `--simulate` drive `GameModule.update()` directly with JSON action scripts and hashes.
+- **No-GL simulation**: `run_simulation()` and `--simulate` drive `GameModule.update()` directly with JSON actions and hashes.
 - **AI discovery and testing**: `--describe` exposes actions, capabilities, schemas and snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; helpers add validation, observations and seeded bots.
 - **Visual regression gate**: `--compare-baseline baseline.json` re-renders, compares hashes, stats and nodes, and exits non-zero on change. `--diff-out diff.png` writes a pixel diff.
 - **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` provide round-trip loading, changed-pixel counts and a visual diff.
 - **Frame reports for AI analysis**: `--report` writes schema-11 JSON with image hashes, pixel stats, content box, palette, camera, projected content, FX counts and UI metadata.
 - **Human overlay**: game-agnostic HUD with status, FPS, frame, time and profiler lines, plus help/pause menu; 5×7 font, no asset.
 - **Web console and WebGL viewer**: `--serve` exposes a stdlib JSON API (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/editor`, `/api/simulate`) and a scene editor for hierarchy, node/asset/component authoring, transforms, undo, prefabs, play/snapshot, views, grid, animation/materials, drag-drop/copy-paste/locking, assets, validation and layers.
-- **Game-agnostic core**: no combat, light-lock, weave, network or expedition code.
+- **Game-agnostic core**: no combat, light-lock, weave or expedition code.
 
 ## 🤖 AI Testing & Frame Analysis
 
@@ -293,7 +293,7 @@ python -m keystone --headless --frames 1 --size 1280x720 \
   --out frame.png --report current.json --compare-baseline baseline.json
 ```
 
-The first command runs the scenario twice and exits 0 only when both hashes match. The second renders, writes the report, compares it with the baseline and exits non-zero when the image changed. The diff covers luminance/content deltas and changed/added/removed nodes. `--diff-out diff.png` adds a visual pixel diff. `--expect-hash <32-hex>` pins a known final hash either way.
+The first command runs the scenario twice and exits 0 only when both hashes match. The second renders, writes the report, compares it with the baseline and exits non-zero when the image changed. The diff covers luminance/content deltas and added/removed/changed nodes. `--diff-out diff.png` adds a visual pixel diff. `--expect-hash <32-hex>` pins a known final hash either way.
 
 See [`docs/AI_GUIDE.md`](docs/AI_GUIDE.md) for the complete workflow.
 
@@ -514,6 +514,7 @@ keystone/
 │   ├── test_bloom.py          <- bloom
 │   ├── test_culling.py        <- frustum culling
 │   ├── test_scene_snapshot.py <- versioned scene save/load
+│   ├── test_round_trip_stability.py <- idempotent save/load
 │   ├── test_scene_library.py <- scene library save, load and restore
 │   ├── test_scene_diff.py   <- structured scene diff coverage
 │   ├── test_plugin.py        <- GameModule contract and loader
