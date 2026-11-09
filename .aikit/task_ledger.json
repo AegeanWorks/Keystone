@@ -1,59 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-report-rest-v1",
+    "task_id": "keystone-f7-playtest-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794176987.4654741,
+    "updated_at": 1794204363.253759,
     "owner": "commandcode:keystone-console",
     "started_by": "commandcode:keystone-console",
     "continuations": [],
-    "completed_at": 1794176994.3718083
+    "completed_at": 1794204372.1379373
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-blend-loop-audit-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[3/3] Project gate passes 6/6 with looping blend states, blend-space wrap duration, smooth crossfades in both directions and the editor preview looping; canonical --simulate hash still 772cac5232a0947b8f6d1914a5cf0cde; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794160629.3002172,
-      "timestamp_str": "2026-11-08 20:57:09",
-      "agent": "commandcode:keystone-console"
-    },
-    {
-      "task_id": "keystone-blend-loop-audit-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-blend-loop-audit-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794160636.9906075,
-      "timestamp_str": "2026-11-08 20:57:16",
-      "agent": "commandcode:keystone-console"
-    },
-    {
-      "task_id": "keystone-blend-loop-audit-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[3/3] Re-verified with labeled evidence: JUnit 856 tests 0 failures 0 errors; --simulate --frames 120 hash 772cac5232a0947b8f6d1914a5cf0cde and --expect-hash exit 0; --verify-determinism ok; headless 96x64 PNG+report; aikit check keystone 6/6. Crossfade-out test corrected to be genuinely failing-first (all five fail with animation.py and animation_state.py reverted to HEAD). checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794162191.5502684,
-      "timestamp_str": "2026-11-08 21:23:11",
-      "agent": "commandcode:keystone-console"
-    },
-    {
-      "task_id": "keystone-blend-loop-audit-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-blend-loop-audit-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794162405.8405914,
-      "timestamp_str": "2026-11-08 21:26:45",
-      "agent": "commandcode:keystone-console"
-    },
     {
       "task_id": "keystone-implicit-fsm-v1",
       "phase": "in_progress",
@@ -252,6 +210,56 @@
       "status": "completed",
       "timestamp": 1794176994.3718107,
       "timestamp_str": "2026-11-09 01:29:54",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-f7-playtest-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan: verified F7 (the one untriaged report finding) true in all four parts by execution; implement the report's stated first slice - read-only on_frame/on_event observers plus an events frame map on run_bot, and load_policy with a --policy module:factory CLI form",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794204346.2984748,
+      "timestamp_str": "2026-11-09 09:05:46",
+      "agent": "commandcode:keystone-console",
+      "impact_assessment": {
+        "why": "run_bot had no per-frame hook, no evidence module existed, --policy accepted only three built-ins, and agents.observe is a snapshot adapter, so the consumer ships its own 739-line play harness and 107-line bot and core playtest stays unvalidated against real content.",
+        "benefits": "A game collects its own telemetry and registers its own bot policy without forking the runner.",
+        "risks": "contract: additive run_bot keywords and a broadened --policy value; dependency: none new; concurrency: none; state: no transcript or persisted format change.",
+        "mitigation": "Keep observers read-only, pin that the transcript and hash are identical with and without them, and run the full 6/6 gate plus the canonical simulate hash."
+      },
+      "plan_digest": "5b7d2f3bd7f6fd6cb3813b949cbee43ac56cd19d6ad21bed3f1f0054b1f4fb72"
+    },
+    {
+      "task_id": "keystone-f7-playtest-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Implemented and verified - run_bot on_frame/on_event/events observers proven neutral (identical hash, actions, final and snapshots with and without trace), load_policy plus --policy module:factory verified end to end 6/6; 976 tests pass; canonical simulate hash unchanged; pushed 81e58e5",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794204356.6696186,
+      "timestamp_str": "2026-11-09 09:05:56",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-f7-playtest-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[3/3] Project gate passes 6/6 on 81e58e5; branch clean and synced with origin/master; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794204363.253759,
+      "timestamp_str": "2026-11-09 09:06:03",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-f7-playtest-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-f7-playtest-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794204372.137939,
+      "timestamp_str": "2026-11-09 09:06:12",
       "agent": "commandcode:keystone-console"
     }
   ]
