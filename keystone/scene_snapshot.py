@@ -88,6 +88,26 @@ def _point_light_from_dict(data: Mapping[str, Any]) -> PointLight:
     )
 
 
+def _sprite_to_dict(sprite: Any) -> dict[str, Any]:
+    return {
+        "size": sprite.size,
+        "color": _vec3_to_list(sprite.color),
+        "alpha": sprite.alpha,
+    }
+
+
+def _sprite_from_dict(data: Any) -> Any:
+    from keystone.scene import Sprite
+
+    if not isinstance(data, Mapping):
+        raise TypeError("node sprite must be a mapping or null")
+    return Sprite(
+        size=float(data.get("size", 1.0)),
+        color=_vec3_from_value(data.get("color"), "sprite color", Vec3(1.0, 0.9, 0.7)),
+        alpha=float(data.get("alpha", 1.0)),
+    )
+
+
 def _transform_to_dict(transform: Any) -> dict[str, Any]:
     if not isinstance(transform, Transform):
         raise TypeError("node transform must be a Transform")
@@ -199,6 +219,7 @@ def scene_to_dict(scene: Scene, registry: Any = None) -> dict[str, Any]:
                 "transform": _transform_to_dict(node.transform),
                 "mesh": mesh_ids.get(id(node.mesh)) if node.mesh is not None else None,
                 "material": material_ids.get(id(node.material)) if node.material is not None else None,
+                "sprite": _sprite_to_dict(node.sprite) if node.sprite is not None else None,
                 "prefab_link": node.prefab_link.to_dict() if node.prefab_link is not None else None,
                 "prefab_base": (
                     copy.deepcopy(node.prefab_base)
@@ -413,6 +434,8 @@ def scene_from_dict(
             scene_group=scene_group,
         )
         node.transform = _transform_from_dict(raw.get("transform", {}))
+        if raw.get("sprite") is not None:
+            node.sprite = _sprite_from_dict(raw.get("sprite"))
         visible = raw.get("visible", True)
         if not isinstance(visible, bool):
             raise TypeError("scene snapshot node visible must be a boolean")

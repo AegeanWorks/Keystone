@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `156`
-- **Total Classes**: `250`
-- **Total Top-Level Functions**: `452`
-- **Total Class Methods**: `1637`
-- **Total Source Lines**: `43944`
+- **Total Python Modules**: `157`
+- **Total Classes**: `254`
+- **Total Top-Level Functions**: `454`
+- **Total Class Methods**: `1652`
+- **Total Source Lines**: `44159`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`156` module(s))
+- **Indexed**: python (`157` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -729,7 +729,7 @@
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
 > *Blinn-Phong forward renderer with fog, shadows and screenshot readback.*
 
-**Size**: `1185` lines (`47303` bytes)
+**Size**: `1211` lines (`48406` bytes)
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
@@ -1402,7 +1402,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `525` lines (`20686` bytes)
+**Size**: `554` lines (`21923` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -1432,6 +1432,8 @@
   - Method `.world_matrix()`
   - Method `.world_visible()`
   - Method `.traverse()`
+- `class Sprite` - *A camera-facing quad drawn as a billboard at the node's position.*
+  - Method `.__post_init__()`
 - `class DirectionalLight` - *A direction the light travels in, plus linear color and intensity.*
   - Method `.__post_init__()`
   - Method `.unit_direction()`
@@ -1508,7 +1510,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `491` lines (`20692` bytes)
+**Size**: `514` lines (`21455` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)` - *Serialize a vector as floats.*
@@ -1517,6 +1519,8 @@
 - `def _light_from_dict(data)`
 - `def _point_light_to_dict(light)`
 - `def _point_light_from_dict(data)`
+- `def _sprite_to_dict(sprite)`
+- `def _sprite_from_dict(data)`
 - `def _transform_to_dict(transform)`
 - `def _transform_from_dict(data)`
 - `def _payload_asset_ids(registry)`
@@ -3528,6 +3532,32 @@
 
 **Functions:**
 - `def _quad_mesh(**overrides)`
+
+---
+
+### [`tests/test_sprite_nodes.py`](tests/test_sprite_nodes.py)
+> *Tests for placed sprite nodes: model, round trip and rendering.*
+
+**Size**: `137` lines (`5448` bytes)
+
+**Classes:**
+- `class SpriteModelTest`
+  - Method `.test_defaults_and_validation()`
+  - Method `.test_node_rejects_a_non_sprite_payload()`
+  - Method `.test_node_without_a_sprite_still_works()`
+- `class SpriteSnapshotTest`
+  - Method `.test_sprite_round_trips()`
+  - Method `.test_document_is_stable_across_one_load()`
+  - Method `.test_a_node_without_a_sprite_writes_null()`
+- `class SpriteRenderTest`
+  - Method `.setUp()`
+  - Method `._scene(sprite, visible)`
+  - Method `._render(scene)`
+  - Method `._lit(pixels)`
+  - Method `.test_sprite_draws_without_particles()`
+  - Method `.test_sprite_colour_is_per_sprite()`
+  - Method `.test_hidden_or_transparent_sprites_draw_nothing()`
+  - Method `.test_size_scales_the_covered_area()`
 
 ---
 

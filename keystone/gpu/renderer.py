@@ -309,14 +309,17 @@ layout(location = 0) in vec2 a_corner;
 layout(location = 1) in vec3 a_offset;
 layout(location = 2) in float a_scale;
 layout(location = 3) in float a_alpha;
+layout(location = 4) in vec3 a_tint;
 uniform mat4 u_view_proj;
 uniform vec3 u_right;
 uniform vec3 u_up;
 out vec2 v_uv;
 out float v_alpha;
+out vec3 v_tint;
 void main() {
     v_uv = a_corner + vec2(0.5);
     v_alpha = a_alpha;
+    v_tint = a_tint;
     vec3 world = a_offset + (u_right * a_corner.x + u_up * a_corner.y) * a_scale;
     gl_Position = u_view_proj * vec4(world, 1.0);
 }
@@ -325,6 +328,7 @@ void main() {
 SPRITE_FRAGMENT_SHADER = """#version 330 core
 in vec2 v_uv;
 in float v_alpha;
+in vec3 v_tint;
 uniform vec3 u_sprite_color;
 uniform float u_bloom_enabled;
 uniform float u_bloom_threshold;
@@ -343,7 +347,7 @@ void main() {
     if (a <= 0.001) {
         discard;
     }
-    vec3 color = u_sprite_color;
+    vec3 color = u_sprite_color * v_tint;
     float l = dot(color, vec3(0.2126, 0.7152, 0.0722));
     if (u_bloom_enabled > 0.5) {
         float b = smoothstep(u_bloom_threshold, u_bloom_threshold + u_bloom_knee, l);
@@ -731,14 +735,17 @@ class Renderer:
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self._sprite_inst_vbo)
         GL.glBufferData(GL.GL_ARRAY_BUFFER, 0, None, GL.GL_DYNAMIC_DRAW)
         GL.glEnableVertexAttribArray(1)
-        GL.glVertexAttribPointer(1, 3, GL.GL_FLOAT, GL.GL_FALSE, 5 * 4, GL.GLvoidp(0))
+        GL.glVertexAttribPointer(1, 3, GL.GL_FLOAT, GL.GL_FALSE, 8 * 4, GL.GLvoidp(0))
         GL.glVertexAttribDivisor(1, 1)
         GL.glEnableVertexAttribArray(2)
-        GL.glVertexAttribPointer(2, 1, GL.GL_FLOAT, GL.GL_FALSE, 5 * 4, GL.GLvoidp(3 * 4))
+        GL.glVertexAttribPointer(2, 1, GL.GL_FLOAT, GL.GL_FALSE, 8 * 4, GL.GLvoidp(3 * 4))
         GL.glVertexAttribDivisor(2, 1)
         GL.glEnableVertexAttribArray(3)
-        GL.glVertexAttribPointer(3, 1, GL.GL_FLOAT, GL.GL_FALSE, 5 * 4, GL.GLvoidp(4 * 4))
+        GL.glVertexAttribPointer(3, 1, GL.GL_FLOAT, GL.GL_FALSE, 8 * 4, GL.GLvoidp(4 * 4))
         GL.glVertexAttribDivisor(3, 1)
+        GL.glEnableVertexAttribArray(4)
+        GL.glVertexAttribPointer(4, 3, GL.GL_FLOAT, GL.GL_FALSE, 8 * 4, GL.GLvoidp(5 * 4))
+        GL.glVertexAttribDivisor(4, 1)
         GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, self._sprite_ibo)
         GL.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, len(indices) * 4, (GL.GLuint * len(indices))(*indices), GL.GL_STATIC_DRAW)
         GL.glBindVertexArray(0)
@@ -770,30 +777,49 @@ class Renderer:
         post_on: bool,
         bloom_on: bool,
     ) -> tuple[int, int]:
-        if not self._sprites_requested(scene) or particles is None:
-            return (0, 0)
-        items = getattr(particles, "particles", None)
-        if not isinstance(items, list) or not items:
+        if not self._sprites_requested(scene):
             return (0, 0)
         rows: list[float] = []
-        for particle in items:
-            try:
-                position = particle.position
-                age = float(particle.age)
-                lifetime = float(particle.lifetime)
-                size = float(particle.size)
-            except (AttributeError, TypeError, ValueError):
+        items = getattr(particles, "particles", None)
+        if isinstance(items, list):
+            for particle in items:
+                try:
+                    position = particle.position
+                    age = float(particle.age)
+                    lifetime = float(particle.lifetime)
+                    size = float(particle.size)
+                except (AttributeError, TypeError, ValueError):
+                    continue
+                if lifetime <= 0.0 or age >= lifetime:
+                    continue
+                try:
+                    alpha = sprite_alpha(age, lifetime)
+                except ValueError:
+                    continue
+                if alpha <= 0.001:
+                    continue
+                rows.extend([float(position.x), float(position.y), float(position.z), max(size * 0.35, 0.05), alpha, 1.0, 1.0, 1.0])
+        # Placed sprites are scene content, so they draw even with no particles.
+        for node in scene.traverse():
+            sprite = getattr(node, "sprite", None)
+            if sprite is None or not node.world_visible():
                 continue
-            if lifetime <= 0.0 or age >= lifetime:
+            if float(sprite.alpha) <= 0.001 or float(sprite.size) <= 0.0:
                 continue
-            try:
-                alpha = sprite_alpha(age, lifetime)
-            except ValueError:
-                continue
-            if alpha <= 0.001:
-                continue
-            rows.extend([float(position.x), float(position.y), float(position.z), max(size * 0.35, 0.05), alpha])
-        count = len(rows) // 5
+            center = node.world_matrix().transform_point(Vec3())
+            rows.extend(
+                [
+                    float(center.x),
+                    float(center.y),
+                    float(center.z),
+                    float(sprite.size),
+                    float(sprite.alpha),
+                    float(sprite.color.x),
+                    float(sprite.color.y),
+                    float(sprite.color.z),
+                ]
+            )
+        count = len(rows) // 8
         if count == 0:
             return (0, 0)
         right, up = self._camera_basis(scene)

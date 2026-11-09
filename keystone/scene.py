@@ -136,6 +136,7 @@ class Node:
     transform: Transform = field(default_factory=Transform)
     mesh: object | None = None
     material: object | None = None
+    sprite: object | None = None
     visible: bool = True
     parent: Node | None = field(default=None, repr=False)
     children: list[Node] = field(default_factory=list)
@@ -183,6 +184,8 @@ class Node:
                 raise TypeError("component value must match its key type")
         if self.prefab_link is not None and not isinstance(self.prefab_link, PrefabLink):
             raise TypeError("node prefab_link must be a PrefabLink or None")
+        if self.sprite is not None and not isinstance(self.sprite, Sprite):
+            raise TypeError("node sprite must be a Sprite or None")
         if self.prefab_base is not None:
             if not isinstance(self.prefab_base, Mapping):
                 raise TypeError("node prefab_base must be a mapping or None")
@@ -303,6 +306,32 @@ class Node:
             node = stack.pop()
             yield node
             stack.extend(reversed(list(node.children)))
+
+
+@dataclass(frozen=True, slots=True)
+class Sprite:
+    """A camera-facing quad drawn as a billboard at the node's position.
+
+    Particles own emission; this is for a *placed* sprite in the scene, such as
+    a light glow, a marker or a billboarded sign. ``size`` is the world half
+    extent, so a size of 1.0 draws a 2x2 quad before perspective.
+    """
+
+    size: float = 1.0
+    color: Vec3 = Vec3(1.0, 0.9, 0.7)
+    alpha: float = 1.0
+
+    def __post_init__(self) -> None:
+        _finite_vec3(self.color, "sprite color")
+        for label, value in (("size", self.size), ("alpha", self.alpha)):
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise TypeError(f"sprite {label} must be a number")
+            if not math.isfinite(value):
+                raise ValueError(f"sprite {label} must be finite")
+        if self.size < 0.0:
+            raise ValueError("sprite size must be non-negative")
+        if not 0.0 <= self.alpha <= 1.0:
+            raise ValueError("sprite alpha must be between 0 and 1")
 
 
 @dataclass(frozen=True, slots=True)

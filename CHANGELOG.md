@@ -105,3 +105,5 @@ changes that do not bump the release number yet.
 - A scene can now hold multiple point lights (`Scene.point_lights`, up to
   eight lit at once). `scene.point_light` still reads and writes the first
   light, so existing code is unchanged.
+- `Node.sprite` places a camera-facing billboard (`Sprite(size, color, alpha)`)
+  as scene content; sprites no longer require a particle emitter.
