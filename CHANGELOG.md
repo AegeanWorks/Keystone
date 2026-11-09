@@ -69,7 +69,9 @@ changes that do not bump the release number yet.
 - `Canvas` measures and aligns text: `text_width`, `line_height`, `fit_text`,
   `text_right` and `text_center`, matching the shared font metrics.
 - `TextureData.pattern("cell"|"grid"|"panel"|"rivets"|"noise")` builds
-  deterministic procedural textures with a seed.
+  deterministic procedural textures with a seed. The margin presets are linear
+  in pixel count (panel 180ms -> 2ms, rivets 288ms -> 6.5ms at 512x512) and
+  `MAX_PATTERN_SIZE` caps a single allocation at 16 MB.
 - `keystone.testing.scene_fingerprint` and `assert_scene_budget` let a testbed
   pin content and coarse budgets instead of exact node counts.
 - `run_bot(..., on_frame=, on_event=, events=)` reports read-only per-frame

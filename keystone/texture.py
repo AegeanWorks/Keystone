@@ -12,6 +12,11 @@ from keystone.png import read_png
 
 Color = tuple[float, float, float]
 
+# Generous ceiling: 2048x2048 is 16 MB of RGBA. Beyond this a procedural
+# preset is almost certainly a mistake, and an unbounded size would let one
+# call allocate hundreds of megabytes.
+MAX_PATTERN_SIZE = 2048
+
 
 def _rgba(color: object, label: str) -> bytes:
     """Clamp three linear floats to one opaque RGBA8 tuple."""
@@ -44,46 +49,72 @@ def _cell(size: int, base: bytes, accent: bytes, seed: int) -> bytes:
 def _grid(size: int, base: bytes, accent: bytes, seed: int) -> bytes:
     """Thin lattice of accent lines every eighth of the texture."""
     step = max(4, size // 8)
-    pixels = bytearray()
+    line = accent * size
+    plain = bytearray()
+    for x in range(size):
+        plain += accent if x % step == 0 else base
+    plain_row = bytes(plain)
+    body = bytearray()
     for y in range(size):
-        for x in range(size):
-            on_line = x % step == 0 or y % step == 0
-            pixels += accent if on_line else base
-    return bytes(pixels)
+        body += line if y % step == 0 else plain_row
+    return bytes(body)
 
 
 def _panel(size: int, base: bytes, accent: bytes, seed: int) -> bytes:
     """Recessed plate: brighter bevel near the edges, darker centre."""
     inset = max(1, size // 16)
-    pixels = bytearray()
+    outer = _blend(base, accent, 0.55)
+    inner = _blend(base, accent, 0.25)
+
+    def colour(edge: int) -> bytes:
+        if edge < inset:
+            return outer
+        if edge < inset * 2:
+            return inner
+        return base
+
+    # A row with vertical distance d has margins of width d: the left runs
+    # colour(0)..colour(d-1) and the right mirrors that order, because the
+    # horizontal distance falls from d-1 back to 0. The middle is colour(d).
+    left_prefixes = [b""]
+    right_prefixes = [b""]
+    for edge in range(size):
+        left_prefixes.append(left_prefixes[-1] + colour(edge))
+        right_prefixes.append(colour(edge) + right_prefixes[-1])
+
+    cache: dict[int, bytes] = {}
+    rows = bytearray()
     for y in range(size):
-        for x in range(size):
-            edge = min(x, y, size - 1 - x, size - 1 - y)
-            if edge < inset:
-                pixels += _blend(base, accent, 0.55)
-            elif edge < inset * 2:
-                pixels += _blend(base, accent, 0.25)
-            else:
-                pixels += base
-    return bytes(pixels)
+        edge_y = min(y, size - 1 - y)
+        row = cache.get(edge_y)
+        if row is None:
+            edge_y = min(edge_y, (size - 1) // 2)
+            middle = colour(edge_y) * (size - 2 * edge_y)
+            row = left_prefixes[edge_y] + middle + right_prefixes[edge_y]
+            cache[edge_y] = row
+        rows += row
+    return bytes(rows)
 
 
 def _rivets(size: int, base: bytes, accent: bytes, seed: int) -> bytes:
     """A panel with four corner studs."""
     pixels = bytearray(_panel(size, base, accent, seed))
     radius = max(1, size // 16)
-    centres = (
+    stud = _blend(accent, base, 0.15)
+    # Only visit each stud's bounding box, not the whole texture per stud.
+    for centre_x, centre_y in (
         (radius * 2, radius * 2),
         (size - 1 - radius * 2, radius * 2),
         (radius * 2, size - 1 - radius * 2),
         (size - 1 - radius * 2, size - 1 - radius * 2),
-    )
-    for centre_x, centre_y in centres:
-        for y in range(size):
-            for x in range(size):
-                if (x - centre_x) ** 2 + (y - centre_y) ** 2 <= radius * radius:
+    ):
+        for y in range(max(0, centre_y - radius), min(size, centre_y + radius + 1)):
+            dy = y - centre_y
+            for x in range(max(0, centre_x - radius), min(size, centre_x + radius + 1)):
+                dx = x - centre_x
+                if dx * dx + dy * dy <= radius * radius:
                     offset = (y * size + x) * 4
-                    pixels[offset : offset + 4] = _blend(accent, base, 0.15)
+                    pixels[offset : offset + 4] = stud
     return bytes(pixels)
 
 
@@ -181,6 +212,11 @@ class TextureData:
             )
         if isinstance(size, bool) or not isinstance(size, int) or size <= 0:
             raise ValueError("pattern size must be a positive integer")
+        if size > MAX_PATTERN_SIZE:
+            raise ValueError(
+                f"pattern size {size} is too large; the limit is "
+                f"{MAX_PATTERN_SIZE} ({MAX_PATTERN_SIZE ** 2 * 4 // (1024 * 1024)} MB)"
+            )
         if isinstance(seed, bool) or not isinstance(seed, int):
             raise TypeError("pattern seed must be an integer")
         base = _rgba(dark, "pattern dark")

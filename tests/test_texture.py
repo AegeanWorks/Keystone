@@ -8,6 +8,57 @@ from keystone.png import read_png, write_png
 from keystone.texture import TextureData
 
 
+class PatternCostTest(unittest.TestCase):
+    """The presets must stay cheap: a per-pixel Python loop scaled badly."""
+
+    def test_margin_presets_are_fast_at_512(self):
+        import time
+
+        for preset in ("grid", "panel", "rivets"):
+            start = time.perf_counter()
+            texture = TextureData.pattern(preset, size=512)
+            elapsed = time.perf_counter() - start
+            self.assertEqual(len(texture.rgba), 512 * 512 * 4)
+            # Was 180-288 ms with an O(size^4) rivets scan; now single-digit ms.
+            self.assertLess(
+                elapsed,
+                0.12,
+                f"{preset} at 512 took {elapsed * 1000:.0f} ms; "
+                "a per-pixel loop probably crept back in",
+            )
+
+    def test_panel_and_rivets_match_the_reference_definition(self):
+        from keystone.texture import _blend
+
+        base = bytes((26, 31, 41, 255))
+        accent = bytes((46, 51, 64, 255))
+        for size in (8, 15, 16, 17, 32, 33, 64):
+            with self.subTest(size=size):
+                inset = max(1, size // 16)
+                outer = _blend(base, accent, 0.55)
+                inner = _blend(base, accent, 0.25)
+                reference = bytearray()
+                for y in range(size):
+                    for x in range(size):
+                        edge = min(x, y, size - 1 - x, size - 1 - y)
+                        if edge < inset:
+                            reference += outer
+                        elif edge < inset * 2:
+                            reference += inner
+                        else:
+                            reference += base
+                actual = TextureData.pattern(
+                    "panel", size=size, dark=(26 / 255, 31 / 255, 41 / 255),
+                    light=(46 / 255, 51 / 255, 64 / 255),
+                ).rgba
+                self.assertEqual(actual, bytes(reference))
+
+    def test_pattern_rejects_an_unbounded_size(self):
+        with self.assertRaises(ValueError) as caught:
+            TextureData.pattern("grid", size=8192)
+        self.assertIn("too large", str(caught.exception))
+
+
 class TextureDataTest(unittest.TestCase):
     def test_pattern_presets_are_deterministic_and_distinct(self):
         for preset in ("grid", "panel", "rivets", "noise"):

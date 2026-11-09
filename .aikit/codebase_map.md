@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `152`
-- **Total Classes**: `242`
+- **Total Classes**: `243`
 - **Total Top-Level Functions**: `440`
-- **Total Class Methods**: `1590`
-- **Total Source Lines**: `42838`
+- **Total Class Methods**: `1593`
+- **Total Source Lines**: `42925`
 
 ---
 
@@ -1586,7 +1586,7 @@
 ### [`keystone/texture.py`](keystone/texture.py)
 > *Immutable RGBA texture data and dependency-free texture sources.*
 
-**Size**: `214` lines (`7897` bytes)
+**Size**: `250` lines (`9364` bytes)
 
 **Classes:**
 - `class TextureData` - *Top-down RGBA8 pixels with a stable name for reports and debugging.*
@@ -3526,9 +3526,13 @@
 ### [`tests/test_texture.py`](tests/test_texture.py)
 > *Tests for immutable texture data and texture sources.*
 
-**Size**: `102` lines (`4006` bytes)
+**Size**: `153` lines (`6120` bytes)
 
 **Classes:**
+- `class PatternCostTest` - *The presets must stay cheap: a per-pixel Python loop scaled badly.*
+  - Method `.test_margin_presets_are_fast_at_512()`
+  - Method `.test_panel_and_rivets_match_the_reference_definition()`
+  - Method `.test_pattern_rejects_an_unbounded_size()`
 - `class TextureDataTest`
   - Method `.test_pattern_presets_are_deterministic_and_distinct()`
   - Method `.test_pattern_seed_changes_noise_but_not_grid()`
