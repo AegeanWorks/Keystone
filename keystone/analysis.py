@@ -34,7 +34,8 @@ REPORT_SCHEMA = {
         "sprites": ["enabled"],
         "culling": ["enabled"],
         "fx": ["alive", "drawn", "enabled"],
-        "node": ["id", "name", "parent", "parent_id", "visible", "tags", "layer", "components", "world", "screen", "bbox", "triangles", "material"],
+        "node": ["id", "name", "parent", "parent_id", "visible", "tags", "layer", "components", "world", "screen", "bbox", "triangles", "material", "sprite"],
+        "sprite": ["size", "color", "alpha"],
         "material": ["color", "specular", "shininess", "checker_scale", "metallic", "roughness", "emissive", "texture"],
         "texture": ["name", "width", "height", "sha256"],
         "ui": ["visible", "paused", "labels", "buttons"],
@@ -191,6 +192,26 @@ def _node_report(scene: Scene, width: int, height: int) -> list[dict]:
                 for z in (low[2], high[2])
             ]
             entry["bbox"] = _projected_bbox(corners, view_projection, width, height)
+        elif node.sprite is not None:
+            # A placed sprite draws a camera-facing quad without a mesh, so
+            # report the quad it occupies; otherwise a vision model sees
+            # pixels that no node claims.
+            half = float(node.sprite.size)
+            corners = [
+                world.transform_point(Vec3(x, y, 0.0))
+                for x in (-half, half)
+                for y in (-half, half)
+            ]
+            entry["bbox"] = _projected_bbox(corners, view_projection, width, height)
+            entry["sprite"] = {
+                "size": node.sprite.size,
+                "color": [
+                    float(node.sprite.color.x),
+                    float(node.sprite.color.y),
+                    float(node.sprite.color.z),
+                ],
+                "alpha": node.sprite.alpha,
+            }
         nodes.append(entry)
     return nodes
 
@@ -227,6 +248,21 @@ _BOX_EDGES = tuple(
 )
 
 
+def _edges_for(count: int) -> tuple[tuple[int, int], ...]:
+    """Return the edges joining ``count`` corners in their given order.
+
+    A mesh reports the eight corners of a world AABB, so the twelve box edges
+    are used. A sprite reports a four-corner quad, where consecutive corners
+    are connected; the diagonal is not an edge and clipping it would add a
+    crossing the quad never reaches.
+    """
+    if count == 8:
+        return _BOX_EDGES
+    if count < 2:
+        return ()
+    return tuple((index, (index + 1) % count) for index in range(count))
+
+
 def _near_distance(clip: tuple[float, float, float, float]) -> float:
     """Return how far a clip point sits in front of the near plane.
 
@@ -256,7 +292,7 @@ def _projected_bbox(
     for clip in clips:
         if _near_distance(clip) >= 0.0 and clip[3] > epsilon:
             points.append(_to_screen(clip, width, height))
-    for first, second in _BOX_EDGES:
+    for first, second in _edges_for(len(clips)):
         clip_a, clip_b = clips[first], clips[second]
         ahead_a = _near_distance(clip_a) >= 0.0
         ahead_b = _near_distance(clip_b) >= 0.0

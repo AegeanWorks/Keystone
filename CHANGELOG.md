@@ -106,4 +106,5 @@ changes that do not bump the release number yet.
   eight lit at once). `scene.point_light` still reads and writes the first
   light, so existing code is unchanged.
 - `Node.sprite` places a camera-facing billboard (`Sprite(size, color, alpha)`)
-  as scene content; sprites no longer require a particle emitter.
+  as scene content; sprites no longer require a particle emitter, and the
+  frame report gives a sprite-only node the bbox and description it draws.

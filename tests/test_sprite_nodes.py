@@ -68,6 +68,59 @@ class SpriteSnapshotTest(unittest.TestCase):
         self.assertIsNone(entry["sprite"])
 
 
+class SpriteReportTest(unittest.TestCase):
+    """A sprite draws pixels, so the frame report must place it on screen."""
+
+    def _report_entry(self, sprite, width=96, height=64):
+        from keystone.analysis import _node_report
+
+        scene = Scene()
+        scene.camera.position = Vec3(0.0, 0.0, 5.0)
+        scene.camera.look_at(Vec3(0.0, 0.0, 0.0))
+        scene.add(Node("beacon", id="beacon", sprite=sprite))
+        return next(
+            entry
+            for entry in _node_report(scene, width, height)
+            if entry["id"] == "beacon"
+        )
+
+    def test_sprite_only_node_reports_a_bbox(self):
+        entry = self._report_entry(Sprite(size=1.0))
+        self.assertIsNotNone(
+            entry["bbox"], "a sprite that draws pixels must not report bbox=None"
+        )
+        min_x, min_y, max_x, max_y = entry["bbox"]
+        self.assertGreater(max_x - min_x, 1.0)
+        self.assertGreater(max_y - min_y, 1.0)
+        # The quad is square at this orientation, so the box is roughly square.
+        self.assertAlmostEqual(max_x - min_x, max_y - min_y, delta=2.0)
+
+    def test_sprite_bbox_grows_with_size(self):
+        small = self._report_entry(Sprite(size=0.5))["bbox"]
+        large = self._report_entry(Sprite(size=2.0))["bbox"]
+        self.assertGreater(large[2] - large[0], small[2] - small[0])
+
+    def test_report_carries_the_sprite_description(self):
+        entry = self._report_entry(Sprite(size=0.75, alpha=0.5))
+        sprite = entry["sprite"]
+        self.assertEqual(sprite["size"], 0.75)
+        self.assertEqual(sprite["alpha"], 0.5)
+        self.assertEqual(len(sprite["color"]), 3)
+
+    def test_a_mesh_node_still_uses_its_mesh_bounds(self):
+        from keystone.primitives import cube
+
+        scene = Scene()
+        scene.camera.position = Vec3(0.0, 0.0, 5.0)
+        scene.camera.look_at(Vec3(0.0, 0.0, 0.0))
+        scene.add(Node("box", id="box", mesh=cube(1.5), sprite=Sprite(size=4.0)))
+        from keystone.analysis import _node_report
+
+        entry = next(e for e in _node_report(scene, 96, 64) if e["id"] == "box")
+        # Mesh takes precedence, so the oversized sprite does not inflate the box.
+        self.assertLess(entry["bbox"][2] - entry["bbox"][0], 60.0)
+
+
 class SpriteRenderTest(unittest.TestCase):
     def setUp(self):
         self.context = GLContext(64, 48, visible=False)

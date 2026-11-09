@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `157`
-- **Total Classes**: `254`
-- **Total Top-Level Functions**: `454`
-- **Total Class Methods**: `1652`
-- **Total Source Lines**: `44159`
+- **Total Classes**: `255`
+- **Total Top-Level Functions**: `455`
+- **Total Class Methods**: `1657`
+- **Total Source Lines**: `44248`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`157` module(s))
@@ -78,7 +78,7 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `630` lines (`25903` bytes)
+**Size**: `666` lines (`27384` bytes)
 
 **Functions:**
 - `def _enabled(value)`
@@ -88,6 +88,7 @@
 - `def _node_report(scene, width, height)`
 - `def _clip_point(view_projection, point)` - *Return homogeneous clip coordinates ``(x, y, z, w)`` for one world point.*
 - `def _to_screen(clip, width, height)` - *Map clip coordinates to top-down image pixels, clamped to the frame.*
+- `def _edges_for(count)` - *Return the edges joining ``count`` corners in their given order.*
 - `def _near_distance(clip)` - *Return how far a clip point sits in front of the near plane.*
 - `def _projected_bbox(corners, view_projection, width, height)` - *Return the on-screen box of a world AABB's silhouette, or None.*
 - `def analyze_frame(scene, pixels, width, height, image_path, ui, fx)`
@@ -3538,7 +3539,7 @@
 ### [`tests/test_sprite_nodes.py`](tests/test_sprite_nodes.py)
 > *Tests for placed sprite nodes: model, round trip and rendering.*
 
-**Size**: `137` lines (`5448` bytes)
+**Size**: `190` lines (`7681` bytes)
 
 **Classes:**
 - `class SpriteModelTest`
@@ -3549,6 +3550,12 @@
   - Method `.test_sprite_round_trips()`
   - Method `.test_document_is_stable_across_one_load()`
   - Method `.test_a_node_without_a_sprite_writes_null()`
+- `class SpriteReportTest` - *A sprite draws pixels, so the frame report must place it on screen.*
+  - Method `._report_entry(sprite, width, height)`
+  - Method `.test_sprite_only_node_reports_a_bbox()`
+  - Method `.test_sprite_bbox_grows_with_size()`
+  - Method `.test_report_carries_the_sprite_description()`
+  - Method `.test_a_mesh_node_still_uses_its_mesh_bounds()`
 - `class SpriteRenderTest`
   - Method `.setUp()`
   - Method `._scene(sprite, visible)`
