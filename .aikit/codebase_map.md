@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `153`
-- **Total Classes**: `245`
-- **Total Top-Level Functions**: `441`
-- **Total Class Methods**: `1598`
-- **Total Source Lines**: `43111`
+- **Total Python Modules**: `154`
+- **Total Classes**: `246`
+- **Total Top-Level Functions**: `444`
+- **Total Class Methods**: `1605`
+- **Total Source Lines**: `43271`
 
 ---
 
@@ -29,7 +29,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `686` lines (`36902` bytes)
+**Size**: `735` lines (`39079` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -38,6 +38,8 @@
 - `def _port(text)`
 - `def _seed(text)`
 - `def main(argv)`
+- `def _read_comparison_report(path, role)` - *Read one side of a baseline comparison with actionable guidance.*
+- `def _run_failure_hint(args)` - *Name the fix for a failure that happened after the game loaded.*
 
 ---
 
@@ -2410,6 +2412,26 @@
   - Method `.test_overlapping_start_depenetrates_to_the_nearest_face()`
   - Method `.test_character_rejects_non_finite_inputs()`
   - Method `.test_character_steps_are_deterministic()`
+
+---
+
+### [`tests/test_cli_failure_advice.py`](tests/test_cli_failure_advice.py)
+> *A CLI failure must name the action that actually failed.*
+
+**Size**: `111` lines (`4753` bytes)
+
+**Classes:**
+- `class CliFailureAdviceTest`
+  - Method `.setUpClass()`
+  - Method `.tearDownClass()`
+  - Method `.test_startup_failure_blames_the_game_factory()`
+  - Method `.test_corrupt_baseline_names_the_report_not_the_game()`
+  - Method `.test_mismatched_diff_dimensions_advise_matching_sizes()`
+  - Method `.test_baseline_gate_still_keys_on_pixels()`
+  - Method `.test_a_real_change_fails_the_gate_and_writes_a_diff()`
+
+**Functions:**
+- `def run(args, timeout)`
 
 ---
 

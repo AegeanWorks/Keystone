@@ -378,8 +378,10 @@ def main(argv: list[str] | None = None) -> int:
     from keystone.plugin import describe_game, load_game
 
     engine = None
+    started = False
     try:
         game = load_game(args.game)
+        started = True
         if project_context is not None and not args.validate_project:
             from keystone.project import attach_project_assets
 
@@ -624,10 +626,9 @@ def main(argv: list[str] | None = None) -> int:
             engine.capture(args.out, args.report)
         if args.compare_baseline:
             from keystone.analysis import compare_reports, diff_images
-            from keystone.serialization import read_json
 
-            baseline = read_json(args.compare_baseline)
-            current = read_json(args.report)
+            baseline = _read_comparison_report(args.compare_baseline, "baseline")
+            current = _read_comparison_report(args.report, "current")
             diff = compare_reports(baseline, current)
             pixel_diff = None
             if args.diff_out:
@@ -665,21 +666,69 @@ def main(argv: list[str] | None = None) -> int:
             )
         return 0
     except Exception as exc:  # noqa: BLE001 - a CLI must never leak a traceback
-        print("Keystone could not start.", file=sys.stderr)
         message = str(exc)
+        # Only the load itself is "could not start"; a failure later in the run
+        # must not blame the game factory, which is already known to work.
+        print(
+            "Keystone could not start." if not started else "Keystone could not finish.",
+            file=sys.stderr,
+        )
         if "Why:" in message and "Fix:" in message:
             print(message, file=sys.stderr)
-        else:
+        elif not started:
             print(f"Why: {message}", file=sys.stderr)
             print(
                 "Fix: pass a valid 'package.module:Factory' with build_scene, update, "
                 "snapshot, actions and status methods.",
                 file=sys.stderr,
             )
+        else:
+            print(f"Why: {message}", file=sys.stderr)
+            print(f"Fix: {_run_failure_hint(args)}", file=sys.stderr)
         return 1
     finally:
         if engine is not None:
             engine.close()
+
+
+def _read_comparison_report(path: str, role: str) -> dict:
+    """Read one side of a baseline comparison with actionable guidance."""
+    from keystone.serialization import read_json
+
+    try:
+        document = read_json(path)
+    except (OSError, ValueError, TypeError) as exc:
+        raise ValueError(
+            f"could not read the {role} report {path}.\n"
+            f"Why: {exc}\n"
+            f"Fix: pass the JSON written by --headless --report, not a PNG or a "
+            f"hand-edited file."
+        ) from exc
+    if not isinstance(document, dict):
+        # ValueError, not TypeError: this is a rejected file, and the message
+        # already carries the Why:/Fix: contract the CLI prints.
+        raise ValueError(  # noqa: TRY004
+            f"could not read the {role} report {path}.\n"
+            "Why: the file does not contain a JSON object.\n"
+            "Fix: pass the JSON written by --headless --report."
+        )
+    return document
+
+
+def _run_failure_hint(args: argparse.Namespace) -> str:
+    """Name the fix for a failure that happened after the game loaded."""
+    if getattr(args, "compare_baseline", None):
+        return (
+            "re-render the baseline and the current frame at the same --size; "
+            "--diff-out needs matching image dimensions"
+        )
+    if getattr(args, "diff_out", None):
+        return "write --diff-out to an existing directory"
+    if getattr(args, "report", None) or getattr(args, "out", None):
+        return "check the output path exists and is writable"
+    if getattr(args, "playtest", False):
+        return "check the playtest arguments and the game's outcome/score signals"
+    return "re-run with --describe to confirm the game contract, then inspect the log"
 
 
 if __name__ == "__main__":

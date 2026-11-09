@@ -87,3 +87,7 @@ changes that do not bump the release number yet.
 - WAV decoding scales both signs by 32767 and clamps to [-1, 1], so a round
   trip is symmetric; negatives no longer drift toward zero while positives do
   not, and full-scale +/-1.0 now round-trips exactly.
+- A failure after the game loads now reports "could not finish" with advice
+  naming the failing step; previously every failure claimed the game factory
+  was invalid, and a corrupt `--compare-baseline` report leaked a raw JSON
+  decoder message.
