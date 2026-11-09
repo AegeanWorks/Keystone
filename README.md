@@ -486,6 +486,7 @@ keystone/
 │   ├── test_ui.py            <- font, canvas, menu and overlay
 │   ├── test_renderer.py      <- headless OpenGL integration
 │   ├── test_input.py         <- action mapping and ActionState
+│   ├── test_input_keys.py    <- GL key table and dead bindings
 │   ├── test_lifecycle.py     <- component start/update/stop lifecycle
 │   ├── test_clock.py         <- fixed-step clock
 │   ├── test_physics.py       <- rays, AABB, sphere queries and raycasts
