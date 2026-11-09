@@ -31,6 +31,8 @@ class PluginTest(unittest.TestCase):
         self.assertTrue(payload["capabilities"]["prefabs"])
         self.assertEqual(payload["capabilities"]["report_schema"]["version"], 11)
         self.assertEqual(payload["capabilities"]["web"]["api_version"], 1)
+        self.assertIn("1", payload["capabilities"]["input_keys"])
+        self.assertIn("space", payload["capabilities"]["input_keys"])
         self.assertIn("/api/scene", payload["capabilities"]["web"]["endpoints"])
         self.assertEqual(
             payload["capabilities"]["editor"]["schema"], EDITOR_SCHEMA_VERSION

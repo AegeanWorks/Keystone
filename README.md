@@ -102,6 +102,22 @@ class MyGame:
 
 The engine owns the window, OpenGL context, renderer, fixed clock, input sampling and screenshots. The game owns its state, rules and scene contents. The engine never imports a game.
 
+### Optional live controls
+
+A game may implement `bind_input(mapping)` to extend the engine's default
+`InputMap` with its declared buttons:
+
+```python
+def bind_input(self, mapping: InputMap) -> None:
+    mapping.bind("slot1", "1")
+    mapping.bind("reload", "r")
+```
+
+The hook runs once after the engine builds its map. `describe_game()` reports
+`capabilities.input_bind_hook` and `input_keys`; `Engine` exposes
+`unbound_buttons` and `unknown_keys` so a dead control is visible. Mouse
+buttons arrive through `ActionState.mouse_clicked`, not key bindings.
+
 ### Scene identity and components
 
 A node carries a stable scene ID, tags, one layer and optional typed components:
@@ -252,27 +268,19 @@ The API sends CORS headers so local AI clients can call it directly. Keep the de
 
 ## 🚀 Features
 
-- **OpenGL 3.3 core renderer**: GLSL 330, indexed meshes, depth/culling, Blinn-Phong + PBR, shadows, sRGB, post grade, bloom and sprites; profiler stats.
-- **Scene graph**: nodes with stable IDs, tags, layers, typed components, local/world transforms, visibility, cycle-safe parenting, queries and cached GPU meshes.
-- **Prefabs**: capture subtrees, persist versioned `.kprefab` files via the asset registry, instantiate deterministic copies, and refresh instances while preserving field-level overrides against each instance baseline.
-- **Assets**: immutable `MeshData` with optional UVs and vertex colors, cube/plane/cone/cylinder/sphere primitives, OBJ loading and `TextureData` with PNG/checker sources.
-- **PBR materials**: `Material` combines Blinn-Phong specular/shininess with metallic/roughness/emissive; textures wrap/mipmap RGBA; glTF PBR survives import; graphs add `pbr`.
-- **Fixed-step runtime**: `FixedStepClock` releases whole steps with a bounded catch-up budget; headless advances one step per frame for deterministic tests.
-- **Action input**: rebindable `InputMap` bindings expose `forward`, `right`, `up`, `look_yaw`, `look_pitch`, `pressed` and `held` across action contexts; no GLFW access.
-- **Audio core**: synth (`sine`, `square`, `noise`), named-bus `Mixer` with deterministic mixdown, mono 16-bit WAV and `audio_report()`; no hardware.
-- **Animation**: keyframe `Track`/`AnimationClip`, looping, crossfades, events, blend spaces, `apply_pose()`, CPU/GPU skinning, JSON round trips, reports, keyframe authoring and state machines.
-- **Replay runner**: `run_log()`/`verify_log()` replay a `CommandLog`; `--replay` audits them.
-- **Particles**: seeded CPU emitters with forces, swept collision, bursts, culling and JSON reports; HUD/inspector counts; one GPU billboard each.
-- **Physics**: ray/AABB/sphere queries, sphere pushout, spatial-grid broadphase, AABB movement with gravity, trigger tracking and filtered raycasts.
-- **Replay and persistence**: `ActionState` command logs, stable hashes and atomic JSON writes with `.bak` snapshots.
-- **Plugin loading**: `load_game("package.module:Factory")` validates the five-op contract.
-- **No-GL simulation**: `run_simulation()` and `--simulate` drive `GameModule.update()` directly with JSON actions and hashes.
-- **AI discovery and testing**: `--describe` exposes actions, capabilities, schemas and snapshot; `--verify-determinism` runs a script twice; `--expect-hash` pins a result; helpers add validation and seeded bots.
-- **Visual regression gate**: `--compare-baseline baseline.json` re-renders, compares pixels, stats and nodes, and exits non-zero on change. `--diff-out diff.png` writes a pixel diff.
-- **PNG reader and pixel diff**: `keystone.png.read_png()` and `keystone.analysis.diff_images()` give round-trip loading, changed-pixel counts and a visual diff.
-- **Frame reports for AI analysis**: `--report` writes schema-11 JSON with image hashes, pixel stats, content box, palette, camera, projected content, FX counts and UI metadata.
-- **Human overlay**: game-agnostic HUD with status, FPS, frame, time and profiler lines, plus help/pause menu; 5×7 font, no asset.
-- **Web console and WebGL viewer**: `--serve` exposes a stdlib JSON API (`/api/describe`, `/api/scene`, `/api/inspector`, `/api/editor`, `/api/simulate`) and a scene editor for hierarchy, node/asset/component authoring, transforms, undo, prefabs, play/snapshot, views, grid, animation/materials, drag-drop/copy-paste/locking, assets, validation and layers.
+- **OpenGL 3.3 renderer**: GLSL 330, PBR, shadows, sRGB, post grade, bloom, sprites and profiler stats.
+- **Scene graph**: stable IDs, tags, layers, typed components, world transforms, queries and cached GPU meshes.
+- **Prefabs**: capture, versioned `.kprefab` persistence, deterministic instantiation and override-preserving refresh.
+- **Assets**: `MeshData`, primitives, streaming OBJ, PNG/checker `TextureData`, and an id/digest registry with hot reload plus core scene rebinding.
+- **PBR materials**: specular/shininess plus metallic/roughness/emissive, wrapped/mipmapped textures and material graphs.
+- **Runtime**: fixed-step clock with bounded catch-up; headless one-step-per-frame determinism.
+- **Input**: rebindable `InputMap` across contexts, a game `bind_input` hook, and dead-binding diagnostics.
+- **Audio**: synth, named-bus mixer, deterministic mixdown, WAV I/O and reports; no hardware output.
+- **Animation**: tracks/clips, looping, crossfades, events, blend spaces, masked `apply_pose`, CPU/GPU skinning and state machines.
+- **Particles and physics**: seeded emitters with swept collision; rays, AABB/sphere queries, broadphase, character movement and triggers.
+- **Replay and persistence**: command logs, stable hashes, `run_log`/`verify_log`, atomic JSON with `.bak`.
+- **Testing and AI**: `--describe`, `--simulate`, `--verify-determinism`, `--expect-hash`, frame reports, pixel diffs, seeded playtests and adapters.
+- **Human UI and web**: overlay/pause menu, `draw_ui`, stdlib JSON API and WebGL2 console/editor.
 - **Game-agnostic core**: no combat, light-lock, weave or expedition code.
 
 ## 🤖 AI Testing & Frame Analysis

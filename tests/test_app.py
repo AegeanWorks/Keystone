@@ -43,6 +43,28 @@ class BadBindCube(CubeDemo):
         raise RuntimeError("binding hook exploded")
 
 
+class SlotCube(CubeDemo):
+    name = "slot-cube"
+
+    def bind_input(self, mapping):
+        mapping.bind("slot1", "1")
+        mapping.bind("slot2", "2")
+
+    def actions(self):
+        payload = super().actions()
+        payload["buttons"] = [*payload["buttons"], "slot1", "slot2"]
+        return payload
+
+
+class UnboundCube(CubeDemo):
+    name = "unbound-cube"
+
+    def actions(self):
+        payload = super().actions()
+        payload["buttons"] = [*payload["buttons"], "slot2"]
+        return payload
+
+
 class EngineTest(unittest.TestCase):
     def test_engine_lets_the_game_bind_its_own_controls(self):
         game = BindCube()
@@ -68,6 +90,25 @@ class EngineTest(unittest.TestCase):
         bindings = engine.input.list_actions()
         self.assertEqual(bindings["forward"], "w")
         self.assertNotIn("fire", bindings)
+
+    def test_engine_reports_dead_key_names(self):
+        engine = Engine(BindCube(), 48, 32, visible=False)
+        self.addCleanup(engine.close)
+        # mouse buttons arrive through mouse_clicked, not key_down("mouse_left").
+        self.assertEqual(engine.unknown_keys, ("mouse_left",))
+        self.assertEqual(engine.unbound_buttons, ())
+
+    def test_engine_binds_number_keys_and_reports_no_gaps(self):
+        engine = Engine(SlotCube(), 48, 32, visible=False)
+        self.addCleanup(engine.close)
+        self.assertEqual(engine.input.list_actions()["slot2"], "2")
+        self.assertEqual(engine.unknown_keys, ())
+        self.assertEqual(engine.unbound_buttons, ())
+
+    def test_engine_reports_declared_buttons_with_no_binding(self):
+        engine = Engine(UnboundCube(), 48, 32, visible=False)
+        self.addCleanup(engine.close)
+        self.assertEqual(engine.unbound_buttons, ("slot2",))
 
     def test_headless_engine_runs_fixed_steps_and_saves_a_png(self):
         game = CubeDemo()

@@ -10,6 +10,16 @@ from OpenGL import GL
 MIN_VERSION = (3, 3)
 
 _KEYS = {
+    "0": glfw.KEY_0,
+    "1": glfw.KEY_1,
+    "2": glfw.KEY_2,
+    "3": glfw.KEY_3,
+    "4": glfw.KEY_4,
+    "5": glfw.KEY_5,
+    "6": glfw.KEY_6,
+    "7": glfw.KEY_7,
+    "8": glfw.KEY_8,
+    "9": glfw.KEY_9,
     "w": glfw.KEY_W,
     "a": glfw.KEY_A,
     "s": glfw.KEY_S,
@@ -31,6 +41,11 @@ _KEYS = {
     "escape": glfw.KEY_ESCAPE,
     "f1": glfw.KEY_F1,
 }
+
+
+def key_names() -> tuple[str, ...]:
+    """Return the key names a real GL context can report to InputMap.sample()."""
+    return tuple(_KEYS)
 
 
 def require_opengl_33(version: str) -> None:

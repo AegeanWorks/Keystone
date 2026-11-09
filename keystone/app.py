@@ -6,7 +6,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from keystone.clock import FixedStepClock
-from keystone.gpu.context import GLContext
+from keystone.gpu.context import GLContext, key_names
 from keystone.gpu.renderer import Renderer
 from keystone.gpu.ui_renderer import UiRenderer
 from keystone.input import ActionState, InputMap
@@ -94,6 +94,12 @@ class Engine:
         bind_input = getattr(self.game, "bind_input", None)
         if callable(bind_input):
             bind_input(self.input)
+        actions = self.game.actions()
+        declared = actions.get("buttons", ()) if isinstance(actions, dict) else ()
+        if not isinstance(declared, (list, tuple, set, frozenset)):
+            declared = ()
+        self.unbound_buttons = tuple(self.input.unbound_buttons(declared))
+        self.unknown_keys = tuple(self.input.unknown_keys(key_names()))
 
     def __enter__(self) -> Engine:
         return self

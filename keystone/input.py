@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
@@ -263,6 +263,25 @@ class InputMap:
             name
             for name in buttons
             if isinstance(name, str) and name.strip() and name not in bound
+        )
+
+    def unknown_keys(self, supported: Iterable[str]) -> list[str]:
+        """Return bound key names the given context cannot sample.
+
+        ``bind()`` accepts any non-blank name so tests and custom contexts can
+        use their own vocabulary. A real ``GLContext`` only reports its key
+        table, so a binding to an unknown name is a silently dead control; this
+        reports that gap instead of hiding it. Mouse buttons are not key names:
+        they arrive through ``ActionState.mouse_clicked``.
+        """
+        if isinstance(supported, (str, bytes)):
+            raise TypeError("supported must be a collection of key names")
+        try:
+            allowed = set(supported)
+        except TypeError as exc:
+            raise TypeError("supported must be a collection of key names") from exc
+        return sorted(
+            {key for key in self.bindings.values() if key not in allowed}
         )
 
     def to_dict(self) -> dict[str, object]:

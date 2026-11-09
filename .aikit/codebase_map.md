@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `154`
-- **Total Classes**: `246`
-- **Total Top-Level Functions**: `444`
-- **Total Class Methods**: `1605`
-- **Total Source Lines**: `43271`
+- **Total Python Modules**: `155`
+- **Total Classes**: `249`
+- **Total Top-Level Functions**: `445`
+- **Total Class Methods**: `1617`
+- **Total Source Lines**: `43395`
 
 ---
 
@@ -219,7 +219,7 @@
 ### [`keystone/app.py`](keystone/app.py)
 > *Game-agnostic engine runtime: window, fixed step, input, render and capture.*
 
-**Size**: `350` lines (`13935` bytes)
+**Size**: `356` lines (`14308` bytes)
 
 **Classes:**
 - `class Engine` - *Owns the runtime around one external GameModule.*
@@ -650,7 +650,7 @@
 ### [`keystone/gpu/context.py`](keystone/gpu/context.py)
 > *GLFW window and OpenGL 3.3 context lifecycle with deterministic teardown.*
 
-**Size**: `151` lines (`5224` bytes)
+**Size**: `166` lines (`5578` bytes)
 
 **Classes:**
 - `class GLContext` - *A hidden or visible GLFW window owning one OpenGL 3.3 core context.*
@@ -673,6 +673,7 @@
   - Method `.close()`
 
 **Functions:**
+- `def key_names()` - *Return the key names a real GL context can report to InputMap.sample().*
 - `def require_opengl_33(version)` - *Refuse a context that cannot run the 3.3 core shader pipeline.*
 
 ---
@@ -891,7 +892,7 @@
 ### [`keystone/input.py`](keystone/input.py)
 > *Generic input mapping: named actions, axes and pointer look.*
 
-**Size**: `396` lines (`16539` bytes)
+**Size**: `415` lines (`17468` bytes)
 
 **Classes:**
 - `class ActionState` - *One sampled input frame; games translate names into their own rules.*
@@ -908,6 +909,7 @@
   - Method `.unbind(action)` - *Remove a custom binding from the active context; returns False when not bound.*
   - Method `.list_actions()` - *Return a copy of the current action-to-key map for UI and AI clients.*
   - Method `.unbound_buttons(buttons)` - *Return declared buttons that no binding in any context can produce.*
+  - Method `.unknown_keys(supported)` - *Return bound key names the given context cannot sample.*
   - Method `.to_dict()`
   - Method `.from_dict(data)`
   - Method `.save_bindings(path)`
@@ -1202,7 +1204,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `120` lines (`4532` bytes)
+**Size**: `122` lines (`4624` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -2160,7 +2162,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `617` lines (`24907` bytes)
+**Size**: `658` lines (`26326` bytes)
 
 **Classes:**
 - `class HudCube`
@@ -2170,10 +2172,18 @@
   - Method `.bind_input(mapping)`
 - `class BadBindCube`
   - Method `.bind_input(mapping)`
+- `class SlotCube`
+  - Method `.bind_input(mapping)`
+  - Method `.actions()`
+- `class UnboundCube`
+  - Method `.actions()`
 - `class EngineTest`
   - Method `.test_engine_lets_the_game_bind_its_own_controls()`
   - Method `.test_a_failing_bind_hook_does_not_leave_the_engine_half_open()`
   - Method `.test_a_game_without_the_bind_hook_keeps_the_defaults()`
+  - Method `.test_engine_reports_dead_key_names()`
+  - Method `.test_engine_binds_number_keys_and_reports_no_gaps()`
+  - Method `.test_engine_reports_declared_buttons_with_no_binding()`
   - Method `.test_headless_engine_runs_fixed_steps_and_saves_a_png()`
   - Method `.test_ui_capture_alpha_is_opaque()`
   - Method `.test_ui_overlay_changes_the_captured_frame()`
@@ -2674,7 +2684,7 @@
 ### [`tests/test_input.py`](tests/test_input.py)
 > *Tests for input sampling and action state.*
 
-**Size**: `235` lines (`9767` bytes)
+**Size**: `252` lines (`10447` bytes)
 
 **Classes:**
 - `class FakeContext`
@@ -2686,6 +2696,8 @@
   - Method `.test_unbound_buttons_reports_declared_actions_with_no_binding()`
   - Method `.test_unbound_buttons_counts_bindings_from_every_context()`
   - Method `.test_unbound_buttons_rejects_non_list_input()`
+  - Method `.test_unknown_keys_reports_names_a_real_context_cannot_sample()`
+  - Method `.test_unknown_keys_rejects_a_bare_string()`
   - Method `.test_axes_and_pressed_edges()`
   - Method `.test_custom_binding()`
   - Method `.test_mouse_delta_feeds_look()`
@@ -2703,6 +2715,19 @@
   - Method `.test_from_dict_rejects_non_string_context()`
   - Method `.test_custom_bindings_preserved_in_new_contexts()`
   - Method `.test_from_dict_rejects_blank_action_or_key()`
+
+---
+
+### [`tests/test_input_keys.py`](tests/test_input_keys.py)
+> *Tests for the real GL key table exposed to InputMap consumers.*
+
+**Size**: `22` lines (`691` bytes)
+
+**Classes:**
+- `class KeyTableTest`
+  - Method `.test_number_row_is_bindable_for_slot_actions()`
+  - Method `.test_key_names_exposes_the_same_table()`
+  - Method `.test_no_two_names_share_one_glfw_code()`
 
 ---
 
@@ -3026,7 +3051,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `117` lines (`4479` bytes)
+**Size**: `119` lines (`4615` bytes)
 
 **Classes:**
 - `class PluginTest`

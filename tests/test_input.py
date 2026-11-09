@@ -2,6 +2,7 @@
 
 import unittest
 
+from keystone.gpu.context import key_names
 from keystone.input import DEFAULT_BINDINGS, ActionState, InputMap
 
 
@@ -40,6 +41,22 @@ class InputMapTest(unittest.TestCase):
         for value in ("fire", 5, None):
             with self.subTest(value=value), self.assertRaises(TypeError):
                 mapping.unbound_buttons(value)
+
+    def test_unknown_keys_reports_names_a_real_context_cannot_sample(self):
+        mapping = InputMap()
+        supported = set(key_names())
+        mapping.bind("slot2", "2")
+        mapping.bind("reload", "r")
+        self.assertEqual(mapping.unknown_keys(supported), [])
+
+        mapping.bind("fire", "mouse_left")
+        self.assertEqual(mapping.unknown_keys(supported), ["mouse_left"])
+
+    def test_unknown_keys_rejects_a_bare_string(self):
+        mapping = InputMap()
+        for value in ("wasd", 5, None):
+            with self.subTest(value=value), self.assertRaises(TypeError):
+                mapping.unknown_keys(value)
 
     def test_axes_and_pressed_edges(self):
         context = FakeContext()

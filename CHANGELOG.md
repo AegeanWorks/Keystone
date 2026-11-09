@@ -53,6 +53,9 @@ changes that do not bump the release number yet.
   `--describe` under `capabilities.input_bind_hook`.
 - `InputMap.unbound_buttons()` reports declared buttons that no binding can
   produce, so a misleading `actions()` contract is visible.
+- The real key table includes the number row, `InputMap.unknown_keys()` and
+  `Engine.unbound_buttons`/`unknown_keys` expose dead bindings after the game
+  hook, and `--describe` reports `capabilities.input_keys`.
 - `AssetRegistry.reload(scene)` refreshes sources and rebinds live scene
   nodes, registered materials and inline textures, reporting `rebound` and
   `registry_rebound`. The web editor now calls the same core rule.

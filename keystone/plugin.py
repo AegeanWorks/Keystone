@@ -35,6 +35,7 @@ class GameModule(Protocol):
 def describe_game(game: GameModule) -> dict[str, object]:
     """Return a machine-readable capability/action/snapshot description."""
     from keystone.analysis import REPORT_SCHEMA
+    from keystone.gpu.context import key_names
 
     name = getattr(game, "name", None)
     if not isinstance(name, str) or not name.strip():
@@ -60,6 +61,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "input_bindings": True,
             "input_contexts": True,
             "input_bind_hook": callable(getattr(game, "bind_input", None)),
+            "input_keys": list(key_names()),
             "audio": True,
             "batching": True,
             "prefabs": True,

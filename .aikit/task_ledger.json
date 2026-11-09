@@ -1,57 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-cli-advice-v1",
-    "last_phase": "in_progress",
+    "task_id": "keystone-input-keys-diagnostics",
+    "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794250028.0212865,
-    "owner": "commandcode:keystone-console",
-    "started_by": "commandcode:keystone-console",
+    "updated_at": 1794251414.0484576,
+    "owner": "commandcode:goal",
+    "started_by": "commandcode:goal",
     "continuations": [],
-    "completed_at": 1794250034.9511216
+    "completed_at": 1794251420.7428434
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-report-rest-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/6] Plan: verified all remaining report findings F3,F4,F5,F6,F8,F9,F10,F11,F12,F14 TRUE by execution; fix the six additive ones - F3 apply_pose channel mask, F4 camera up()/basis(), F6 honest batch metrics plus content-keyed grouping, F8 Canvas text measuring and a clamped label row, F9 deterministic texture patterns, F12 scene budget/fingerprint test helpers; defer F5 light list, F10 sprite nodes, F11 versioned store and F14 History removal as they need shader/schema work or break the public API",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794175448.0513654,
-      "timestamp_str": "2026-11-09 01:04:08",
-      "agent": "commandcode:keystone-console",
-      "impact_assessment": {
-        "why": "Every remaining claim reproduced: apply_pose zeroed a simulated position, the camera has no up/basis, two content-identical meshes produce 2 instancing groups, plan_batches hides instanced_calls while plan_instanced exposes it, Canvas cannot measure text although keystone.ui.font.text_width exists, TextureData has only checker/from_png, keystone.testing has no budget helper, and History has no production consumer.",
-        "benefits": "Animation can layer on simulation-owned nodes, viewmodel code stops re-deriving the camera basis, render metrics mean one thing each, HUD labels can be measured and clamped instead of clipping, procedural textures stop being hand-rolled per game, and testbeds can assert budgets instead of brittle exact counts.",
-        "risks": "contract: additive parameters and helpers only; dependency: none new; concurrency: none; state: no persisted format change.",
-        "mitigation": "Keep every default path byte-identical, prove each fix failing-first, verify pixels and the canonical simulate hash are unchanged, and run the full 6/6 gate."
-      },
-      "plan_digest": "c7fd0ea5892c3ecc6a9f93b68c17b219b1d466f0e7b5412e0758f8fc967d74b3"
-    },
-    {
-      "task_id": "keystone-report-rest-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/6] Implemented and verified six additive fixes - F3 apply_pose mask, F4 camera up()/basis(), F6 plan_batches node_draws/instanced_calls, F8 Canvas text measuring and alignment, F9 TextureData.pattern presets, F12 scene_fingerprint/assert_scene_budget; all proven failing-first; deferred F5/F10/F11/F14 with evidence in ADR-208",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794176978.4736419,
-      "timestamp_str": "2026-11-09 01:29:38",
-      "agent": "commandcode:keystone-console"
-    },
-    {
-      "task_id": "keystone-report-rest-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[3/6] Project gate 6/6 on b22fa7e; 962 tests 0 failures; canonical --simulate hash 772cac5232a0947b8f6d1914a5cf0cde and reference PNG 4899B unchanged; end-to-end verification 7/7; pushed to origin/master; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794176987.4654741,
-      "timestamp_str": "2026-11-09 01:29:47",
-      "agent": "commandcode:keystone-console"
-    },
     {
       "task_id": "keystone-report-rest-v1",
       "phase": "completed",
@@ -261,6 +221,45 @@
       "timestamp": 1794250034.951124,
       "timestamp_str": "2026-11-09 21:47:14",
       "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-input-keys-diagnostics",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Plan: digit key names, dead-key diagnostics and input_keys in --describe, driven by the shooter testbed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794251407.1879454,
+      "timestamp_str": "2026-11-09 22:10:07",
+      "agent": "commandcode:goal",
+      "impact_assessment": {
+        "why": "The shooter testbed could not bind weapon slots: the real key table had no number row, and bind() accepted dead names such as mouse_left without telling the consumer.",
+        "benefits": "Games can bind the number row, and a declared button with no working key is visible through Engine.unbound_buttons/unknown_keys and --describe.",
+        "risks": "contract: public input surface; dependency: glfw key constants (already required); concurrency: none; state: context.py, input.py, app.py, plugin.py, tests, README, CHANGELOG",
+        "mitigation": "failing-first key-table and diagnostic tests, existing bind-hook tests, full suite and 6/6 gates"
+      },
+      "plan_digest": "2d87f7c9a7bf9d1c05991b9b86ed8e576d2c5b56f376e5892b801c5605206057"
+    },
+    {
+      "task_id": "keystone-input-keys-diagnostics",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Digit keys + dead-key diagnostics verified: 942 tests, 6/6 gates (test, lint, mechanics, hygiene, guidelines, secrets)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794251414.0484576,
+      "timestamp_str": "2026-11-09 22:10:14",
+      "agent": "commandcode:goal"
+    },
+    {
+      "task_id": "keystone-input-keys-diagnostics",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-input-keys-diagnostics' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794251420.7428463,
+      "timestamp_str": "2026-11-09 22:10:20",
+      "agent": "commandcode:goal"
     }
   ]
 }
