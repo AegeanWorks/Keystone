@@ -110,3 +110,6 @@ changes that do not bump the release number yet.
   frame report gives a sprite-only node the bbox and description it draws.
 - A sprite now survives prefab capture and instantiation, editor undo, and the
   web `set_node` action (which accepts a partial mapping or `null` to clear).
+- `--describe` advertises `sprite_nodes` and `point_lights`, both engine
+  schemas list `sprite`, and the scene export emits it, so an agent can find
+  the features from the discovery payload.

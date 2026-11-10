@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `157`
-- **Total Classes**: `256`
+- **Total Classes**: `257`
 - **Total Top-Level Functions**: `456`
-- **Total Class Methods**: `1666`
-- **Total Source Lines**: `44445`
+- **Total Class Methods**: `1670`
+- **Total Source Lines**: `44488`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`157` module(s))
@@ -1218,7 +1218,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `122` lines (`4624` bytes)
+**Size**: `125` lines (`4759` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1894,7 +1894,7 @@
 ### [`keystone/web/scene.py`](keystone/web/scene.py)
 > *Export a game-agnostic scene as a JSON document for the browser viewer.*
 
-**Size**: `162` lines (`5827` bytes)
+**Size**: `163` lines (`5913` bytes)
 
 **Functions:**
 - `def _enabled(value)`
@@ -1908,7 +1908,7 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `651` lines (`27063` bytes)
+**Size**: `651` lines (`27083` bytes)
 
 ---
 
@@ -3542,7 +3542,7 @@
 ### [`tests/test_sprite_nodes.py`](tests/test_sprite_nodes.py)
 > *Tests for placed sprite nodes: model, round trip and rendering.*
 
-**Size**: `303` lines (`12464` bytes)
+**Size**: `342` lines (`14157` bytes)
 
 **Classes:**
 - `class SpriteModelTest`
@@ -3561,6 +3561,11 @@
   - Method `.test_editor_exposes_and_sets_a_sprite()`
   - Method `.test_editor_rejects_a_malformed_sprite()`
   - Method `.test_undo_restores_the_previous_sprite()`
+- `class SpriteDiscoveryTest` - *An AI can only use a feature it can find in the schema.*
+  - Method `.test_describe_advertises_sprite_nodes_and_point_lights()`
+  - Method `.test_every_carrier_document_lists_sprite_in_its_schema()`
+  - Method `.test_scene_export_emits_the_sprite_it_promises()`
+  - Method `.test_editor_document_reports_the_sprite_field()`
 - `class SpriteReportTest` - *A sprite draws pixels, so the frame report must place it on screen.*
   - Method `._report_entry(sprite, width, height)`
   - Method `.test_sprite_only_node_reports_a_bbox()`

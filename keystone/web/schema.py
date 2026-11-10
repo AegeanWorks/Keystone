@@ -343,7 +343,7 @@ EDITOR_SCHEMA = {
     "actions": list(EDITOR_ACTIONS),
     "examples": EDITOR_EXAMPLES,
     "fields": {
-        "node": ["id", "name", "parent_id", "children", "visible", "locked", "selected", "tags", "layer", "components", "component_data", "mesh", "material", "prefab_link", "scene_group", "transform", "world"],
+        "node": ["id", "name", "parent_id", "children", "visible", "locked", "selected", "tags", "layer", "components", "component_data", "mesh", "material", "sprite", "prefab_link", "scene_group", "transform", "world"],
         "selection": ["selected_ids", "selection_count"],
         "select_many": ["ids", "mode"],
         "set_layer_visible": ["name", "visible"],
@@ -636,7 +636,7 @@ SCENE_SCHEMA = {
         "point_light": ["position", "color", "intensity", "radius"],
         "point_lights": ["position", "color", "intensity", "radius"],
         "atmosphere": ["ambient", "background", "sky", "fog_density"],
-        "node": ["id", "name", "parent_id", "visible", "tags", "layer", "components", "world", "mesh", "material"],
+        "node": ["id", "name", "parent_id", "visible", "tags", "layer", "components", "world", "mesh", "material", "sprite"],
         "mesh": ["positions", "normals", "uvs", "colors", "indices"],
         "material": ["color", "specular", "shininess", "checker_scale", "metallic", "roughness", "emissive", "texture"],
         "texture": ["name", "width", "height", "rgba_base64", "sha256"],

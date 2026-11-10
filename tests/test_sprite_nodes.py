@@ -181,6 +181,45 @@ class SpriteReachTest(unittest.TestCase):
         self.assertIsNone(node["sprite"], "undo must drop the sprite it added")
 
 
+class SpriteDiscoveryTest(unittest.TestCase):
+    """An AI can only use a feature it can find in the schema."""
+
+    def test_describe_advertises_sprite_nodes_and_point_lights(self):
+        from keystone.gpu.renderer import MAX_POINT_LIGHTS
+        from keystone.plugin import describe_game
+        from keystone.samples import CubeDemo
+
+        capabilities = describe_game(CubeDemo())["capabilities"]
+        self.assertTrue(capabilities.get("sprite_nodes"), "sprite nodes must be advertised")
+        self.assertEqual(capabilities.get("point_lights"), MAX_POINT_LIGHTS)
+
+    def test_every_carrier_document_lists_sprite_in_its_schema(self):
+        from keystone.web.schema import EDITOR_SCHEMA, SCENE_SCHEMA
+
+        self.assertIn("sprite", EDITOR_SCHEMA["fields"]["node"])
+        self.assertIn("sprite", EDITOR_SCHEMA["fields"]["set_node"])
+        self.assertIn("sprite", SCENE_SCHEMA["fields"]["node"])
+
+    def test_scene_export_emits_the_sprite_it_promises(self):
+        from keystone.web.scene import scene_document
+
+        scene = Scene()
+        scene.add(Node("glow", id="glow", sprite=Sprite(size=0.5)))
+        entry = next(
+            node for node in scene_document(scene)["nodes"] if node["id"] == "glow"
+        )
+        self.assertEqual(entry["sprite"]["size"], 0.5)
+
+    def test_editor_document_reports_the_sprite_field(self):
+        from keystone.samples import CubeDemo
+        from keystone.web.server import GameSession
+
+        session = GameSession(CubeDemo())
+        created = session.editor_action({"action": "create_node", "name": "probe"})
+        node = next(n for n in created["nodes"] if n["name"] == "probe")
+        self.assertIn("sprite", node)
+
+
 class SpriteReportTest(unittest.TestCase):
     """A sprite draws pixels, so the frame report must place it on screen."""
 

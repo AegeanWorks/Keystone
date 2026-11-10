@@ -36,6 +36,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
     """Return a machine-readable capability/action/snapshot description."""
     from keystone.analysis import REPORT_SCHEMA
     from keystone.gpu.context import key_names
+    from keystone.gpu.renderer import MAX_POINT_LIGHTS
 
     name = getattr(game, "name", None)
     if not isinstance(name, str) or not name.strip():
@@ -53,6 +54,8 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "post": True,
             "bloom": True,
             "sprites": True,
+            "sprite_nodes": True,
+            "point_lights": MAX_POINT_LIGHTS,
             "culling": True,
             "skin": True,
             "pbr": True,

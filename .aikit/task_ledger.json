@@ -1,67 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-sprite-reach-v1",
+    "task_id": "keystone-discovery-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794288291.8926332,
+    "updated_at": 1794289011.656828,
     "owner": "commandcode:keystone-console",
     "started_by": "commandcode:keystone-console",
     "continuations": [],
-    "completed_at": 1794288299.8576078
+    "completed_at": 1794289020.148096
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-project-start-hint-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan: fix the --project load-failure advice, which told the caller to pass a package.module:Factory even though --project derives the spec from keystone.json, so renaming the scaffolded Game class produced unactionable guidance",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794257989.58405,
-      "timestamp_str": "2026-11-09 23:59:49",
-      "agent": "commandcode:keystone-console",
-      "impact_assessment": {
-        "why": "AI-driven game creation is a stated project goal; a misleading Fix: during the authoring loop sends an agent to edit the wrong thing.",
-        "benefits": "An AI that refactors its entry class is pointed at the one field that needs updating and can verify recovery immediately.",
-        "risks": "contract: startup error text changes when --project is set; dependency: none; concurrency: outer toolkit still being edited; state: none.",
-        "mitigation": "Add _start_failure_hint keyed on args.project, keep the factory text for explicit --game, and pin scaffold-rename-recover as a failing-first test."
-      },
-      "plan_digest": "b0a7c00c6965b45fd6893e39fe9d53fa9026f08e0a3dbc9043dbb9b6265e6bd3"
-    },
-    {
-      "task_id": "keystone-project-start-hint-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Fixed and verified - _start_failure_hint names the keystone.json game field under --project and keeps the factory advice for explicit --game; scaffold-rename-recover test fails against the pre-fix handler; 1023 tests pass; 6/6 gates pass",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794257994.1866393,
-      "timestamp_str": "2026-11-09 23:59:54",
-      "agent": "commandcode:keystone-console"
-    },
-    {
-      "task_id": "keystone-project-start-hint-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[3/3] Authoring-loop walk confirms the rest of the path is sound: --new scaffolds a validated project that simulates and renders as shipped, an edit re-validates and re-simulates, and the headless report shows the edited node with its bbox; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794258001.042126,
-      "timestamp_str": "2026-11-10 00:00:01",
-      "agent": "commandcode:keystone-console"
-    },
-    {
-      "task_id": "keystone-project-start-hint-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-project-start-hint-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794258012.4688008,
-      "timestamp_str": "2026-11-10 00:00:12",
-      "agent": "commandcode:keystone-console"
-    },
     {
       "task_id": "keystone-action-fix-v1",
       "phase": "in_progress",
@@ -260,6 +210,56 @@
       "status": "completed",
       "timestamp": 1794288299.857611,
       "timestamp_str": "2026-11-10 08:24:59",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-discovery-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan: make the features added this session discoverable - --describe advertised neither point_lights nor sprite_nodes, the editor schema omitted sprite on node, SCENE_SCHEMA omitted it, and the scene export did not emit it",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794288995.9309094,
+      "timestamp_str": "2026-11-10 08:36:35",
+      "agent": "commandcode:keystone-console",
+      "impact_assessment": {
+        "why": "A capability an AI cannot find in the discovery payload is absent for authoring; discovery is the first pillar of the project goal.",
+        "benefits": "An agent reading --describe or the schema finds both features and their field names without reading source.",
+        "risks": "contract: capability keys and schema field lists grow; dependency: none; concurrency: none; state: scene export gains a key.",
+        "mitigation": "Take the light cap from MAX_POINT_LIGHTS rather than restating it, and assert the export actually emits the sprite the schema promises."
+      },
+      "plan_digest": "2827239eaf654ffefabe600f3bd18e1057b9879b9f908d58800928f1a7f5c9df"
+    },
+    {
+      "task_id": "keystone-discovery-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Fixed - describe_game reports sprite_nodes and point_lights (value from MAX_POINT_LIGHTS); EDITOR_SCHEMA and SCENE_SCHEMA list sprite on node; set_node allows it; web/scene.py now emits sprite so the declaration is true; 1075 tests pass; canonical hash unchanged and PNG 4899B",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794289002.7247107,
+      "timestamp_str": "2026-11-10 08:36:42",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-discovery-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[3/3] Verified - a probe of --describe now lists point_lights and sprite_nodes; schema carries sprite in editor node, set_node and scene export; the scene export test proves the promised field is emitted; two discovery tests fail when the advertisement is removed; a systematic node-field coverage probe across snapshot, prefab and editor shows only parent/prefab_base/scene_group differences, all intentional; frame tracking and occlusion resolution probed and sound; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794289011.656828,
+      "timestamp_str": "2026-11-10 08:36:51",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-discovery-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-discovery-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794289020.1480978,
+      "timestamp_str": "2026-11-10 08:37:00",
       "agent": "commandcode:keystone-console"
     }
   ]

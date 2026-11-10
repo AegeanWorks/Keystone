@@ -94,6 +94,7 @@ def scene_document(scene: Scene, game: str = "game") -> dict:
                 "world": list(node.world_matrix().flat()),
                 "mesh": mesh_id,
                 "material": material,
+                "sprite": node.sprite.to_dict() if node.sprite is not None else None,
             }
         )
     camera = scene.camera
