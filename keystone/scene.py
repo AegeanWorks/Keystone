@@ -333,6 +333,28 @@ class Sprite:
         if not 0.0 <= self.alpha <= 1.0:
             raise ValueError("sprite alpha must be between 0 and 1")
 
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "size": self.size,
+            "color": [self.color.x, self.color.y, self.color.z],
+            "alpha": self.alpha,
+        }
+
+    @classmethod
+    def from_dict(cls, data: object) -> Sprite:
+        if not isinstance(data, Mapping):
+            raise TypeError("sprite document must be a mapping")
+        raw_color = data.get("color", (1.0, 0.9, 0.7))
+        if isinstance(raw_color, (str, bytes)) or not isinstance(raw_color, (list, tuple)):
+            raise TypeError("sprite color must be three numbers")
+        if len(raw_color) != 3:
+            raise ValueError("sprite color must have three values")
+        return cls(
+            size=float(data.get("size", 1.0)),
+            color=Vec3(float(raw_color[0]), float(raw_color[1]), float(raw_color[2])),
+            alpha=float(data.get("alpha", 1.0)),
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class DirectionalLight:

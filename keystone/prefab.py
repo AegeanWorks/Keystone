@@ -19,7 +19,7 @@ from keystone.component_codec import (
     component_to_dict,
 )
 from keystone.math3d import Quat, Vec3
-from keystone.scene import Node, PrefabLink, Scene, Transform
+from keystone.scene import Node, PrefabLink, Scene, Sprite, Transform
 from keystone.schema import PREFAB_SCHEMA_VERSION
 from keystone.serialization import read_json, write_json_atomic
 
@@ -32,6 +32,7 @@ def _copy_template(node: Node) -> Node:
         transform=node.transform,
         mesh=node.mesh,
         material=node.material,
+        sprite=node.sprite,
         visible=node.visible,
         id=node.id,
         tags=set(node.tags),
@@ -275,6 +276,7 @@ class Prefab:
                 "material": _asset_id(
                     registry, node.material, f"{node.id or node.name!r} material", "material"
                 ),
+                "sprite": node.sprite.to_dict() if node.sprite is not None else None,
                 "components": [
                     component_to_dict(component)
                     for _, component in sorted(
@@ -367,6 +369,11 @@ class Prefab:
                 transform=_transform_from_dict(value.get("transform", {})),
                 mesh=resolve(value.get("mesh"), "mesh", f"{node_id!r} mesh"),
                 material=resolve(value.get("material"), "material", f"{node_id!r} material"),
+                sprite=(
+                    Sprite.from_dict(value.get("sprite"))
+                    if value.get("sprite") is not None
+                    else None
+                ),
                 visible=visible,
                 id=node_id,
                 tags=set(tags),
@@ -457,6 +464,7 @@ class Prefab:
                 transform=node.transform,
                 mesh=node.mesh,
                 material=node.material,
+                sprite=node.sprite,
                 visible=node.visible,
                 id=new_id,
                 tags=set(node.tags),

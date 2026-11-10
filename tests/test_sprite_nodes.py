@@ -68,6 +68,119 @@ class SpriteSnapshotTest(unittest.TestCase):
         self.assertIsNone(entry["sprite"])
 
 
+class SpriteReachTest(unittest.TestCase):
+    """A sprite must survive every path that carries scene content."""
+
+    def test_sprite_to_dict_round_trips(self):
+        sprite = Sprite(size=0.75, color=Vec3(0.1, 0.2, 0.3), alpha=0.5)
+        self.assertEqual(Sprite.from_dict(sprite.to_dict()), sprite)
+
+    def test_sprite_from_dict_rejects_bad_documents(self):
+        for bad in (
+            "nope",
+            [],
+            {"color": [1.0, 0.0]},
+            {"color": "red"},
+            {"size": "big"},
+        ):
+            with self.subTest(payload=bad), self.assertRaises((TypeError, ValueError)):
+                Sprite.from_dict(bad)
+
+    def test_prefab_document_and_instance_carry_the_sprite(self):
+        from keystone.prefab import Prefab
+
+        scene = Scene()
+        root = scene.add(Node("glow", id="glow", sprite=Sprite(size=0.5)))
+        prefab = Prefab.from_node(root, name="glow")
+
+        document = prefab.to_dict()
+        self.assertIsNotNone(document["roots"][0]["sprite"])
+
+        target = Scene()
+        created = prefab.instantiate(target)
+        self.assertIsNotNone(
+            created[0].sprite, "instantiating a prefab must keep its sprite"
+        )
+        self.assertEqual(created[0].sprite.size, 0.5)
+
+    def test_prefab_round_trip_through_json_keeps_the_sprite(self):
+        import json
+
+        from keystone.prefab import Prefab
+
+        scene = Scene()
+        root = scene.add(Node("glow", id="glow", sprite=Sprite(size=1.25, alpha=0.25)))
+        prefab = Prefab.from_node(root, name="glow")
+        reloaded = Prefab.from_dict(json.loads(json.dumps(prefab.to_dict())))
+        target = Scene()
+        created = reloaded.instantiate(target)
+        self.assertEqual(created[0].sprite.size, 1.25)
+        self.assertEqual(created[0].sprite.alpha, 0.25)
+
+    def test_editor_exposes_and_sets_a_sprite(self):
+        from keystone.samples import CubeDemo
+        from keystone.web.server import GameSession
+
+        session = GameSession(CubeDemo())
+        created = session.editor_action({"action": "create_node", "name": "glow"})
+        node_id = next(n["id"] for n in created["nodes"] if n["name"] == "glow")
+        node = next(n for n in created["nodes"] if n["id"] == node_id)
+        self.assertIn("sprite", node, "the editor must report the sprite field")
+        self.assertIsNone(node["sprite"])
+
+        result = session.editor_action(
+            {
+                "action": "set_node",
+                "id": node_id,
+                "sprite": {"size": 0.5, "color": [1.0, 0.0, 0.0], "alpha": 0.8},
+            }
+        )
+        updated = next(n for n in result["nodes"] if n["id"] == node_id)
+        self.assertEqual(updated["sprite"]["size"], 0.5)
+        self.assertEqual(updated["sprite"]["alpha"], 0.8)
+
+        # A partial payload updates only the named field.
+        partial = session.editor_action(
+            {"action": "set_node", "id": node_id, "sprite": {"alpha": 0.25}}
+        )
+        merged = next(n for n in partial["nodes"] if n["id"] == node_id)
+        self.assertEqual(merged["sprite"]["size"], 0.5, "size must be preserved")
+        self.assertEqual(merged["sprite"]["alpha"], 0.25)
+
+        cleared = session.editor_action(
+            {"action": "set_node", "id": node_id, "sprite": None}
+        )
+        gone = next(n for n in cleared["nodes"] if n["id"] == node_id)
+        self.assertIsNone(gone["sprite"])
+
+    def test_editor_rejects_a_malformed_sprite(self):
+        from keystone.samples import CubeDemo
+        from keystone.web.server import GameSession, WebProblem
+
+        session = GameSession(CubeDemo())
+        created = session.editor_action({"action": "create_node", "name": "glow"})
+        node_id = next(n["id"] for n in created["nodes"] if n["name"] == "glow")
+        for bad in ("nope", {"size": -1.0}, {"unknown": 1}, {"color": [1.0]}):
+            with self.subTest(payload=bad), self.assertRaises((WebProblem, ValueError, TypeError)):
+                session.editor_action(
+                    {"action": "set_node", "id": node_id, "sprite": bad}
+                )
+
+    def test_undo_restores_the_previous_sprite(self):
+        from keystone.samples import CubeDemo
+        from keystone.web.server import GameSession
+
+        session = GameSession(CubeDemo())
+        created = session.editor_action({"action": "create_node", "name": "glow"})
+        node_id = next(n["id"] for n in created["nodes"] if n["name"] == "glow")
+        session.editor_action(
+            {"action": "set_node", "id": node_id, "sprite": {"size": 1.0}}
+        )
+        undone = session.editor_action({"action": "undo"})
+        node = next(n for n in undone["nodes"] if n["id"] == node_id)
+        self.assertIsNone(node["sprite"], "undo must drop the sprite it added")
+
+
 class SpriteReportTest(unittest.TestCase):
     """A sprite draws pixels, so the frame report must place it on screen."""
 

@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `157`
-- **Total Classes**: `255`
-- **Total Top-Level Functions**: `455`
-- **Total Class Methods**: `1657`
-- **Total Source Lines**: `44248`
+- **Total Classes**: `256`
+- **Total Top-Level Functions**: `456`
+- **Total Class Methods**: `1666`
+- **Total Source Lines**: `44445`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`157` module(s))
@@ -1251,7 +1251,7 @@
 ### [`keystone/prefab.py`](keystone/prefab.py)
 > *Deterministic prefabs: capture, persist and instantiate reusable subtrees.*
 
-**Size**: `505` lines (`20483` bytes)
+**Size**: `513` lines (`20828` bytes)
 
 **Classes:**
 - `class Prefab` - *An immutable-name, detached template of one or more scene subtrees.*
@@ -1403,7 +1403,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `554` lines (`21923` bytes)
+**Size**: `576` lines (`22823` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -1435,6 +1435,8 @@
   - Method `.traverse()`
 - `class Sprite` - *A camera-facing quad drawn as a billboard at the node's position.*
   - Method `.__post_init__()`
+  - Method `.to_dict()`
+  - Method `.from_dict(data)`
 - `class DirectionalLight` - *A direction the light travels in, plus linear color and intensity.*
   - Method `.__post_init__()`
   - Method `.unit_direction()`
@@ -1757,7 +1759,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `3238` lines (`115466` bytes)
+**Size**: `3292` lines (`117304` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -1828,7 +1830,8 @@
 - `def duplicate_node(scene, node, name)` - *Clone one node subtree as a sibling with fresh scene-allocated ids.*
 - `def reparent_node(scene, node, parent)` - *Move one node subtree or its whole prefab instance below a new parent.*
 - `def transform_from_payload(node, payload)`
-- `def set_node_properties(node, payload)` - *Update a node's name, visibility, tags or layer atomically.*
+- `def _sprite_from_payload(value, base)` - *Build a Sprite from an editor payload, or None to clear it.*
+- `def set_node_properties(node, payload)` - *Update a node's name, visibility, tags, layer or sprite atomically.*
 - `def set_component(node, type_name, data, component_types)` - *Decode and add/replace one component on a node.*
 - `def remove_component(node, type_name, component_types)` - *Remove one named component from a node.*
 - `def assign_assets(node, payload, registry)` - *Assign or clear a node's mesh/material through registry asset ids.*
@@ -1905,7 +1908,7 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `651` lines (`27053` bytes)
+**Size**: `651` lines (`27063` bytes)
 
 ---
 
@@ -3539,7 +3542,7 @@
 ### [`tests/test_sprite_nodes.py`](tests/test_sprite_nodes.py)
 > *Tests for placed sprite nodes: model, round trip and rendering.*
 
-**Size**: `190` lines (`7681` bytes)
+**Size**: `303` lines (`12464` bytes)
 
 **Classes:**
 - `class SpriteModelTest`
@@ -3550,6 +3553,14 @@
   - Method `.test_sprite_round_trips()`
   - Method `.test_document_is_stable_across_one_load()`
   - Method `.test_a_node_without_a_sprite_writes_null()`
+- `class SpriteReachTest` - *A sprite must survive every path that carries scene content.*
+  - Method `.test_sprite_to_dict_round_trips()`
+  - Method `.test_sprite_from_dict_rejects_bad_documents()`
+  - Method `.test_prefab_document_and_instance_carry_the_sprite()`
+  - Method `.test_prefab_round_trip_through_json_keeps_the_sprite()`
+  - Method `.test_editor_exposes_and_sets_a_sprite()`
+  - Method `.test_editor_rejects_a_malformed_sprite()`
+  - Method `.test_undo_restores_the_previous_sprite()`
 - `class SpriteReportTest` - *A sprite draws pixels, so the frame report must place it on screen.*
   - Method `._report_entry(sprite, width, height)`
   - Method `.test_sprite_only_node_reports_a_bbox()`

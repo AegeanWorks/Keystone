@@ -108,3 +108,5 @@ changes that do not bump the release number yet.
 - `Node.sprite` places a camera-facing billboard (`Sprite(size, color, alpha)`)
   as scene content; sprites no longer require a particle emitter, and the
   frame report gives a sprite-only node the bbox and description it draws.
+- A sprite now survives prefab capture and instantiation, editor undo, and the
+  web `set_node` action (which accepts a partial mapping or `null` to clear).

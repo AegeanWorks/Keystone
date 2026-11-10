@@ -369,7 +369,7 @@ EDITOR_SCHEMA = {
         ],
         "scene_group": ["id", "name", "parent_id", "node_count", "roots"],
         "transform": ["position", "rotation", "scale"],
-        "set_node": ["id", "name", "visible", "tags", "layer"],
+        "set_node": ["id", "name", "visible", "tags", "layer", "sprite"],
         "save_prefab": ["id", "ids", "name"],
         "set_scene": ["camera", "environment"],
         "camera": ["position", "yaw", "pitch", "fov_y", "near", "far"],

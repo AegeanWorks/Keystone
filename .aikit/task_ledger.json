@@ -1,67 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-sprite-nodes-v1",
+    "task_id": "keystone-sprite-reach-v1",
     "last_phase": "in_progress",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794261742.4767227,
+    "updated_at": 1794288291.8926332,
     "owner": "commandcode:keystone-console",
     "started_by": "commandcode:keystone-console",
     "continuations": [],
-    "completed_at": 1794261748.6328406
+    "completed_at": 1794288299.8576078
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-bbox-nearclip-v1",
-      "phase": "in_progress",
-      "phase_num": 2,
-      "description": "[1/3] Plan: fix the frame-report node bbox, which dropped corners behind the near plane so the sample floor collapsed to a zero-height line at the horizon even though it fills the lower 56% of the rendered frame",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794254340.9042566,
-      "timestamp_str": "2026-11-09 22:59:00",
-      "agent": "commandcode:keystone-console",
-      "impact_assessment": {
-        "why": "The project goal is vision-model analyzability; a bbox that contradicts the image is worse than no bbox.",
-        "benefits": "An AI reading the report localises ground planes and any surface crossing the camera correctly.",
-        "risks": "contract: bbox values change for near-plane-crossing meshes; dependency: none; concurrency: outer toolkit is being edited in parallel; state: report schema stays 11.",
-        "mitigation": "Clip box edges at the near plane z+w==0 (not w==0, which is the eye and divides by zero), clamp to the frame, keep schema 11, and pin the floor plus identity-matrix cases with failing-first tests."
-      },
-      "plan_digest": "5d077b3e65a7fd54150f7f3f80d8dd3fd0cffc4cc99c4fb1bc020d8d0d122ab9"
-    },
-    {
-      "task_id": "keystone-bbox-nearclip-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[2/3] Fixed and verified - _projected_bbox clips the twelve box edges against the near plane and clamps to the frame; floor now [0.0, 27.81, 96.0, 64.0] matching the render; 1022 tests pass; canonical hash 772cac5232a0947b8f6d1914a5cf0cde unchanged; reference PNG 4899B; 6/6 gates pass",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794254346.506703,
-      "timestamp_str": "2026-11-09 22:59:06",
-      "agent": "commandcode:keystone-console"
-    },
-    {
-      "task_id": "keystone-bbox-nearclip-v1",
-      "phase": "in_progress",
-      "phase_num": 4,
-      "description": "[3/3] Visual confirmation - rendered the sample scene and read the image: the checkered floor fills the bottom half from the horizon down, matching the new bbox; schema note documents the clamping rule; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794254352.8084333,
-      "timestamp_str": "2026-11-09 22:59:12",
-      "agent": "commandcode:keystone-console"
-    },
-    {
-      "task_id": "keystone-bbox-nearclip-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-bbox-nearclip-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794254358.2651424,
-      "timestamp_str": "2026-11-09 22:59:18",
-      "agent": "commandcode:keystone-console"
-    },
     {
       "task_id": "keystone-project-start-hint-v1",
       "phase": "in_progress",
@@ -260,6 +210,56 @@
       "status": "completed",
       "timestamp": 1794261748.6328428,
       "timestamp_str": "2026-11-10 01:02:28",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-sprite-reach-v1",
+      "phase": "in_progress",
+      "phase_num": 2,
+      "description": "[1/3] Plan: close the three paths that silently dropped Node.sprite - the web editor node document and set_node, the prefab document and instantiate, and the editor undo snapshot - by giving Sprite one shared to_dict/from_dict",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794288274.1345158,
+      "timestamp_str": "2026-11-10 08:24:34",
+      "agent": "commandcode:keystone-console",
+      "impact_assessment": {
+        "why": "A probe showed an AI working over the web API could not create a sprite at all, and a prefab instance lost one on placement; AI-driven authoring is a stated goal.",
+        "benefits": "A sprite created over HTTP persists through undo, prefab capture, JSON round trip, instantiation and reload.",
+        "risks": "contract: set_node gains a field and the editor document gains a key; dependency: none; concurrency: none; state: prefab and undo documents gain sprite.",
+        "mitigation": "One serialisation on the type, validation through the existing helpers, and failing-first tests for each of the four paths."
+      },
+      "plan_digest": "b7616606fc597f3ebcb726f580ff5c390d65f40591ffe186b16c5e6a139e79ef"
+    },
+    {
+      "task_id": "keystone-sprite-reach-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[2/3] Implemented - Sprite.to_dict/from_dict on the type; editor node document and undo snapshot carry sprite; set_node accepts a partial mapping or null with validation; prefab document, from_dict and instance clone carry it, and the override baseline records it; 1071 tests pass; canonical hash unchanged and PNG 4899B",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794288283.4094038,
+      "timestamp_str": "2026-11-10 08:24:43",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-sprite-reach-v1",
+      "phase": "in_progress",
+      "phase_num": 4,
+      "description": "[3/3] Verified - reach probe now reports 0 gaps across editor document, set_node, prefab document, instance clone and snapshot; partial set_node keeps size while changing alpha; null clears; undo drops the added sprite; four reach tests fail when the document and instance fields are reverted; checklists: passed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794288291.8926332,
+      "timestamp_str": "2026-11-10 08:24:51",
+      "agent": "commandcode:keystone-console"
+    },
+    {
+      "task_id": "keystone-sprite-reach-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-sprite-reach-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794288299.857611,
+      "timestamp_str": "2026-11-10 08:24:59",
       "agent": "commandcode:keystone-console"
     }
   ]

@@ -44,6 +44,7 @@ from keystone.scene import (
     Scene,
     SceneGroup,
     ShadowSettings,
+    Sprite,
     SpriteSettings,
     Transform,
 )
@@ -686,6 +687,7 @@ def _node_snapshot(node: Node) -> dict[str, object]:
         "transform": node.transform,
         "mesh": node.mesh,
         "material": node.material,
+        "sprite": node.sprite,
         "visible": node.visible,
         "id": node.id,
         "tags": set(node.tags),
@@ -712,6 +714,7 @@ def _node_from_snapshot(data: Mapping[str, object]) -> Node:
         transform=data["transform"],
         mesh=data["mesh"],
         material=data["material"],
+        sprite=data.get("sprite"),
         visible=data["visible"],
         id=data["id"],
         tags=set(data["tags"]),
@@ -1318,6 +1321,15 @@ def node_document(
         "component_data": _component_documents(node),
         "mesh": _payload_id(registry, node.mesh, "mesh"),
         "material": _payload_id(registry, node.material, "material"),
+        "sprite": (
+            {
+                "size": node.sprite.size,
+                "color": list(node.sprite.color),
+                "alpha": node.sprite.alpha,
+            }
+            if node.sprite is not None
+            else None
+        ),
         "prefab_link": (
             node.prefab_link.to_dict() if node.prefab_link is not None else None
         ),
@@ -1542,19 +1554,48 @@ def transform_from_payload(node: Node, payload: dict) -> Transform:
     return _transform_from_payload(payload, node.transform)
 
 
+def _sprite_from_payload(value: object, base: object) -> object:
+    """Build a Sprite from an editor payload, or None to clear it.
+
+    Partial payloads update the fields they name, so an editor can change the
+    colour of an existing sprite without restating its size.
+    """
+    if value is None:
+        return None
+    if not isinstance(value, Mapping):
+        raise TypeError("node sprite must be a mapping or null")
+    _unknown_keys(value, {"size", "color", "alpha"}, "node sprite")
+    current = base if isinstance(base, Sprite) else Sprite()
+    size = current.size
+    color = current.color
+    alpha = current.alpha
+    if "size" in value:
+        size = _finite_number(value.get("size"), "sprite size")
+    if "color" in value:
+        color = _payload_vec3(value.get("color"), "sprite color")
+    if "alpha" in value:
+        alpha = _finite_number(value.get("alpha"), "sprite alpha")
+    return Sprite(size=size, color=color, alpha=alpha)
+
+
 def set_node_properties(node: Node, payload: Mapping[str, object]) -> Node:
-    """Update a node's name, visibility, tags or layer atomically."""
+    """Update a node's name, visibility, tags, layer or sprite atomically."""
     if not isinstance(node, Node):
         raise TypeError("set_node target must be a Node")
     if not isinstance(payload, Mapping):
         raise TypeError("set_node payload must be a mapping")
-    fields = [name for name in ("name", "visible", "tags", "layer") if name in payload]
+    fields = [
+        name
+        for name in ("name", "visible", "tags", "layer", "sprite")
+        if name in payload
+    ]
     if not fields:
-        raise ValueError("set_node needs name, visible, tags or layer")
+        raise ValueError("set_node needs name, visible, tags, layer or sprite")
     name = node.name
     visible = node.visible
     tags = set(node.tags)
     layer = node.layer
+    sprite = node.sprite
     if "name" in payload:
         value = payload.get("name")
         if not isinstance(value, str) or not value.strip():
@@ -1572,10 +1613,13 @@ def set_node_properties(node: Node, payload: Mapping[str, object]) -> Node:
         if not isinstance(value, str) or not value:
             raise ValueError("node layer must be a non-empty string")
         layer = value
+    if "sprite" in payload:
+        sprite = _sprite_from_payload(payload.get("sprite"), node.sprite)
     node.name = name
     node.visible = visible
     node.tags = tags
     node.layer = layer
+    node.sprite = sprite
     return node
 
 
@@ -1966,6 +2010,7 @@ def _node_override_values(
     if registry is not None:
         values["mesh"] = _payload_id(registry, node.mesh, "mesh")
         values["material"] = _payload_id(registry, node.material, "material")
+    values["sprite"] = node.sprite.to_dict() if node.sprite is not None else None
     for component_type, component in sorted(
         node.components.items(),
         key=lambda item: (item[0].__module__, item[0].__qualname__),
@@ -2159,6 +2204,15 @@ def _apply_override_value(
         if not isinstance(value, str) or not value:
             return False
         node.layer = value
+        return True
+    if field == "sprite":
+        if value is None:
+            node.sprite = None
+            return True
+        try:
+            node.sprite = Sprite.from_dict(value)
+        except (TypeError, ValueError):
+            return False
         return True
     if field == "transform.position":
         position = _finite_array(value, 3, "override position")
