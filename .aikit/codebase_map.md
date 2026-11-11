@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `179`
-- **Total Classes**: `300`
-- **Total Top-Level Functions**: `519`
-- **Total Class Methods**: `1876`
-- **Total Source Lines**: `48171`
+- **Total Python Modules**: `180`
+- **Total Classes**: `302`
+- **Total Top-Level Functions**: `520`
+- **Total Class Methods**: `1892`
+- **Total Source Lines**: `48342`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`179` module(s))
+- **Indexed**: python (`180` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -1373,7 +1373,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `135` lines (`5125` bytes)
+**Size**: `136` lines (`5159` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1815,7 +1815,7 @@
 ### [`keystone/ui/canvas.py`](keystone/ui/canvas.py)
 > *Screen-space 2D canvas built from clipped color quads and bitmap text.*
 
-**Size**: `162` lines (`5704` bytes)
+**Size**: `192` lines (`6952` bytes)
 
 **Classes:**
 - `class TextElement` - *One text draw call recorded for AI/UI reports.*
@@ -1831,6 +1831,7 @@
   - Method `.fit_text(text, width, scale)` - *Trim text so it fits ``width`` pixels at this scale.*
   - Method `.text_right(right, y, text, color, scale)` - *Append text whose right edge sits at ``right``.*
   - Method `.text_center(center, y, text, color, scale)` - *Append text horizontally centred on ``center``.*
+  - Method `.paragraph(x, y, width, text, color, scale, line_gap)` - *Draw wrapped text and return the height it consumed.*
   - Method `.add_button(x, y, width, height, label, action, selected, hovered)` - *Record button metadata; drawing stays with the widgets module.*
   - Method `.vertices()` - *Return interleaved x, y, r, g, b, a vertices for six triangles per quad.*
   - Method `.measured_height(scale)` - *Return the line height matching a text call at the same scale.*
@@ -1840,13 +1841,14 @@
 ### [`keystone/ui/font.py`](keystone/ui/font.py)
 > *Embedded 5x7 bitmap font for the dependency-free human overlay.*
 
-**Size**: `92` lines (`5112` bytes)
+**Size**: `132` lines (`6660` bytes)
 
 **Functions:**
 - `def glyph(character)` - *Return the 7x5 rows for one character; lowercase maps to uppercase.*
 - `def text_width(text, scale)` - *Return the pixel width of text, excluding trailing tracking.*
 - `def line_height(scale)` - *Return the pixel height of one uppercase text line.*
 - `def truncate_text(text, width, scale)` - *Trim text so it fits width pixels, leaving room for an ellipsis-free cut.*
+- `def wrap_text(text, max_width, scale)` - *Wrap text to a pixel width at word boundaries.*
 
 ---
 
@@ -4265,6 +4267,32 @@
 
 **Functions:**
 - `def state(**overrides)`
+
+---
+
+### [`tests/test_ui_text.py`](tests/test_ui_text.py)
+> *Tests for word wrapping and multi-line paragraph drawing.*
+
+**Size**: `100` lines (`4057` bytes)
+
+**Classes:**
+- `class WrapTextTest`
+  - Method `.test_wraps_at_word_boundaries()`
+  - Method `.test_keeps_explicit_newlines()`
+  - Method `.test_a_long_word_is_truncated_to_fit()`
+  - Method `.test_empty_text_wraps_to_no_lines()`
+  - Method `.test_every_line_fits_the_limit()`
+  - Method `.test_wrapping_is_deterministic()`
+  - Method `.test_malformed_arguments_are_rejected()`
+- `class ParagraphTest`
+  - Method `.test_draws_one_text_element_per_wrapped_line()`
+  - Method `.test_line_gap_extends_the_reported_height()`
+  - Method `.test_blank_lines_consume_height()`
+  - Method `.test_empty_text_draws_nothing()`
+  - Method `.test_non_positive_width_draws_nothing()`
+  - Method `.test_every_drawn_line_stays_inside_the_width()`
+  - Method `.test_malformed_arguments_are_rejected()`
+  - Method `.test_describe_advertises_paragraph_text()`
 
 ---
 

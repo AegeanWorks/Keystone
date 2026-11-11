@@ -262,6 +262,8 @@ def draw_ui(self, canvas: Canvas, state: HudState) -> None:
 
 The hook runs before the engine HUD and pause menu, so engine UI stays on top. It receives the current `Canvas` and `HudState`, so games share the embedded font, clipping and pause state. `H` hides game UI too.
 
+`canvas.paragraph(x, y, width, text, color, scale)` wraps at word boundaries, preserves explicit newlines and blank lines, truncates a single overlong word and returns the height used; `keystone.ui.font.wrap_text()` exposes the wrapped lines for custom layout. `--describe` reports `capabilities.ui_text_wrap`.
+
 ### Textures
 
 ```python

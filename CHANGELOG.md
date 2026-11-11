@@ -170,3 +170,7 @@ changes that do not bump the release number yet.
   `--describe` reports `capabilities.scene_raycast`.
 - `ray_aabb` and `ray_sphere` now return world-unit distances for non-unit
   ray directions; they normalized the direction and scaled the result again.
+- `Canvas.paragraph()` and `keystone.ui.font.wrap_text()` wrap HUD text at
+  word boundaries, preserve explicit newlines and blank lines, truncate an
+  overlong single word and return the height used. `--describe` reports
+  `capabilities.ui_text_wrap`.

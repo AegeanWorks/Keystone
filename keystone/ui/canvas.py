@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from keystone.ui.font import glyph, line_height, text_width, truncate_text
+from keystone.ui.font import glyph, line_height, text_width, truncate_text, wrap_text
 
 Color = tuple[float, float, float, float]
 Quad = tuple[float, float, float, float, Color]
@@ -130,6 +130,36 @@ class Canvas:
     ) -> None:
         """Append text horizontally centred on ``center``."""
         self.text(center - text_width(text, scale) / 2, y, text, color, scale)
+
+    def paragraph(
+        self,
+        x: float,
+        y: float,
+        width: float,
+        text: str,
+        color: Color,
+        scale: int = 2,
+        line_gap: int = 0,
+    ) -> int:
+        """Draw wrapped text and return the height it consumed.
+
+        A width of zero or less draws nothing, matching the layout widgets;
+        explicit newlines and blank lines keep their spacing.
+        """
+        if isinstance(scale, bool) or not isinstance(scale, int) or scale < 1:
+            raise ValueError("text scale must be a positive integer")
+        if isinstance(line_gap, bool) or not isinstance(line_gap, int) or line_gap < 0:
+            raise ValueError("paragraph line gap must be a non-negative integer")
+        if isinstance(width, bool) or not isinstance(width, (int, float)):
+            raise TypeError("paragraph width must be a real number")
+        if width <= 0:
+            return 0
+        lines = wrap_text(str(text), int(width), scale)
+        step = line_height(scale) + line_gap
+        for index, line in enumerate(lines):
+            if line:
+                self.text(x, y + index * step, line, color, scale)
+        return len(lines) * line_height(scale) + max(0, len(lines) - 1) * line_gap
 
     def add_button(
         self,

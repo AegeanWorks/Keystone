@@ -133,6 +133,7 @@ keystone/
 │   ├── test_texture.py       <- texture data, checker and PNG loading
 │   ├── test_ui.py            <- font, canvas, menu and overlay
 │   ├── test_ui_widgets.py     <- HUD layout widgets and viewport safety
+│   ├── test_ui_text.py        <- word wrapping and paragraph layout
 │   ├── test_renderer.py      <- headless OpenGL integration
 │   ├── test_input.py         <- action mapping and ActionState
 │   ├── test_input_keys.py    <- GL key table and dead bindings

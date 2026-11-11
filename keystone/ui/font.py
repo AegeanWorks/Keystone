@@ -90,3 +90,43 @@ def truncate_text(text: str, width: int, scale: int = 1) -> str:
         return ""
     limit = max(0, (width // scale + 1) // (GLYPH_WIDTH + TRACKING))
     return text[:limit]
+
+def wrap_text(text: str, max_width: float, scale: int = 1) -> tuple[str, ...]:
+    """Wrap text to a pixel width at word boundaries.
+
+    Explicit newlines are preserved (a trailing newline adds a blank line) and
+    a single word wider than the limit is truncated with ``truncate_text`` so
+    no line ever exceeds the width. Case is preserved; the canvas uppercases
+    when it draws.
+    """
+    if isinstance(scale, bool) or not isinstance(scale, int) or scale <= 0:
+        raise ValueError("scale must be a positive integer")
+    if isinstance(max_width, bool) or not isinstance(max_width, (int, float)):
+        raise TypeError("wrap width must be a real number")
+    width = int(max_width)
+    if width <= 0:
+        raise ValueError("wrap width must be positive")
+    value = str(text)
+    if value == "":
+        return ()
+    lines: list[str] = []
+    for paragraph in value.split("\n"):
+        words = paragraph.split()
+        current = ""
+        for word in words:
+            candidate = word if not current else current + " " + word
+            if text_width(candidate, scale) <= width:
+                current = candidate
+                continue
+            if current:
+                lines.append(current)
+            if text_width(word, scale) > width:
+                lines.append(truncate_text(word, width, scale))
+                current = ""
+            else:
+                current = word
+        if current:
+            lines.append(current)
+        if not words:
+            lines.append("")
+    return tuple(lines)

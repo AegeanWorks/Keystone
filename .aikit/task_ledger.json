@@ -1,93 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-picking-v1",
+    "task_id": "keystone-hud-text-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794434018.2197912,
+    "updated_at": 1794435773.5811515,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
-    "completed_at": 1794434186.2643805
+    "completed_at": 1794435824.252071
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-spatial-audio-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Verified and holding for delivery - spatial audio is complete, the empty-mixer sample-rate bug is fixed and non-finite listeners are rejected with zero sources; full suite green (1102 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
-      "files_affected": [
-        "keystone/audio.py",
-        "keystone/audio_spatial.py",
-        "tests/test_audio.py",
-        "tests/test_audio_spatial.py",
-        "keystone/__init__.py",
-        "keystone/plugin.py",
-        "README.md",
-        "docs/ARCHITECTURE.md",
-        "docs/TREE.md",
-        "CHANGELOG.md",
-        ".aikit/decisions.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794421098.3953018,
-      "timestamp_str": "2026-11-11 21:18:18",
-      "agent": "kilo:goal",
-      "checklists": "passed",
-      "handoff": {
-        "state": "nine verified milestones on disk - ADR-224 content batching, ADR-225 camera rig/overlay, ADR-226 clip binding, ADR-227 HUD widgets, ADR-228 evidence routes, docs/TREE split, ADR-229 pathfinding, ADR-230 navigation, ADR-231 spatial audio",
-        "next": "obtain explicit user authorization to commit, then stage and commit the nine verified milestones by name (or split by milestone) and run python aikit.py check keystone --strict",
-        "open": "commit delivery not authorized, so no more feature work should stack",
-        "evidence": "the new tests plus canonical hash and 4899-byte PNG"
-      }
-    },
-    {
-      "task_id": "keystone-delivery-composition-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/2] Plan: strengthen the pending delivery with seam tests instead of new features - a staged camera-rig route must keep an overlay part screen-anchored while world geometry moves, and separately built content-equal overlay nodes must share one draw inside the overlay pass",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794422637.704426,
-      "timestamp_str": "2026-11-11 21:43:57",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "Nine milestones are verified but uncommitted; the remaining safe work is proving the seams between them, which no focused suite covers: camera rig with evidence routes, and content-keyed instancing inside the overlay pass.",
-        "benefits": "The delivery gains cross-feature regression coverage with no new public surface, and the tests would fail if either the overlay layer filter, the rig sync, the route staging or content-keyed grouping regressed.",
-        "risks": "contract: none, tests only; dependency: none; concurrency: none; state: adds one test module and a docs/TREE entry.",
-        "mitigation": "Use the public Engine, evidence Route and Renderer APIs, read checkpoint reports from disk, keep the canonical hash and reference PNG unchanged, and let the project gates regenerate the map."
-      },
-      "plan_digest": "d40f7997be11516b3bd8c5dc0a9d520894ea91d832f541ed73a0771680293d5f"
-    },
-    {
-      "task_id": "keystone-spatial-audio-v1",
-      "phase": "superseded",
-      "phase_num": 4,
-      "description": "Superseded by 'keystone-delivery-composition-v1' without --complete or --reset",
-      "status": "superseded",
-      "timestamp": 1794422637.704426,
-      "timestamp_str": "2026-11-11 21:43:57",
-      "agent": "kilo:goal"
-    },
-    {
-      "task_id": "keystone-delivery-composition-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/2] Plan (impact-assessed): add tests/test_feature_composition.py with two seam tests - a staged camera-rig evidence route keeps the overlay part screen-anchored while world nodes move, and two separately built content-equal overlay nodes share one overlay draw",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794422665.4984376,
-      "timestamp_str": "2026-11-11 21:44:25",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "Nine verified milestones are uncommitted; the remaining safe work is proving the seams between them, which no focused suite covers.",
-        "benefits": "Cross-feature regression coverage with no new public surface; the tests fail if the overlay filter, rig sync, route staging or content-keyed grouping regresses.",
-        "risks": "contract: none, tests plus one docs entry; dependency: none; concurrency: none; state: one new test module.",
-        "mitigation": "Use public Engine/Route/Renderer APIs, read checkpoint reports from disk, keep canonical evidence unchanged, and let aikit fix regenerate the map."
-      },
-      "plan_digest": "34fabd402b6ea7dd4a868f13a8a5d7db7421585342f6f36a1db423faff1cef0c"
-    },
     {
       "task_id": "keystone-delivery-composition-v1",
       "phase": "phase 4",
@@ -502,6 +426,100 @@
       "status": "completed",
       "timestamp": 1794434186.2643816,
       "timestamp_str": "2026-11-12 00:56:26",
+      "agent": "kilo:goal"
+    },
+    {
+      "task_id": "keystone-hud-text-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: add word wrapping plus a measured paragraph draw (wrap_text, Canvas.paragraph) so HUD text wraps at the viewport width without games re-implementing layout",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794435645.8650103,
+      "timestamp_str": "2026-11-12 01:20:45",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "The HUD had measured single-line helpers but no wrapping, so every multi-line hint or dialogue re-measured strings; this is the remaining repeated layout code after the widget work.",
+        "benefits": "One call draws wrapped, width-safe HUD text with newline and blank-line control and a measured height, discoverable from --describe.",
+        "risks": "contract: font and canvas gain functions plus a capability; dependency: none; concurrency: none; state: no scene or report schema change.",
+        "mitigation": "Greedy word wrapping, truncation of overlong words, per-line width tests, validated scale/gap, and an unchanged canonical frame because the engine overlay does not use paragraphs yet."
+      },
+      "plan_digest": "58d9833797c0cd0680e6b6d4b9b2058f940ca560d23cbfead3c289e3ae929b16"
+    },
+    {
+      "task_id": "keystone-hud-text-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan (impact-assessed): add keystone.ui.font.wrap_text and Canvas.paragraph with greedy word wrapping, explicit newline and blank-line handling, overlong-word truncation, measured height and a ui_text_wrap capability",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794435677.2833426,
+      "timestamp_str": "2026-11-12 01:21:17",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "Single-line HUD helpers forced every multi-line hint, dialogue or error to re-implement measurement and splitting, the same repeated layout code the widget work removed.",
+        "benefits": "Width-safe wrapped HUD text in one measured call, usable by games and AI authors, with wrapped lines exposed for custom layout.",
+        "risks": "contract: font/canvas functions plus a capability; dependency: none; concurrency: none; state: no schema change.",
+        "mitigation": "Preserve explicit newlines, truncate overlong words, pin per-line widths and validation, and keep the canonical hash and reference PNG unchanged."
+      },
+      "plan_digest": "1f4fb616c75e5e225317332910c3aabc95008038039a587bd31c9709507eb8ee"
+    },
+    {
+      "task_id": "keystone-hud-text-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/3] Implemented and verified - wrap_text and Canvas.paragraph wrap at word boundaries, preserve explicit and blank lines, truncate overlong words, return measured height, and validate scale/gap/width; README, ARCHITECTURE, docs/TREE, CHANGELOG and ADR-236 updated; --describe reports capabilities.ui_text_wrap; 15 text tests green (1171 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
+      "files_affected": [
+        "keystone/ui/font.py",
+        "keystone/ui/canvas.py",
+        "keystone/plugin.py",
+        "tests/test_ui_text.py",
+        "README.md",
+        "docs/ARCHITECTURE.md",
+        "docs/TREE.md",
+        "CHANGELOG.md",
+        ".aikit/decisions.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1794435773.5811515,
+      "timestamp_str": "2026-11-12 01:22:53",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "artifact": "stdout",
+          "metric": "collected_tests",
+          "candidate": 1171.0,
+          "unit": "tests",
+          "baseline": 1156.0,
+          "command": "python -m pytest --collect-only -q"
+        },
+        {
+          "artifact": "README.md",
+          "metric": "readme_chars",
+          "candidate": 26541.0,
+          "unit": "chars",
+          "baseline": 26176.0,
+          "command": "python -c len(README.md)"
+        },
+        {
+          "artifact": "temp PNG",
+          "metric": "reference_png_bytes",
+          "candidate": 4899.0,
+          "unit": "bytes",
+          "baseline": 4899.0,
+          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png"
+        }
+      ],
+      "checklists": "passed"
+    },
+    {
+      "task_id": "keystone-hud-text-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-hud-text-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794435824.2520719,
+      "timestamp_str": "2026-11-12 01:23:44",
       "agent": "kilo:goal"
     }
   ]

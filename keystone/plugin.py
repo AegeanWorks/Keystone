@@ -94,6 +94,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "evidence": True,
             "human_ui": {"overlay": "on", "toggle": "h", "pause": "p", "menu": ["resume", "toggle_ui", "quit"]},
             "game_ui": callable(getattr(game, "draw_ui", None)),
+            "ui_text_wrap": True,
             "report_schema": REPORT_SCHEMA,
             "web": {
                 "api_version": WEB_API_VERSION,
