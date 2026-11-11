@@ -211,6 +211,17 @@ write_navgrid("levels/hall.navgrid", grid)
 
 `grid_from_boxes()` rasterizes the same AABBs a character collides with: a cell blocks when its world-space centre falls inside a box inflated by the clearance radius on X and Z, so navigation cannot silently drift from the level geometry. `scene_boxes()` derives those AABBs from a scene's visible mesh nodes (skipping the camera-relative overlay layer), so one level can feed the grid directly. `NavGrid.to_dict()`/`from_dict()` and `write_navgrid`/`read_navgrid` persist a schema-1 document that sorts blocked cells, rejects duplicates and rejects out-of-bounds cells. `--describe` reports `capabilities.nav_authoring`.
 
+### Scene picking
+
+```python
+from keystone.picking import hit_report, raycast_scene
+
+hit = raycast_scene(scene, Ray(camera.position, camera.forward()))
+print(hit_report(hit))
+```
+
+`raycast_scene()` returns the nearest visible mesh under a ray as a `SceneHit` with the node id, node name, world distance and contact point. Hidden nodes, camera-relative overlay content, an excluded layer and ignored ids or names never block the query, and bounds are the same conservative mesh AABBs navigation uses. `hit_report()` emits a JSON-safe hit or miss for agent logs and evidence. `--describe` reports `capabilities.scene_raycast`.
+
 ### Navigation: following a route
 
 ```python
@@ -343,7 +354,7 @@ The API sends CORS headers so local AI clients can call it directly. Keep the de
 - **Input**: rebindable `InputMap` across contexts, a game `bind_input` hook, and dead-binding diagnostics.
 - **Audio**: synth, named-bus mixer, deterministic mixdown, WAV I/O, distance-attenuated spatial mixes and reports; no hardware output.
 - **Animation**: tracks/clips, looping, crossfades, events, blend spaces, masked `apply_pose`, clip binding onto pooled nodes, CPU/GPU skinning and state machines.
-- **Particles and physics**: seeded emitters with swept collision; rays, AABB/sphere queries, broadphase, character movement and triggers.
+- **Particles and physics**: seeded emitters with swept collision; rays, AABB/sphere queries, broadphase, scene picking, character movement and triggers.
 - **Pathfinding**: immutable nav grids, deterministic A* over 4 or 8 neighbours with corner-cut refusal, line-of-sight path smoothing, JSON-safe path reports, scene/box-derived nav grids with schema-1 documents, and a waypoint follower that feeds `CharacterController`.
 - **Replay and persistence**: command logs, stable hashes, `run_log`/`verify_log`, atomic JSON with `.bak`.
 - **Testing and AI**: `--describe`, `--simulate`, `--verify-determinism`, `--expect-hash`, frame reports, pixel diffs, seeded playtests, deterministic capture routes with checkpoint evidence diffs, and adapters.

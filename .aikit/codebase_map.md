@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `177`
-- **Total Classes**: `297`
-- **Total Top-Level Functions**: `513`
-- **Total Class Methods**: `1862`
-- **Total Source Lines**: `47857`
+- **Total Python Modules**: `179`
+- **Total Classes**: `300`
+- **Total Top-Level Functions**: `519`
+- **Total Class Methods**: `1876`
+- **Total Source Lines**: `48171`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`177` module(s))
+- **Indexed**: python (`179` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `239` lines (`5230` bytes)
+**Size**: `243` lines (`5350` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -1290,7 +1290,7 @@
 ### [`keystone/physics.py`](keystone/physics.py)
 > *Generic collision primitives and ray queries for the engine core.*
 
-**Size**: `184` lines (`7182` bytes)
+**Size**: `183` lines (`7120` bytes)
 
 **Classes:**
 - `class Ray`
@@ -1312,6 +1312,22 @@
 - `def aabb_overlap(first, second)`
 - `def sphere_aabb_overlap(sphere, box)`
 - `def resolve_sphere_aabb(sphere, box)` - *Push a sphere out of an AABB along the shallowest axis.*
+
+---
+
+### [`keystone/picking.py`](keystone/picking.py)
+> *Scene picking: ray queries over visible world meshes.*
+
+**Size**: `150` lines (`5072` bytes)
+
+**Classes:**
+- `class SceneHit` - *One scene ray hit: the node, the world distance and the contact point.*
+
+**Functions:**
+- `def _finite(value, label)`
+- `def _ignore_names(value)`
+- `def raycast_scene(scene, ray, *, layer, ignore, max_distance)` - *Return the nearest visible mesh hit, or None.*
+- `def hit_report(hit)` - *Return a JSON-safe summary of one scene ray query.*
 
 ---
 
@@ -1357,7 +1373,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `134` lines (`5090` bytes)
+**Size**: `135` lines (`5125` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -3439,7 +3455,7 @@
 ### [`tests/test_physics.py`](tests/test_physics.py)
 > *Tests for generic ray and collision primitives.*
 
-**Size**: `102` lines (`4260` bytes)
+**Size**: `110` lines (`4681` bytes)
 
 **Classes:**
 - `class PhysicsTest`
@@ -3453,7 +3469,36 @@
   - Method `.test_pushout_lands_exactly_outside_the_face()`
   - Method `.test_aabb_helpers_are_consistent_with_overlap()`
   - Method `.test_raycast_returns_the_nearest_hit()`
+  - Method `.test_ray_distance_is_world_units_for_a_non_unit_direction()`
   - Method `.test_raycast_filter_can_skip_candidates()`
+
+---
+
+### [`tests/test_picking.py`](tests/test_picking.py)
+> *Tests for scene picking and ray queries.*
+
+**Size**: `152` lines (`5996` bytes)
+
+**Classes:**
+- `class RaycastSceneTest`
+  - Method `.test_returns_the_nearest_visible_mesh()`
+  - Method `.test_hidden_and_overlay_nodes_do_not_block()`
+  - Method `.test_layer_filter_and_ignore_lists()`
+  - Method `.test_max_distance_cuts_the_query()`
+  - Method `.test_a_non_normalized_direction_keeps_world_distance()`
+  - Method `.test_ties_break_on_node_id()`
+  - Method `.test_empty_scene_and_misses_return_none()`
+  - Method `.test_malformed_arguments_are_rejected()`
+- `class HitReportTest`
+  - Method `.test_a_hit_report_is_json_safe()`
+  - Method `.test_a_miss_report_has_no_node()`
+  - Method `.test_report_rejects_a_non_hit()`
+  - Method `.test_a_hit_is_immutable()`
+  - Method `.test_describe_advertises_scene_raycast()`
+
+**Functions:**
+- `def _cube(scene, name, x, *, node_id, **kwargs)`
+- `def _ray(direction, origin)`
 
 ---
 

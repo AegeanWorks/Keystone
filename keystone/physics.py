@@ -103,9 +103,9 @@ def ray_aabb(ray: Ray, box: AABB) -> float | None:
         tmax = min(tmax, t2)
         if tmin > tmax:
             return None
-    if tmax < 0.0 or tmin * length > ray.t_max:
+    if tmax < 0.0 or tmin > ray.t_max:
         return None
-    return max(tmin, 0.0) * length
+    return max(tmin, 0.0)
 
 
 def raycast(
@@ -142,9 +142,8 @@ def ray_sphere(ray: Ray, sphere: Sphere) -> float | None:
         return None
     root = math.sqrt(discriminant)
     for t in ((-b - root) / 2.0, (-b + root) / 2.0):
-        distance = t * length
-        if 0.0 <= distance <= ray.t_max:
-            return distance
+        if 0.0 <= t <= ray.t_max:
+            return t
     return None
 
 

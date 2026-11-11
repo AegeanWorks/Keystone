@@ -78,6 +78,7 @@ from keystone.pathfinding import (
     path_report,
     smooth_path,
 )
+from keystone.picking import SceneHit, hit_report, raycast_scene
 from keystone.playtest import (
     PLAYTEST_REPORT_SCHEMA,
     TRANSCRIPT_SCHEMA,
@@ -164,6 +165,7 @@ __all__ = [
     "Route",
     "Scene",
     "SceneGroup",
+    "SceneHit",
     "ScriptedPolicy",
     "ShadowSettings",
     "SoundSource",
@@ -192,6 +194,7 @@ __all__ = [
     "grid_from_boxes",
     "grid_path_points",
     "group_instances",
+    "hit_report",
     "lifecycle_hooks",
     "line_of_sight",
     "load_gltf",
@@ -208,6 +211,7 @@ __all__ = [
     "path_report",
     "plan_batches",
     "plan_instanced",
+    "raycast_scene",
     "read_navgrid",
     "read_wav",
     "run_bot",

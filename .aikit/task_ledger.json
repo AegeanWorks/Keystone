@@ -1,93 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-path-smoothing-v1",
+    "task_id": "keystone-picking-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794428555.8998775,
+    "updated_at": 1794434018.2197912,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
-    "completed_at": 1794432160.631231
+    "completed_at": 1794434186.2643805
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-spatial-audio-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: add distance-attenuated spatial audio (SoundSource, distance_gain, spatial_mix, spatial_report) that reuses the named-bus Mixer and stays deterministic and device-free, with a discovery flag",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794420315.9772398,
-      "timestamp_str": "2026-11-11 21:05:15",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "Audio had buses but no positions: games had to compute attenuation themselves and keep it consistent with bus gains, pitch and clipping; a deterministic spatial mixdown completes the existing audio core without pretending to own a playback device.",
-        "benefits": "One listener position plus positioned sources yields a reproducible mix and a JSON-safe audibility report, so AI clients can audit sound placement and games need no new dependency.",
-        "risks": "contract: new module, four exports and a capabilities key; dependency: none; concurrency: none; state: immutable sources and pure functions, no scene or report schema change.",
-        "mitigation": "Keep attenuation linear and bounded, route the mix through the existing Mixer so bus and clipping behaviour is shared, pin every bound and validation case with failing-first tests, and keep the canonical hash and reference PNG unchanged."
-      },
-      "plan_digest": "853afcee31983e062fbb883ceaa8b0c2dbc7f9f9c7d962f0ac34bfcc56046738"
-    },
-    {
-      "task_id": "keystone-navigation-v1",
-      "phase": "superseded",
-      "phase_num": 4,
-      "description": "Superseded by 'keystone-spatial-audio-v1' without --complete or --reset",
-      "status": "superseded",
-      "timestamp": 1794420315.9772398,
-      "timestamp_str": "2026-11-11 21:05:15",
-      "agent": "kilo:goal"
-    },
-    {
-      "task_id": "keystone-spatial-audio-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/3] Implemented and verified - keystone/audio_spatial.py adds SoundSource, linear bounded distance_gain, spatial_mix through the named-bus Mixer with caller bus gains and stable pitch-scaled silence, and spatial_report; exports, README section and audio bullet, ARCHITECTURE audio row, docs/TREE.md, CHANGELOG and ADR-231 updated; --describe reports capabilities.spatial_audio; 21 tests green (1100 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged",
-      "files_affected": [
-        "keystone/audio_spatial.py",
-        "tests/test_audio_spatial.py",
-        "keystone/__init__.py",
-        "keystone/plugin.py",
-        "README.md",
-        "docs/ARCHITECTURE.md",
-        "docs/TREE.md",
-        "CHANGELOG.md",
-        ".aikit/decisions.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794420328.363021,
-      "timestamp_str": "2026-11-11 21:05:28",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "candidate": 1100.0,
-          "command": "python -m pytest --collect-only -q",
-          "artifact": "stdout",
-          "metric": "collected_tests",
-          "baseline": 1079.0,
-          "unit": "tests"
-        },
-        {
-          "candidate": 24335.0,
-          "command": "python -c len(README.md)",
-          "artifact": "README.md",
-          "metric": "readme_chars",
-          "baseline": 23459.0,
-          "unit": "chars"
-        },
-        {
-          "candidate": 4899.0,
-          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
-          "artifact": "temp PNG",
-          "metric": "reference_png_bytes",
-          "baseline": 4899.0,
-          "unit": "bytes"
-        }
-      ],
-      "checklists": "passed"
-    },
     {
       "task_id": "keystone-spatial-audio-v1",
       "phase": "phase 4",
@@ -500,6 +424,84 @@
       "status": "completed",
       "timestamp": 1794432160.6312323,
       "timestamp_str": "2026-11-12 00:22:40",
+      "agent": "kilo:goal"
+    },
+    {
+      "task_id": "keystone-picking-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: add scene picking (SceneHit, raycast_scene, hit_report) that resolves the nearest visible mesh node with filters and JSON-safe reports, and fix non-unit ray distances found while wiring it",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794433996.6824522,
+      "timestamp_str": "2026-11-12 00:53:16",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "Physics raycasts needed caller-built keyed boxes and games/AIs had no way to ask what node is under a ray; picking is a baseline Unity/Unreal capability and the bridge exposed a double-scaling defect in ray_aabb and ray_sphere for non-unit directions.",
+        "benefits": "One call resolves a ray to a node with distance and contact point, filters hidden/overlay/layer/ignored content, and reports hits or misses for agent logs; non-unit rays now return true world distances.",
+        "risks": "contract: new module, three exports, one capability, and a behavior fix in physics for non-unit rays; dependency: picking imports culling, physics, scene; concurrency: none; state: pure queries.",
+        "mitigation": "Reuse the same visibility and bound rules as navigation, delegate tie-breaking to physics.raycast, pin nearest hit, filters, max distance and non-unit distances with failing-first tests, and keep the canonical evidence unchanged."
+      },
+      "plan_digest": "55a729f2489c206edbbe0592b239aa09df083884ec634d9ccbba364cc1d59b55"
+    },
+    {
+      "task_id": "keystone-picking-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/3] Implemented and verified - keystone/picking.py adds SceneHit, raycast_scene (nearest visible mesh, hidden/overlay/layer/ignore filters, max_distance, id tie-break) and hit_report; ray_aabb and ray_sphere now return world-unit distances for non-unit directions; exports, README section and bullet, ARCHITECTURE row and tree, docs/TREE.md, CHANGELOG and ADR-235 updated; --describe reports capabilities.scene_raycast; 14 picking tests plus the physics regression green (1156 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
+      "files_affected": [
+        "keystone/picking.py",
+        "keystone/physics.py",
+        "tests/test_picking.py",
+        "tests/test_physics.py",
+        "keystone/__init__.py",
+        "keystone/plugin.py",
+        "README.md",
+        "docs/ARCHITECTURE.md",
+        "docs/TREE.md",
+        "CHANGELOG.md",
+        ".aikit/decisions.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1794434018.2197912,
+      "timestamp_str": "2026-11-12 00:53:38",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "command": "python -m pytest --collect-only -q",
+          "artifact": "stdout",
+          "metric": "collected_tests",
+          "unit": "tests",
+          "baseline": 1142.0,
+          "candidate": 1156.0
+        },
+        {
+          "command": "python -m pytest tests/test_physics.py::PhysicsTest::test_ray_distance_is_world_units_for_a_non_unit_direction",
+          "artifact": "tests/test_physics.py",
+          "metric": "non_unit_ray_distance",
+          "unit": "world",
+          "baseline": 3.0,
+          "candidate": 1.5
+        },
+        {
+          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
+          "artifact": "temp PNG",
+          "metric": "reference_png_bytes",
+          "unit": "bytes",
+          "baseline": 4899.0,
+          "candidate": 4899.0
+        }
+      ],
+      "checklists": "passed"
+    },
+    {
+      "task_id": "keystone-picking-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-picking-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794434186.2643816,
+      "timestamp_str": "2026-11-12 00:56:26",
       "agent": "kilo:goal"
     }
   ]

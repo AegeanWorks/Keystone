@@ -164,3 +164,9 @@ changes that do not bump the release number yet.
   the same corner rule as movement and greedily drop redundant waypoints, so
   a smoothed A* route stays legal while using fewer points. `--describe`
   reports `capabilities.path_smoothing`.
+- `keystone.picking` adds `raycast_scene`, `SceneHit` and `hit_report`: a ray
+  returns the nearest visible mesh node with world distance and contact
+  point, skipping hidden, overlay, layer-filtered and ignored nodes.
+  `--describe` reports `capabilities.scene_raycast`.
+- `ray_aabb` and `ray_sphere` now return world-unit distances for non-unit
+  ray directions; they normalized the direction and scaled the result again.

@@ -89,6 +89,14 @@ class PhysicsTest(unittest.TestCase):
         self.assertAlmostEqual(hit.distance, 1.5)
         self.assertEqual(hit.box, near)
 
+    def test_ray_distance_is_world_units_for_a_non_unit_direction(self):
+        near = AABB(Vec3(0, 0, 2), Vec3(0.5, 0.5, 0.5))
+        hit = raycast(Ray(Vec3(0, 0, 0), Vec3(0, 0, 2)), [("near", near)])
+        assert hit is not None
+        self.assertAlmostEqual(hit.distance, 1.5)
+        sphere = Sphere(Vec3(0, 0, 3), 1.0)
+        self.assertAlmostEqual(ray_sphere(Ray(Vec3(0, 0, 0), Vec3(0, 0, 2)), sphere), 2.0)
+
     def test_raycast_filter_can_skip_candidates(self):
         ray = Ray(Vec3(0, 0, 0), Vec3(0, 0, 1))
         near = AABB(Vec3(0, 0, 2), Vec3(0.5, 0.5, 0.5))

@@ -64,6 +64,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "pathfinding": True,
             "path_smoothing": True,
             "nav_authoring": True,
+            "scene_raycast": True,
             "navigation": True,
             "agents": True,
             "profiler": True,

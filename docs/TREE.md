@@ -40,6 +40,7 @@ keystone/
 │   ├── testing.py            <- deterministic scenario helpers
 │   ├── physics.py            <- rays, AABB, sphere queries, pushout and raycasts
 │   ├── particles.py          <- deterministic CPU emitters and systems
+│   ├── picking.py            <- scene ray queries and hit reports
 │   ├── broadphase.py         <- deterministic spatial-grid broadphase
 │   ├── pathfinding.py        <- deterministic A* over a bounded nav grid
 │   ├── navigation.py         <- waypoint following and grid-to-world route points
@@ -138,6 +139,7 @@ keystone/
 │   ├── test_lifecycle.py     <- component start/update/stop lifecycle
 │   ├── test_clock.py         <- fixed-step clock
 │   ├── test_physics.py       <- rays, AABB, sphere queries and raycasts
+│   ├── test_picking.py       <- scene ray hits, filters and reports
 │   ├── test_pathfinding.py   <- nav grids, A* routes and path reports
 │   ├── test_path_smoothing.py <- line of sight and waypoint reduction
 │   ├── test_navigation.py    <- waypoint followers and route integration
