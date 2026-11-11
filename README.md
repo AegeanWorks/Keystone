@@ -264,6 +264,18 @@ The hook runs before the engine HUD and pause menu, so engine UI stays on top. I
 
 `canvas.paragraph(x, y, width, text, color, scale)` wraps at word boundaries, preserves explicit newlines and blank lines, truncates a single overlong word and returns the height used; `keystone.ui.font.wrap_text()` exposes the wrapped lines for custom layout. `--describe` reports `capabilities.ui_text_wrap`.
 
+### Deterministic randomness
+
+```python
+from keystone.rng import RandomStream
+
+rng = RandomStream(seed=1337)
+enemies = rng.fork("enemies")
+position = Vec3(rng.uniform(-4.0, 4.0), 0.0, rng.uniform(-4.0, 4.0))
+```
+
+`RandomStream` implements SplitMix64 with a pinned reference vector, so a replay or save resumes the same sequence on every platform. `random()`, `uniform()`, `randint()` (inclusive, no modulo bias), `choice()` and `shuffled()` cover normal needs; `fork(label)` derives an independent child stream for a subsystem; `snapshot()`/`from_snapshot()` persist the seed and state for saves. `--describe` reports `capabilities.deterministic_random`.
+
 ### Textures
 
 ```python
@@ -358,7 +370,7 @@ The API sends CORS headers so local AI clients can call it directly. Keep the de
 - **Animation**: tracks/clips, looping, crossfades, events, 1D and bilinear 2D blend spaces, masked `apply_pose`, clip binding onto pooled nodes, CPU/GPU skinning and state machines.
 - **Particles and physics**: seeded emitters with swept collision; rays, AABB/sphere queries, broadphase, scene picking, character movement and triggers.
 - **Pathfinding**: immutable nav grids, deterministic A* over 4 or 8 neighbours with corner-cut refusal, line-of-sight path smoothing, JSON-safe path reports, scene/box-derived nav grids with schema-1 documents, and a waypoint follower that feeds `CharacterController`.
-- **Replay and persistence**: command logs, stable hashes, `run_log`/`verify_log`, atomic JSON with `.bak`.
+- **Replay and determinism**: command logs, stable hashes, `run_log`/`verify_log`, atomic JSON with `.bak`, and SplitMix64 random streams with labelled forks and snapshot/restore.
 - **Testing and AI**: `--describe`, `--simulate`, `--verify-determinism`, `--expect-hash`, frame reports, pixel diffs, seeded playtests, deterministic capture routes with checkpoint evidence diffs, and adapters.
 - **Human UI and web**: overlay/pause menu, `draw_ui`, measured-text layout widgets (`label_row`, `table`, `progress_bar`, `badge`) that stay inside the viewport, stdlib JSON API and WebGL2 console/editor.
 - **Game-agnostic core**: no combat, light-lock, weave or expedition code.

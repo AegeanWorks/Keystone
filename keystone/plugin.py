@@ -65,6 +65,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "path_smoothing": True,
             "nav_authoring": True,
             "scene_raycast": True,
+            "deterministic_random": True,
             "scene_overlap": True,
             "navigation": True,
             "agents": True,

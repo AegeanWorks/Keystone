@@ -174,6 +174,10 @@ changes that do not bump the release number yet.
   word boundaries, preserve explicit newlines and blank lines, truncate an
   overlong single word and return the height used. `--describe` reports
   `capabilities.ui_text_wrap`.
+- `keystone.rng` adds deterministic SplitMix64 `RandomStream` and
+  `RandomStreamState`: uniform/random/randint/choice/shuffled, labelled
+  forks and snapshot/restore, with the published reference vector pinned by
+  tests. `--describe` reports `capabilities.deterministic_random`.
 - `BlendSpace2D` and `BlendSample2D` add bilinear two-parameter blend
   spaces over complete rectangular grids, with canonical sample order,
   schema-1 documents, strict validation and JSON-safe reports.

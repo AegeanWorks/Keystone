@@ -108,6 +108,7 @@ from keystone.playtest import (
 )
 from keystone.plugin import GameModule
 from keystone.prefab import Prefab
+from keystone.rng import RandomStream, RandomStreamState
 from keystone.scene import (
     OVERLAY_LAYER,
     BloomSettings,
@@ -176,6 +177,8 @@ __all__ = [
     "Prefab",
     "Quat",
     "RandomPolicy",
+    "RandomStream",
+    "RandomStreamState",
     "Route",
     "Scene",
     "SceneGroup",

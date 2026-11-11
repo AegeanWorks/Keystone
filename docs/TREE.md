@@ -30,6 +30,7 @@ keystone/
 │   ├── plugin.py             <- GameModule protocol and loader
 │   ├── playtest.py           <- seeded bot policies and fairness
 │   ├── replay.py             <- command log and stable hash
+│   ├── rng.py                <- SplitMix64 random streams and snapshots
 │   ├── history.py            <- bounded undo/redo snapshots
 │   ├── scene_snapshot.py     <- versioned scene save/load
 │   ├── scene_library.py      <- file-backed scene library
@@ -195,6 +196,7 @@ keystone/
 │   ├── test_scene_diff.py   <- structured scene diff coverage
 │   ├── test_plugin.py        <- GameModule contract and loader
 │   ├── test_replay.py        <- command log and hashes
+│   ├── test_rng.py           <- reference vectors, forks and snapshots
 │   ├── test_serialization.py <- atomic JSON persistence
 │   ├── test_component_codec.py <- typed component JSON codec
 │   ├── test_library_trash.py <- recoverable library deletes

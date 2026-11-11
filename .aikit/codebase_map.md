@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `182`
-- **Total Classes**: `308`
-- **Total Top-Level Functions**: `527`
-- **Total Class Methods**: `1932`
-- **Total Source Lines**: `48897`
+- **Total Python Modules**: `184`
+- **Total Classes**: `313`
+- **Total Top-Level Functions**: `528`
+- **Total Class Methods**: `1960`
+- **Total Source Lines**: `49210`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`182` module(s))
+- **Indexed**: python (`184` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `260` lines (`5578` bytes)
+**Size**: `263` lines (`5680` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -1391,7 +1391,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `138` lines (`5234` bytes)
+**Size**: `139` lines (`5276` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1554,6 +1554,33 @@
 - `def stable_hash(payload)` - *Hash a JSON-safe payload deterministically; reject process-local values.*
 - `def run_log(factory, log, trace, scene_loader)` - *Replay a command log on a fresh game without a window or GL context.*
 - `def verify_log(factory, log, scene_loader)` - *Run one log twice from a factory and compare final hashes.*
+
+---
+
+### [`keystone/rng.py`](keystone/rng.py)
+> *Deterministic random streams for replays, saves and AI-authored games.*
+
+**Size**: `162` lines (`6643` bytes)
+
+**Classes:**
+- `class RandomStreamState` - *A JSON-safe snapshot of a stream's seed and current state.*
+  - Method `.to_dict()`
+- `class RandomStream` - *One deterministic SplitMix64 stream.*
+  - Method `.__init__(seed)`
+  - Method `.from_snapshot(data)` - *Restore a stream from a snapshot document.*
+  - Method `._from_parts(seed, state)`
+  - Method `._restore(state)`
+  - Method `.snapshot()` - *Return the seed and state needed to resume this exact sequence.*
+  - Method `.next_u64()` - *Advance the stream and return the next 64-bit value.*
+  - Method `.random()` - *Return a float in ``[0, 1)`` built from the top 53 bits.*
+  - Method `.uniform(low, high)` - *Return a float in ``[low, high]``; reversed bounds raise.*
+  - Method `.randint(low, high)` - *Return an integer in ``[low, high]`` without modulo bias.*
+  - Method `.choice(items)` - *Return one item from a non-empty sequence.*
+  - Method `.shuffled(items)` - *Return a Fisher-Yates permutation without modifying the input.*
+  - Method `.fork(label)` - *Derive a labelled child stream, consuming one draw from this one.*
+
+**Functions:**
+- `def _finite(value, label)`
 
 ---
 
@@ -3860,6 +3887,33 @@
   - Method `.test_strict_seed_and_frames_are_rejected()`
   - Method `.test_run_log_restores_global_random_state()`
   - Method `.test_run_log_replays_deterministically()`
+
+---
+
+### [`tests/test_rng.py`](tests/test_rng.py)
+> *Tests for the deterministic SplitMix64 random stream.*
+
+**Size**: `147` lines (`6193` bytes)
+
+**Classes:**
+- `class SplitMixVectorTest`
+  - Method `.test_seed_zero_matches_the_reference_vector()`
+  - Method `.test_seed_12345_matches_the_reference_vector()`
+  - Method `.test_equal_seeds_repeat_and_different_seeds_diverge()`
+  - Method `.test_negative_seeds_are_masked_not_rejected()`
+- `class RandomStreamTest`
+  - Method `.test_random_is_in_the_unit_interval()`
+  - Method `.test_uniform_respects_bounds()`
+  - Method `.test_randint_is_inclusive_and_integral()`
+  - Method `.test_choice_picks_a_member_deterministically()`
+  - Method `.test_shuffled_returns_a_permutation_without_touching_the_input()`
+  - Method `.test_fork_is_deterministic_and_label_sensitive()`
+  - Method `.test_snapshot_restores_the_exact_sequence()`
+  - Method `.test_snapshot_validation()`
+  - Method `.test_snapshot_is_immutable_and_typed()`
+- `class RandomStreamValidationTest`
+  - Method `.test_seed_must_be_an_integer()`
+  - Method `.test_describe_advertises_deterministic_random()`
 
 ---
 
