@@ -113,3 +113,54 @@ changes that do not bump the release number yet.
 - `--describe` advertises `sprite_nodes` and `point_lights`, both engine
   schemas list `sprite`, and the scene export emits it, so an agent can find
   the features from the discovery payload.
+- Static batch and instancing groups now key on `keystone.content` mesh and
+  material digests instead of Python object identity, so two separately
+  loaded copies of one asset share a group. Digest results are cached per
+  immutable payload, and the asset registry uses the same digest stream.
+- `CameraRig(camera)` syncs a scene root to the camera pose and `attach()`
+  places ordinary nodes at camera-space offsets on the reserved `overlay`
+  layer. The renderer draws that layer after a depth clear, so level
+  geometry cannot occlude a viewmodel or reticle, and world culling, batch
+  plans, merges and shadows skip it. The renderer reports `overlay_calls`,
+  `overlay_triangles` and `overlay_nodes`, and `--describe` advertises
+  `camera_rig` and `overlay_layer`.
+- `AnimationClip.bind({"subject": "enemy-07"})` returns a copy of a clip
+  retargeted onto other node ids, with an optional `name` so one authored
+  motion can be registered per pooled slot. Unknown source ids are rejected
+  with the ids the clip does animate, and `--describe` reports
+  `capabilities.animation_binding`.
+- HUD layout widgets `label_row`, `table`, `progress_bar` and `badge` measure
+  text with the shared font metric and clamp every draw to the canvas, so a
+  right-anchored row stays inside the frame at narrow viewports. The engine
+  overlay truncates its own right panel at the same edge.
+- `keystone.evidence` adds deterministic capture routes: `Route` runs a
+  per-frame `stage` callback over an engine, `capture_route` writes one PNG
+  and frame report per named checkpoint plus a route hash, and
+  `diff_evidence` compares two runs per label. `--describe` reports
+  `capabilities.evidence`.
+- The README now keeps a condensed orientation tree and links to
+  `docs/TREE.md`, which carries the full annotated module and test map. The
+  split restores room under the README size limit for feature documentation.
+- `keystone.pathfinding` adds immutable `NavGrid` and deterministic A*:
+  `find_path()` searches 4 or 8 neighbours, refuses to cut wall corners,
+  returns path/cost/expansion evidence, and `path_report()` emits a JSON-safe
+  route summary. `--describe` reports `capabilities.pathfinding`.
+- `keystone.navigation` adds `PathFollower`, `grid_path_points` and
+  `navigation_report`: a follower turns a route into wish velocity for
+  `CharacterController`, advances from the reported position (so collisions
+  cannot make it skip waypoints), and reports JSON-safe progress.
+  `--describe` reports `capabilities.navigation`.
+- `keystone.audio_spatial` adds `SoundSource`, `distance_gain`, `spatial_mix`
+  and `spatial_report`: linear distance attenuation inside a near/far range,
+  deterministic mixdown through the existing buses, and JSON-safe per-source
+  audibility. `--describe` reports `capabilities.spatial_audio`.
+- `keystone.nav_authoring` derives a `NavGrid` from the same AABBs a character
+  collides with (`scene_boxes` collects visible world meshes and skips the
+  camera-relative overlay; `grid_from_boxes` inflates by a clearance radius
+  on X/Z) and persists grids as schema-1 documents (`NavGrid.to_dict`/
+  `from_dict`, `write_navgrid`, `read_navgrid`). `--describe` reports
+  `capabilities.nav_authoring`.
+- `line_of_sight()` and `smooth_path()` test grid segments cell by cell with
+  the same corner rule as movement and greedily drop redundant waypoints, so
+  a smoothed A* route stays legal while using fewer points. `--describe`
+  reports `capabilities.path_smoothing`.

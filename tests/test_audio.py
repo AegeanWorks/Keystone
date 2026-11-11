@@ -55,6 +55,12 @@ class AudioTest(unittest.TestCase):
         self.assertEqual(report["schema"], 1)
         self.assertEqual(report["voices"], 2)
 
+    def test_an_empty_mixer_render_keeps_its_sample_rate(self):
+        rendered = Mixer(sample_rate=8000).render()
+        self.assertEqual(rendered.samples, ())
+        self.assertEqual(rendered.sample_rate, 8000)
+        self.assertEqual(rendered.name, "mixdown")
+
     def test_mix_clips_requires_shared_rate(self):
         first = AudioClip(samples=(0.1, 0.2), sample_rate=22050, name="a")
         second = AudioClip(samples=(0.1,), sample_rate=8000, name="b")

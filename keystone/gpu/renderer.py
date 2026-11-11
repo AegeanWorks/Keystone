@@ -25,7 +25,7 @@ from keystone.gpu.sprites import SPRITE_COLOR, sprite_alpha
 from keystone.gpu.texture_buffer import GpuTexture
 from keystone.math3d import Mat4, Vec3
 from keystone.png import write_png
-from keystone.scene import Scene
+from keystone.scene import OVERLAY_LAYER, Scene
 from keystone.skin import MAX_SKIN_BONES, bone_matrices
 from keystone.texture import TextureData
 
@@ -591,6 +591,9 @@ class Renderer:
             "bloom_enabled": 0,
             "sprite_calls": 0,
             "sprites": 0,
+            "overlay_calls": 0,
+            "overlay_triangles": 0,
+            "overlay_nodes": 0,
             "sprites_enabled": 0,
             "culled_nodes": 0,
             "culling_enabled": 0,
@@ -776,12 +779,16 @@ class Renderer:
         view_projection: Mat4,
         post_on: bool,
         bloom_on: bool,
+        *,
+        layer: str | None = None,
+        exclude_layer: str | None = None,
+        include_particles: bool = True,
     ) -> tuple[int, int]:
         if not self._sprites_requested(scene):
             return (0, 0)
         rows: list[float] = []
         items = getattr(particles, "particles", None)
-        if isinstance(items, list):
+        if include_particles and isinstance(items, list):
             for particle in items:
                 try:
                     position = particle.position
@@ -803,6 +810,10 @@ class Renderer:
         for node in scene.traverse():
             sprite = getattr(node, "sprite", None)
             if sprite is None or not node.world_visible():
+                continue
+            if layer is not None and node.layer != layer:
+                continue
+            if exclude_layer is not None and node.layer == exclude_layer:
                 continue
             if float(sprite.alpha) <= 0.001 or float(sprite.size) <= 0.0:
                 continue
@@ -932,7 +943,7 @@ class Renderer:
             GL.glCullFace(GL.GL_FRONT)
             self._depth_program.use()
             self._depth_program.set_mat4("u_light_vp", light_vp)
-            for group in group_instances(scene):
+            for group in group_instances(scene, exclude_layer=OVERLAY_LAYER):
                 mesh = group["mesh"]
                 if not isinstance(mesh, MeshData):
                     raise TypeError("Node.mesh must be MeshData")
@@ -969,6 +980,9 @@ class Renderer:
         post_on: bool,
         bloom_on: bool,
         planes: tuple[tuple[float, float, float, float], ...] | None = None,
+        *,
+        layer: str | None = None,
+        exclude_layer: str | None = None,
     ) -> tuple[int, int, int, int, int]:
         draw_calls = 0
         triangles = 0
@@ -984,7 +998,7 @@ class Renderer:
         self._apply_post(self._program, post_on)
         self._apply_post(self._inst_program, post_on)
         self._apply_post(self._skin_program, post_on)
-        for group in group_instances(scene, planes):
+        for group in group_instances(scene, planes, layer=layer, exclude_layer=exclude_layer):
             mesh = group["mesh"]
             if not isinstance(mesh, MeshData):
                 raise TypeError("Node.mesh must be MeshData")
@@ -1027,6 +1041,53 @@ class Renderer:
                 instances += len(models)
                 triangles += mesh.triangle_count() * len(models)
         return (draw_calls, triangles, instanced_calls, instances, kept_nodes)
+
+    def _draw_overlay(
+        self,
+        scene: Scene,
+        view_projection: Mat4,
+        light_vp: Mat4,
+        shadows_on: bool,
+        srgb_on: bool,
+        post_on: bool,
+        bloom_on: bool,
+    ) -> tuple[int, int, int]:
+        """Draw camera-relative content over the world, or return zeros.
+
+        Overlay nodes render after the depth buffer is cleared, so level
+        geometry cannot occlude them; that is the rule that makes a viewmodel
+        or reticle read correctly at any camera distance.
+        """
+        has_overlay = any(
+            node.layer == OVERLAY_LAYER
+            and node.world_visible()
+            and (isinstance(node.mesh, MeshData) or getattr(node, "sprite", None) is not None)
+            for node in scene.traverse()
+        )
+        if not has_overlay:
+            return (0, 0, 0)
+        GL.glClear(GL.GL_DEPTH_BUFFER_BIT)
+        draw_calls, triangles, _instanced_calls, _instances, nodes = self._draw_geometry(
+            scene,
+            view_projection,
+            light_vp,
+            shadows_on,
+            srgb_on,
+            post_on,
+            bloom_on,
+            None,
+            layer=OVERLAY_LAYER,
+        )
+        sprite_calls, sprites = self._draw_sprites(
+            scene,
+            None,
+            view_projection,
+            post_on,
+            bloom_on,
+            layer=OVERLAY_LAYER,
+            include_particles=False,
+        )
+        return (draw_calls + sprite_calls, triangles + sprites * 2, nodes)
 
     def _run_bloom_chain(self) -> None:
         assert self._bloom_scene is not None
@@ -1120,7 +1181,11 @@ class Renderer:
                 planes = None
             if planes is not None:
                 for node in scene.traverse():
-                    if isinstance(node.mesh, MeshData) and node.world_visible():
+                    if (
+                        isinstance(node.mesh, MeshData)
+                        and node.world_visible()
+                        and node.layer != OVERLAY_LAYER
+                    ):
                         total_mesh += 1
         if not bloom_on:
             GL.glViewport(0, 0, self.width, self.height)
@@ -1128,12 +1193,18 @@ class Renderer:
             GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
             self._draw_sky(scene, srgb_on, post_on, bloom_on)
             drawn = self._draw_geometry(
-                scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on, planes
+                scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on, planes,
+                exclude_layer=OVERLAY_LAYER,
             )
             draw_calls, triangles, instanced_calls, instances, kept_nodes = drawn
-            sprite_calls, sprites = self._draw_sprites(scene, particles, view_projection, post_on, bloom_on)
+            sprite_calls, sprites = self._draw_sprites(
+                scene, particles, view_projection, post_on, bloom_on, exclude_layer=OVERLAY_LAYER
+            )
             draw_calls += sprite_calls
             triangles += sprites * 2
+            overlay_calls, overlay_triangles, overlay_nodes = self._draw_overlay(
+                scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on
+            )
         else:
             self._ensure_bloom_fbos()
             assert self._bloom_scene is not None
@@ -1142,12 +1213,18 @@ class Renderer:
             GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
             self._draw_sky(scene, srgb_on, post_on, bloom_on)
             drawn = self._draw_geometry(
-                scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on, planes
+                scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on, planes,
+                exclude_layer=OVERLAY_LAYER,
             )
             draw_calls, triangles, instanced_calls, instances, kept_nodes = drawn
-            sprite_calls, sprites = self._draw_sprites(scene, particles, view_projection, post_on, bloom_on)
+            sprite_calls, sprites = self._draw_sprites(
+                scene, particles, view_projection, post_on, bloom_on, exclude_layer=OVERLAY_LAYER
+            )
             draw_calls += sprite_calls
             triangles += sprites * 2
+            overlay_calls, overlay_triangles, overlay_nodes = self._draw_overlay(
+                scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on
+            )
             GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
             self._run_bloom_chain()
         GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
@@ -1168,6 +1245,9 @@ class Renderer:
             "bloom_enabled": 1 if bloom_on else 0,
             "sprite_calls": sprite_calls,
             "sprites": sprites,
+            "overlay_calls": overlay_calls,
+            "overlay_triangles": overlay_triangles,
+            "overlay_nodes": overlay_nodes,
             "sprites_enabled": 1 if sprites_on else 0,
             "culled_nodes": max(0, total_mesh - kept_nodes) if planes is not None else 0,
             "culling_enabled": 1 if culling_on else 0,

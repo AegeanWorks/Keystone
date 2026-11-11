@@ -6,7 +6,7 @@ from importlib import import_module
 from typing import Protocol, runtime_checkable
 
 from keystone.input import ActionState
-from keystone.scene import Scene
+from keystone.scene import OVERLAY_LAYER, Scene
 from keystone.schema import (
     EDITOR_ACTIONS,
     EDITOR_SCHEMA_VERSION,
@@ -56,9 +56,15 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "sprites": True,
             "sprite_nodes": True,
             "point_lights": MAX_POINT_LIGHTS,
+            "camera_rig": True,
+            "overlay_layer": OVERLAY_LAYER,
             "culling": True,
             "skin": True,
             "pbr": True,
+            "pathfinding": True,
+            "path_smoothing": True,
+            "nav_authoring": True,
+            "navigation": True,
             "agents": True,
             "profiler": True,
             "input_bindings": True,
@@ -66,6 +72,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "input_bind_hook": callable(getattr(game, "bind_input", None)),
             "input_keys": list(key_names()),
             "audio": True,
+            "spatial_audio": True,
             "batching": True,
             "prefabs": True,
             "static_merge": True,
@@ -73,6 +80,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "animation": True,
             "animation_events": True,
             "animation_blend": True,
+            "animation_binding": True,
             "replay": True,
             "asset_inventory": True,
             "particles": True,
@@ -82,6 +90,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
                 "actions": list(EDITOR_ACTIONS),
             },
             "playtest": True,
+            "evidence": True,
             "human_ui": {"overlay": "on", "toggle": "h", "pause": "p", "menu": ["resume", "toggle_ui", "quit"]},
             "game_ui": callable(getattr(game, "draw_ui", None)),
             "report_schema": REPORT_SCHEMA,

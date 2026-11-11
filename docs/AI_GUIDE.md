@@ -89,6 +89,31 @@ python -m keystone --simulate --frames 120 --actions actions.json \
 
 Exit code 0 means the final hash matched; 1 means drift. `--verify-determinism` runs the same scenario twice and can also take `--expect-hash`.
 
+## 3b. Capture a deterministic route
+
+A route stages frames and writes named checkpoint evidence, so a change can be proven with images and counters instead of prose:
+
+```python
+from keystone.evidence import Checkpoint, Route, capture_route, diff_evidence, write_evidence
+
+def stage(frame, scene):
+    scene.camera.position = Vec3(0.0, 1.5, 4.0 - frame * 0.05)
+
+route = Route(
+    name="entry-view",
+    frames=30,
+    checkpoints=(Checkpoint(10, "approach"), Checkpoint(30, "settled")),
+    stage=stage,
+)
+before = capture_route(engine, route, "evidence/before")
+write_evidence("evidence/before.json", before)
+# after a change, capture again and compare per label:
+diff = diff_evidence(before, capture_route(engine, route, "evidence/after"))
+print(diff["changed"], diff["checkpoints"])
+```
+
+`capture_route` runs one fixed step per frame, calls `stage(frame, scene)` before each step, and at each checkpoint writes `NNNN-label.png` and `NNNN-label.json` plus a `route_hash` over the checkpoint evidence. Two runs of one route over one game are byte-identical, so an observed hash difference is real rather than noise. `diff_evidence` matches checkpoints by label and reports image changes, luminance/content deltas and draw-counter deltas, with `missing`/`added` labels called out. `--describe` lists `capabilities.evidence`.
+
 ## 4. Bot-playtest a game
 
 ```bash
@@ -219,6 +244,21 @@ def draw_ui(self, canvas: Canvas, state: HudState) -> None:
 ```
 
 `--describe` reports `capabilities.game_ui` as true when the hook exists. The hook is skipped with `--no-ui` and when the person hides the overlay. `--start-paused` is also useful here: the game's HUD renders under the pause menu.
+
+## 8b. Place camera-relative content
+
+`CameraRig` puts a viewmodel, reticle or held item on the lens instead of in the level. Parts are ordinary scene nodes on the reserved `overlay` layer, so a frame report shows them with `layer: "overlay"` and their bbox:
+
+```python
+from keystone.camera_rig import CameraRig
+
+rig = CameraRig(scene.camera)
+rig.attach("viewmodel", position=Vec3(0.27, -0.21, -0.6), mesh=gun, material=metal)
+rig.attach_to(scene)
+rig.sync()  # after moving the camera, before rendering
+```
+
+The overlay pass draws after a depth clear, so world geometry cannot occlude it; culling, batch plans, merges and shadows skip it. `--describe` reports `capabilities.camera_rig` and `overlay_layer`, and the renderer reports `overlay_calls`, `overlay_triangles` and `overlay_nodes` beside the world counters.
 
 ## Web API and browser console
 

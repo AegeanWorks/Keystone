@@ -56,6 +56,7 @@ REPORT_SCHEMA = {
         "schema-9 adds scene bloom metadata (bloom glow enabled).",
         "schema-10 adds scene sprite metadata and top-level fx particle counts.",
         "schema-11 adds scene culling metadata (view-frustum culling enabled).",
+        "layer 'overlay' marks camera-relative content (CameraRig); it draws after a depth clear and is excluded from world culling, batch plans and shadows.",
         "schema-1/2/3 reports remain comparable; nodes are keyed by id when both reports are schema 4 or newer.",
         "ui labels and button rects are presentation metadata in top-left pixels.",
     ],

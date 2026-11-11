@@ -217,6 +217,8 @@ class Mixer:
             else:
                 bus_gain = self.buses.get(bus, 0.0) * master
             parts.append((clip, gain * bus_gain, pitch))
+        if not parts:
+            return AudioClip(samples=(), sample_rate=self.sample_rate, name="mixdown")
         result = mix_clips(parts)
         return AudioClip(samples=result.samples, sample_rate=self.sample_rate, name="mixdown")
 

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import itertools
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 
 from keystone.math3d import Quat, Vec3
@@ -237,6 +237,48 @@ class AnimationClip:
     def events_in_range(self, start: float, end: float) -> list[str]:
         """Return event names with start < time <= end (loop callers split wraps)."""
         return [label for time, label in self.events if start < time <= end]
+
+    def bind(self, targets: Mapping[str, str], name: str | None = None) -> AnimationClip:
+        """Return a copy whose tracks play on the given node ids.
+
+        Clip tracks are keyed by node id, but games routinely reuse one authored
+        motion across pooled nodes (``enemy-00`` through ``enemy-23``). Binding
+        rewrites every channel and leaves unmapped tracks alone, so one clip can
+        be registered per slot::
+
+            controller.add(spin.bind({"subject": "enemy-07"}, name="spin@enemy-07"))
+
+        The binding is strict: a source id the clip does not animate is an error,
+        because a typo would otherwise leave the track on the neutral target and
+        animate nothing visible.
+        """
+        if not isinstance(targets, Mapping):
+            raise TypeError("animation binding must be a mapping of source ids to target ids")
+        for source, target in targets.items():
+            if not isinstance(source, str) or not source.strip():
+                raise ValueError("animation binding source ids must be non-blank strings")
+            if not isinstance(target, str) or not target.strip():
+                raise ValueError("animation binding target ids must be non-blank strings")
+        known = self.node_ids()
+        unknown = sorted(source for source in targets if source not in known)
+        if unknown:
+            raise ValueError(
+                f"animation binding names tracks the clip does not animate: {', '.join(unknown)}; "
+                f"the clip animates {', '.join(known) or 'no nodes'}"
+            )
+        if name is not None and (not isinstance(name, str) or not name.strip()):
+            raise ValueError("animation binding name must be a non-blank string")
+
+        def retarget(tracks: tuple[tuple[str, Track], ...]) -> tuple[tuple[str, Track], ...]:
+            return tuple((targets.get(node_id, node_id), track) for node_id, track in tracks)
+
+        return AnimationClip(
+            name=self.name if name is None else name,
+            position_tracks=retarget(self.position_tracks),
+            rotation_tracks=retarget(self.rotation_tracks),
+            scale_tracks=retarget(self.scale_tracks),
+            events=self.events,
+        )
 
     def to_dict(self) -> dict:
         def pack(tracks: tuple[tuple[str, Track], ...]) -> dict:

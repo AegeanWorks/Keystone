@@ -42,6 +42,26 @@ class BatchTest(unittest.TestCase):
         self.assertEqual(plan["batched_calls"], 1)
         self.assertEqual(plan["saved_calls"], 3)
 
+    def test_content_identical_payloads_batch_across_loads(self):
+        """Two separately built copies of one asset share one batch."""
+        scene = Scene()
+        for index in range(2):
+            scene.add(
+                Node(
+                    f"box-{index}",
+                    id=f"box-{index}",
+                    mesh=cube(1.0),
+                    material=Material(color=Vec3(0.5, 0.5, 0.5)),
+                )
+            )
+        plan = plan_batches(scene)
+        self.assertEqual(plan["groups"], 1)
+        self.assertEqual(plan["instanced_calls"], 1)
+        self.assertEqual(plan["saved_calls"], 1)
+        merged = merge_batches(scene)
+        self.assertEqual(merged["merged_calls"], 1)
+        self.assertEqual(merged["merged"][0]["count"], 2)
+
     def test_cube_demo_plan_reports_savings(self):
         plan = plan_batches(CubeDemo().build_scene())
         self.assertGreaterEqual(plan["draw_calls"], 5)

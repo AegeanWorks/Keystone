@@ -46,6 +46,24 @@ class PlanInstancedTest(unittest.TestCase):
         self.assertEqual(plan["saved_calls"], 0)
         self.assertEqual(plan["instances"], 0)
 
+    def test_content_identical_payloads_share_a_group(self):
+        """Separate loads of one asset must batch by content, not identity."""
+        scene = Scene()
+        for index in range(2):
+            scene.add(
+                Node(
+                    f"box-{index}",
+                    transform=Transform(position=Vec3(float(index) * 2.0, 0.0, 0.0)),
+                    mesh=cube(1.0),
+                    material=Material(color=Vec3(0.8, 0.2, 0.2)),
+                )
+            )
+        plan = plan_instanced(scene)
+        self.assertEqual(plan["groups"], 1)
+        self.assertEqual(plan["instanced_calls"], 1)
+        self.assertEqual(plan["saved_calls"], 1)
+        self.assertEqual(plan["instances"], 2)
+
     def test_skinned_groups_are_not_instanced(self):
         identity = (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0)
         mesh = MeshData(

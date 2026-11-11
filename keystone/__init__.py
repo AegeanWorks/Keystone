@@ -31,7 +31,14 @@ from keystone.audio import (
     square,
     write_wav,
 )
+from keystone.audio_spatial import (
+    SoundSource,
+    distance_gain,
+    spatial_mix,
+    spatial_report,
+)
 from keystone.batch import merge_batches, plan_batches
+from keystone.camera_rig import CameraRig
 from keystone.culling import (
     aabb_visible,
     cull_scene,
@@ -41,6 +48,13 @@ from keystone.culling import (
     node_visible,
     world_bounds,
 )
+from keystone.evidence import (
+    Checkpoint,
+    Route,
+    capture_route,
+    diff_evidence,
+    write_evidence,
+)
 from keystone.gltf import GltfImport, load_gltf
 from keystone.gpu.instancing import group_instances, plan_instanced
 from keystone.history import History
@@ -48,7 +62,22 @@ from keystone.input import ActionState, InputMap
 from keystone.lifecycle import ComponentRuntime, LifecycleContext, lifecycle_hooks
 from keystone.material_graph import MaterialGraph, MaterialGraphNode
 from keystone.math3d import Mat4, Quat, Vec3
+from keystone.nav_authoring import (
+    grid_from_boxes,
+    read_navgrid,
+    scene_boxes,
+    write_navgrid,
+)
+from keystone.navigation import PathFollower, grid_path_points, navigation_report
 from keystone.particles import Emitter, Particle, ParticleSystem, particles_report
+from keystone.pathfinding import (
+    NavGrid,
+    PathResult,
+    find_path,
+    line_of_sight,
+    path_report,
+    smooth_path,
+)
 from keystone.playtest import (
     PLAYTEST_REPORT_SCHEMA,
     TRANSCRIPT_SCHEMA,
@@ -67,6 +96,7 @@ from keystone.playtest import (
 from keystone.plugin import GameModule
 from keystone.prefab import Prefab
 from keystone.scene import (
+    OVERLAY_LAYER,
     BloomSettings,
     ColorSettings,
     CullingSettings,
@@ -85,6 +115,7 @@ from keystone.skin import bone_matrices, skin_mesh, skin_point
 from keystone.texture import TextureData
 
 __all__ = [
+    "OVERLAY_LAYER",
     "PLAYTEST_REPORT_SCHEMA",
     "SAMPLE_RATE",
     "TRANSCRIPT_SCHEMA",
@@ -101,6 +132,8 @@ __all__ = [
     "BlendSpace1D",
     "BloomSettings",
     "BotPolicy",
+    "CameraRig",
+    "Checkpoint",
     "ColorSettings",
     "ComponentRuntime",
     "CullingSettings",
@@ -117,18 +150,23 @@ __all__ = [
     "MaterialGraph",
     "MaterialGraphNode",
     "Mixer",
+    "NavGrid",
     "Node",
     "Particle",
     "ParticleSystem",
+    "PathFollower",
+    "PathResult",
     "PointLight",
     "PostSettings",
     "Prefab",
     "Quat",
     "RandomPolicy",
+    "Route",
     "Scene",
     "SceneGroup",
     "ScriptedPolicy",
     "ShadowSettings",
+    "SoundSource",
     "SpriteSettings",
     "TextureData",
     "Track",
@@ -143,36 +181,52 @@ __all__ = [
     "bone_matrices",
     "canon",
     "canon_hash",
+    "capture_route",
     "cull_scene",
     "culling_enabled",
+    "diff_evidence",
     "diff_transcripts",
+    "distance_gain",
     "extract_planes",
+    "find_path",
+    "grid_from_boxes",
+    "grid_path_points",
     "group_instances",
     "lifecycle_hooks",
+    "line_of_sight",
     "load_gltf",
     "make_report",
     "merge_batches",
     "mix_clips",
     "model_visible",
+    "navigation_report",
     "node_visible",
     "noise",
     "observe",
     "parse_actions",
     "particles_report",
+    "path_report",
     "plan_batches",
     "plan_instanced",
+    "read_navgrid",
     "read_wav",
     "run_bot",
+    "scene_boxes",
     "scene_from_dict",
     "scene_to_dict",
     "sine",
     "skin_mesh",
     "skin_point",
+    "smooth_path",
+    "spatial_mix",
+    "spatial_report",
     "square",
     "summarize_report",
     "to_command_log",
     "validate_fairness",
     "world_bounds",
+    "write_evidence",
+    "write_navgrid",
     "write_wav",
 ]
 

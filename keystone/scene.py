@@ -13,6 +13,10 @@ from keystone.math3d import Mat4, Quat, Vec3
 
 T = TypeVar("T")
 
+#: Reserved layer for camera-relative content. The renderer draws it after a
+#: depth clear, and world culling, batch plans, merges and shadows skip it.
+OVERLAY_LAYER = "overlay"
+
 
 def _finite_vec3(value: object, label: str) -> Vec3:
     if not isinstance(value, Vec3):

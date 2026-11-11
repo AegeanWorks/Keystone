@@ -9,9 +9,10 @@ across runs.
 
 from __future__ import annotations
 
+from keystone.content import material_digest, mesh_digest
 from keystone.culling import model_visible
 from keystone.geometry import Material, MeshData
-from keystone.scene import Scene
+from keystone.scene import OVERLAY_LAYER, Scene
 
 __all__ = ["group_instances", "plan_instanced"]
 
@@ -19,16 +20,26 @@ __all__ = ["group_instances", "plan_instanced"]
 Plane = tuple[float, float, float, float]
 
 
-def _material_key(material: object) -> int:
+def _matches_layer(node_layer: str, layer: str | None, exclude_layer: str | None) -> bool:
+    """Whether a node layer passes the optional layer filters."""
+    if layer is not None and node_layer != layer:
+        return False
+    return not (exclude_layer is not None and node_layer == exclude_layer)
+
+
+def _material_key(material: object) -> str | None:
     """Normalize the grouping key to match renderer fallback behavior."""
     if isinstance(material, Material):
-        return id(material)
-    return 0
+        return material_digest(material)
+    return None
 
 
 def group_instances(
     scene: Scene,
     planes: tuple[Plane, ...] | None = None,
+    *,
+    layer: str | None = None,
+    exclude_layer: str | None = None,
 ) -> list[dict]:
     """Group visible nodes by identical mesh/material payloads.
 
@@ -43,17 +54,23 @@ def group_instances(
     ``keystone.culling.cull_scene`` but reusing the already-computed world
     matrix, so culling adds no second scene traversal.     ``None`` preserves
     the legacy unculled grouping.
+
+    ``layer`` keeps only nodes on that layer and ``exclude_layer`` drops
+    them, which is how the renderer separates the world pass from the
+    camera-relative overlay pass (``keystone.scene.OVERLAY_LAYER``).
     """
-    groups: dict[tuple[int, int], dict] = {}
+    groups: dict[tuple[str, str | None], dict] = {}
     for node in scene.traverse():
         mesh = node.mesh
         if not isinstance(mesh, MeshData) or not node.world_visible():
+            continue
+        if not _matches_layer(node.layer, layer, exclude_layer):
             continue
         model = node.world_matrix()
         if planes is not None and not model_visible(mesh, model, planes):
             continue
         material = node.material if isinstance(node.material, Material) else None
-        key = (id(mesh), id(material) if material is not None else 0)
+        key = (mesh_digest(mesh), _material_key(material))
         entry = groups.get(key)
         if entry is None:
             entry = {"mesh": mesh, "material": material, "items": []}
@@ -83,7 +100,12 @@ def group_instances(
 
 def plan_instanced(scene: Scene) -> dict:
     """Return a JSON-safe instancing plan mirroring ``plan_batches`` counts."""
-    groups = group_instances(scene)
+    groups = group_instances(scene, exclude_layer=OVERLAY_LAYER)
+    overlay_calls = sum(
+        1
+        for node in scene.traverse()
+        if node.layer == OVERLAY_LAYER and isinstance(node.mesh, MeshData) and node.world_visible()
+    )
     nodes_total = sum(len(group["nodes"]) for group in groups)
     batches = []
     for group in groups:
@@ -108,5 +130,6 @@ def plan_instanced(scene: Scene) -> dict:
         "saved_calls": sum(len(group["nodes"]) - 1 for group in instanced_groups),
         "instances": instanced,
         "triangles": sum(group["triangles"] for group in groups),
+        "overlay_calls": overlay_calls,
         "batches": batches,
     }

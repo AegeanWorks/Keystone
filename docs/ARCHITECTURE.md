@@ -28,8 +28,11 @@ keystone/
 ├── app.py            Engine: context, renderer, clock, input, loop, screenshots
 ├── plugin.py         GameModule Protocol and load_game()
 ├── playtest.py        seeded bot policies, transcript diffing, fairness validation
+├── evidence.py        deterministic capture routes and checkpoint evidence diffs
 ├── input.py          ActionState + InputMap
 ├── clock.py          FixedStepClock
+├── camera_rig.py     camera-following overlay rig for viewmodels and HUD anchors
+├── content.py        content digests shared by batching, instancing and assets
 ├── culling.py        frustum planes and AABB visibility
 ├── replay.py         CommandLog + stable_hash()
 ├── serialization.py  atomic JSON with .bak
@@ -38,6 +41,9 @@ keystone/
 ├── testing.py        deterministic AI/CI scenario helpers
 ├── physics.py        Ray, AABB, Sphere, queries, raycasts and pushout
 ├── broadphase.py     deterministic spatial-grid broadphase
+├── pathfinding.py    deterministic A* over a bounded nav grid
+├── navigation.py     waypoint following and grid-to-world route points
+├── nav_authoring.py  scene/box-derived nav grids and schema-1 documents
 ├── character.py      AABB character movement, gravity and ground state
 ├── triggers.py       trigger volumes and enter/exit tracking
 ├── schema.py         versioned core schema constants
@@ -146,6 +152,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 |---|---|---|
 | Math | Implemented | Vec3, Mat4, Quat, transforms |
 | Scene | Implemented | hierarchy, visibility, lights, IDs, tags, layers and components |
+| Camera rig | Implemented | `CameraRig` keeps a scene root on the camera pose; parts use camera-space offsets on the reserved `overlay` layer, which draws after a depth clear and is excluded from world culling, batch plans, merges and shadows |
 | Prefabs | Implemented | detached subtree capture, versioned `.kprefab` save/load (schema 2), file-backed libraries, deterministic instance IDs, nested prefab instances with rebased links/IDs, component copy isolation, JSON-safe describe |
 | Projects | Implemented | versioned `keystone.json` manifest, `--new` scaffold with starter scene/prefab content, startup scene and component hooks, `--project` loader, `--validate-project` diagnostics, relative asset import as `project:<path>`, editor asset import with manifest update and registry rollback, editor hot reload with scene/history rebinding, editor glTF/GLB scene import as prefabs, project asset inventory and history-and-clipboard-safe forget-from-project, editor runnable builds, CLI glTF/GLB scene-to-prefab import and generated five-op game |
 | Scene queries | Implemented | name/tag/layer/component filters and ID lookup |
@@ -157,8 +164,8 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | glTF 2.0 | Implemented | dependency-free importer for meshes, materials, textures and scenes; GLB containers, external and embedded buffers, normalized accessors, PNG textures, TRS and matrix transforms; sparse accessors and non-triangle primitives rejected |
 | Renderer | Implemented | OpenGL 3.3, sky, lights, PBR (metallic/roughness/emissive), fog, textures, readback, draw/triangle stats, static batch planning and world-space merge |
 | Runtime | Implemented | fixed clock, rebindable input with contexts and JSON persistence, loop, screenshots, profiler HUD with audio voices and animation clips |
-| Audio | Implemented | synth clips, named-bus mixer, deterministic mixdown, WAV I/O, audit reports |
-| Animation | Implemented | deterministic keyframe clips, looping controller, crossfade blending, timed events, pose application, JSON round trips, audit reports, parameter-driven state machines with triggers and crossfades, 1D blend spaces, blend states and editor previews, blend states that loop, wrap and crossfade at the space's own duration, file-backed `.kstate` machines with rename/duplicate, fixed-step editor previews, load-to-editor authoring and library keyframe editing |
+| Audio | Implemented | synth clips, named-bus mixer, deterministic mixdown, distance-attenuated spatial mixes, WAV I/O, audit reports |
+| Animation | Implemented | deterministic keyframe clips, looping controller, crossfade blending, timed events, pose application, JSON round trips, audit reports, clip binding onto pooled node ids, parameter-driven state machines with triggers and crossfades, 1D blend spaces, blend states and editor previews, blend states that loop, wrap and crossfade at the space's own duration, file-backed `.kstate` machines with rename/duplicate, fixed-step editor previews, load-to-editor authoring and library keyframe editing |
 | Particles | Implemented | deterministic CPU emitters and systems with gravity/drag, swept AABB collision with bounce, friction and contact-kill, burst emission, lifetime culling, JSON round trips, HUD/inspector/AI reports, plus one GPU point-sprite billboard per live particle |
 | Replay | Implemented | CommandLog runner and verifier without a window; --replay log.json with hash pinning |
 | Plugin | Implemented | GameModule + loader |
@@ -168,13 +175,15 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | AI discovery | Implemented | describe_game/--describe contract introspection |
 | AI testing | Implemented | deterministic scenario helpers |
 | Frame report | Implemented | image statistics, projected nodes, materials, UI metadata and report diff |
-| Human UI | Implemented | bitmap font, canvas, HUD/help, interactive pause menu |
+| Human UI | Implemented | bitmap font, canvas, HUD/help, interactive pause menu, measured text helpers and layout widgets (`label_row`, `table`, `progress_bar`, `badge`) that clamp to the viewport |
 | Web console | Implemented | scene export, JSON API, CORS, static WebGL2 viewer |
 | Scene editor | Implemented | hierarchy, node create/duplicate/reparent/delete, node property and transform edits, camera/environment authoring, atomic batch authoring, action examples in the web schema, asset inventory/metadata/assignment with a console metadata readout, typed component authoring with field schemas and generated console inputs, real-time play/pause/resume/step/stop with action scripts and authored-scene restore, full-scene bounded named undo/redo with multi-step jumps, scene-vs-saved diffs, prefab capture/insertion, multi-root prefab instance groups with revert/apply, per-field prefab override tracking, per-field prefab override panel, isolated prefab edit mode, prefab instance refresh, multi-root prefab capture from a multi-selection, deterministic component lifecycle hooks, additive scene groups, multi-selection with batch transform/toggle/delete, marquee box selection, centroid translate/rotate/axis-local-scale, multi-node shared inspector editing, scene-group save-as/source settings/container transforms, hierarchy prefab badges, file-backed scene/prefab save/load/rename/duplicate/delete/restore with recoverable trash, `--scene` startup, an independent orbit/pan/zoom/focus viewport camera, click selection, a selection rim highlight, X/Y/Z viewport move/rotate/scale gizmos with live preview and one-action-per-drag, hierarchy/asset filters and keyboard undo/redo/delete/focus/nudge shortcuts via `/api/editor` and console controls, Scene/Game view modes with Play auto-switch, scene grid and persistent snap toggle, perspective/orthographic top/front/side view presets, structured camera/environment/render-toggle inspector, live play snapshot/status inspector, deterministic project export bundles with vendored engine and hashed BUILD.json, inline animation clip preview/scrubber with undo, animation timeline scrubber, real-time animation preview playback, file-backed animation library with save/delete/restore, workspace layout persistence, file-backed material library and editor, material delete/restore lifecycle, meshless pivot icons, draggable collapsible hierarchy tree, AI-readable scene validation report, editable snap increments, project-relative asset import with manifest update and registry rollback, asset hot reload with dependency-first ordering, textures/meshes before materials and prefabs last, plus scene, history, prefab, clipboard and registry rebinding, glTF/GLB scene import as project prefabs with transactional re-import rollback, startup scene selection, dirty-state tracking and revert, project asset inventory and history-and-clipboard-safe forget-from-project, asset usage reports across live, saved, history and clipboard content, registry-backed material texture picker with preview, multi-node asset assignment, selection copy/paste, layer visibility toggles with selection pruning, node lock protection including locked prefab refresh, locked-descendant deletion, prefab revert and apply, named camera view bookmarks |
 | Physics | Implemented | rays, AABB, sphere queries, broadphase, character movement and triggers |
+| Pathfinding | Implemented | immutable nav grids, deterministic A* over 4 or 8 neighbours, corner-cut refusal, line-of-sight smoothing, JSON-safe path reports, scene/box-derived schema-1 nav-grid documents and a waypoint follower that drives `CharacterController` from reported positions |
 | AI adapters | Implemented | validated action parsing, fused observations, report summaries, hash-chained audit trail |
 | Playtest | Implemented | seeded bot policies, CommandLog-compatible transcripts, transcript diffing, schema-1 reports, fairness validation |
-| Batching | Implemented | static mesh/material grouping with draw-call savings, world-space merge, and skin-aware merge for identical rigs |
+| Evidence | Implemented | deterministic capture routes with per-frame staging callbacks, per-checkpoint PNG and frame reports, route hashes and label-keyed evidence diffs |
+| Batching | Implemented | content-keyed static mesh/material grouping with draw-call savings, world-space merge, and skin-aware merge for identical rigs |
 | Inspector | Implemented | web `/api/inspector` with node counts, batch plan, merge summary (incl. skinned rigs), audio, animation and particle state, asset inventory |
 | ECS | Optional/missing | evaluate after a real workload |
 | Editor/tooling | Missing | future core module |

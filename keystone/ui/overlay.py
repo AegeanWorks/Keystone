@@ -147,7 +147,12 @@ class HumanOverlay:
             (state.culled != 0, f"CULL {state.culled} OFFSCREEN"),
         )
         values = [value for shown, value in candidates if shown]
-        right_width = max(text_width(value, scale) for value in values) + 12 * scale
+        inner_width = max(1, state.width - 2 * margin - 12 * scale)
+        values = [truncate_text(value, inner_width, scale) for value in values]
+        right_width = min(
+            max(1, state.width - 2 * margin),
+            max(text_width(value, scale) for value in values) + 12 * scale,
+        )
         right_height = line * len(values) + 6 * scale
         right_x = state.width - margin - right_width
         panel(canvas, right_x, margin, right_width, right_height)

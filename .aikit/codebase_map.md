@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `157`
-- **Total Classes**: `257`
-- **Total Top-Level Functions**: `456`
-- **Total Class Methods**: `1670`
-- **Total Source Lines**: `44488`
+- **Total Python Modules**: `177`
+- **Total Classes**: `297`
+- **Total Top-Level Functions**: `513`
+- **Total Class Methods**: `1862`
+- **Total Source Lines**: `47857`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`157` module(s))
+- **Indexed**: python (`177` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `185` lines (`4133` bytes)
+**Size**: `239` lines (`5230` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -78,7 +78,7 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `666` lines (`27384` bytes)
+**Size**: `667` lines (`27544` bytes)
 
 **Functions:**
 - `def _enabled(value)`
@@ -109,7 +109,7 @@
 ### [`keystone/animation.py`](keystone/animation.py)
 > *Deterministic, game-agnostic animation: keyframe clips, sampling and control.*
 
-**Size**: `531` lines (`23468` bytes)
+**Size**: `573` lines (`25703` bytes)
 
 **Classes:**
 - `class Track` - *One keyframed channel: sorted times with Vec3 or Quat values.*
@@ -124,6 +124,7 @@
   - Method `.node_ids()`
   - Method `.sample(time)`
   - Method `.events_in_range(start, end)` - *Return event names with start < time <= end (loop callers split wraps).*
+  - Method `.bind(targets, name)` - *Return a copy whose tracks play on the given node ids.*
   - Method `.to_dict()`
   - Method `.from_dict(data)`
 - `class AnimationController` - *Deterministic playback: advance time, loop, blend and write Transforms.*
@@ -279,7 +280,7 @@
 ### [`keystone/assets.py`](keystone/assets.py)
 > *Game-agnostic asset registry with stable ids, content hashes and dependencies.*
 
-**Size**: `496` lines (`19308` bytes)
+**Size**: `453` lines (`17602` bytes)
 
 **Classes:**
 - `class AssetRecord` - *One registered asset: a stable id, kind, immutable payload and content digest.*
@@ -314,15 +315,13 @@
 - `def _dependencies(asset_id, dependencies)`
 - `def _digest(kind, payload, registry)`
 - `def _digest_prefab(prefab, registry)`
-- `def _digest_mesh(mesh)`
-- `def _digest_material(material)`
 
 ---
 
 ### [`keystone/audio.py`](keystone/audio.py)
 > *Game-agnostic audio core: synth clips, bus mixer and WAV I/O.*
 
-**Size**: `288` lines (`12484` bytes)
+**Size**: `290` lines (`12593` bytes)
 
 **Classes:**
 - `class AudioClip` - *Immutable mono PCM clip in [-1, 1] with a fixed sample rate.*
@@ -352,10 +351,30 @@
 
 ---
 
+### [`keystone/audio_spatial.py`](keystone/audio_spatial.py)
+> *Deterministic 3D audio attenuation and mixdown.*
+
+**Size**: `163` lines (`6333` bytes)
+
+**Classes:**
+- `class SoundSource` - *One positional mono source with a linear distance range.*
+  - Method `.__post_init__()`
+
+**Functions:**
+- `def _finite(value, label)`
+- `def _finite_vec3(value, label)`
+- `def distance_gain(listener, source)` - *Linear attenuation: 1 inside the near radius, 0 at the far radius.*
+- `def _bus_gains(overrides)`
+- `def _sources(value)`
+- `def spatial_mix(listener, sources, *, bus_gains, sample_rate)` - *Mix every source through distance attenuation and the named buses.*
+- `def spatial_report(listener, sources)` - *Return a JSON-safe per-source attenuation summary.*
+
+---
+
 ### [`keystone/batch.py`](keystone/batch.py)
 > *Static batch planner: group draw nodes to cut draw calls without new deps.*
 
-**Size**: `162` lines (`7047` bytes)
+**Size**: `176` lines (`7658` bytes)
 
 **Functions:**
 - `def _skinned(mesh)` - *Whether a mesh deforms at render time and must never bake or merge.*
@@ -405,6 +424,20 @@
   - Method `.move(forward, right, up)`
   - Method `.rotate(yaw_delta, pitch_delta)`
   - Method `.look_at(target)`
+
+---
+
+### [`keystone/camera_rig.py`](keystone/camera_rig.py)
+> *Camera-attached scene content: a rig whose root follows the camera pose.*
+
+**Size**: `100` lines (`3973` bytes)
+
+**Classes:**
+- `class CameraRig` - *A root node that follows one perspective camera, plus camera-space parts.*
+  - Method `.__init__(camera, name)`
+  - Method `.attach_to(scene)` - *Add the rig root to a scene once and return it.*
+  - Method `.attach(name, *, position, rotation, scale, mesh, material, sprite, visible, tags)` - *Attach one part at a camera-space offset and return it.*
+  - Method `.sync()` - *Copy the camera pose onto the rig root and return it.*
 
 ---
 
@@ -459,6 +492,20 @@
 
 ---
 
+### [`keystone/content.py`](keystone/content.py)
+> *Content digests for mesh and material payloads.*
+
+**Size**: `105` lines (`3912` bytes)
+
+**Functions:**
+- `def _cached(payload, compute)`
+- `def mesh_digest(mesh)` - *Return the stable SHA-256 content digest of one mesh payload.*
+- `def material_digest(material)` - *Return the stable SHA-256 content digest of one material payload.*
+- `def _hash_mesh(mesh)`
+- `def _hash_material(material)`
+
+---
+
 ### [`keystone/culling.py`](keystone/culling.py)
 > *Deterministic CPU view-frustum culling for the core forward renderer.*
 
@@ -472,6 +519,29 @@
 - `def model_visible(mesh, model, planes)` - *Return True when a mesh under an affine model matrix survives culling.*
 - `def node_visible(node, planes)` - *Return True when a scene node survives frustum culling.*
 - `def cull_scene(scene, width, height)` - *Return python ``id()`` values of frustum-visible nodes.*
+
+---
+
+### [`keystone/evidence.py`](keystone/evidence.py)
+> *Deterministic capture routes and evidence diffs.*
+
+**Size**: `242` lines (`9486` bytes)
+
+**Classes:**
+- `class Checkpoint` - *One frame to capture, under a label that survives report diffs.*
+  - Method `.__post_init__()`
+- `class Route` - *A deterministic capture plan over one engine session.*
+  - Method `.__post_init__()`
+  - Method `.frame_numbers()`
+
+**Functions:**
+- `def _slug(label)`
+- `def _engine_error(engine)`
+- `def _render_snapshot(engine)`
+- `def capture_route(engine, route, directory)` - *Run ``route`` on ``engine`` and write one PNG and report per checkpoint.*
+- `def write_evidence(path, summary)` - *Write a route summary atomically, with the project's usual ``.bak``.*
+- `def _delta(before, after)`
+- `def diff_evidence(before, after)` - *Compare two route summaries checkpoint by checkpoint.*
 
 ---
 
@@ -693,11 +763,12 @@
 ### [`keystone/gpu/instancing.py`](keystone/gpu/instancing.py)
 > *Deterministic grouping for hardware instancing.*
 
-**Size**: `112` lines (`4204` bytes)
+**Size**: `135` lines (`5222` bytes)
 
 **Functions:**
+- `def _matches_layer(node_layer, layer, exclude_layer)` - *Whether a node layer passes the optional layer filters.*
 - `def _material_key(material)` - *Normalize the grouping key to match renderer fallback behavior.*
-- `def group_instances(scene, planes)` - *Group visible nodes by identical mesh/material payloads.*
+- `def group_instances(scene, planes, *, layer, exclude_layer)` - *Group visible nodes by identical mesh/material payloads.*
 - `def plan_instanced(scene)` - *Return a JSON-safe instancing plan mirroring ``plan_batches`` counts.*
 
 ---
@@ -730,7 +801,7 @@
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
 > *Blinn-Phong forward renderer with fog, shadows and screenshot readback.*
 
-**Size**: `1211` lines (`48406` bytes)
+**Size**: `1291` lines (`51370` bytes)
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
@@ -753,14 +824,15 @@
   - Method `._init_sprite_buffers()`
   - Method `._release_sprite_buffers()`
   - Method `._camera_basis(scene)`
-  - Method `._draw_sprites(scene, particles, view_projection, post_on, bloom_on)`
+  - Method `._draw_sprites(scene, particles, view_projection, post_on, bloom_on, *, layer, exclude_layer, include_particles)`
   - Method `._apply_bloom(program, bloom_on)`
   - Method `._apply_post(program, post_on)`
   - Method `._apply_shared(program, scene, view_projection, light_vp, shadows_on, srgb_on)`
   - Method `._apply_material(program, material)`
   - Method `._render_shadow_pass(scene, light_vp)`
   - Method `._draw_quad()`
-  - Method `._draw_geometry(scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on, planes)`
+  - Method `._draw_geometry(scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on, planes, *, layer, exclude_layer)`
+  - Method `._draw_overlay(scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on)` - *Draw camera-relative content over the world, or return zeros.*
   - Method `._run_bloom_chain()`
   - Method `.render(scene, particles)`
   - Method `.read_pixels()`
@@ -1099,6 +1171,44 @@
 
 ---
 
+### [`keystone/nav_authoring.py`](keystone/nav_authoring.py)
+> *Author nav grids from collision boxes or JSON documents.*
+
+**Size**: `153` lines (`5785` bytes)
+
+**Functions:**
+- `def _finite(value, label)`
+- `def _positive_int(value, label)`
+- `def grid_from_boxes(width, height, boxes, *, cell_size, origin, clearance)` - *Rasterize collision boxes into an XZ nav grid.*
+- `def scene_boxes(scene, *, layer)` - *Return one world AABB per visible world-space mesh node.*
+- `def read_navgrid(path)` - *Load a schema-1 nav grid document.*
+- `def write_navgrid(path, grid)` - *Write a nav grid as an atomic JSON document.*
+
+---
+
+### [`keystone/navigation.py`](keystone/navigation.py)
+> *Waypoint following that turns a path route into movement.*
+
+**Size**: `162` lines (`5929` bytes)
+
+**Classes:**
+- `class PathFollower` - *Follow a world-space waypoint route with a fixed speed.*
+  - Method `.__post_init__()`
+  - Property `.done`
+  - Property `.target`
+  - Method `._skip_reached(position)`
+  - Method `.advance(position)` - *Return the wish velocity toward the next waypoint and the done flag.*
+  - Method `.remaining_distance(position)` - *Straight-line distance from ``position`` through the route ahead.*
+
+**Functions:**
+- `def _finite(value, label)`
+- `def _finite_vec3(value, label)`
+- `def _cell(value)`
+- `def grid_path_points(cells, *, cell_size, origin, height)` - *Convert grid cells to world-space cell centres on a horizontal plane.*
+- `def navigation_report(follower, position)` - *Return a JSON-safe follower state for frame or agent reports.*
+
+---
+
 ### [`keystone/obj_loader.py`](keystone/obj_loader.py)
 > *Streaming Wavefront OBJ loader producing indexed triangle meshes.*
 
@@ -1145,6 +1255,35 @@
 - `def _depenetrate_static(px, py, pz, flat)` - *Eject a stationary point from the nearest box face deterministically.*
 - `def _move_point_flat(px, py, pz, axis, amount, flat)` - *Float-only swept point move; axis is 0/1/2 for x/y/z.*
 - `def particles_report(system)`
+
+---
+
+### [`keystone/pathfinding.py`](keystone/pathfinding.py)
+> *Deterministic A* pathfinding over a bounded 4- or 8-connected grid.*
+
+**Size**: `359` lines (`13210` bytes)
+
+**Classes:**
+- `class NavGrid` - *A bounded grid with immutable blocked cells.*
+  - Method `.__post_init__()`
+  - Method `.in_bounds(cell)`
+  - Method `.is_open(cell)`
+  - Method `.with_blocked(*cells)` - *Return a copy with these cells blocked, leaving this grid unchanged.*
+  - Method `.with_open(*cells)` - *Return a copy with these cells opened, leaving this grid unchanged.*
+  - Method `.to_dict()` - *Return a JSON-safe document with blocked cells in stable order.*
+  - Method `.from_dict(data)` - *Load a grid document, rejecting malformed or out-of-bounds cells.*
+- `class PathResult` - *The outcome of one search: the route, its cost and the expansion count.*
+  - Property `.found`
+
+**Functions:**
+- `def _check_cell(value, label)`
+- `def _heuristic(cell, goal, diagonal)`
+- `def find_path(grid, start, goal, *, diagonal)` - *Search from ``start`` to ``goal`` and return a deterministic result.*
+- `def _reconstruct(came_from, goal)`
+- `def _line_cells(start, goal)` - *Cells crossed by the segment between two cell centres (DDA).*
+- `def line_of_sight(grid, start, goal)` - *Whether a straight segment between two open cells crosses only open cells.*
+- `def smooth_path(grid, path)` - *Greedily drop waypoints whose straight replacement stays visible.*
+- `def path_report(result)` - *Return a JSON-safe summary of one search for frame or agent reports.*
 
 ---
 
@@ -1218,7 +1357,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `125` lines (`4759` bytes)
+**Size**: `134` lines (`5090` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1403,7 +1542,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `576` lines (`22823` bytes)
+**Size**: `580` lines (`23003` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -1712,7 +1851,7 @@
 ### [`keystone/ui/overlay.py`](keystone/ui/overlay.py)
 > *Game-agnostic human overlay: HUD, controls help and pause menu.*
 
-**Size**: `172` lines (`7337` bytes)
+**Size**: `177` lines (`7559` bytes)
 
 **Classes:**
 - `class HudState` - *Presentation-only snapshot the overlay needs for one frame.*
@@ -1736,13 +1875,18 @@
 ---
 
 ### [`keystone/ui/widgets.py`](keystone/ui/widgets.py)
-> *Small immediate-mode UI widgets: panels and labelled buttons.*
+> *Small immediate-mode UI widgets: panels, buttons and HUD layout rows.*
 
-**Size**: `43` lines (`1436` bytes)
+**Size**: `153` lines (`5052` bytes)
 
 **Functions:**
+- `def _row_right(canvas, x, width)` - *Right edge of a row, clamped to the canvas.*
 - `def panel(canvas, x, y, width, height, color)` - *Draw a background panel; non-positive sizes are ignored.*
 - `def button(canvas, x, y, width, height, label, scale, selected, hovered)` - *Draw one menu button with selected and pointer-hover states.*
+- `def label_row(canvas, x, y, width, label, value, scale, label_color, value_color)` - *Draw a label on the left and its value on the right of one row.*
+- `def table(canvas, x, y, width, rows, scale, gap, label_color, value_color)` - *Draw stacked label/value rows and return the total height used.*
+- `def progress_bar(canvas, x, y, width, height, value, scale, fill_color, track_color)` - *Draw a horizontal bar filled to ``value`` (clamped to 0..1).*
+- `def badge(canvas, x, y, label, scale, color, text_color)` - *Draw a small filled label capsule and return its measured width.*
 
 ---
 
@@ -2126,6 +2270,30 @@
 
 ---
 
+### [`tests/test_animation_binding.py`](tests/test_animation_binding.py)
+> *Tests for retargeting a clip onto another node id.*
+
+**Size**: `107` lines (`4359` bytes)
+
+**Classes:**
+- `class ClipBindingTest`
+  - Method `.test_bind_moves_every_channel_to_the_target()`
+  - Method `.test_bound_pose_keeps_the_sampled_values()`
+  - Method `.test_bind_leaves_the_source_clip_untouched()`
+  - Method `.test_unmapped_tracks_are_retained()`
+  - Method `.test_bind_can_rename_the_clip()`
+  - Method `.test_a_binding_can_fill_a_controller_per_slot()`
+  - Method `.test_unknown_source_names_the_ids_it_knows()`
+  - Method `.test_a_collision_with_a_retained_id_is_rejected()`
+  - Method `.test_bind_rejects_malformed_input()`
+  - Method `.test_describe_advertises_binding()`
+
+**Functions:**
+- `def _vec_track(first, second)`
+- `def _subject_clip()`
+
+---
+
 ### [`tests/test_animation_blend.py`](tests/test_animation_blend.py)
 > *Unit tests for deterministic 1D animation blend spaces.*
 
@@ -2324,7 +2492,7 @@
 ### [`tests/test_audio.py`](tests/test_audio.py)
 > *Tests for the game-agnostic audio core.*
 
-**Size**: `215` lines (`8767` bytes)
+**Size**: `221` lines (`9035` bytes)
 
 **Classes:**
 - `class AudioTest`
@@ -2332,6 +2500,7 @@
   - Method `.test_noise_rejects_nonint_seed_to_keep_determinism()`
   - Method `.test_validation_rejects_bad_params()`
   - Method `.test_mixer_applies_buses_and_renders()`
+  - Method `.test_an_empty_mixer_render_keeps_its_sample_rate()`
   - Method `.test_mix_clips_requires_shared_rate()`
   - Method `.test_mix_clips_clamps_once_at_the_end()`
   - Method `.test_wav_round_trip_preserves_negative_and_positive_symmetry()` - *A clip must decode with the same scale on both signs.*
@@ -2349,15 +2518,55 @@
 
 ---
 
+### [`tests/test_audio_spatial.py`](tests/test_audio_spatial.py)
+> *Tests for deterministic distance attenuation and spatial mixdown.*
+
+**Size**: `205` lines (`8529` bytes)
+
+**Classes:**
+- `class DistanceGainTest`
+  - Method `.test_inside_the_near_radius_is_full_volume()`
+  - Method `.test_at_or_beyond_the_far_radius_is_silent()`
+  - Method `.test_between_the_radii_falls_off_linearly()`
+  - Method `.test_distance_is_measured_in_three_dimensions()`
+  - Method `.test_gain_is_monotonic_with_distance()`
+  - Method `.test_bad_arguments_are_rejected()`
+- `class SoundSourceValidationTest`
+  - Method `.test_defaults_describe_a_mid_range_effect()`
+  - Method `.test_malformed_sources_are_rejected()`
+- `class SpatialMixTest`
+  - Method `._mix(listener, sources, **kwargs)`
+  - Method `.test_a_source_at_the_near_radius_mixes_at_full_source_gain()`
+  - Method `.test_a_source_beyond_the_far_radius_is_silent()`
+  - Method `.test_sources_add_in_source_order()`
+  - Method `.test_pitch_scales_the_mixed_length()`
+  - Method `.test_an_empty_or_silent_scene_returns_silence_at_the_mixer_rate()`
+  - Method `.test_custom_bus_gains_are_honoured()`
+  - Method `.test_an_unknown_bus_is_rejected()`
+  - Method `.test_mixing_is_deterministic()`
+  - Method `.test_malformed_mix_arguments_are_rejected()`
+- `class SpatialReportTest`
+  - Method `.test_report_is_json_safe_and_ordered()`
+  - Method `.test_empty_report_counts_nothing()`
+  - Method `.test_a_non_finite_listener_is_rejected_even_with_no_sources()`
+  - Method `.test_report_rejects_bad_input()`
+  - Method `.test_describe_advertises_spatial_audio()`
+
+**Functions:**
+- `def _source(**overrides)`
+
+---
+
 ### [`tests/test_batch.py`](tests/test_batch.py)
 > *Tests for the static batch planner and inspector endpoint.*
 
-**Size**: `94` lines (`4047` bytes)
+**Size**: `114` lines (`4824` bytes)
 
 **Classes:**
 - `class BatchTest`
   - Method `.test_plan_metrics_name_what_they_count()` - *`draw_calls` in a plan is a node count, so it must say so.*
   - Method `.test_shared_meshes_batch_into_few_groups()`
+  - Method `.test_content_identical_payloads_batch_across_loads()` - *Two separately built copies of one asset share one batch.*
   - Method `.test_cube_demo_plan_reports_savings()`
   - Method `.test_merge_savings_respect_exclude()`
   - Method `.test_non_material_payloads_use_the_renderer_default()`
@@ -2421,6 +2630,30 @@
   - Method `.test_enormous_proxy_is_rejected_instead_of_hanging()`
   - Method `.test_pairs_are_unique_and_ordered_by_insertion()`
   - Method `.test_clear_and_validation()`
+
+---
+
+### [`tests/test_camera_rig.py`](tests/test_camera_rig.py)
+> *Tests for camera-attached rigs and the reserved overlay layer.*
+
+**Size**: `127` lines (`5017` bytes)
+
+**Classes:**
+- `class CameraRigTest`
+  - Method `.test_parts_sit_at_camera_space_offsets()`
+  - Method `.test_sync_follows_camera_movement_and_rotation()`
+  - Method `.test_rig_root_orientation_matches_the_lens()`
+  - Method `.test_sync_clamps_pitch_like_the_camera_does()`
+  - Method `.test_rig_stays_still_until_synced()` - *Moving the camera is not enough; sync is the one explicit step.*
+  - Method `.test_attached_nodes_use_the_overlay_layer()`
+  - Method `.test_attach_carries_payloads_and_flags()`
+  - Method `.test_attach_to_is_idempotent()`
+  - Method `.test_rig_layers_survive_a_snapshot_round_trip()`
+  - Method `.test_rejects_a_non_camera_and_a_non_scene()`
+  - Method `.test_describe_advertises_the_rig_and_layer()`
+
+**Functions:**
+- `def _position(node)`
 
 ---
 
@@ -2507,6 +2740,25 @@
 
 ---
 
+### [`tests/test_content.py`](tests/test_content.py)
+> *Tests for the content digests shared by batching and the asset registry.*
+
+**Size**: `70` lines (`2684` bytes)
+
+**Classes:**
+- `class MeshDigestTest`
+  - Method `.test_equal_meshes_share_a_digest()`
+  - Method `.test_different_geometry_has_a_different_digest()`
+  - Method `.test_repeated_calls_reuse_the_cached_digest()`
+  - Method `.test_rejects_a_non_mesh()`
+- `class MaterialDigestTest`
+  - Method `.test_equal_materials_share_a_digest()`
+  - Method `.test_every_field_reaches_the_digest()`
+  - Method `.test_repeated_calls_reuse_the_cached_digest()`
+  - Method `.test_rejects_a_non_material()`
+
+---
+
 ### [`tests/test_culling.py`](tests/test_culling.py)
 > *Tests for deterministic CPU view-frustum culling (color pass only).*
 
@@ -2543,6 +2795,34 @@
 
 ---
 
+### [`tests/test_evidence.py`](tests/test_evidence.py)
+> *Tests for deterministic capture routes and evidence diffs.*
+
+**Size**: `192` lines (`7964` bytes)
+
+**Classes:**
+- `class RouteValidationTest`
+  - Method `.test_default_route_is_one_frame()`
+  - Method `.test_checkpoints_must_be_ordered_and_inside_the_route()`
+  - Method `.test_malformed_routes_are_rejected()`
+  - Method `.test_frame_numbers_are_reported()`
+  - Method `.test_describe_advertises_evidence()`
+- `class CaptureRouteTest`
+  - Method `.setUp()`
+  - Method `._capture(route, directory)`
+  - Method `._route(directory_name, background)`
+  - Method `.test_capture_writes_one_png_and_report_per_checkpoint()`
+  - Method `.test_stage_runs_for_every_frame_before_the_step()`
+  - Method `.test_two_runs_of_one_route_are_byte_identical()`
+  - Method `.test_a_staged_change_is_visible_in_the_diff()`
+  - Method `.test_identical_evidence_reports_no_change()`
+  - Method `.test_renamed_checkpoints_are_reported()`
+  - Method `.test_write_evidence_round_trips_atomically()`
+  - Method `.test_engine_and_route_types_are_checked()`
+  - Method `.test_stage_failure_names_the_frame()`
+
+---
+
 ### [`tests/test_export.py`](tests/test_export.py)
 > *Tests for deterministic project export bundles.*
 
@@ -2554,6 +2834,24 @@
   - Method `.test_export_refuses_non_empty_target_and_force_overwrites()`
   - Method `.test_export_cli_and_validation_failures()`
   - Method `.test_export_excludes_development_files_and_nested_target()`
+
+---
+
+### [`tests/test_feature_composition.py`](tests/test_feature_composition.py)
+> *Composition tests across the features added in this delivery batch.*
+
+**Size**: `110` lines (`4426` bytes)
+
+**Classes:**
+- `class CameraRigRouteTest`
+  - Method `.test_a_staged_route_keeps_the_rig_part_screen_anchored()`
+- `class OverlayContentBatchTest`
+  - Method `.setUp()`
+  - Method `.test_separately_built_overlay_copies_batch_in_the_overlay_pass()`
+
+**Functions:**
+- `def _node(sample, directory, name)`
+- `def _center_shift(first, second)`
 
 ---
 
@@ -2760,12 +3058,13 @@
 ### [`tests/test_instancing.py`](tests/test_instancing.py)
 > *Game-agnostic tests for hardware-instancing grouping.*
 
-**Size**: `103` lines (`4127` bytes)
+**Size**: `121` lines (`4854` bytes)
 
 **Classes:**
 - `class PlanInstancedTest`
   - Method `.test_groups_identical_payloads()`
   - Method `.test_separates_distinct_materials()`
+  - Method `.test_content_identical_payloads_share_a_group()` - *Separate loads of one asset must batch by content, not identity.*
   - Method `.test_skinned_groups_are_not_instanced()`
   - Method `.test_ignores_invisible_and_missing_mesh()`
   - Method `.test_ordering_is_deterministic()`
@@ -2929,6 +3228,88 @@
 
 ---
 
+### [`tests/test_nav_authoring.py`](tests/test_nav_authoring.py)
+> *Tests for nav-grid documents and authoring grids from collision boxes.*
+
+**Size**: `140` lines (`5915` bytes)
+
+**Classes:**
+- `class NavGridDocumentTest`
+  - Method `.test_a_grid_round_trips_through_its_document()`
+  - Method `.test_the_document_is_json_safe()`
+  - Method `.test_from_dict_rejects_malformed_documents()`
+  - Method `.test_a_missing_blocked_list_means_no_walls()`
+- `class GridFromBoxesTest`
+  - Method `.test_a_box_over_one_cell_blocks_that_cell()`
+  - Method `.test_clearance_inflates_the_box_by_the_agent_radius()`
+  - Method `.test_origin_and_cell_size_map_cells_to_world_centres()`
+  - Method `.test_boxes_outside_the_grid_block_nothing()`
+  - Method `.test_several_boxes_union()`
+  - Method `.test_an_empty_box_list_makes_an_open_grid()`
+  - Method `.test_malformed_authoring_arguments_are_rejected()`
+- `class NavGridFileTest`
+  - Method `.setUp()`
+  - Method `.test_a_grid_round_trips_through_a_file()`
+  - Method `.test_reading_a_non_document_is_rejected()`
+  - Method `.test_writing_requires_a_grid()`
+  - Method `.test_describe_advertises_nav_authoring()`
+
+**Functions:**
+- `def _box(x, z, half)`
+
+---
+
+### [`tests/test_navigation.py`](tests/test_navigation.py)
+> *Tests for waypoint following and grid-to-world route conversion.*
+
+**Size**: `156` lines (`6753` bytes)
+
+**Classes:**
+- `class GridPointsTest`
+  - Method `.test_cells_convert_to_world_cell_centres()`
+  - Method `.test_default_origin_and_height_put_the_route_on_the_floor_plane()`
+  - Method `.test_empty_route_converts_to_no_points()`
+  - Method `.test_malformed_conversions_are_rejected()`
+- `class PathFollowerTest`
+  - Method `.test_follower_skips_the_start_cell_and_aims_at_the_next()`
+  - Method `.test_follower_turns_toward_the_next_waypoint_inside_the_radius()`
+  - Method `.test_follower_finishes_on_the_last_waypoint()`
+  - Method `.test_a_stuck_follower_keeps_aiming_at_the_same_waypoint()`
+  - Method `.test_remaining_distance_covers_the_route_ahead()`
+  - Method `.test_empty_path_is_done_immediately()`
+  - Method `.test_malformed_followers_are_rejected()`
+- `class NavigationIntegrationTest`
+  - Method `.test_a_character_walks_a_grid_route_to_the_goal()`
+- `class NavigationReportTest`
+  - Method `.test_report_is_json_safe()`
+  - Method `.test_finished_report_has_no_target()`
+  - Method `.test_report_rejects_a_non_follower()`
+  - Method `.test_describe_advertises_navigation()`
+
+---
+
+### [`tests/test_overlay.py`](tests/test_overlay.py)
+> *Tests for camera-relative overlay drawing and metric separation.*
+
+**Size**: `132` lines (`4999` bytes)
+
+**Classes:**
+- `class OverlayMetricTest`
+  - Method `.test_plans_exclude_overlay_nodes()`
+  - Method `.test_group_instances_filters_by_layer()`
+- `class OverlayRenderTest`
+  - Method `.setUp()`
+  - Method `.test_overlay_draws_after_a_depth_clear()` - *The wall is closer to the camera's line of sight than nothing else.*
+  - Method `.test_hidden_overlay_leaves_the_world_frame()`
+  - Method `.test_overlay_does_not_cast_a_shadow()`
+
+**Functions:**
+- `def _metric_scene()` - *One world cube and one overlay cube with equal payloads.*
+- `def _render_scene()` - *A red wall at -3 and a rig holding a blue part at -1.*
+- `def _centre(pixels, width, height)`
+
+---
+
 ### [`tests/test_particles.py`](tests/test_particles.py)
 > *Tests for the deterministic particle core.*
 
@@ -2975,6 +3356,68 @@
 - `class SlideTest`
   - Method `.test_sliding_along_face_preserves_tangential_motion()`
   - Method `.test_sliding_is_deterministic()`
+
+---
+
+### [`tests/test_path_smoothing.py`](tests/test_path_smoothing.py)
+> *Tests for grid line-of-sight checks and path smoothing.*
+
+**Size**: `105` lines (`4254` bytes)
+
+**Classes:**
+- `class LineOfSightTest`
+  - Method `.test_an_open_straight_line_is_visible()`
+  - Method `.test_a_blocked_cell_breaks_the_line()`
+  - Method `.test_a_clear_diagonal_line_is_visible()`
+  - Method `.test_a_diagonal_line_through_a_wall_corner_is_not_visible()`
+  - Method `.test_the_same_cell_is_visible()`
+  - Method `.test_validation()`
+- `class SmoothPathTest`
+  - Method `.test_an_open_route_collapses_to_its_endpoints()`
+  - Method `.test_a_clear_diagonal_route_collapses_across_cells()`
+  - Method `.test_a_wall_keeps_the_corner_it_must_round()`
+  - Method `.test_the_smoothed_route_keeps_the_same_endpoints()`
+  - Method `.test_short_and_empty_paths_are_returned_unchanged()`
+  - Method `.test_an_unreachable_result_has_nothing_to_smooth()`
+  - Method `.test_smoothing_is_deterministic()`
+  - Method `.test_validation()`
+  - Method `.test_describe_advertises_path_smoothing()`
+
+**Functions:**
+- `def _grid(width, height, blocked)`
+- `def _segments_clear(grid, path)`
+
+---
+
+### [`tests/test_pathfinding.py`](tests/test_pathfinding.py)
+> *Tests for deterministic grid pathfinding.*
+
+**Size**: `150` lines (`6115` bytes)
+
+**Classes:**
+- `class NavGridTest`
+  - Method `.test_open_and_blocked_cells()`
+  - Method `.test_grid_is_immutable()`
+  - Method `.test_malformed_grids_are_rejected()`
+- `class FindPathTest`
+  - Method `.test_straight_path_on_an_open_grid()`
+  - Method `.test_path_starts_and_ends_on_the_goal()`
+  - Method `.test_walks_around_a_wall()`
+  - Method `.test_unreachable_goal_is_not_found()`
+  - Method `.test_start_equal_to_goal()`
+  - Method `.test_diagonal_paths_are_shorter()`
+  - Method `.test_diagonal_moves_do_not_cut_corners()`
+  - Method `.test_blocked_endpoints_are_rejected()`
+  - Method `.test_out_of_bounds_endpoints_are_rejected()`
+  - Method `.test_results_are_deterministic()`
+- `class PathReportTest`
+  - Method `.test_report_is_json_safe_and_names_the_route()`
+  - Method `.test_unreachable_report_has_an_empty_path()`
+  - Method `.test_rejects_a_non_result()`
+  - Method `.test_describe_advertises_pathfinding()`
+
+**Functions:**
+- `def _open_grid(width, height, blocked)`
 
 ---
 
@@ -3389,6 +3832,28 @@
 
 ---
 
+### [`tests/test_scene_boxes.py`](tests/test_scene_boxes.py)
+> *Tests for deriving collision boxes from scene geometry.*
+
+**Size**: `87` lines (`3554` bytes)
+
+**Classes:**
+- `class SceneBoxesTest`
+  - Method `.test_each_visible_mesh_becomes_one_world_aabb()`
+  - Method `.test_hidden_nodes_and_overlay_nodes_are_skipped()`
+  - Method `.test_a_layer_filter_keeps_only_that_layer()`
+  - Method `.test_a_hierarchy_translates_the_box()`
+  - Method `.test_nodes_without_meshes_are_skipped()`
+  - Method `.test_the_order_follows_scene_traversal()`
+  - Method `.test_malformed_arguments_are_rejected()`
+- `class SceneToRouteTest`
+  - Method `.test_a_wall_in_the_scene_reaches_the_router()`
+
+**Functions:**
+- `def _wall(name, x, z, *, size, **node_kwargs)`
+
+---
+
 ### [`tests/test_scene_diff.py`](tests/test_scene_diff.py)
 > *Tests for structured scene snapshot diffs.*
 
@@ -3755,6 +4220,38 @@
 
 **Functions:**
 - `def state(**overrides)`
+
+---
+
+### [`tests/test_ui_widgets.py`](tests/test_ui_widgets.py)
+> *Tests for the HUD layout widgets and right-edge safety.*
+
+**Size**: `159` lines (`6008` bytes)
+
+**Classes:**
+- `class LabelRowTest`
+  - Method `.test_label_and_value_sit_at_opposite_edges()`
+  - Method `.test_label_is_trimmed_before_it_collides_with_the_value()`
+  - Method `.test_rows_stay_inside_a_narrow_viewport()`
+  - Method `.test_non_positive_width_draws_nothing()`
+  - Method `.test_text_is_not_tracked_when_the_row_cannot_fit_one_glyph()`
+- `class TableTest`
+  - Method `.test_rows_stack_and_report_total_height()`
+  - Method `.test_empty_table_draws_nothing()`
+- `class ProgressBarTest`
+  - Method `.test_fill_tracks_the_clamped_value()`
+  - Method `.test_values_are_clamped_to_the_bar()`
+  - Method `.test_bar_clips_at_the_canvas_edge()`
+  - Method `.test_rejects_an_unknown_value()`
+- `class BadgeTest`
+  - Method `.test_badge_measures_itself_and_draws_the_label()`
+  - Method `.test_badge_clips_at_the_canvas_edge()`
+- `class OverlaySafetyTest`
+  - Method `._state(width, height)`
+  - Method `.test_right_panel_fits_a_phone_viewport()`
+
+**Functions:**
+- `def _right_edge_margin(element, width)`
 
 ---
 

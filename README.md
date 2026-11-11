@@ -118,6 +118,24 @@ The hook runs once after the engine builds its map. `describe_game()` reports
 `unbound_buttons` and `unknown_keys` so a dead control is visible. Mouse
 buttons arrive through `ActionState.mouse_clicked`, not key bindings.
 
+### Camera-relative content
+
+`CameraRig(scene.camera)` keeps a scene root on the camera pose. `attach()`
+adds parts with camera-space offsets (`+X` right, `+Y` up, `-Z` forward) on
+the reserved `overlay` layer, and `sync()` follows the camera after it moves:
+
+```python
+rig = CameraRig(scene.camera)
+rig.attach("viewmodel", position=Vec3(0.27, -0.21, -0.6), mesh=gun, material=metal)
+rig.attach_to(scene)
+# later, after camera movement and before a frame renders:
+rig.sync()
+```
+
+The renderer draws the overlay layer after a depth clear, so level geometry
+cannot occlude it, and world culling, batch plans, merges and shadows skip
+it. `--describe` reports `capabilities.camera_rig` and `overlay_layer`.
+
 ### Scene identity and components
 
 A node carries a stable scene ID, tags, one layer and optional typed components:
@@ -169,6 +187,54 @@ hit = raycast(Ray(Vec3(), Vec3(0, 0, 1)), [("wall", wall)])
 ```
 
 `SpatialGrid` keeps a uniform grid of AABB proxies with exact overlaps in insertion order; `cell_size` trades speed, not correctness. `CharacterController` moves an AABB body with wish velocity, gravity, wall/floor response, stair step-up, slope-limited climb and platform carry; no capsules or solvers. `TriggerTracker` reports sorted `entered`/`exited` tuples and an immutable `active` set; `raycast()` returns the nearest hit.
+
+### Pathfinding: deterministic A*
+
+```python
+from keystone.pathfinding import NavGrid, find_path, path_report
+
+grid = NavGrid(32, 24, frozenset({(5, y) for y in range(12)}))
+result = find_path(grid, (0, 0), (20, 10), diagonal=True)
+print(path_report(result))
+```
+
+`NavGrid` is an immutable bounded grid with blocked cells. `find_path()` runs A* over four or eight neighbours, refuses to cut wall corners on diagonal moves, and returns a deterministic `PathResult` (`path`, `cost`, `expanded`, `found`); a blocked start or an out-of-bounds endpoint raises, and an unreachable goal returns `found=False`. `line_of_sight()` tests a straight segment cell by cell with the same corner rule, and `smooth_path()` greedily drops waypoints whose straight replacement stays visible, so a follower gets a short route without cutting corners. `path_report()` gives a JSON-safe route summary for agent and capture evidence. `--describe` reports `capabilities.pathfinding` and `capabilities.path_smoothing`.
+
+### Nav grids from level boxes
+
+```python
+from keystone.nav_authoring import grid_from_boxes, write_navgrid
+
+grid = grid_from_boxes(48, 32, wall_boxes, cell_size=1.0, clearance=0.4)
+write_navgrid("levels/hall.navgrid", grid)
+```
+
+`grid_from_boxes()` rasterizes the same AABBs a character collides with: a cell blocks when its world-space centre falls inside a box inflated by the clearance radius on X and Z, so navigation cannot silently drift from the level geometry. `scene_boxes()` derives those AABBs from a scene's visible mesh nodes (skipping the camera-relative overlay layer), so one level can feed the grid directly. `NavGrid.to_dict()`/`from_dict()` and `write_navgrid`/`read_navgrid` persist a schema-1 document that sorts blocked cells, rejects duplicates and rejects out-of-bounds cells. `--describe` reports `capabilities.nav_authoring`.
+
+### Navigation: following a route
+
+```python
+from keystone.navigation import PathFollower, grid_path_points, navigation_report
+
+points = grid_path_points(result.path, cell_size=1.0, height=0.9)
+follower = PathFollower(points, speed=3.0)
+wish, done = follower.advance(body.position)
+body = controller.step(body, wish, 1 / 60, walls)
+```
+
+`PathFollower` turns waypoints into a wish velocity for `CharacterController`. It advances by the position the caller reports back, so a wall that holds the body in place keeps the follower aimed at the same waypoint instead of skipping it; the next waypoint is the first one farther than `arrive_radius`, and a consumed route reports `done` forever. `navigation_report()` emits JSON-safe follower state, and `--describe` reports `capabilities.navigation`.
+
+### Audio: distance attenuation
+
+```python
+from keystone.audio_spatial import SoundSource, spatial_mix, spatial_report
+
+source = SoundSource(position=Vec3(4.0, 0.0, 2.0), clip=beep, min_distance=1.0, max_distance=20.0)
+mix = spatial_mix(listener.position, [source], bus_gains={"sfx": 0.8})
+print(spatial_report(listener.position, [source]))
+```
+
+`distance_gain()` is linear: full volume inside `min_distance`, silent at `max_distance`, interpolated between. `spatial_mix()` sends every source through the named-bus `Mixer` with attenuation baked into its voice gain, so clip length, pitch and clipping match the rest of the audio core. `spatial_report()` emits JSON-safe per-source distance, attenuation, bus and audibility. Clips are mono, so this attenuates by distance without panning. `--describe` reports `capabilities.spatial_audio`.
 
 ### Optional game UI
 
@@ -275,12 +341,13 @@ The API sends CORS headers so local AI clients can call it directly. Keep the de
 - **PBR materials**: specular/shininess plus metallic/roughness/emissive, wrapped/mipmapped textures and material graphs.
 - **Runtime**: fixed-step clock with bounded catch-up; headless one-step-per-frame determinism.
 - **Input**: rebindable `InputMap` across contexts, a game `bind_input` hook, and dead-binding diagnostics.
-- **Audio**: synth, named-bus mixer, deterministic mixdown, WAV I/O and reports; no hardware output.
-- **Animation**: tracks/clips, looping, crossfades, events, blend spaces, masked `apply_pose`, CPU/GPU skinning and state machines.
+- **Audio**: synth, named-bus mixer, deterministic mixdown, WAV I/O, distance-attenuated spatial mixes and reports; no hardware output.
+- **Animation**: tracks/clips, looping, crossfades, events, blend spaces, masked `apply_pose`, clip binding onto pooled nodes, CPU/GPU skinning and state machines.
 - **Particles and physics**: seeded emitters with swept collision; rays, AABB/sphere queries, broadphase, character movement and triggers.
+- **Pathfinding**: immutable nav grids, deterministic A* over 4 or 8 neighbours with corner-cut refusal, line-of-sight path smoothing, JSON-safe path reports, scene/box-derived nav grids with schema-1 documents, and a waypoint follower that feeds `CharacterController`.
 - **Replay and persistence**: command logs, stable hashes, `run_log`/`verify_log`, atomic JSON with `.bak`.
-- **Testing and AI**: `--describe`, `--simulate`, `--verify-determinism`, `--expect-hash`, frame reports, pixel diffs, seeded playtests and adapters.
-- **Human UI and web**: overlay/pause menu, `draw_ui`, stdlib JSON API and WebGL2 console/editor.
+- **Testing and AI**: `--describe`, `--simulate`, `--verify-determinism`, `--expect-hash`, frame reports, pixel diffs, seeded playtests, deterministic capture routes with checkpoint evidence diffs, and adapters.
+- **Human UI and web**: overlay/pause menu, `draw_ui`, measured-text layout widgets (`label_row`, `table`, `progress_bar`, `badge`) that stay inside the viewport, stdlib JSON API and WebGL2 console/editor.
 - **Game-agnostic core**: no combat, light-lock, weave or expedition code.
 
 ## 🤖 AI Testing & Frame Analysis
@@ -367,196 +434,24 @@ AI clients diff frames/scenes/sim/UI via `compare_reports(before, after)` (image
 
 ```text
 keystone/
-├── keystone/
-│   ├── __init__.py           <- public API and version
-│   ├── _version.py           <- single-source release version
-│   ├── __main__.py           <- CLI: --game, headless frames, PNG
-│   ├── agents.py             <- AI adapters and audit trail
-│   ├── animation.py          <- clips, controller and pose reports
-│   ├── animation_blend.py    <- blend spaces
-│   ├── animation_state.py    <- parameter-driven state machine transitions
-│   ├── animation_library.py  <- file-backed .kanim clip library
-│   ├── state_machine_library.py <- file-backed .kstate machine library
-│   ├── app.py                <- Engine loop
-│   ├── audio.py              <- synth clips, mixer and WAV I/O
-│   ├── batch.py              <- static batch planning, world-space and rig merge
-│   ├── clock.py              <- fixed-step clock
-│   ├── culling.py            <- frustum culling
-│   ├── input.py              <- ActionState and InputMap
-│   ├── lifecycle.py          <- deterministic component start/update/stop
-│   ├── plugin.py             <- GameModule protocol and loader
-│   ├── playtest.py           <- seeded bot policies and fairness
-│   ├── replay.py             <- command log and stable hash
-│   ├── history.py            <- bounded undo/redo snapshots
-│   ├── scene_snapshot.py     <- versioned scene save/load
-│   ├── scene_library.py      <- file-backed scene library
-│   ├── scene_diff.py         <- structured saved-scene diffs
-│   ├── serialization.py      <- atomic JSON persistence
-│   ├── headless.py           <- no-GL simulation and action scripts
-│   ├── analysis.py           <- frame stats, projection and report diff
-│   ├── testing.py            <- deterministic scenario helpers
-│   ├── physics.py            <- rays, AABB, sphere queries, pushout and raycasts
-│   ├── particles.py          <- deterministic CPU emitters and systems
-│   ├── broadphase.py         <- deterministic spatial-grid broadphase
-│   ├── character.py          <- AABB movement and ground detection
-│   ├── triggers.py           <- trigger volumes and tracking
-│   ├── assets.py             <- mesh, material and texture asset registry
-│   ├── asset_io.py           <- file-backed sources, loaders and hot reload
-│   ├── component_codec.py    <- shared JSON codec for typed components
-│   ├── gltf_import.py        <- glTF/GLB scene to prefab import
-│   ├── schema.py             <- versioned core schema constants
-│   ├── math3d.py             <- Vec3, Mat4, Quat (column-major, OpenGL-ready)
-│   ├── camera.py             <- perspective camera
-│   ├── project.py           <- manifests, scaffolding and --project loading
-│   ├── export.py            <- deterministic runnable project bundles
-│   ├── prefab.py            <- deterministic subtree templates
-│   ├── prefab_library.py    <- file-backed prefab library
-│   ├── library_trash.py      <- recoverable library deletes
-│   ├── scene.py              <- hierarchy, identity, components, transforms and lights
-│   ├── geometry.py           <- MeshData, Material
-│   ├── skin.py               <- bone palettes, CPU skinning
-│   ├── mesh_builder.py       <- merge boxes, quads, meshes, skinned rigs
-│   ├── material_graph.py     <- node graphs evaluating to Material
-│   ├── material_library.py   <- file-backed .kmaterial library
-│   ├── primitives.py         <- cube, plane, cone, cylinder and sphere
-│   ├── obj_loader.py         <- Wavefront OBJ loader
-│   ├── png.py                <- dependency-free PNG writer and reader
-│   ├── texture.py            <- immutable RGBA textures, PNG and checker sources
-│   ├── samples.py            <- CubeDemo smoke test
-│   ├── gltf/
-│   │   ├── __init__.py       <- glTF package exports
-│   │   ├── io.py             <- source, buffer and accessor decoding
-│   │   ├── textures.py       <- image and texture decoding
-│   │   ├── materials.py      <- PBR to Material conversion
-│   │   ├── meshes.py         <- primitive, mesh, skin decoding
-│   │   ├── skins.py          <- joints and inverse binds
-│   │   ├── scene.py          <- node, skin and scene construction
-│   │   └── loader.py         <- top-level import orchestration
-│   ├── ui/
-│   │   ├── __init__.py       <- UI package exports
-│   │   ├── font.py           <- embedded 5x7 bitmap font
-│   │   ├── canvas.py         <- clipped screen-space quads and text
-│   │   ├── widgets.py        <- panels and menu buttons
-│   │   ├── menu.py           <- pure pause-menu selection state
-│   │   ├── report.py         <- UI labels/buttons for AI reports
-│   │   └── overlay.py        <- HUD, controls help and pause menu
-│   ├── web/
-│   │   ├── __init__.py       <- web package exports
-│   │   ├── editor.py         <- hierarchy, transform and prefab edits
-│   │   ├── schema.py         <- web API and scene document schemas
-│   │   ├── scene.py          <- scene-to-JSON export for the viewer
-│   │   ├── server.py         <- stdlib JSON API and static server
-│   │   └── static/
-│   │       ├── index.html    <- console shell
-│   │       ├── app.js        <- console controls and API client
-│   │       ├── viewer.js     <- WebGL2 scene renderer
-│   │       └── style.css     <- console layout and tokens
-│   └── gpu/
-│       ├── __init__.py       <- GPU adapter package marker
-│       ├── context.py        <- GLFW window and OpenGL 3.3 context
-│       ├── shader.py         <- GLSL compilation and uniforms
-│       ├── mesh_buffer.py    <- VAO/VBO/EBO upload and drawing
-│       ├── skinned_buffer.py <- skinned mesh upload
-│       ├── sprites.py        <- deterministic sprite math
-│       ├── instancing.py     <- deterministic instancing groups
-│       ├── shadow.py         <- shadow map
-│       ├── post.py           <- post grade math
-│       ├── bloom.py          <- bloom glow
-│       ├── bloom_fbo.py      <- bloom diffusion FBO
-│       ├── texture_buffer.py <- 2D texture upload, mipmaps and cleanup
-│       ├── ui_renderer.py    <- screen-space alpha-blended UI draw
-│       └── renderer.py       <- forward renderer, sky, lights, shadows, post, bloom, sprites
-├── assets/
-│   ├── octahedron.obj        <- generic sample OBJ
-│   ├── engine.png            <- sample frame
-│   ├── engine.json           <- sample frame report
-│   ├── logo.svg              <- project logo
-│   ├── social-preview.svg    <- social preview
-│   └── screenshots/          <- approved HUD + console keepers
-├── docs/
-│   ├── ARCHITECTURE.md       <- core layers and contract
-│   ├── AI_GUIDE.md           <- discover, simulate and verify
-│   └── IMPLICIT_STATE_AUDIT.md <- state-machine audit
-├── tests/
-│   ├── test_math3d.py        <- math core
-│   ├── test_scene.py         <- hierarchy, camera and lights
-│   ├── test_geometry.py      <- meshes, primitives, builder and OBJ
-│   ├── test_png.py           <- PNG writer and reader
-│   ├── test_texture.py       <- texture data, checker and PNG loading
-│   ├── test_ui.py            <- font, canvas, menu and overlay
-│   ├── test_renderer.py      <- headless OpenGL integration
-│   ├── test_input.py         <- action mapping and ActionState
-│   ├── test_input_keys.py    <- GL key table and dead bindings
-│   ├── test_lifecycle.py     <- component start/update/stop lifecycle
-│   ├── test_clock.py         <- fixed-step clock
-│   ├── test_physics.py       <- rays, AABB, sphere queries and raycasts
-│   ├── test_broadphase.py    <- spatial-grid queries, updates and pairs
-│   ├── test_project.py      <- manifest, scaffold and --project workflow
-│   ├── test_export.py       <- export bundle structure, hashes and launcher
-│   ├── test_prefab.py       <- prefab capture, IDs and isolation
-│   ├── test_prefab_library.py <- prefab library save, load and errors
-│   ├── test_particles.py     <- seeded emitters, forces and reports
-│   ├── test_pbr.py           <- metallic/roughness/emissive shading
-│   ├── test_character.py     <- floor, wall, jump and validation behavior
-│   ├── test_triggers.py      <- enter/exit tracking and multiple volumes
-│   ├── test_agents.py        <- AI adapters, validation and audit trail
-│   ├── test_animation.py     <- clips, blending and timed events
-│   ├── test_animation_blend.py <- blend spaces
-│   ├── test_animation_state.py <- state transitions, triggers and round trips
-│   ├── test_animation_library.py <- clip library save, load, delete and restore
-│   ├── test_state_machine_library.py <- .kstate library save/delete/restore
-│   ├── test_material_library.py <- material library save, load, register and textures
-│   ├── test_skinning.py      <- skin math, GPU path, glTF
-│   ├── test_sprites.py       <- sprite math, report, sample fixture
-│   ├── test_sprite_nodes.py  <- placed sprite nodes and billboards
-│   ├── test_merge_skin.py    <- skin-aware merge
-│   ├── test_assets.py          <- registry ids, digests, dependencies and reload
-│   ├── test_audio.py         <- synth, mixer buses and WAV I/O
-│   ├── test_batch.py         <- batch planning and world-space merge
-│   ├── test_material_graph.py <- declarative material graph evaluation
-│   ├── test_gltf.py           <- glTF/GLB import and texture loading
-│   ├── test_gltf_import.py    <- glTF/GLB prefab import coverage
-│   ├── test_history.py        <- bounded undo/redo history
-│   ├── test_instancing.py     <- hardware-instancing groups and draws
-│   ├── test_shadows.py        <- shadow map
-│   ├── test_srgb.py           <- sRGB pipeline
-│   ├── test_post.py           <- post color-grade
-│   ├── test_bloom.py          <- bloom
-│   ├── test_culling.py        <- frustum culling
-│   ├── test_scene_snapshot.py <- versioned scene save/load
-│   ├── test_round_trip_stability.py <- idempotent save/load
-│   ├── test_scene_library.py <- scene library save, load and restore
-│   ├── test_scene_diff.py   <- structured scene diff coverage
-│   ├── test_plugin.py        <- GameModule contract and loader
-│   ├── test_replay.py        <- command log and hashes
-│   ├── test_serialization.py <- atomic JSON persistence
-│   ├── test_component_codec.py <- typed component JSON codec
-│   ├── test_library_trash.py <- recoverable library deletes
-│   ├── test_version.py       <- version single-source drift guard
-│   ├── test_headless.py      <- no-GL simulation and action scripts
-│   ├── test_analysis.py      <- frame stats, projection, report diff
-│   ├── test_projected_bbox.py <- near-plane silhouette clipping
-│   ├── test_testing.py       <- deterministic helpers
-│   ├── test_samples.py       <- CubeDemo smoke test
-│   ├── test_boundary.py      <- no game modules/imports
-│   ├── test_cli_failure_advice.py <- post-start errors name the step
-│   ├── test_web.py           <- scene export, JSON API, assets
-│   ├── test_app.py           <- engine loop, CLI, simulate and reports
-│   ├── test_playtest.py      <- seeded bots and fairness
-│   ├── test_swarm_fixes.py   <- swarm pins
-│   ├── support_maze_game.py  <- deterministic grid fixture
-│   └── support_policy.py     <- external policy fixture
-├── requirements.txt          <- pinned runtime and test dependencies
-├── pyproject.toml            <- package metadata, pytest and ruff configuration
-├── .gitignore                <- transient AIKit state excluded
-├── LICENSE                   <- Aegean License 1.1 (AL-1.1): free personal use
-├── COMMERCIAL.md             <- Commercial licensing terms
-├── LICENSES/                 <- REUSE license texts
-├── REUSE.toml                <- Machine-readable SPDX metadata
-├── CHANGELOG.md              <- release history
+├── keystone/                <- engine package: runtime, scene, renderer, AI adapters
+├── tests/                   <- unit suites and headless OpenGL integration suites
+├── docs/                    <- architecture, AI guide, implicit-state audit, full tree
+├── assets/                  <- brand and sample assets
+├── LICENSES/                <- REUSE license texts
+├── .aikit/                  <- project memory: guidelines, ledger, decisions
+├── .gitignore               <- transient AIKit state excluded
+├── CHANGELOG.md             <- release history
+├── COMMERCIAL.md            <- commercial licensing terms
+├── LICENSE                  <- Aegean License 1.1 (AL-1.1)
+├── pyproject.toml           <- project metadata, lint and test configuration
 ├── README.md
-└── .aikit/                   <- this project's memory: record, ledger, decisions
+├── requirements.txt         <- pinned runtime dependencies
+└── REUSE.toml               <- machine-readable SPDX metadata
 ```
+
+The README keeps this condensed map for orientation; the full annotated tree,
+down to every source and test module, lives in [docs/TREE.md](docs/TREE.md).
 
 ## 🏗️ Architecture
 

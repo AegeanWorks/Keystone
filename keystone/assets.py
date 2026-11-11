@@ -23,6 +23,7 @@ from keystone.asset_io import (
     rebind_node_assets,
     rebind_payload,
 )
+from keystone.content import material_digest, mesh_digest
 from keystone.geometry import Material, MeshData
 from keystone.prefab import Prefab
 from keystone.texture import TextureData
@@ -432,9 +433,9 @@ def _digest(kind: str, payload: AssetPayload, registry: AssetRegistry | None = N
         digest.update(payload.sha256().encode("ascii"))
         return digest.hexdigest()
     if kind == "mesh" and isinstance(payload, MeshData):
-        return _digest_mesh(payload)
+        return mesh_digest(payload)
     if kind == "material" and isinstance(payload, Material):
-        return _digest_material(payload)
+        return material_digest(payload)
     if kind == "prefab" and isinstance(payload, Prefab):
         return _digest_prefab(payload, registry)
     raise TypeError(f"payload is a {asset_kind(payload)}, not a {kind}")
@@ -450,47 +451,3 @@ def _digest_prefab(prefab: Prefab, registry: AssetRegistry | None) -> str:
         allow_nan=False,
     )
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
-
-
-def _digest_mesh(mesh: MeshData) -> str:
-    digest = hashlib.sha256()
-    for group in (mesh.positions, mesh.normals, mesh.uvs, mesh.colors):
-        digest.update(len(group).to_bytes(8, "little"))
-        for item in group:
-            digest.update(struct.pack(f"<{len(item)}d", *item))
-    for group in (mesh.joints,):
-        digest.update(len(group).to_bytes(8, "little"))
-        for item in group:
-            digest.update(len(item).to_bytes(8, "little"))
-            digest.update(struct.pack(f"<{len(item)}i", *item))
-    for group in (mesh.weights, mesh.skin_inverse_bind):
-        digest.update(len(group).to_bytes(8, "little"))
-        for item in group:
-            digest.update(len(item).to_bytes(8, "little"))
-            digest.update(struct.pack(f"<{len(item)}d", *item))
-    digest.update(len(mesh.skin_joints).to_bytes(8, "little"))
-    for name in mesh.skin_joints:
-        encoded = name.encode("utf-8")
-        digest.update(len(encoded).to_bytes(8, "little"))
-        digest.update(encoded)
-    digest.update(len(mesh.indices).to_bytes(8, "little"))
-    if mesh.indices:
-        digest.update(struct.pack(f"<{len(mesh.indices)}i", *mesh.indices))
-    return digest.hexdigest()
-
-
-def _digest_material(material: Material) -> str:
-    digest = hashlib.sha256()
-    values = (
-        *material.color,
-        material.specular,
-        material.shininess,
-        material.checker_scale,
-        material.metallic,
-        material.roughness,
-        *material.emissive,
-    )
-    digest.update(struct.pack(f"<{len(values)}d", *values))
-    texture = material.texture if isinstance(material.texture, TextureData) else None
-    digest.update(texture.sha256().encode("ascii") if texture is not None else b"")
-    return digest.hexdigest()
