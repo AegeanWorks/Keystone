@@ -1,114 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-hud-text-v1",
+    "task_id": "keystone-scene-overlap-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794435773.5811515,
+    "updated_at": 1794437368.9853742,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
-    "completed_at": 1794435824.252071
+    "completed_at": 1794437392.030396
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-delivery-composition-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/2] Verified - tests/test_feature_composition.py passes both seams: the rig part's projected bbox centre shifts under 1px across a staged route that moves and rotates the camera while cube-0 shifts more than 1px, and two separately built content-equal overlay cubes render in one overlay draw with overlay_nodes=2 and world draw_calls=0; docs/TREE.md records the module; full suite green (1104 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
-      "files_affected": [
-        "tests/test_feature_composition.py",
-        "docs/TREE.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794422743.8532927,
-      "timestamp_str": "2026-11-11 21:45:43",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "command": "python -m pytest --collect-only -q",
-          "candidate": 1104.0,
-          "artifact": "stdout",
-          "baseline": 1102.0,
-          "unit": "tests",
-          "metric": "collected_tests"
-        },
-        {
-          "command": "python -m pytest tests/test_feature_composition.py",
-          "candidate": 1.0,
-          "artifact": "tests/test_feature_composition.py",
-          "baseline": 2.0,
-          "unit": "calls",
-          "metric": "overlay_draw_calls_for_two_equal_nodes"
-        },
-        {
-          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
-          "candidate": 4899.0,
-          "artifact": "temp PNG",
-          "baseline": 4899.0,
-          "unit": "bytes",
-          "metric": "reference_png_bytes"
-        }
-      ],
-      "checklists": "passed"
-    },
-    {
-      "task_id": "keystone-delivery-composition-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Hardened while holding for delivery - differential fuzz over random nav grids matched BFS exactly: 994 solvable 4-connected cases had A* cost equal to BFS depth, 994 diagonal cases were valid, corner-cut free, never costlier than orthogonal and equal on rerun, and follower invariants held; the verified tree was backed up outside the repo (391 files, 2.18 MB zip containing all six new modules, docs/TREE.md and the feature-composition tests); no tracked files changed by the fuzz",
-      "files_affected": [
-        ".aikit/task_ledger.json"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794423614.8976202,
-      "timestamp_str": "2026-11-11 22:00:14",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "artifact": "temp script output",
-          "command": "python differential A* vs BFS fuzz, seed 20261111",
-          "candidate": 994.0,
-          "baseline": 0.0,
-          "metric": "differential_path_cases",
-          "unit": "cases"
-        },
-        {
-          "artifact": "keystone-backup-20261111-215553.zip",
-          "command": "Compress-Archive of the verified tree to temp",
-          "candidate": 391.0,
-          "baseline": 0.0,
-          "metric": "backup_files",
-          "unit": "files"
-        }
-      ],
-      "checklists": "passed",
-      "handoff": {
-        "state": "tree verified, differential fuzz green, backup zip in temp at keystone-backup-20261111-215553.zip",
-        "next": "obtain explicit user authorization to commit the nine verified milestones plus seam tests, then stage and commit (one delivery commit or split by milestone) and run python aikit.py check keystone --strict",
-        "open": "commit delivery not authorized and no further feature work should stack",
-        "evidence": "ADR-224..ADR-231, feature-composition tests, canonical hash and 4899-byte PNG"
-      }
-    },
-    {
-      "task_id": "keystone-nav-authoring-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: close the navigation authoring gap with NavGrid schema-1 documents (to_dict/from_dict, strict validation) and nav_authoring.grid_from_boxes/read_navgrid/write_navgrid that derive blocked cells from the level's own collision AABBs with clearance inflation",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794424989.1649854,
-      "timestamp_str": "2026-11-11 22:23:09",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "Pathfinding and following exist, but the blocked-cell set is hand-maintained beside collision boxes, so moving a wall silently desynchronizes navigation; grids also have no document form for AI inspection or authoring.",
-        "benefits": "One call turns level collision into a nav grid, the grid round-trips through sorted JSON, and an AI can diff or hand-edit navigation outside a running engine.",
-        "risks": "contract: NavGrid gains document methods, one new module, three exports and a capability; dependency: nav_authoring imports physics.AABB; concurrency: none; state: schema-1 document is new but does not touch scene snapshots.",
-        "mitigation": "Keep rasterization pure and deterministic (centre-in-inflated-box on XZ), validate every document and argument strictly, pin the clearance boundaries, and keep the canonical hash and reference PNG unchanged."
-      },
-      "plan_digest": "30ff5711215f8d929a7e2a6e1d548d6eff73243e79f4a1ba1d1b096a7e436770"
-    },
     {
       "task_id": "keystone-delivery-composition-v1",
       "phase": "superseded",
@@ -520,6 +423,82 @@
       "status": "completed",
       "timestamp": 1794435824.2520719,
       "timestamp_str": "2026-11-12 01:23:44",
+      "agent": "kilo:goal"
+    },
+    {
+      "task_id": "keystone-scene-overlap-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: add sphere and box overlap queries over scene bounds (SceneOverlap, overlap_scene, overlap_report) sharing the picking bounds walk, with layer/ignore filters, deterministic distance-then-id ordering and JSON-safe reports",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794437327.003204,
+      "timestamp_str": "2026-11-12 01:48:47",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "Picking answered ray queries but there was no area query for proximity, triggers or AI perception; callers would rebuild scene bounds exactly as picking did.",
+        "benefits": "One scene answers ray and area queries from one bounds rule, with deterministic ordering and reports an AI can log.",
+        "risks": "contract: picking gains three exports and a capability; refactor risk in shared bounds walking; dependency: none; concurrency: none; state: pure queries.",
+        "mitigation": "Factor one _scene_meshes walker used by both queries, keep filters identical, pin ordering and filters with failing-first tests, and keep the canonical evidence unchanged."
+      },
+      "plan_digest": "4021ccaa15b00698fc2fe6b3ccd00fbebc5465080245ce99cb7305a4c6a6b86c"
+    },
+    {
+      "task_id": "keystone-scene-overlap-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/3] Implemented and verified - picking.py now shares one _scene_meshes bounds walker between ray and area queries and adds SceneOverlap, overlap_scene (Sphere or AABB, layer/ignore filters, distance-then-id ordering) and overlap_report; exports, README, ARCHITECTURE, docs/TREE, CHANGELOG and ADR-237 updated; --describe reports capabilities.scene_overlap; 12 overlap tests plus the picking suite green (1183 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
+      "files_affected": [
+        "keystone/picking.py",
+        "tests/test_overlap.py",
+        "keystone/__init__.py",
+        "keystone/plugin.py",
+        "README.md",
+        "docs/ARCHITECTURE.md",
+        "docs/TREE.md",
+        "CHANGELOG.md",
+        ".aikit/decisions.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1794437368.9853742,
+      "timestamp_str": "2026-11-12 01:49:28",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "unit": "tests",
+          "candidate": 1183.0,
+          "artifact": "stdout",
+          "command": "python -m pytest --collect-only -q",
+          "baseline": 1171.0,
+          "metric": "collected_tests"
+        },
+        {
+          "unit": "nodes",
+          "candidate": 2.0,
+          "artifact": "tests/test_overlap.py",
+          "command": "python -m pytest tests/test_overlap.py::OverlapSceneTest::test_a_sphere_returns_every_overlapping_visible_mesh",
+          "baseline": 1.0,
+          "metric": "sphere_overlap_hits"
+        },
+        {
+          "unit": "bytes",
+          "candidate": 4899.0,
+          "artifact": "temp PNG",
+          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
+          "baseline": 4899.0,
+          "metric": "reference_png_bytes"
+        }
+      ],
+      "checklists": "passed"
+    },
+    {
+      "task_id": "keystone-scene-overlap-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-scene-overlap-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794437392.0303972,
+      "timestamp_str": "2026-11-12 01:49:52",
       "agent": "kilo:goal"
     }
   ]

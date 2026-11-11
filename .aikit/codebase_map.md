@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `180`
-- **Total Classes**: `302`
-- **Total Top-Level Functions**: `520`
-- **Total Class Methods**: `1892`
-- **Total Source Lines**: `48342`
+- **Total Python Modules**: `181`
+- **Total Classes**: `305`
+- **Total Top-Level Functions**: `524`
+- **Total Class Methods**: `1904`
+- **Total Source Lines**: `48575`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`180` module(s))
+- **Indexed**: python (`181` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `243` lines (`5350` bytes)
+**Size**: `253` lines (`5487` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -1318,16 +1318,20 @@
 ### [`keystone/picking.py`](keystone/picking.py)
 > *Scene picking: ray queries over visible world meshes.*
 
-**Size**: `150` lines (`5072` bytes)
+**Size**: `247` lines (`8215` bytes)
 
 **Classes:**
 - `class SceneHit` - *One scene ray hit: the node, the world distance and the contact point.*
+- `class SceneOverlap` - *One node whose world bounds overlap the query shape.*
 
 **Functions:**
 - `def _finite(value, label)`
 - `def _ignore_names(value)`
+- `def _scene_meshes(scene, layer, ignored)` - *Visible world meshes and their conservative world AABBs.*
 - `def raycast_scene(scene, ray, *, layer, ignore, max_distance)` - *Return the nearest visible mesh hit, or None.*
 - `def hit_report(hit)` - *Return a JSON-safe summary of one scene ray query.*
+- `def overlap_scene(scene, shape, *, layer, ignore)` - *Return visible meshes whose world bounds overlap a sphere or box.*
+- `def overlap_report(hits)` - *Return a JSON-safe summary of one overlap query.*
 
 ---
 
@@ -1373,7 +1377,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `136` lines (`5159` bytes)
+**Size**: `137` lines (`5194` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -3303,6 +3307,32 @@
   - Method `.test_finished_report_has_no_target()`
   - Method `.test_report_rejects_a_non_follower()`
   - Method `.test_describe_advertises_navigation()`
+
+---
+
+### [`tests/test_overlap.py`](tests/test_overlap.py)
+> *Tests for scene overlap queries.*
+
+**Size**: `125` lines (`5182` bytes)
+
+**Classes:**
+- `class OverlapSceneTest`
+  - Method `.test_a_sphere_returns_every_overlapping_visible_mesh()`
+  - Method `.test_a_box_returns_overlapping_meshes()`
+  - Method `.test_hidden_and_overlay_nodes_never_overlap()`
+  - Method `.test_layer_filter_and_ignore_lists()`
+  - Method `.test_results_are_sorted_by_distance_then_id()`
+  - Method `.test_misses_return_no_hits()`
+  - Method `.test_malformed_arguments_are_rejected()`
+  - Method `.test_a_hit_is_immutable()`
+- `class OverlapReportTest`
+  - Method `.test_report_is_json_safe_and_sorted()`
+  - Method `.test_empty_report_counts_zero()`
+  - Method `.test_report_rejects_a_non_sequence()`
+  - Method `.test_describe_advertises_scene_overlap()`
+
+**Functions:**
+- `def _cube(scene, name, x, z, **kwargs)`
 
 ---
 

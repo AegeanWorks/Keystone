@@ -17,10 +17,17 @@ from dataclasses import dataclass
 from keystone.culling import world_bounds
 from keystone.geometry import MeshData
 from keystone.math3d import Vec3
-from keystone.physics import AABB, Ray, raycast
+from keystone.physics import (
+    AABB,
+    Ray,
+    Sphere,
+    aabb_overlap,
+    raycast,
+    sphere_aabb_overlap,
+)
 from keystone.scene import OVERLAY_LAYER, Node, Scene
 
-__all__ = ["SceneHit", "hit_report", "raycast_scene"]
+__all__ = ["SceneHit", "SceneOverlap", "hit_report", "overlap_report", "overlap_scene", "raycast_scene"]
 
 
 def _finite(value: object, label: str) -> float:
@@ -56,6 +63,44 @@ def _ignore_names(value: object) -> frozenset[str]:
     return frozenset(names)
 
 
+def _scene_meshes(
+    scene: Scene,
+    layer: str | None,
+    ignored: frozenset[str],
+) -> list[tuple[Node, AABB]]:
+    """Visible world meshes and their conservative world AABBs."""
+    found: list[tuple[Node, AABB]] = []
+    for node in scene.traverse():
+        if not node.world_visible() or node.layer == OVERLAY_LAYER:
+            continue
+        if layer is not None and node.layer != layer:
+            continue
+        if node.id in ignored or node.name in ignored:
+            continue
+        mesh = node.mesh
+        if not isinstance(mesh, MeshData):
+            continue
+        low, high = world_bounds(mesh, node.world_matrix())
+        found.append(
+            (
+                node,
+                AABB(
+                    Vec3(
+                        (low.x + high.x) * 0.5,
+                        (low.y + high.y) * 0.5,
+                        (low.z + high.z) * 0.5,
+                    ),
+                    Vec3(
+                        (high.x - low.x) * 0.5,
+                        (high.y - low.y) * 0.5,
+                        (high.z - low.z) * 0.5,
+                    ),
+                ),
+            )
+        )
+    return found
+
+
 def raycast_scene(
     scene: Scene,
     ray: Ray,
@@ -85,33 +130,9 @@ def raycast_scene(
         if limit < 0.0:
             raise ValueError("max distance must be non-negative")
     effective = ray if limit == ray.t_max else Ray(ray.origin, ray.direction, limit)
-    colliders: list[tuple[str, AABB]] = []
-    nodes: dict[str, Node] = {}
-    for node in scene.traverse():
-        if not node.world_visible() or node.layer == OVERLAY_LAYER:
-            continue
-        if layer is not None and node.layer != layer:
-            continue
-        if node.id in ignored or node.name in ignored:
-            continue
-        mesh = node.mesh
-        if not isinstance(mesh, MeshData):
-            continue
-        low, high = world_bounds(mesh, node.world_matrix())
-        box = AABB(
-            Vec3(
-                (low.x + high.x) * 0.5,
-                (low.y + high.y) * 0.5,
-                (low.z + high.z) * 0.5,
-            ),
-            Vec3(
-                (high.x - low.x) * 0.5,
-                (high.y - low.y) * 0.5,
-                (high.z - low.z) * 0.5,
-            ),
-        )
-        colliders.append((node.id, box))
-        nodes[node.id] = node
+    boxes = _scene_meshes(scene, layer, ignored)
+    colliders = [(node.id, box) for node, box in boxes]
+    nodes = {node.id: node for node, _box in boxes}
     hit = raycast(effective, colliders)
     if hit is None:
         return None
@@ -147,4 +168,80 @@ def hit_report(hit: SceneHit | None) -> dict:
         "node_name": hit.node_name,
         "distance": round(hit.distance, 6),
         "point": [round(hit.point.x, 6), round(hit.point.y, 6), round(hit.point.z, 6)],
+    }
+
+@dataclass(frozen=True, slots=True)
+class SceneOverlap:
+    """One node whose world bounds overlap the query shape."""
+
+    node_id: str
+    node_name: str
+    distance: float
+    box: AABB
+
+
+def overlap_scene(
+    scene: Scene,
+    shape: Sphere | AABB,
+    *,
+    layer: str | None = None,
+    ignore: object = (),
+) -> tuple[SceneOverlap, ...]:
+    """Return visible meshes whose world bounds overlap a sphere or box.
+
+    Results sort by centre distance, then node id, so a query is
+    deterministic. Hidden nodes and camera-relative overlay content never
+    overlap; ``layer`` and ``ignore`` filter like ``raycast_scene``.
+    """
+    if not isinstance(scene, Scene):
+        raise TypeError("overlap_scene needs a Scene")
+    if not isinstance(shape, (Sphere, AABB)):
+        raise TypeError("overlap_scene needs a Sphere or AABB")
+    if layer is not None and not isinstance(layer, str):
+        raise TypeError("overlap layer must be a string or None")
+    if layer is not None and not layer.strip():
+        raise ValueError("overlap layer must be a non-blank string")
+    ignored = _ignore_names(ignore)
+    centre = shape.center
+    found: list[SceneOverlap] = []
+    for node, box in _scene_meshes(scene, layer, ignored):
+        if isinstance(shape, Sphere):
+            overlaps = sphere_aabb_overlap(shape, box)
+        else:
+            overlaps = aabb_overlap(shape, box)
+        if not overlaps:
+            continue
+        found.append(
+            SceneOverlap(
+                node_id=node.id,
+                node_name=node.name,
+                distance=(box.center - centre).length(),
+                box=box,
+            )
+        )
+    found.sort(key=lambda hit: (hit.distance, hit.node_id))
+    return tuple(found)
+
+
+def overlap_report(hits: tuple[SceneOverlap, ...] | list[SceneOverlap]) -> dict:
+    """Return a JSON-safe summary of one overlap query."""
+    try:
+        items = tuple(hits)
+    except TypeError as exc:
+        raise TypeError("overlap_report needs an iterable of SceneOverlap") from exc
+    for hit in items:
+        if not isinstance(hit, SceneOverlap):
+            raise TypeError("overlap_report needs an iterable of SceneOverlap")
+    return {
+        "schema": 1,
+        "count": len(items),
+        "nodes": [
+            {
+                "node_id": hit.node_id,
+                "node_name": hit.node_name,
+                "distance": round(hit.distance, 6),
+                "center": [round(hit.box.center.x, 6), round(hit.box.center.y, 6), round(hit.box.center.z, 6)],
+            }
+            for hit in items
+        ],
     }

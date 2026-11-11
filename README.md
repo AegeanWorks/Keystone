@@ -220,7 +220,7 @@ hit = raycast_scene(scene, Ray(camera.position, camera.forward()))
 print(hit_report(hit))
 ```
 
-`raycast_scene()` returns the nearest visible mesh under a ray as a `SceneHit` with the node id, node name, world distance and contact point. Hidden nodes, camera-relative overlay content, an excluded layer and ignored ids or names never block the query, and bounds are the same conservative mesh AABBs navigation uses. `hit_report()` emits a JSON-safe hit or miss for agent logs and evidence. `--describe` reports `capabilities.scene_raycast`.
+`raycast_scene()` returns the nearest visible mesh under a ray as a `SceneHit` with the node id, node name, world distance and contact point. Hidden nodes, camera-relative overlay content, an excluded layer and ignored ids or names never block the query, and bounds are the same conservative mesh AABBs navigation uses. `overlap_scene()` is the area counterpart: pass a `Sphere` or `AABB` and get every overlapping visible mesh, sorted by centre distance then node id, with the same filters. `hit_report()` and `overlap_report()` emit JSON-safe results for agent logs and evidence. `--describe` reports `capabilities.scene_raycast` and `capabilities.scene_overlap`.
 
 ### Navigation: following a route
 

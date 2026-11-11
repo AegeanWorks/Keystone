@@ -141,6 +141,7 @@ keystone/
 │   ├── test_clock.py         <- fixed-step clock
 │   ├── test_physics.py       <- rays, AABB, sphere queries and raycasts
 │   ├── test_picking.py       <- scene ray hits, filters and reports
+│   ├── test_overlap.py        <- scene sphere/box overlap queries
 │   ├── test_pathfinding.py   <- nav grids, A* routes and path reports
 │   ├── test_path_smoothing.py <- line of sight and waypoint reduction
 │   ├── test_navigation.py    <- waypoint followers and route integration

@@ -78,7 +78,14 @@ from keystone.pathfinding import (
     path_report,
     smooth_path,
 )
-from keystone.picking import SceneHit, hit_report, raycast_scene
+from keystone.picking import (
+    SceneHit,
+    SceneOverlap,
+    hit_report,
+    overlap_report,
+    overlap_scene,
+    raycast_scene,
+)
 from keystone.playtest import (
     PLAYTEST_REPORT_SCHEMA,
     TRANSCRIPT_SCHEMA,
@@ -166,6 +173,7 @@ __all__ = [
     "Scene",
     "SceneGroup",
     "SceneHit",
+    "SceneOverlap",
     "ScriptedPolicy",
     "ShadowSettings",
     "SoundSource",
@@ -206,6 +214,8 @@ __all__ = [
     "node_visible",
     "noise",
     "observe",
+    "overlap_report",
+    "overlap_scene",
     "parse_actions",
     "particles_report",
     "path_report",
