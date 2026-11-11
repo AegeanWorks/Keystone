@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `181`
-- **Total Classes**: `305`
-- **Total Top-Level Functions**: `524`
-- **Total Class Methods**: `1904`
-- **Total Source Lines**: `48575`
+- **Total Python Modules**: `182`
+- **Total Classes**: `308`
+- **Total Top-Level Functions**: `527`
+- **Total Class Methods**: `1932`
+- **Total Source Lines**: `48897`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`181` module(s))
+- **Indexed**: python (`182` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `253` lines (`5487` bytes)
+**Size**: `260` lines (`5578` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -150,7 +150,7 @@
 ### [`keystone/animation_blend.py`](keystone/animation_blend.py)
 > *Deterministic one-dimensional animation blend spaces.*
 
-**Size**: `154` lines (`5598` bytes)
+**Size**: `305` lines (`11955` bytes)
 
 **Classes:**
 - `class BlendSample` - *One clip anchored at a scalar threshold.*
@@ -165,10 +165,24 @@
   - Method `.to_dict()`
   - Method `.from_dict(data)`
   - Method `.report()` - *Return a JSON-safe summary for AI clients and diagnostics.*
+- `class BlendSample2D` - *One clip anchored at a point in a two-parameter plane.*
+  - Method `.__post_init__()`
+  - Method `.to_dict()`
+  - Method `.from_dict(data)`
+- `class BlendSpace2D` - *A rectangular grid of clips blended bilinearly in two parameters.*
+  - Method `.__post_init__()`
+  - Property `.xs`
+  - Property `.ys`
+  - Property `.duration`
+  - Method `.sample(x_parameter, y_parameter, time)` - *Return the bilinearly blended pose at one point and clip time.*
+  - Method `.to_dict()`
+  - Method `.from_dict(data)`
+  - Method `.report()` - *Return a JSON-safe summary for AI clients and diagnostics.*
 
 **Functions:**
 - `def _finite(label, value)`
 - `def _schema(data)`
+- `def _cell(axis, value)` - *Return the bracketing indices and blend factor on one axis.*
 
 ---
 
@@ -1377,7 +1391,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `137` lines (`5194` bytes)
+**Size**: `138` lines (`5234` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -2330,6 +2344,37 @@
 
 **Functions:**
 - `def _clip(name, x)`
+
+---
+
+### [`tests/test_animation_blend2d.py`](tests/test_animation_blend2d.py)
+> *Tests for deterministic 2D (bilinear grid) animation blend spaces.*
+
+**Size**: `163` lines (`6947` bytes)
+
+**Classes:**
+- `class BlendSpace2DTest`
+  - Method `.test_grid_axes_are_sorted()`
+  - Method `.test_corners_return_their_samples()`
+  - Method `.test_the_centre_is_the_bilinear_average()`
+  - Method `.test_edges_interpolate_one_axis()`
+  - Method `.test_values_clamp_to_the_grid()`
+  - Method `.test_a_single_row_or_column_still_blends()`
+  - Method `.test_a_single_sample_is_returned_directly()`
+  - Method `.test_a_3x2_grid_uses_the_local_cell()`
+  - Method `.test_sampling_is_deterministic()`
+  - Method `.test_duration_is_the_longest_clip()`
+  - Method `.test_documents_round_trip_and_are_json_safe()`
+  - Method `.test_reports_are_json_safe()`
+  - Method `.test_an_incomplete_grid_is_rejected()`
+  - Method `.test_duplicate_coordinates_are_rejected()`
+  - Method `.test_malformed_spaces_are_rejected()`
+  - Method `.test_malformed_documents_are_rejected()`
+  - Method `.test_describe_advertises_2d_blending()`
+
+**Functions:**
+- `def _clip(name, x)`
+- `def _grid()`
 
 ---
 

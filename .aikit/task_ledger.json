@@ -1,94 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-scene-overlap-v1",
+    "task_id": "keystone-blend2d-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794437368.9853742,
+    "updated_at": 1794438831.660977,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
-    "completed_at": 1794437392.030396
+    "completed_at": 1794438878.6122448
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-delivery-composition-v1",
-      "phase": "superseded",
-      "phase_num": 4,
-      "description": "Superseded by 'keystone-nav-authoring-v1' without --complete or --reset",
-      "status": "superseded",
-      "timestamp": 1794424989.1649854,
-      "timestamp_str": "2026-11-11 22:23:09",
-      "agent": "kilo:goal"
-    },
-    {
-      "task_id": "keystone-nav-authoring-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/3] Implemented and verified - NavGrid.to_dict/from_dict persist sorted schema-1 documents and reject bad schemas, sizes, malformed/duplicate/out-of-bounds cells; nav_authoring.grid_from_boxes rasterizes AABB collisions with XZ clearance into blocked cells, read_navgrid/write_navgrid use atomic JSON; exports, README section and bullet, ARCHITECTURE row and tree, docs/TREE.md, CHANGELOG and ADR-232 updated; --describe reports capabilities.nav_authoring; 15 tests green (1119 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged",
-      "files_affected": [
-        "keystone/pathfinding.py",
-        "keystone/nav_authoring.py",
-        "tests/test_nav_authoring.py",
-        "keystone/__init__.py",
-        "keystone/plugin.py",
-        "README.md",
-        "docs/ARCHITECTURE.md",
-        "docs/TREE.md",
-        "CHANGELOG.md",
-        ".aikit/decisions.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794425016.6908746,
-      "timestamp_str": "2026-11-11 22:23:36",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "baseline": 1104.0,
-          "unit": "tests",
-          "candidate": 1119.0,
-          "command": "python -m pytest --collect-only -q",
-          "metric": "collected_tests",
-          "artifact": "stdout"
-        },
-        {
-          "baseline": 24335.0,
-          "unit": "chars",
-          "candidate": 25080.0,
-          "command": "python -c len(README.md)",
-          "metric": "readme_chars",
-          "artifact": "README.md"
-        },
-        {
-          "baseline": 4899.0,
-          "unit": "bytes",
-          "candidate": 4899.0,
-          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
-          "metric": "reference_png_bytes",
-          "artifact": "temp PNG"
-        }
-      ],
-      "checklists": "passed"
-    },
-    {
-      "task_id": "keystone-scene-boxes-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: complete the nav authoring loop by deriving collision AABBs from scene geometry (scene_boxes), skipping overlay and hidden nodes, with an optional layer filter, so a level feeds grid_from_boxes directly",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794426555.8424232,
-      "timestamp_str": "2026-11-11 22:49:15",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "ADR-232 rasterized boxes but callers still had to collect them; scene meshes already know their world bounds, and every game would otherwise repeat the same loop with different rules for hidden and camera-relative nodes.",
-        "benefits": "Level collision becomes navigation input in one line, viewmodel and hidden geometry cannot leak into the walkable set, and the box order is deterministic for evidence.",
-        "risks": "contract: nav_authoring gains scene_boxes and one export; dependency: nav_authoring now imports culling, geometry and scene; concurrency: none; state: no document change.",
-        "mitigation": "Reuse culling.world_bounds, skip OVERLAY_LAYER unconditionally, validate the Scene and layer, pin ordering and hierarchy behaviour, prove an end-to-end pillar route, and keep the canonical evidence unchanged."
-      },
-      "plan_digest": "d99e7b2e386a6cb96f9b3c8cc146d2eac7c0642dbc8985a6757a0c9e824dd8cb"
-    },
     {
       "task_id": "keystone-nav-authoring-v1",
       "phase": "superseded",
@@ -499,6 +422,82 @@
       "status": "completed",
       "timestamp": 1794437392.0303972,
       "timestamp_str": "2026-11-12 01:49:52",
+      "agent": "kilo:goal"
+    },
+    {
+      "task_id": "keystone-blend2d-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: add bilinear rectangular 2D blend spaces (BlendSample2D, BlendSpace2D) with a complete-grid requirement, canonical sample order, schema-1 documents, strict validation and a discovery flag",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794438798.9705691,
+      "timestamp_str": "2026-11-12 02:13:18",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "Only 1D blend spaces existed, but speed/direction locomotion needs a two-parameter plane; nesting 1D spaces or hand-blending four poses repeats game code and is error-prone.",
+        "benefits": "Exact deterministic bilinear weights over a grid, persisted JSON, and a natural locomotion complement to the 1D space that AI clients can inspect.",
+        "risks": "contract: animation_blend gains two classes, two exports and a capability; dependency: none; concurrency: none; state: schema-1 document is new and does not touch state-machine documents.",
+        "mitigation": "Require a complete rectangular grid with actionable errors, store samples in canonical order for stable docs, pin corners/centre/edges/clamping/validation, and keep the canonical evidence unchanged."
+      },
+      "plan_digest": "5d18222b4d66bb2e93cdbbe27fea72a9a163a65fd0f6b10eb40c5dd5d56f9c01"
+    },
+    {
+      "task_id": "keystone-blend2d-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/3] Implemented and verified - BlendSample2D and BlendSpace2D store canonically ordered samples on a complete rectangular grid, clamp each axis, bilinearly blend the surrounding cell via blend_poses and degenerate cleanly for 1xN/Nx1/1x1; schema-1 documents reject unknown fields, incomplete grids and duplicate anchors; exports, README, ARCHITECTURE, docs/TREE, CHANGELOG and ADR-238 updated; --describe reports capabilities.animation_blend_2d; 17 tests green (1200 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
+      "files_affected": [
+        "keystone/animation_blend.py",
+        "tests/test_animation_blend2d.py",
+        "keystone/__init__.py",
+        "keystone/plugin.py",
+        "README.md",
+        "docs/ARCHITECTURE.md",
+        "docs/TREE.md",
+        "CHANGELOG.md",
+        ".aikit/decisions.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1794438831.660977,
+      "timestamp_str": "2026-11-12 02:13:51",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "artifact": "stdout",
+          "baseline": 1183.0,
+          "candidate": 1200.0,
+          "unit": "tests",
+          "metric": "collected_tests",
+          "command": "python -m pytest --collect-only -q"
+        },
+        {
+          "artifact": "tests/test_animation_blend2d.py",
+          "baseline": 0.0,
+          "candidate": 15.0,
+          "unit": "pose",
+          "metric": "bilinear_centre_value",
+          "command": "python -m pytest tests/test_animation_blend2d.py"
+        },
+        {
+          "artifact": "temp PNG",
+          "baseline": 4899.0,
+          "candidate": 4899.0,
+          "unit": "bytes",
+          "metric": "reference_png_bytes",
+          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png"
+        }
+      ],
+      "checklists": "passed"
+    },
+    {
+      "task_id": "keystone-blend2d-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-blend2d-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794438878.6122463,
+      "timestamp_str": "2026-11-12 02:14:38",
       "agent": "kilo:goal"
     }
   ]

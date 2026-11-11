@@ -355,7 +355,7 @@ The API sends CORS headers so local AI clients can call it directly. Keep the de
 - **Runtime**: fixed-step clock with bounded catch-up; headless one-step-per-frame determinism.
 - **Input**: rebindable `InputMap` across contexts, a game `bind_input` hook, and dead-binding diagnostics.
 - **Audio**: synth, named-bus mixer, deterministic mixdown, WAV I/O, distance-attenuated spatial mixes and reports; no hardware output.
-- **Animation**: tracks/clips, looping, crossfades, events, blend spaces, masked `apply_pose`, clip binding onto pooled nodes, CPU/GPU skinning and state machines.
+- **Animation**: tracks/clips, looping, crossfades, events, 1D and bilinear 2D blend spaces, masked `apply_pose`, clip binding onto pooled nodes, CPU/GPU skinning and state machines.
 - **Particles and physics**: seeded emitters with swept collision; rays, AABB/sphere queries, broadphase, scene picking, character movement and triggers.
 - **Pathfinding**: immutable nav grids, deterministic A* over 4 or 8 neighbours with corner-cut refusal, line-of-sight path smoothing, JSON-safe path reports, scene/box-derived nav grids with schema-1 documents, and a waypoint follower that feeds `CharacterController`.
 - **Replay and persistence**: command logs, stable hashes, `run_log`/`verify_log`, atomic JSON with `.bak`.

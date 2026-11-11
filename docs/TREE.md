@@ -160,6 +160,7 @@ keystone/
 │   ├── test_animation.py     <- clips, blending and timed events
 │   ├── test_animation_binding.py <- clip retargeting onto pooled node ids
 │   ├── test_animation_blend.py <- blend spaces
+│   ├── test_animation_blend2d.py <- bilinear 2D blend grids
 │   ├── test_animation_state.py <- state transitions, triggers and round trips
 │   ├── test_animation_library.py <- clip library save, load, delete and restore
 │   ├── test_state_machine_library.py <- .kstate library save/delete/restore

@@ -12,7 +12,12 @@ from keystone.animation import (
     apply_pose,
     blend_poses,
 )
-from keystone.animation_blend import BlendSample, BlendSpace1D
+from keystone.animation_blend import (
+    BlendSample,
+    BlendSample2D,
+    BlendSpace1D,
+    BlendSpace2D,
+)
 from keystone.animation_state import (
     AnimationState,
     AnimationStateMachine,
@@ -137,7 +142,9 @@ __all__ = [
     "AudioClip",
     "AuditTrail",
     "BlendSample",
+    "BlendSample2D",
     "BlendSpace1D",
+    "BlendSpace2D",
     "BloomSettings",
     "BotPolicy",
     "CameraRig",
