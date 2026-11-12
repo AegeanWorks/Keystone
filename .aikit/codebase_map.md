@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `189`
-- **Total Classes**: `328`
-- **Total Top-Level Functions**: `545`
-- **Total Class Methods**: `2048`
-- **Total Source Lines**: `51302`
+- **Total Python Modules**: `191`
+- **Total Classes**: `331`
+- **Total Top-Level Functions**: `551`
+- **Total Class Methods**: `2068`
+- **Total Source Lines**: `51700`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`189` module(s))
+- **Indexed**: python (`191` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `273` lines (`5949` bytes)
+**Size**: `276` lines (`6047` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -1188,6 +1188,29 @@
 
 ---
 
+### [`keystone/nav_agent.py`](keystone/nav_agent.py)
+> *A reusable agent that walks a nav route with collision and local avoidance.*
+
+**Size**: `225` lines (`8993` bytes)
+
+**Classes:**
+- `class NavAgent` - *One character that walks a `NavGrid` route with a controller.*
+  - Method `.__init__(grid, controller, body, *, cell_size, origin, height, speed, arrive_radius, diagonal, smooth, separation_weight)`
+  - Property `.position`
+  - Property `.done`
+  - Method `.current_cell()`
+  - Method `.set_goal(goal)` - *Plan to ``goal``; return False and clear the route when unreachable.*
+  - Method `.replan()` - *Recompute the route to the current goal, if one is set.*
+  - Method `.step(dt, obstacles, neighbours)` - *Advance the body one step and return a JSON-safe progress report.*
+
+**Functions:**
+- `def _finite(label, value)`
+- `def _point(label, value)`
+- `def _agent_cell(grid, position, cell_size, origin)`
+- `def nav_agent_report(agent)` - *Return a JSON-safe summary of an agent's progress and body.*
+
+---
+
 ### [`keystone/nav_authoring.py`](keystone/nav_authoring.py)
 > *Author nav grids from collision boxes or JSON documents.*
 
@@ -1394,7 +1417,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `145` lines (`5494` bytes)
+**Size**: `146` lines (`5525` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -3394,6 +3417,34 @@
 **Functions:**
 - `def _rig_mesh(**overrides)`
 - `def _rig_scene(transform, material, mesh)`
+
+---
+
+### [`tests/test_nav_agent.py`](tests/test_nav_agent.py)
+> *Tests for the reusable nav agent.*
+
+**Size**: `169` lines (`6855` bytes)
+
+**Classes:**
+- `class NavAgentPlanTest`
+  - Method `.test_a_goal_plans_a_route_and_reports_it()`
+  - Method `.test_an_unreachable_goal_clears_the_plan()`
+  - Method `.test_a_blocked_or_outside_goal_raises()`
+  - Method `.test_a_blocked_start_raises()`
+  - Method `.test_replan_without_a_goal_returns_false()`
+  - Method `.test_agent_validation()`
+- `class NavAgentWalkTest`
+  - Method `.test_an_agent_walks_around_a_wall_to_its_goal()`
+  - Method `.test_a_route_to_the_current_cell_finishes_immediately()`
+  - Method `.test_step_validation()`
+  - Method `.test_neighbours_can_push_an_agent_off_a_straight_route()`
+  - Method `.test_zero_separation_weight_ignores_neighbours()`
+  - Method `.test_report_is_json_safe()`
+  - Method `.test_describe_advertises_nav_agents()`
+
+**Functions:**
+- `def _floor(x, z)`
+- `def _agent(grid, *, x, z, speed, **kwargs)`
 
 ---
 

@@ -70,6 +70,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "deterministic_random": True,
             "scene_overlap": True,
             "navigation": True,
+            "nav_agent": True,
             "steering": True,
             "tilemap": True,
             "agents": True,

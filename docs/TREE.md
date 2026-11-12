@@ -45,6 +45,7 @@ keystone/
 │   ├── broadphase.py         <- deterministic spatial-grid broadphase
 │   ├── pathfinding.py        <- deterministic A* over a bounded nav grid
 │   ├── navigation.py         <- waypoint following and grid-to-world route points
+│   ├── nav_agent.py          <- route-walking agent over the character controller
 │   ├── steering.py           <- seek, arrive and separation steering
 │   ├── nav_authoring.py      <- scene/box-derived nav grids and schema-1 documents
 │   ├── character.py          <- AABB movement and ground detection
@@ -149,6 +150,7 @@ keystone/
 │   ├── test_pathfinding.py   <- nav grids, A* routes and path reports
 │   ├── test_path_smoothing.py <- line of sight and waypoint reduction
 │   ├── test_navigation.py    <- waypoint followers and route integration
+│   ├── test_nav_agent.py     <- agent planning, walking and avoidance
 │   ├── test_steering.py      <- seek, arrive, separation and clamps
 │   ├── test_nav_authoring.py <- nav documents and box rasterization
 │   ├── test_scene_boxes.py   <- scene collision boxes and route integration

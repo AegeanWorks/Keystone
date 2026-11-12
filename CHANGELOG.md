@@ -208,6 +208,11 @@ changes that do not bump the release number yet.
   colliders per solid cell, a merged floor-and-wall `MeshData` in one draw,
   `with_cell()` copies, schema-1 documents and a JSON-safe
   `tilemap_report()`. `--describe` reports `capabilities.tilemap`.
+- `keystone.nav_agent` adds `NavAgent` and `nav_agent_report`: one object
+  composes A*, smoothing, waypoint following, separation steering and
+  `CharacterController`; `set_goal` plans once, `replan` re-runs, and `step`
+  moves the body against colliders with optional neighbour avoidance while
+  returning JSON-safe progress. `--describe` reports `capabilities.nav_agent`.
 - `keystone.steering` adds deterministic `Agent`, `seek`, `arrive`,
   `separation`, `steer` and `steering_report`: pure wish-velocity shaping
   with quadratic contact repulsion and a max-speed clamp, no time step or

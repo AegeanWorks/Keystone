@@ -67,6 +67,7 @@ from keystone.input import ActionState, InputMap
 from keystone.lifecycle import ComponentRuntime, LifecycleContext, lifecycle_hooks
 from keystone.material_graph import MaterialGraph, MaterialGraphNode
 from keystone.math3d import Mat4, Quat, Vec3
+from keystone.nav_agent import NavAgent, nav_agent_report
 from keystone.nav_authoring import (
     grid_from_boxes,
     read_navgrid,
@@ -169,6 +170,7 @@ __all__ = [
     "MaterialGraph",
     "MaterialGraphNode",
     "Mixer",
+    "NavAgent",
     "NavGrid",
     "Node",
     "Particle",
@@ -225,6 +227,7 @@ __all__ = [
     "merge_batches",
     "mix_clips",
     "model_visible",
+    "nav_agent_report",
     "navigation_report",
     "node_visible",
     "noise",
