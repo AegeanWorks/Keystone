@@ -38,6 +38,7 @@ keystone/
 ├── rng.py            SplitMix64 random streams and snapshots
 ├── root_motion.py    root-motion delta extraction and in-place poses
 ├── root_motion_body.py  root-motion clips driving a character body
+├── root_motion_presenter.py  container-node presentation for root-motion bodies
 ├── serialization.py  atomic JSON with .bak
 ├── headless.py       no-GL action simulation
 ├── analysis.py       frame statistics, projected scene and report diff
@@ -172,7 +173,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Renderer | Implemented | OpenGL 3.3, sky, lights, PBR (metallic/roughness/emissive), fog, textures, readback, draw/triangle stats, static batch planning and world-space merge |
 | Runtime | Implemented | fixed clock, rebindable input with contexts and JSON persistence, loop, screenshots, profiler HUD with audio voices and animation clips |
 | Audio | Implemented | synth clips, named-bus mixer, deterministic mixdown, distance-attenuated spatial mixes, WAV I/O, audit reports |
-| Animation | Implemented | deterministic keyframe clips, looping controller, crossfade blending, timed events, pose application, JSON round trips, audit reports, clip binding onto pooled node ids, root-motion extraction with in-place baking, a looping root-motion player and a controller-driven root-motion body, parameter-driven state machines with triggers and crossfades, 1D blend spaces and bilinear rectangular 2D blend spaces, states that sample a 2D space by two parameters, blend states and editor previews, blend states that loop, wrap and crossfade at the space's own duration, file-backed `.kstate` machines with rename/duplicate, fixed-step editor previews, load-to-editor authoring and library keyframe editing |
+| Animation | Implemented | deterministic keyframe clips, looping controller, crossfade blending, timed events, pose application, JSON round trips, audit reports, clip binding onto pooled node ids, root-motion extraction with in-place baking, a looping root-motion player, a controller-driven root-motion body and a container presenter, parameter-driven state machines with triggers and crossfades, 1D blend spaces and bilinear rectangular 2D blend spaces, states that sample a 2D space by two parameters, blend states and editor previews, blend states that loop, wrap and crossfade at the space's own duration, file-backed `.kstate` machines with rename/duplicate, fixed-step editor previews, load-to-editor authoring and library keyframe editing |
 | Particles | Implemented | deterministic CPU emitters and systems with gravity/drag, swept AABB collision with bounce, friction and contact-kill, burst emission, lifetime culling, JSON round trips, HUD/inspector/AI reports, plus one GPU point-sprite billboard per live particle |
 | Replay | Implemented | CommandLog runner and verifier without a window; --replay log.json with hash pinning |
 | Randomness | Implemented | SplitMix64 streams with pinned reference vectors, labelled forks, inclusive unbiased integers, permutations and snapshot/restore for saves |

@@ -419,7 +419,7 @@ The API sends CORS headers so local AI clients can call it directly. Keep the de
 - **Runtime**: fixed-step clock with bounded catch-up; headless one-step-per-frame determinism.
 - **Input**: rebindable `InputMap` across contexts, a game `bind_input` hook, and dead-binding diagnostics.
 - **Audio**: synth, named-bus mixer, deterministic mixdown, WAV I/O, distance-attenuated spatial mixes and reports; no hardware output.
-- **Animation**: tracks/clips, looping, crossfades, events, 1D and bilinear 2D blend spaces, state machines that drive either space, masked `apply_pose`, clip binding onto pooled nodes, root-motion extraction, a looping player and a controller-driven root-motion body, CPU/GPU skinning and state machines.
+- **Animation**: tracks/clips, looping, crossfades, events, 1D and bilinear 2D blend spaces, state machines that drive either space, masked `apply_pose`, clip binding onto pooled nodes, root-motion extraction, a looping player, a controller-driven root-motion body and a scene presenter, CPU/GPU skinning and state machines.
 - **Particles and physics**: seeded emitters with swept collision; rays, AABB/sphere queries, broadphase, scene picking, character movement and triggers.
 - **Pathfinding**: immutable nav grids, deterministic A* over 4 or 8 neighbours with corner-cut refusal, line-of-sight path smoothing, JSON-safe path reports, scene/box-derived nav grids with schema-1 documents, a waypoint follower, seek/arrive/separation steering, and a composed nav agent that walks a route with collision and avoidance.
 - **Replay and determinism**: command logs, stable hashes, `run_log`/`verify_log`, atomic JSON with `.bak`, and SplitMix64 random streams with labelled forks and snapshot/restore.

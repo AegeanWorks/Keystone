@@ -33,6 +33,7 @@ keystone/
 │   ├── rng.py                <- SplitMix64 random streams and snapshots
 │   ├── root_motion.py        <- root deltas and in-place pose baking
 │   ├── root_motion_body.py   <- root-motion clips driving a character body
+│   ├── root_motion_presenter.py <- container-node presentation for root-motion bodies
 │   ├── history.py            <- bounded undo/redo snapshots
 │   ├── scene_snapshot.py     <- versioned scene save/load
 │   ├── scene_library.py      <- file-backed scene library
@@ -210,6 +211,7 @@ keystone/
 │   ├── test_root_motion.py   <- deltas, yaw and in-place poses
 │   ├── test_root_motion_player.py <- clip deltas across loop wraps
 │   ├── test_root_motion_body.py <- clip-driven bodies, walls and yaw
+│   ├── test_root_motion_presenter.py <- container sync and in-place posing
 │   ├── test_serialization.py <- atomic JSON persistence
 │   ├── test_component_codec.py <- typed component JSON codec
 │   ├── test_library_trash.py <- recoverable library deletes

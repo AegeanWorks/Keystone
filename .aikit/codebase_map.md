@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `197`
-- **Total Classes**: `342`
-- **Total Top-Level Functions**: `565`
-- **Total Class Methods**: `2136`
-- **Total Source Lines**: `53058`
+- **Total Python Modules**: `199`
+- **Total Classes**: `344`
+- **Total Top-Level Functions**: `570`
+- **Total Class Methods**: `2148`
+- **Total Source Lines**: `53294`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`197` module(s))
+- **Indexed**: python (`199` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `291` lines (`6437` bytes)
+**Size**: `297` lines (`6606` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -1420,7 +1420,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `150` lines (`5667` bytes)
+**Size**: `151` lines (`5710` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1656,6 +1656,22 @@
 
 **Functions:**
 - `def root_motion_body_report(rig)` - *Return a JSON-safe summary of a root-motion body.*
+
+---
+
+### [`keystone/root_motion_presenter.py`](keystone/root_motion_presenter.py)
+> *Present a root-motion body on scene nodes.*
+
+**Size**: `83` lines (`3151` bytes)
+
+**Classes:**
+- `class RootMotionPresenter` - *Sync one scene container to a root-motion body and apply its pose.*
+  - Method `.__init__(rig, container)`
+  - Method `.sync()` - *Place the container at the body position and yaw, keeping its scale.*
+  - Method `.step(scene, dt, colliders)` - *Advance the rig, sync the container and apply the in-place pose.*
+
+**Functions:**
+- `def root_motion_presenter_report(presenter)` - *Return a JSON-safe summary of a presenter's last step.*
 
 ---
 
@@ -4203,6 +4219,31 @@
 **Functions:**
 - `def _walk()`
 - `def _turn()`
+
+---
+
+### [`tests/test_root_motion_presenter.py`](tests/test_root_motion_presenter.py)
+> *Tests for presenting a root-motion body on scene nodes.*
+
+**Size**: `146` lines (`5559` bytes)
+
+**Classes:**
+- `class RootMotionPresenterTest`
+  - Method `.test_the_container_follows_the_body_and_children_stay_in_place()`
+  - Method `.test_turning_rotates_the_container()`
+  - Method `.test_sync_does_not_advance_the_clip()`
+  - Method `.test_scale_is_preserved()`
+  - Method `.test_report_names_the_container_and_updated_nodes()`
+  - Method `.test_colliders_stop_the_container()`
+  - Method `.test_missing_pose_nodes_are_reported_as_not_updated()`
+  - Method `.test_validation()`
+  - Method `.test_describe_advertises_the_presenter()`
+
+**Functions:**
+- `def _walk(units)`
+- `def _turn()`
+- `def _scene()`
+- `def _rig(clip)`
 
 ---
 

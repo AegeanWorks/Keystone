@@ -118,6 +118,10 @@ from keystone.root_motion import (
     root_motion_report,
 )
 from keystone.root_motion_body import RootMotionBody, root_motion_body_report
+from keystone.root_motion_presenter import (
+    RootMotionPresenter,
+    root_motion_presenter_report,
+)
 from keystone.scene import (
     OVERLAY_LAYER,
     BloomSettings,
@@ -195,6 +199,7 @@ __all__ = [
     "RootMotion",
     "RootMotionBody",
     "RootMotionPlayer",
+    "RootMotionPresenter",
     "Route",
     "Scene",
     "SceneGroup",
@@ -256,6 +261,7 @@ __all__ = [
     "read_navgrid",
     "read_wav",
     "root_motion_body_report",
+    "root_motion_presenter_report",
     "root_motion_report",
     "run_bot",
     "scene_boxes",
