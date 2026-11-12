@@ -170,6 +170,9 @@ changes that do not bump the release number yet.
   `--describe` reports `capabilities.scene_raycast`.
 - `ray_aabb` and `ray_sphere` now return world-unit distances for non-unit
   ray directions; they normalized the direction and scaled the result again.
+- `CameraShaker` composes a `CameraShake` offset onto an immutable base
+  camera pose, in world or camera-local space, and reports base, pose and
+  shake state. `--describe` reports `capabilities.camera_shaker`.
 - `keystone.camera_shake` adds `CameraShake`, `ShakeOffset` and
   `shake_report`: trauma accumulation, linear decay, seeded sine noise and a
   deterministic position/yaw/pitch offset for game feel.

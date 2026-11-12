@@ -45,6 +45,7 @@ from keystone.audio_spatial import (
 from keystone.batch import merge_batches, plan_batches
 from keystone.camera_rig import CameraRig
 from keystone.camera_shake import CameraShake, ShakeOffset, shake_report
+from keystone.camera_shaker import CameraShaker, camera_shaker_report
 from keystone.culling import (
     aabb_visible,
     cull_scene,
@@ -167,6 +168,7 @@ __all__ = [
     "BotPolicy",
     "CameraRig",
     "CameraShake",
+    "CameraShaker",
     "Checkpoint",
     "ColorSettings",
     "ComponentRuntime",
@@ -225,6 +227,7 @@ __all__ = [
     "audio_report",
     "blend_poses",
     "bone_matrices",
+    "camera_shaker_report",
     "canon",
     "canon_hash",
     "capture_route",

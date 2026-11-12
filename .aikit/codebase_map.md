@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `202`
-- **Total Classes**: `349`
-- **Total Top-Level Functions**: `572`
-- **Total Class Methods**: `2181`
-- **Total Source Lines**: `53710`
+- **Total Python Modules**: `204`
+- **Total Classes**: `351`
+- **Total Top-Level Functions**: `573`
+- **Total Class Methods**: `2194`
+- **Total Source Lines**: `53904`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`202` module(s))
+- **Indexed**: python (`204` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `301` lines (`6737` bytes)
+**Size**: `304` lines (`6855` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -474,6 +474,23 @@
 **Functions:**
 - `def _finite(label, value)`
 - `def shake_report(shake)` - *Return a JSON-safe summary of a shake state and its current offset.*
+
+---
+
+### [`keystone/camera_shaker.py`](keystone/camera_shaker.py)
+> *Compose deterministic camera shake with a base camera pose.*
+
+**Size**: `90` lines (`3249` bytes)
+
+**Classes:**
+- `class CameraShaker` - *Apply a `CameraShake` offset on top of an immutable base camera pose.*
+  - Method `.__init__(camera, shake, *, local)`
+  - Method `.add(amount)` - *Add trauma to the underlying shake.*
+  - Method `.update(dt)` - *Advance the shake decay clock.*
+  - Method `.pose()` - *Return the composed camera; the base camera is never changed.*
+
+**Functions:**
+- `def camera_shaker_report(shaker)` - *Return a JSON-safe summary of a base pose and its shaken pose.*
 
 ---
 
@@ -1442,7 +1459,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `153` lines (`5775` bytes)
+**Size**: `154` lines (`5810` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -2959,6 +2976,25 @@
   - Method `.test_report_rejects_other_objects()`
   - Method `.test_offset_is_immutable()`
   - Method `.test_describe_advertises_camera_shake()`
+
+---
+
+### [`tests/test_camera_shaker.py`](tests/test_camera_shaker.py)
+> *Tests for composing camera shake with a base camera pose.*
+
+**Size**: `100` lines (`4401` bytes)
+
+**Classes:**
+- `class CameraShakerTest`
+  - Method `.test_zero_trauma_leaves_the_base_pose()`
+  - Method `.test_the_base_camera_is_never_mutated()`
+  - Method `.test_shake_offsets_appear_in_the_composed_pose()`
+  - Method `.test_camera_local_translation_follows_the_base_orientation()`
+  - Method `.test_local_mode_uses_the_camera_basis()`
+  - Method `.test_update_decays_and_pose_reflects_zero()`
+  - Method `.test_report_is_json_safe()`
+  - Method `.test_validation()`
+  - Method `.test_describe_advertises_the_shaker()`
 
 ---
 

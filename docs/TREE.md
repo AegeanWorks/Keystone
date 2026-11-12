@@ -23,6 +23,7 @@ keystone/
 │   ├── clock.py              <- fixed-step clock
 │   ├── camera_rig.py          <- camera-following overlay rig for viewmodels and HUD anchors
 │   ├── camera_shake.py       <- trauma decay and seeded shake offsets
+│   ├── camera_shaker.py      <- shake offsets composed onto a base camera
 │   ├── content.py             <- content digests for batching, instancing and assets
 │   ├── evidence.py            <- deterministic capture routes and checkpoint evidence diffs
 │   ├── culling.py            <- frustum culling
@@ -191,6 +192,7 @@ keystone/
 │   ├── test_batch.py         <- batch planning and world-space merge
 │   ├── test_camera_rig.py     <- camera-space parts and rig sync
 │   ├── test_camera_shake.py  <- trauma, decay and deterministic offsets
+│   ├── test_camera_shaker.py <- base poses, local offsets and reports
 │   ├── test_content.py        <- mesh and material digest cache
 │   ├── test_evidence.py       <- capture routes, reruns and evidence diffs
 │   ├── test_feature_composition.py <- rig routes and overlay instancing seams
