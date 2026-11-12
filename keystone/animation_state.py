@@ -11,7 +11,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, replace
 
 from keystone.animation import AnimationClip, AnimationController
-from keystone.animation_blend import BlendSpace1D
+from keystone.animation_blend import BlendSpace1D, BlendSpace2D
 from keystone.scene import Transform
 
 __all__ = ["AnimationState", "AnimationStateMachine", "AnimationTransition"]
@@ -19,7 +19,16 @@ __all__ = ["AnimationState", "AnimationStateMachine", "AnimationTransition"]
 OPERATORS = ("greater", "less", "equal", "not_equal", "trigger")
 PARAMETER = float | bool
 _STATE_KEYS = frozenset(
-    {"name", "clip", "loop", "speed", "blend_space", "blend_parameter"}
+    {
+        "name",
+        "clip",
+        "loop",
+        "speed",
+        "blend_space",
+        "blend_parameter",
+        "blend_space2d",
+        "blend_parameters",
+    }
 )
 _TRANSITION_KEYS = frozenset(
     {"source", "target", "parameter", "operator", "value", "duration"}
@@ -56,7 +65,7 @@ def _parameter_value(label: str, value: object) -> PARAMETER:
 
 @dataclass(frozen=True, slots=True)
 class AnimationState:
-    """One named clip or 1D blend space with loop and speed settings."""
+    """One named clip, 1D blend space or 2D blend space with motion settings."""
 
     name: str
     clip: AnimationClip
@@ -64,6 +73,8 @@ class AnimationState:
     speed: float = 1.0
     blend_space: BlendSpace1D | None = None
     blend_parameter: str = "speed"
+    blend_space2d: BlendSpace2D | None = None
+    blend_parameters: tuple[str, str] = ("speed", "strafe")
 
     def __post_init__(self) -> None:
         _name("state name", self.name)
@@ -77,6 +88,18 @@ class AnimationState:
         ):
             raise TypeError("state blend_space must be a BlendSpace1D or None")
         _name("state blend parameter", self.blend_parameter)
+        if self.blend_space2d is not None and not isinstance(self.blend_space2d, BlendSpace2D):
+            raise TypeError("state blend_space2d must be a BlendSpace2D or None")
+        if self.blend_space is not None and self.blend_space2d is not None:
+            raise ValueError("animation state cannot use both blend_space and blend_space2d")
+        parameters = self.blend_parameters
+        if not isinstance(parameters, (tuple, list)):
+            raise TypeError("state blend_parameters must be two parameter names")
+        if len(parameters) != 2:
+            raise ValueError("state blend_parameters must name exactly two parameters")
+        for name in parameters:
+            _name("state blend parameter", name)
+        object.__setattr__(self, "blend_parameters", (parameters[0], parameters[1]))
 
     def to_dict(self) -> dict[str, object]:
         document: dict[str, object] = {
@@ -88,6 +111,9 @@ class AnimationState:
         if self.blend_space is not None:
             document["blend_space"] = self.blend_space.to_dict()
             document["blend_parameter"] = self.blend_parameter
+        if self.blend_space2d is not None:
+            document["blend_space2d"] = self.blend_space2d.to_dict()
+            document["blend_parameters"] = list(self.blend_parameters)
         return document
 
     @classmethod
@@ -100,15 +126,18 @@ class AnimationState:
         if "name" not in data:
             raise ValueError("animation state needs a name")
         raw_space = data.get("blend_space")
-        blend_space = (
-            BlendSpace1D.from_dict(raw_space)
-            if raw_space is not None
-            else None
-        )
+        raw_space2d = data.get("blend_space2d")
+        if raw_space is not None and raw_space2d is not None:
+            raise ValueError("animation state cannot use both blend_space and blend_space2d")
+        blend_space = BlendSpace1D.from_dict(raw_space) if raw_space is not None else None
+        blend_space2d = BlendSpace2D.from_dict(raw_space2d) if raw_space2d is not None else None
+        parameters = data.get("blend_parameters", ("speed", "strafe"))
         if "clip" in data:
             clip = AnimationClip.from_dict(data["clip"])
         elif blend_space is not None:
             clip = blend_space.samples[0].clip
+        elif blend_space2d is not None:
+            clip = blend_space2d.samples[0].clip
         else:
             raise ValueError("animation state needs a clip or blend_space")
         return cls(
@@ -118,6 +147,8 @@ class AnimationState:
             speed=data.get("speed", 1.0),
             blend_space=blend_space,
             blend_parameter=data.get("blend_parameter", "speed"),
+            blend_space2d=blend_space2d,
+            blend_parameters=parameters,  # type: ignore[arg-type]
         )
 
 
@@ -264,8 +295,20 @@ class AnimationStateMachine:
     def _sync_pose_provider(self) -> None:
         """Give the controller the active blend-space sampler, or clear it."""
         state = self.states[self.current]
-        if state.blend_space is None:
+        if state.blend_space is None and state.blend_space2d is None:
             self.controller.set_pose_provider(None)
+            return
+
+        if state.blend_space2d is not None:
+            space2d = state.blend_space2d
+            x_name, y_name = state.blend_parameters
+
+            def pose_at_2d(moment: float) -> dict[str, Transform]:
+                x_value = self.parameters.get(x_name, 0.0)
+                y_value = self.parameters.get(y_name, 0.0)
+                return space2d.sample(float(x_value), float(y_value), moment)
+
+            self.controller.set_pose_provider(pose_at_2d, lambda: space2d.duration)
             return
 
         space = state.blend_space
@@ -347,6 +390,16 @@ class AnimationStateMachine:
             "blend_parameter": (
                 state.blend_parameter
                 if state.blend_space is not None
+                else None
+            ),
+            "blend_space2d": (
+                state.blend_space2d.report()
+                if state.blend_space2d is not None
+                else None
+            ),
+            "blend_parameters": (
+                list(state.blend_parameters)
+                if state.blend_space2d is not None
                 else None
             ),
             "events": list(self.events),

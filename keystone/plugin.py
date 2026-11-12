@@ -84,6 +84,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "animation_events": True,
             "animation_blend": True,
             "animation_blend_2d": True,
+            "animation_state_blend_2d": True,
             "animation_binding": True,
             "replay": True,
             "asset_inventory": True,

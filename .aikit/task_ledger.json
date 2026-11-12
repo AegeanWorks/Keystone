@@ -1,96 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-rng-v1",
+    "task_id": "keystone-state-blend2d-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794440766.8519974,
+    "updated_at": 1794442289.1601334,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
-    "completed_at": 1794440768.4709663
+    "completed_at": 1794442302.866444
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-path-smoothing-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/3] Implemented and verified - line_of_sight uses exact DDA cell traversal plus the movement corner rule; smooth_path greedily keeps the furthest visible cell, preserves endpoints, returns short routes unchanged and is deterministic; open routes collapse to two points while wall routes retain required corners; exports, README, ARCHITECTURE, docs/TREE, CHANGELOG and ADR-234 updated; --describe reports capabilities.path_smoothing; 15 tests green (1142 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged",
-      "files_affected": [
-        "keystone/pathfinding.py",
-        "tests/test_path_smoothing.py",
-        "keystone/__init__.py",
-        "keystone/plugin.py",
-        "README.md",
-        "docs/ARCHITECTURE.md",
-        "docs/TREE.md",
-        "CHANGELOG.md",
-        ".aikit/decisions.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794427971.0357778,
-      "timestamp_str": "2026-11-11 23:12:51",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "metric": "collected_tests",
-          "unit": "tests",
-          "baseline": 1127.0,
-          "candidate": 1142.0,
-          "artifact": "stdout",
-          "command": "python -m pytest --collect-only -q"
-        },
-        {
-          "metric": "open_route_waypoints",
-          "unit": "waypoints",
-          "baseline": 6.0,
-          "candidate": 2.0,
-          "artifact": "tests/test_path_smoothing.py",
-          "command": "python -m pytest tests/test_path_smoothing.py"
-        },
-        {
-          "metric": "reference_png_bytes",
-          "unit": "bytes",
-          "baseline": 4899.0,
-          "candidate": 4899.0,
-          "artifact": "temp PNG",
-          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png"
-        }
-      ],
-      "checklists": "passed"
-    },
-    {
-      "task_id": "keystone-path-smoothing-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Verified and holding for delivery - twelve verified milestones are on disk with 6/6 gates and a fresh external backup; no further feature work will be stacked because the host forbids committing without an explicit user request and the delivery is now large enough that reviewability depends on a commit boundary",
-      "files_affected": [
-        ".aikit/decisions.md",
-        ".aikit/task_ledger.json"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794428555.8998775,
-      "timestamp_str": "2026-11-11 23:22:35",
-      "agent": "kilo:goal",
-      "checklists": "passed",
-      "handoff": {
-        "state": "23 modified and 21 untracked files, full suite 1142 tests green, ruff clean, canonical hash and 4899-byte PNG unchanged, backup at keystone-backup-20261111-231312.zip",
-        "next": "obtain explicit user authorization to commit, then stage by path and commit in milestone order (ADR-224 batching, ADR-225 rig/overlay, ADR-226 clip binding, ADR-227 HUD widgets, ADR-228 evidence routes, docs/TREE split, ADR-229 pathfinding, ADR-230 navigation, ADR-231 spatial audio, ADR-232 nav documents, ADR-233 scene boxes, ADR-234 smoothing), running python aikit.py check keystone --strict after the commit",
-        "open": "commit delivery not authorized, so the goal is blocked on that decision rather than on code",
-        "evidence": "ADR-224..ADR-234, tests for every milestone, feature-composition seams, differential A* fuzz"
-      }
-    },
-    {
-      "task_id": "keystone-path-smoothing-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-path-smoothing-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794432160.6312323,
-      "timestamp_str": "2026-11-12 00:22:40",
-      "agent": "kilo:goal"
-    },
     {
       "task_id": "keystone-picking-v1",
       "phase": "phase 2",
@@ -513,6 +434,81 @@
       "status": "completed",
       "timestamp": 1794440768.4709675,
       "timestamp_str": "2026-11-12 02:46:08",
+      "agent": "kilo:goal"
+    },
+    {
+      "task_id": "keystone-state-blend2d-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: let AnimationState drive a BlendSpace2D with two parameter names, one-space-only validation, document round trips and report exposure, so the 2D space added in ADR-238 is usable from state machines",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794442250.1910396,
+      "timestamp_str": "2026-11-12 03:10:50",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "BlendSpace2D existed but no consumer could sample it; 2D locomotion still needed game code outside the state machine.",
+        "benefits": "One state samples the bilinear grid from live parameters, with schema-1 documents and a discovery flag, while 1D behaviour is unchanged.",
+        "risks": "contract: AnimationState gains two fields and document keys; dependency: none; concurrency: none; state: .kstate documents stay schema 1 and remain backward compatible.",
+        "mitigation": "Reject both-space states, validate exactly two parameter names, keep the 1D sampler untouched, pin sampling/transitions/documents with failing-first tests, and keep the canonical evidence unchanged."
+      },
+      "plan_digest": "3ae9934da0f65b9e5026eb2f72fb0d91179a8dd0053cd57f9ab114ac1f7de24a"
+    },
+    {
+      "task_id": "keystone-state-blend2d-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/3] Implemented and verified - AnimationState accepts blend_space2d plus exactly two blend_parameters, rejects mixed space kinds, samples live machine parameters through the pose provider, round-trips documents and reports axes/parameters; the 1D path and existing state tests are unchanged; exports not needed, README/ARCHITECTURE/docs/TREE/CHANGELOG and ADR-240 updated; --describe reports capabilities.animation_state_blend_2d; 9 new tests green (1224 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
+      "files_affected": [
+        "keystone/animation_state.py",
+        "tests/test_animation_state_blend2d.py",
+        "keystone/plugin.py",
+        "README.md",
+        "docs/ARCHITECTURE.md",
+        "docs/TREE.md",
+        "CHANGELOG.md",
+        ".aikit/decisions.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1794442289.1601334,
+      "timestamp_str": "2026-11-12 03:11:29",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "artifact": "stdout",
+          "baseline": 1215.0,
+          "candidate": 1224.0,
+          "metric": "collected_tests",
+          "command": "python -m pytest --collect-only -q",
+          "unit": "tests"
+        },
+        {
+          "artifact": "tests/test_animation_state_blend2d.py",
+          "baseline": 0.0,
+          "candidate": 15.0,
+          "metric": "state_2d_centre_pose",
+          "command": "python -m pytest tests/test_animation_state_blend2d.py",
+          "unit": "pose"
+        },
+        {
+          "artifact": "temp PNG",
+          "baseline": 4899.0,
+          "candidate": 4899.0,
+          "metric": "reference_png_bytes",
+          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
+          "unit": "bytes"
+        }
+      ],
+      "checklists": "passed"
+    },
+    {
+      "task_id": "keystone-state-blend2d-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-state-blend2d-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794442302.8664453,
+      "timestamp_str": "2026-11-12 03:11:42",
       "agent": "kilo:goal"
     }
   ]

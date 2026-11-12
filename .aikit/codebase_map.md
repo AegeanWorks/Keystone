@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `184`
-- **Total Classes**: `313`
-- **Total Top-Level Functions**: `528`
-- **Total Class Methods**: `1960`
-- **Total Source Lines**: `49210`
+- **Total Python Modules**: `185`
+- **Total Classes**: `314`
+- **Total Top-Level Functions**: `530`
+- **Total Class Methods**: `1969`
+- **Total Source Lines**: `49426`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`184` module(s))
+- **Indexed**: python (`185` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -210,10 +210,10 @@
 ### [`keystone/animation_state.py`](keystone/animation_state.py)
 > *Deterministic parameter-driven animation state machines.*
 
-**Size**: `396` lines (`14776` bytes)
+**Size**: `449` lines (`17408` bytes)
 
 **Classes:**
-- `class AnimationState` - *One named clip or 1D blend space with loop and speed settings.*
+- `class AnimationState` - *One named clip, 1D blend space or 2D blend space with motion settings.*
   - Method `.__post_init__()`
   - Method `.to_dict()`
   - Method `.from_dict(data)`
@@ -1391,7 +1391,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `139` lines (`5276` bytes)
+**Size**: `140` lines (`5322` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -2443,6 +2443,29 @@
 **Functions:**
 - `def _clip(name, offset, events)`
 - `def _machine(duration)`
+
+---
+
+### [`tests/test_animation_state_blend2d.py`](tests/test_animation_state_blend2d.py)
+> *Tests for animation states that drive a 2D blend space.*
+
+**Size**: `162` lines (`6070` bytes)
+
+**Classes:**
+- `class StateBlend2DTest`
+  - Method `.test_a_state_samples_two_parameters()`
+  - Method `.test_parameter_changes_move_the_pose()`
+  - Method `.test_transitions_still_work_with_a_2d_state()`
+  - Method `.test_only_one_space_kind_is_allowed()`
+  - Method `.test_blend_parameters_are_validated()`
+  - Method `.test_state_documents_round_trip()`
+  - Method `.test_documents_reject_both_spaces()`
+  - Method `.test_report_exposes_the_2d_space()`
+  - Method `.test_describe_advertises_state_blending()`
+
+**Functions:**
+- `def _clip(name, x)`
+- `def _grid()`
 
 ---
 

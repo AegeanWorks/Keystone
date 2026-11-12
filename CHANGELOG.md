@@ -174,6 +174,11 @@ changes that do not bump the release number yet.
   word boundaries, preserve explicit newlines and blank lines, truncate an
   overlong single word and return the height used. `--describe` reports
   `capabilities.ui_text_wrap`.
+- Animation states can drive a `BlendSpace2D`: a state takes
+  `blend_space2d` plus two parameter names, samples the bilinear grid from
+  live machine parameters, round-trips through `.kstate` documents and
+  reports axes and parameters. A state may use one space kind only.
+  `--describe` reports `capabilities.animation_state_blend_2d`.
 - `keystone.rng` adds deterministic SplitMix64 `RandomStream` and
   `RandomStreamState`: uniform/random/randint/choice/shuffled, labelled
   forks and snapshot/restore, with the published reference vector pinned by

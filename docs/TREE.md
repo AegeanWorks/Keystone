@@ -163,6 +163,7 @@ keystone/
 │   ├── test_animation_blend.py <- blend spaces
 │   ├── test_animation_blend2d.py <- bilinear 2D blend grids
 │   ├── test_animation_state.py <- state transitions, triggers and round trips
+│   ├── test_animation_state_blend2d.py <- states driving 2D blend grids
 │   ├── test_animation_library.py <- clip library save, load, delete and restore
 │   ├── test_state_machine_library.py <- .kstate library save/delete/restore
 │   ├── test_material_library.py <- material library save, load, register and textures
