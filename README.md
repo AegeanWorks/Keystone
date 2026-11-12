@@ -311,7 +311,7 @@ def draw_ui(self, canvas: Canvas, state: HudState) -> None:
 
 The hook runs before the engine HUD and pause menu, so engine UI stays on top. It receives the current `Canvas` and `HudState`, so games share the embedded font, clipping and pause state. `H` hides game UI too.
 
-`canvas.paragraph(x, y, width, text, color, scale)` wraps at word boundaries, preserves explicit newlines and blank lines, truncates a single overlong word and returns the height used; `keystone.ui.font.wrap_text()` exposes the wrapped lines for custom layout. `--describe` reports `capabilities.ui_text_wrap`.
+`canvas.paragraph(x, y, width, text, color, scale)` wraps at word boundaries, preserves explicit newlines and blank lines, truncates a single overlong word and returns the height used; `canvas.image()` draws a clipped textured quad with UV subrects, tint and alpha. `--describe` reports `capabilities.ui_text_wrap` and `capabilities.ui_images`.
 
 ### Deterministic randomness
 
@@ -424,7 +424,7 @@ The API sends CORS headers so local AI clients can call it directly. Keep the de
 - **Pathfinding**: immutable nav grids, deterministic A* over 4 or 8 neighbours with corner-cut refusal, line-of-sight path smoothing, JSON-safe path reports, scene/box-derived nav grids with schema-1 documents, a waypoint follower, seek/arrive/separation steering, and a composed nav agent that walks a route with collision and avoidance.
 - **Replay and determinism**: command logs, stable hashes, `run_log`/`verify_log`, atomic JSON with `.bak`, and SplitMix64 random streams with labelled forks and snapshot/restore.
 - **Testing and AI**: `--describe`, `--simulate`, `--verify-determinism`, `--expect-hash`, frame reports, pixel diffs, seeded playtests, deterministic capture routes with checkpoint evidence diffs, and adapters.
-- **Human UI and web**: overlay/pause menu, `draw_ui`, measured-text layout widgets (`label_row`, `table`, `progress_bar`, `badge`) that stay inside the viewport, stdlib JSON API and WebGL2 console/editor.
+- **Human UI and web**: overlay/pause menu, `draw_ui`, measured-text layout widgets (`label_row`, `table`, `progress_bar`, `badge`), textured HUD images, stdlib JSON API and WebGL2 console/editor.
 - **Game-agnostic core**: no combat, light-lock, weave or expedition code.
 
 ## 🤖 AI Testing & Frame Analysis

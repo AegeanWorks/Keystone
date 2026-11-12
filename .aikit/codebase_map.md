@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `191`
-- **Total Classes**: `331`
-- **Total Top-Level Functions**: `551`
-- **Total Class Methods**: `2069`
-- **Total Source Lines**: `51873`
+- **Total Python Modules**: `192`
+- **Total Classes**: `334`
+- **Total Top-Level Functions**: `553`
+- **Total Class Methods**: `2085`
+- **Total Source Lines**: `52214`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`191` module(s))
+- **Indexed**: python (`192` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -949,12 +949,15 @@
 ### [`keystone/gpu/ui_renderer.py`](keystone/gpu/ui_renderer.py)
 > *Screen-space OpenGL renderer for the human UI canvas.*
 
-**Size**: `99` lines (`3160` bytes)
+**Size**: `219` lines (`8083` bytes)
 
 **Classes:**
 - `class UiRenderer` - *Uploads one canvas per frame and draws it over the 3D scene.*
   - Method `.__init__()`
   - Method `.draw(canvas)` - *Draw the canvas with alpha blending, then restore 3D render state.*
+  - Method `._gpu_texture(texture)`
+  - Method `._image_vertices(element)`
+  - Method `._draw_images(canvas)`
   - Method `.release()`
 
 ---
@@ -1417,7 +1420,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `146` lines (`5525` bytes)
+**Size**: `147` lines (`5556` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1935,16 +1938,18 @@
 ### [`keystone/ui/canvas.py`](keystone/ui/canvas.py)
 > *Screen-space 2D canvas built from clipped color quads and bitmap text.*
 
-**Size**: `192` lines (`6952` bytes)
+**Size**: `281` lines (`10293` bytes)
 
 **Classes:**
 - `class TextElement` - *One text draw call recorded for AI/UI reports.*
+- `class ImageElement` - *One textured quad recorded for GL and AI/UI reports.*
 - `class ButtonElement` - *One interactive button recorded for AI/UI reports.*
 - `class Canvas` - *Collects UI quads in top-left pixel coordinates and flattens them for GL.*
   - Method `.__init__(width, height)`
   - Property `.labels` - *Return the drawn text values in draw order.*
   - Method `._add(x, y, width, height, color)`
   - Method `.rect(x, y, width, height, color)` - *Append an axis-aligned filled rectangle, clipped to the canvas.*
+  - Method `.image(x, y, width, height, texture, color, u0, v0, u1, v1)` - *Append a textured quad, clipped to the canvas with adjusted UVs.*
   - Method `.text(x, y, text, color, scale)` - *Append bitmap text; lowercase is drawn as uppercase.*
   - Method `.text_width(text, scale)` - *Pixel width of a text run at this canvas scale (shared font metric).*
   - Method `.line_height(scale)` - *Pixel height of one text line at this canvas scale.*
@@ -4613,6 +4618,33 @@
 
 **Functions:**
 - `def state(**overrides)`
+
+---
+
+### [`tests/test_ui_images.py`](tests/test_ui_images.py)
+> *Tests for textured HUD images on the canvas and UI renderer.*
+
+**Size**: `131` lines (`5084` bytes)
+
+**Classes:**
+- `class CanvasImageTest`
+  - Method `.test_an_image_inside_the_canvas_records_full_uvs()`
+  - Method `.test_an_image_is_clipped_with_adjusted_uvs()`
+  - Method `.test_a_fully_outside_image_is_dropped()`
+  - Method `.test_malformed_images_are_rejected()`
+- `class UiImageRenderTest`
+  - Method `.setUp()`
+  - Method `._draw(canvas)`
+  - Method `._pixel(x, screen_y)`
+  - Method `.test_a_solid_texture_draws_at_its_rect()`
+  - Method `.test_the_texture_is_not_vertically_flipped()`
+  - Method `.test_uv_subrects_select_part_of_the_texture()`
+  - Method `.test_images_draw_after_colored_quads()`
+  - Method `.test_zero_alpha_and_empty_canvases_draw_nothing()`
+
+**Functions:**
+- `def _solid(red, green, blue, size)`
+- `def _rows(*rows)`
 
 ---
 
