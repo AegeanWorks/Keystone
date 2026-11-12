@@ -14,7 +14,7 @@ from typing import ClassVar
 from urllib.parse import urlparse
 
 from keystone.animation import AnimationClip, apply_pose
-from keystone.animation_blend import BlendSpace1D
+from keystone.animation_blend import BlendSpace1D, BlendSpace2D
 from keystone.animation_library import AnimationLibrary
 from keystone.animation_state import AnimationStateMachine
 from keystone.assets import AssetRegistry
@@ -307,6 +307,7 @@ class GameSession:
         self.last_prefab_refresh: dict[str, int] | None = None
         self.last_animation_preview: dict[str, object] | None = None
         self.last_blend_space_preview: dict[str, object] | None = None
+        self.last_blend_space2d_preview: dict[str, object] | None = None
         self.last_animation_key: dict[str, object] | None = None
         self.last_validation: dict[str, object] | None = None
         self.last_import: dict[str, object] | None = None
@@ -890,6 +891,7 @@ class GameSession:
         document["prefab_refresh"] = self.last_prefab_refresh
         document["animation_preview"] = self.last_animation_preview
         document["blend_space_preview"] = self.last_blend_space_preview
+        document["blend_space2d_preview"] = self.last_blend_space2d_preview
         document["animation_key"] = self.last_animation_key
         document["validation"] = self.last_validation
         document["imported_asset"] = self.last_import
@@ -1002,6 +1004,7 @@ class GameSession:
         self.last_prefab_refresh = None
         self.last_animation_preview = None
         self.last_blend_space_preview = None
+        self.last_blend_space2d_preview = None
         self.last_animation_key = None
         self.last_validation = None
         self.last_import = None
@@ -1409,6 +1412,59 @@ class GameSession:
                         "updated": list(updated),
                         "record": record,
                         "report": space.report(),
+                    }
+                elif action == "preview_blend_space2d":
+                    data = payload.get("blend_space")
+                    if not isinstance(data, dict):
+                        raise TypeError(
+                            "preview_blend_space2d blend_space must be a JSON object"
+                        )
+                    space2d = BlendSpace2D.from_dict(data)
+                    coordinates = {}
+                    for name, default in (("x", 0.0), ("y", 0.0)):
+                        value = payload.get(name, default)
+                        if (
+                            isinstance(value, bool)
+                            or not isinstance(value, (int, float))
+                            or not math.isfinite(value)
+                        ):
+                            raise ValueError(
+                                f"preview_blend_space2d {name} must be a finite number"
+                            )
+                        coordinates[name] = float(value)
+                    time = payload.get("time", 0.0)
+                    if (
+                        isinstance(time, bool)
+                        or not isinstance(time, (int, float))
+                        or not math.isfinite(time)
+                    ):
+                        raise ValueError(
+                            "preview_blend_space2d time must be a finite number"
+                        )
+                    if time < 0.0:
+                        raise ValueError(
+                            "preview_blend_space2d time must be non-negative"
+                        )
+                    record = payload.get("record", True)
+                    if not isinstance(record, bool):
+                        raise TypeError(
+                            "preview_blend_space2d record must be a boolean"
+                        )
+                    pose = space2d.sample(coordinates["x"], coordinates["y"], float(time))
+                    if record:
+                        updated = self._apply_history(
+                            scene, lambda: apply_pose(scene, pose)
+                        )
+                    else:
+                        updated = apply_pose(scene, pose)
+                        self.last_diff = None
+                    self.last_blend_space2d_preview = {
+                        "x": round(coordinates["x"], 6),
+                        "y": round(coordinates["y"], 6),
+                        "time": round(float(time), 6),
+                        "updated": list(updated),
+                        "record": record,
+                        "report": space2d.report(),
                     }
                 elif action == "save_animation":
                     if self.animation_library is None:

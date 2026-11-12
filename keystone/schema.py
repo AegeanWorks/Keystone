@@ -31,6 +31,7 @@ EDITOR_ACTIONS = (
     "play_stop",
     "preview_animation",
     "preview_blend_space",
+    "preview_blend_space2d",
     "save_animation",
     "delete_animation",
     "restore_animation",

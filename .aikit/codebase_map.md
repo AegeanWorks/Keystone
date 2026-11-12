@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `185`
 - **Total Classes**: `314`
-- **Total Top-Level Functions**: `530`
-- **Total Class Methods**: `1969`
-- **Total Source Lines**: `49426`
+- **Total Top-Level Functions**: `531`
+- **Total Class Methods**: `1970`
+- **Total Source Lines**: `49620`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`185` module(s))
@@ -1391,7 +1391,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `140` lines (`5322` bytes)
+**Size**: `141` lines (`5370` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1738,7 +1738,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `91` lines (`2021` bytes)
+**Size**: `92` lines (`2050` bytes)
 
 ---
 
@@ -2115,14 +2115,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `651` lines (`27083` bytes)
+**Size**: `701` lines (`28401` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `2995` lines (`134366` bytes)
+**Size**: `3051` lines (`137199` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -4497,7 +4497,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `6195` lines (`254078` bytes)
+**Size**: `6281` lines (`257012` bytes)
 
 **Classes:**
 - `class Health`
@@ -4608,6 +4608,7 @@
   - Method `.test_editor_state_machine_rename_and_duplicate()`
   - Method `.test_editor_state_machine_restore_collision_is_400()`
   - Method `.test_editor_preview_blend_space()`
+  - Method `.test_editor_preview_blend_space2d()`
   - Method `.test_editor_blend_state_console_round_trip()`
   - Method `.test_editor_animation_key_authoring()`
   - Method `.test_editor_material_library_save_assign_and_reload()`
@@ -4626,6 +4627,7 @@
 **Functions:**
 - `def _triangle_gltf()`
 - `def _state_machine_document()`
+- `def _blend_space2d_document()`
 - `def _blend_space_document()`
 
 ---

@@ -148,6 +148,41 @@ EDITOR_EXAMPLES = {
         "parameter": 0.5,
         "time": 0.0,
     },
+    "preview_blend_space2d": {
+        "action": "preview_blend_space2d",
+        "blend_space": {
+            "schema": 1,
+            "samples": [
+                {
+                    "clip": {
+                        "schema": 1,
+                        "name": "idle",
+                        "position": {},
+                        "rotation": {},
+                        "scale": {},
+                        "events": [],
+                    },
+                    "x": 0.0,
+                    "y": 0.0,
+                },
+                {
+                    "clip": {
+                        "schema": 1,
+                        "name": "run",
+                        "position": {},
+                        "rotation": {},
+                        "scale": {},
+                        "events": [],
+                    },
+                    "x": 1.0,
+                    "y": 1.0,
+                },
+            ],
+        },
+        "x": 0.5,
+        "y": 0.5,
+        "time": 0.0,
+    },
     "save_animation": {
         "action": "save_animation",
         "name": "bob",
@@ -407,6 +442,21 @@ EDITOR_SCHEMA = {
             "parameter",
             "time",
             "record",
+        ],
+        "preview_blend_space2d": [
+            "blend_space",
+            "x",
+            "y",
+            "time",
+            "record",
+        ],
+        "blend_space2d_preview": [
+            "x",
+            "y",
+            "time",
+            "updated",
+            "record",
+            "report",
         ],
         "blend_space_preview": [
             "parameter",

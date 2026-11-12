@@ -16,7 +16,12 @@ from unittest.mock import patch
 
 from keystone import web
 from keystone.animation import AnimationClip, Track
-from keystone.animation_blend import BlendSample, BlendSpace1D
+from keystone.animation_blend import (
+    BlendSample,
+    BlendSample2D,
+    BlendSpace1D,
+    BlendSpace2D,
+)
 from keystone.animation_state import (
     AnimationState,
     AnimationStateMachine,
@@ -112,6 +117,31 @@ def _state_machine_document():
             )
         ],
         {"speed": 0.0},
+    ).to_dict()
+
+
+def _blend_space2d_document():
+    def clip(name, x):
+        return AnimationClip(
+            name=name,
+            position_tracks=(
+                (
+                    "cube-0",
+                    Track(
+                        times=(0.0, 1.0),
+                        values=(Vec3(x, 0, 0), Vec3(x, 1, 0)),
+                    ),
+                ),
+            ),
+        )
+
+    return BlendSpace2D(
+        (
+            BlendSample2D(clip("bl", 0.0), 0.0, 0.0),
+            BlendSample2D(clip("br", 2.0), 1.0, 0.0),
+            BlendSample2D(clip("tl", 4.0), 0.0, 1.0),
+            BlendSample2D(clip("tr", 6.0), 1.0, 1.0),
+        )
     ).to_dict()
 
 
@@ -5066,6 +5096,62 @@ class WebServerTest(unittest.TestCase):
                 }
             )
         self.assertEqual(caught.exception.status, 400)
+
+    def test_editor_preview_blend_space2d(self):
+        from keystone.schema import EDITOR_ACTIONS
+
+        self.assertIn("preview_blend_space2d", EDITOR_ACTIONS)
+        session = GameSession(CubeDemo())
+        self.assertTrue(session.describe()["capabilities"]["animation_preview_blend_2d"])
+        document = _blend_space2d_document()
+        previewed = session.editor_action(
+            {
+                "action": "preview_blend_space2d",
+                "blend_space": document,
+                "x": 0.5,
+                "y": 0.5,
+                "time": 0.0,
+            }
+        )
+        preview = previewed["blend_space2d_preview"]
+        self.assertEqual(preview["x"], 0.5)
+        self.assertEqual(preview["y"], 0.5)
+        self.assertIn("cube-0", preview["updated"])
+        self.assertEqual(preview["report"]["xs"], [0.0, 1.0])
+        moved = next(node for node in previewed["nodes"] if node["id"] == "cube-0")
+        self.assertEqual(moved["transform"]["position"][0], 3.0)
+        self.assertEqual(previewed["history"]["undo"], 1)
+
+        before = previewed["history"]["undo"]
+        unrecorded = session.editor_action(
+            {
+                "action": "preview_blend_space2d",
+                "blend_space": document,
+                "x": 1.0,
+                "y": 1.0,
+                "time": 0.0,
+                "record": False,
+            }
+        )
+        self.assertFalse(unrecorded["blend_space2d_preview"]["record"])
+        self.assertEqual(unrecorded["history"]["undo"], before)
+        moved = next(node for node in unrecorded["nodes"] if node["id"] == "cube-0")
+        self.assertEqual(moved["transform"]["position"][0], 6.0)
+
+        for payload in (
+            {"x": float("nan")},
+            {"y": float("inf")},
+            {"time": -1.0},
+        ):
+            with self.subTest(payload=payload):
+                request = {
+                    "action": "preview_blend_space2d",
+                    "blend_space": document,
+                }
+                request.update(payload)
+                with self.assertRaises(WebProblem) as caught:
+                    session.editor_action(request)
+                self.assertEqual(caught.exception.status, 400)
 
     def test_editor_blend_state_console_round_trip(self):
         with tempfile.TemporaryDirectory() as directory:

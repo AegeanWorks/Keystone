@@ -350,8 +350,11 @@ The dashboard can inspect the game contract, run the same action scripts as `--s
 | `/api/describe` | `GET` | the same discovery payload as `--describe`, including `capabilities.web` |
 | `/api/scene` | `GET` | scene document schema 2: camera, lights, atmosphere, node identity, world matrices, shared meshes and RGBA textures |
 | `/api/inspector` | `GET` | batch plan, merge, audio/anim/particles, assets |
+| `/api/editor` | `GET/POST` | scene editor document and actions: hierarchy, selection, transforms, prefabs, assets, animation and 1D/2D blend-space previews |
 | `/api/simulate` | `POST` | the same deterministic result as `--simulate`; body `{"frames": 60, "actions": [...], "step": 0.0167, "trace": false}` |
 | `/api` | `GET` | endpoint and schema index |
+
+`POST /api/editor` takes `{"action": ..., ...}`; `preview_blend_space` and `preview_blend_space2d` apply a sampled pose from a 1D or 2D space and record it in editor history unless `record` is false.
 
 The API sends CORS headers so local AI clients can call it directly. Keep the default loopback host; pass `--host 0.0.0.0` for deliberate exposure. The server never opens a GL context.
 

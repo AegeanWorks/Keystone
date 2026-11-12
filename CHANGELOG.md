@@ -174,6 +174,10 @@ changes that do not bump the release number yet.
   word boundaries, preserve explicit newlines and blank lines, truncate an
   overlong single word and return the height used. `--describe` reports
   `capabilities.ui_text_wrap`.
+- The editor gains `preview_blend_space2d`: it samples a 2D blend space at
+  `x`, `y` and `time`, applies the pose through undo history (or
+  `record: false`), and reports the axes and parameters. `--describe`
+  reports `capabilities.animation_preview_blend_2d`.
 - Animation states can drive a `BlendSpace2D`: a state takes
   `blend_space2d` plus two parameter names, samples the bilinear grid from
   live machine parameters, round-trips through `.kstate` documents and

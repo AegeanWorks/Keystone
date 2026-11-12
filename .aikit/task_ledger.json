@@ -1,113 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-state-blend2d-v1",
+    "task_id": "keystone-editor-blend2d-preview-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794442289.1601334,
+    "updated_at": 1794443875.6892223,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
-    "completed_at": 1794442302.866444
+    "completed_at": 1794443906.1517944
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-picking-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: add scene picking (SceneHit, raycast_scene, hit_report) that resolves the nearest visible mesh node with filters and JSON-safe reports, and fix non-unit ray distances found while wiring it",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794433996.6824522,
-      "timestamp_str": "2026-11-12 00:53:16",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "Physics raycasts needed caller-built keyed boxes and games/AIs had no way to ask what node is under a ray; picking is a baseline Unity/Unreal capability and the bridge exposed a double-scaling defect in ray_aabb and ray_sphere for non-unit directions.",
-        "benefits": "One call resolves a ray to a node with distance and contact point, filters hidden/overlay/layer/ignored content, and reports hits or misses for agent logs; non-unit rays now return true world distances.",
-        "risks": "contract: new module, three exports, one capability, and a behavior fix in physics for non-unit rays; dependency: picking imports culling, physics, scene; concurrency: none; state: pure queries.",
-        "mitigation": "Reuse the same visibility and bound rules as navigation, delegate tie-breaking to physics.raycast, pin nearest hit, filters, max distance and non-unit distances with failing-first tests, and keep the canonical evidence unchanged."
-      },
-      "plan_digest": "55a729f2489c206edbbe0592b239aa09df083884ec634d9ccbba364cc1d59b55"
-    },
-    {
-      "task_id": "keystone-picking-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/3] Implemented and verified - keystone/picking.py adds SceneHit, raycast_scene (nearest visible mesh, hidden/overlay/layer/ignore filters, max_distance, id tie-break) and hit_report; ray_aabb and ray_sphere now return world-unit distances for non-unit directions; exports, README section and bullet, ARCHITECTURE row and tree, docs/TREE.md, CHANGELOG and ADR-235 updated; --describe reports capabilities.scene_raycast; 14 picking tests plus the physics regression green (1156 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
-      "files_affected": [
-        "keystone/picking.py",
-        "keystone/physics.py",
-        "tests/test_picking.py",
-        "tests/test_physics.py",
-        "keystone/__init__.py",
-        "keystone/plugin.py",
-        "README.md",
-        "docs/ARCHITECTURE.md",
-        "docs/TREE.md",
-        "CHANGELOG.md",
-        ".aikit/decisions.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794434018.2197912,
-      "timestamp_str": "2026-11-12 00:53:38",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "command": "python -m pytest --collect-only -q",
-          "artifact": "stdout",
-          "metric": "collected_tests",
-          "unit": "tests",
-          "baseline": 1142.0,
-          "candidate": 1156.0
-        },
-        {
-          "command": "python -m pytest tests/test_physics.py::PhysicsTest::test_ray_distance_is_world_units_for_a_non_unit_direction",
-          "artifact": "tests/test_physics.py",
-          "metric": "non_unit_ray_distance",
-          "unit": "world",
-          "baseline": 3.0,
-          "candidate": 1.5
-        },
-        {
-          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
-          "artifact": "temp PNG",
-          "metric": "reference_png_bytes",
-          "unit": "bytes",
-          "baseline": 4899.0,
-          "candidate": 4899.0
-        }
-      ],
-      "checklists": "passed"
-    },
-    {
-      "task_id": "keystone-picking-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-picking-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794434186.2643816,
-      "timestamp_str": "2026-11-12 00:56:26",
-      "agent": "kilo:goal"
-    },
-    {
-      "task_id": "keystone-hud-text-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: add word wrapping plus a measured paragraph draw (wrap_text, Canvas.paragraph) so HUD text wraps at the viewport width without games re-implementing layout",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794435645.8650103,
-      "timestamp_str": "2026-11-12 01:20:45",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "The HUD had measured single-line helpers but no wrapping, so every multi-line hint or dialogue re-measured strings; this is the remaining repeated layout code after the widget work.",
-        "benefits": "One call draws wrapped, width-safe HUD text with newline and blank-line control and a measured height, discoverable from --describe.",
-        "risks": "contract: font and canvas gain functions plus a capability; dependency: none; concurrency: none; state: no scene or report schema change.",
-        "mitigation": "Greedy word wrapping, truncation of overlong words, per-line width tests, validated scale/gap, and an unchanged canonical frame because the engine overlay does not use paragraphs yet."
-      },
-      "plan_digest": "58d9833797c0cd0680e6b6d4b9b2058f940ca560d23cbfead3c289e3ae929b16"
-    },
     {
       "task_id": "keystone-hud-text-v1",
       "phase": "phase 2",
@@ -509,6 +413,100 @@
       "status": "completed",
       "timestamp": 1794442302.8664453,
       "timestamp_str": "2026-11-12 03:11:42",
+      "agent": "kilo:goal"
+    },
+    {
+      "task_id": "keystone-editor-blend2d-preview-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: add the preview_blend_space2d editor action (x, y, time, record) with history support, editor document exposure, schema example/fields, action registration and a discovery flag, completing the 2D animation authoring loop",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794443853.0550911,
+      "timestamp_str": "2026-11-12 03:37:33",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "ADR-240 made states drive a 2D space, but the editor could only scrub 1D, so people and AI clients could not preview 2D locomotion on the authoring surface.",
+        "benefits": "The editor applies a sampled 2D pose through undo history or unrecorded, reports axes/parameters, and both preview actions are documented in the API index and schema.",
+        "risks": "contract: new editor action, editor document field, capability and schema entries; dependency: none; concurrency: none; state: preview fields reset per action like the existing previews.",
+        "mitigation": "Mirror the 1D action's validation and history path, keep the schema example test green, reject non-finite coordinates and negative time before applying, and keep the canonical frame unchanged."
+      },
+      "plan_digest": "716e24dbc141acfda9552b3a7d6a0322c1750f7778b9ba7407dbf759fdc1a429"
+    },
+    {
+      "task_id": "keystone-editor-blend2d-preview-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan (impact-assessed): add preview_blend_space2d to the editor API with x/y/time/record, history support, editor document exposure, schema example and fields, action registration and animation_preview_blend_2d",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794443868.3805559,
+      "timestamp_str": "2026-11-12 03:37:48",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "ADR-240 made states drive a 2D space, but the editor could only scrub 1D, so people and AI clients could not preview 2D locomotion on the authoring surface.",
+        "benefits": "A sampled 2D pose applies through undo history or unrecorded, with axes and parameters reported, and both preview actions are discoverable from the API index, schema and describe payload.",
+        "risks": "contract: new editor action, editor field, capability and schema entries; dependency: none; concurrency: none; state: preview records reset per action as the existing previews do.",
+        "mitigation": "Mirror the 1D validation and history path, keep the schema example test green, reject non-finite coordinates and negative time before applying, and keep the canonical frame unchanged."
+      },
+      "plan_digest": "fcd0eb87536b0a6c9a90aed4d156feea31ab8fcc25c30d5181f537288e25a692"
+    },
+    {
+      "task_id": "keystone-editor-blend2d-preview-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/3] Implemented and verified - preview_blend_space2d samples a schema-1 2D space at x/y/time, applies the pose through undo history or record=false, stores blend_space2d_preview (coordinates, updated ids, report) and exposes it in the editor document; the action is registered in EDITOR_ACTIONS, has a schema example and field entry, README documents /api/editor and both previews, ARCHITECTURE marks tooling implemented, and --describe reports capabilities.animation_preview_blend_2d; a 2x2 grid previews 3.0 at (0.5,0.5), unrecorded (1,1) applies 6.0 without undo, NaN/Inf/negative time return 400; 1225 tests green, ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
+      "files_affected": [
+        "keystone/web/server.py",
+        "keystone/web/schema.py",
+        "keystone/schema.py",
+        "keystone/plugin.py",
+        "tests/test_web.py",
+        "README.md",
+        "docs/ARCHITECTURE.md",
+        "CHANGELOG.md",
+        ".aikit/decisions.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1794443875.6892223,
+      "timestamp_str": "2026-11-12 03:37:55",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "candidate": 1225.0,
+          "baseline": 1224.0,
+          "artifact": "stdout",
+          "command": "python -m pytest --collect-only -q",
+          "metric": "collected_tests",
+          "unit": "tests"
+        },
+        {
+          "candidate": 3.0,
+          "baseline": 0.0,
+          "artifact": "tests/test_web.py",
+          "command": "python -m pytest tests/test_web.py -k preview_blend_space2d",
+          "metric": "preview_2d_centre_pose",
+          "unit": "pose"
+        },
+        {
+          "candidate": 4899.0,
+          "baseline": 4899.0,
+          "artifact": "temp PNG",
+          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
+          "metric": "reference_png_bytes",
+          "unit": "bytes"
+        }
+      ],
+      "checklists": "passed"
+    },
+    {
+      "task_id": "keystone-editor-blend2d-preview-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-editor-blend2d-preview-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794443906.1517959,
+      "timestamp_str": "2026-11-12 03:38:26",
       "agent": "kilo:goal"
     }
   ]
