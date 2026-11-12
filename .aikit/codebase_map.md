@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `185`
-- **Total Classes**: `314`
-- **Total Top-Level Functions**: `531`
-- **Total Class Methods**: `1970`
-- **Total Source Lines**: `49620`
+- **Total Python Modules**: `187`
+- **Total Classes**: `320`
+- **Total Top-Level Functions**: `539`
+- **Total Class Methods**: `1992`
+- **Total Source Lines**: `49982`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`185` module(s))
+- **Indexed**: python (`187` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `263` lines (`5680` bytes)
+**Size**: `270` lines (`5859` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -1391,7 +1391,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `141` lines (`5370` bytes)
+**Size**: `142` lines (`5400` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1790,6 +1790,27 @@
   - Method `.restore(trash_name)` - *Restore one trashed entry and return its summary.*
   - Method `.entry(name)` - *Load one entry's summary, capturing load failures as ``error``.*
   - Method `.entries()` - *Return every ``.kstate`` file in stable name order.*
+
+---
+
+### [`keystone/steering.py`](keystone/steering.py)
+> *Deterministic local steering for moving agents.*
+
+**Size**: `196` lines (`7116` bytes)
+
+**Classes:**
+- `class Agent` - *One steering body: a position, an optional velocity, a radius and a speed.*
+  - Method `.__post_init__()`
+
+**Functions:**
+- `def _finite(label, value)`
+- `def _point(label, value)`
+- `def seek(position, target, max_speed)` - *Return a velocity of ``max_speed`` toward ``target``, or zero at it.*
+- `def arrive(position, target, max_speed, slow_radius)` - *Seek at full speed outside ``slow_radius`` and linearly slow to zero.*
+- `def _neighbours(value)`
+- `def separation(position, neighbours, radius, *, strength, margin)` - *Sum a repulsion from every neighbour within contact distance.*
+- `def steer(agent, wish, neighbours, *, separation_weight, margin)` - *Combine a wish velocity with agent separation and clamp to max speed.*
+- `def steering_report(agent, wish)` - *Return a JSON-safe summary of one steering wish.*
 
 ---
 
@@ -4305,6 +4326,41 @@
 
 **Functions:**
 - `def _machine()`
+
+---
+
+### [`tests/test_steering.py`](tests/test_steering.py)
+> *Tests for deterministic seek/arrive/separation steering.*
+
+**Size**: `158` lines (`6792` bytes)
+
+**Classes:**
+- `class SeekTest`
+  - Method `.test_seek_points_at_the_target_at_max_speed()`
+  - Method `.test_seek_at_the_target_is_zero()`
+  - Method `.test_seek_validation()`
+- `class ArriveTest`
+  - Method `.test_outside_the_slow_radius_arrive_is_seek()`
+  - Method `.test_inside_the_slow_radius_speeds_down_linearly()`
+  - Method `.test_at_the_target_arrive_stops()`
+  - Method `.test_arrive_validation()`
+- `class SeparationTest`
+  - Method `.test_a_neighbour_inside_the_limit_pushes_directly_away()`
+  - Method `.test_outside_the_limit_or_coincident_adds_nothing()`
+  - Method `.test_several_neighbours_sum_deterministically()`
+  - Method `.test_strength_and_margin_scale_the_push()`
+  - Method `.test_separation_validation()`
+- `class SteerTest`
+  - Method `.test_without_neighbours_steer_returns_the_wish_clamped()`
+  - Method `.test_steer_adds_avoidance_to_the_wish()`
+  - Method `.test_steer_ignores_the_agent_itself_by_identity()`
+  - Method `.test_steer_validation()`
+  - Method `.test_agent_validation()`
+- `class SteeringReportTest`
+  - Method `.test_report_is_json_safe()`
+  - Method `.test_unlimited_report()`
+  - Method `.test_report_rejects_bad_input()`
+  - Method `.test_describe_advertises_steering()`
 
 ---
 

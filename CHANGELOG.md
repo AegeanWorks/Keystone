@@ -174,6 +174,10 @@ changes that do not bump the release number yet.
   word boundaries, preserve explicit newlines and blank lines, truncate an
   overlong single word and return the height used. `--describe` reports
   `capabilities.ui_text_wrap`.
+- `keystone.steering` adds deterministic `Agent`, `seek`, `arrive`,
+  `separation`, `steer` and `steering_report`: pure wish-velocity shaping
+  with quadratic contact repulsion and a max-speed clamp, no time step or
+  hidden state. `--describe` reports `capabilities.steering`.
 - The editor gains `preview_blend_space2d`: it samples a 2D blend space at
   `x`, `y` and `time`, applies the pose through undo history (or
   `record: false`), and reports the axes and parameters. `--describe`

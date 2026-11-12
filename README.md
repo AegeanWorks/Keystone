@@ -235,6 +235,18 @@ body = controller.step(body, wish, 1 / 60, walls)
 
 `PathFollower` turns waypoints into a wish velocity for `CharacterController`. It advances by the position the caller reports back, so a wall that holds the body in place keeps the follower aimed at the same waypoint instead of skipping it; the next waypoint is the first one farther than `arrive_radius`, and a consumed route reports `done` forever. `navigation_report()` emits JSON-safe follower state, and `--describe` reports `capabilities.navigation`.
 
+### Steering and avoidance
+
+```python
+from keystone.steering import Agent, seek, steer
+
+agent = Agent(position=Vec3(0.0, 0.0, 0.0), radius=0.4, max_speed=3.0)
+wish = seek(agent.position, target, agent.max_speed)
+adjusted = steer(agent, wish, other_agents, separation_weight=1.2)
+```
+
+`seek()` and `arrive()` turn a target into a wish velocity; `separation()` sums a quadratic repulsion from neighbours inside their contact radius; `steer()` combines a wish with that repulsion and clamps to the agent's max speed, ignoring the agent itself by identity. `steering_report()` emits a JSON-safe wish summary for agent logs. No function integrates time or owns state, so a game keeps collision response in charge. `--describe` reports `capabilities.steering`.
+
 ### Audio: distance attenuation
 
 ```python
@@ -372,7 +384,7 @@ The API sends CORS headers so local AI clients can call it directly. Keep the de
 - **Audio**: synth, named-bus mixer, deterministic mixdown, WAV I/O, distance-attenuated spatial mixes and reports; no hardware output.
 - **Animation**: tracks/clips, looping, crossfades, events, 1D and bilinear 2D blend spaces, state machines that drive either space, masked `apply_pose`, clip binding onto pooled nodes, CPU/GPU skinning and state machines.
 - **Particles and physics**: seeded emitters with swept collision; rays, AABB/sphere queries, broadphase, scene picking, character movement and triggers.
-- **Pathfinding**: immutable nav grids, deterministic A* over 4 or 8 neighbours with corner-cut refusal, line-of-sight path smoothing, JSON-safe path reports, scene/box-derived nav grids with schema-1 documents, and a waypoint follower that feeds `CharacterController`.
+- **Pathfinding**: immutable nav grids, deterministic A* over 4 or 8 neighbours with corner-cut refusal, line-of-sight path smoothing, JSON-safe path reports, scene/box-derived nav grids with schema-1 documents, a waypoint follower that feeds `CharacterController`, and deterministic seek/arrive/separation steering.
 - **Replay and determinism**: command logs, stable hashes, `run_log`/`verify_log`, atomic JSON with `.bak`, and SplitMix64 random streams with labelled forks and snapshot/restore.
 - **Testing and AI**: `--describe`, `--simulate`, `--verify-determinism`, `--expect-hash`, frame reports, pixel diffs, seeded playtests, deterministic capture routes with checkpoint evidence diffs, and adapters.
 - **Human UI and web**: overlay/pause menu, `draw_ui`, measured-text layout widgets (`label_row`, `table`, `progress_bar`, `badge`) that stay inside the viewport, stdlib JSON API and WebGL2 console/editor.

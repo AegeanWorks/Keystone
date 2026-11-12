@@ -1,93 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-editor-blend2d-preview-v1",
+    "task_id": "keystone-steering-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794443875.6892223,
+    "updated_at": 1794445184.5727067,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
-    "completed_at": 1794443906.1517944
+    "completed_at": 1794445192.2561789
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-hud-text-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan (impact-assessed): add keystone.ui.font.wrap_text and Canvas.paragraph with greedy word wrapping, explicit newline and blank-line handling, overlong-word truncation, measured height and a ui_text_wrap capability",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794435677.2833426,
-      "timestamp_str": "2026-11-12 01:21:17",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "Single-line HUD helpers forced every multi-line hint, dialogue or error to re-implement measurement and splitting, the same repeated layout code the widget work removed.",
-        "benefits": "Width-safe wrapped HUD text in one measured call, usable by games and AI authors, with wrapped lines exposed for custom layout.",
-        "risks": "contract: font/canvas functions plus a capability; dependency: none; concurrency: none; state: no schema change.",
-        "mitigation": "Preserve explicit newlines, truncate overlong words, pin per-line widths and validation, and keep the canonical hash and reference PNG unchanged."
-      },
-      "plan_digest": "1f4fb616c75e5e225317332910c3aabc95008038039a587bd31c9709507eb8ee"
-    },
-    {
-      "task_id": "keystone-hud-text-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/3] Implemented and verified - wrap_text and Canvas.paragraph wrap at word boundaries, preserve explicit and blank lines, truncate overlong words, return measured height, and validate scale/gap/width; README, ARCHITECTURE, docs/TREE, CHANGELOG and ADR-236 updated; --describe reports capabilities.ui_text_wrap; 15 text tests green (1171 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
-      "files_affected": [
-        "keystone/ui/font.py",
-        "keystone/ui/canvas.py",
-        "keystone/plugin.py",
-        "tests/test_ui_text.py",
-        "README.md",
-        "docs/ARCHITECTURE.md",
-        "docs/TREE.md",
-        "CHANGELOG.md",
-        ".aikit/decisions.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794435773.5811515,
-      "timestamp_str": "2026-11-12 01:22:53",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "artifact": "stdout",
-          "metric": "collected_tests",
-          "candidate": 1171.0,
-          "unit": "tests",
-          "baseline": 1156.0,
-          "command": "python -m pytest --collect-only -q"
-        },
-        {
-          "artifact": "README.md",
-          "metric": "readme_chars",
-          "candidate": 26541.0,
-          "unit": "chars",
-          "baseline": 26176.0,
-          "command": "python -c len(README.md)"
-        },
-        {
-          "artifact": "temp PNG",
-          "metric": "reference_png_bytes",
-          "candidate": 4899.0,
-          "unit": "bytes",
-          "baseline": 4899.0,
-          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png"
-        }
-      ],
-      "checklists": "passed"
-    },
-    {
-      "task_id": "keystone-hud-text-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-hud-text-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794435824.2520719,
-      "timestamp_str": "2026-11-12 01:23:44",
-      "agent": "kilo:goal"
-    },
     {
       "task_id": "keystone-scene-overlap-v1",
       "phase": "phase 2",
@@ -507,6 +431,82 @@
       "status": "completed",
       "timestamp": 1794443906.1517959,
       "timestamp_str": "2026-11-12 03:38:26",
+      "agent": "kilo:goal"
+    },
+    {
+      "task_id": "keystone-steering-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: add pure deterministic steering (Agent, seek, arrive, separation, steer, steering_report) that shapes wish velocities from navigation into collision-avoiding movement, with quadratic contact repulsion, max-speed clamping and a discovery flag",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794445167.1456795,
+      "timestamp_str": "2026-11-12 03:59:27",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "Navigation routes and PathFollower wishes existed, but nothing kept multiple agents apart; physics pushout is after-the-fact and a full velocity-obstacle solver would be large and hard to verify.",
+        "benefits": "Games can shape a wish velocity around neighbours without a dependency, the layer composes with PathFollower and CharacterController, and AI clients get a JSON steering report.",
+        "risks": "contract: new module, six exports and a capability; dependency: none; concurrency: pure functions; state: frozen agents only.",
+        "mitigation": "Keep functions pure and caller-ordered, validate finite inputs, use quadratic falloff with a deterministic coincident rule, pin seek/arrive/separation/clamps, and keep the canonical evidence unchanged."
+      },
+      "plan_digest": "739078fb64029b440001401473a887a8ad5c72aa5ec2a5ccf33aed2a1dfac835"
+    },
+    {
+      "task_id": "keystone-steering-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/3] Implemented and verified - keystone/steering.py adds frozen Agent, seek, arrive, separation (quadratic contact falloff with a deterministic coincident rule), steer (identity skip, weighted separation, max-speed clamp) and steering_report; exports, README section and bullet, ARCHITECTURE row and tree, docs/TREE, CHANGELOG and ADR-242 updated; --describe reports capabilities.steering; 21 tests green (1246 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
+      "files_affected": [
+        "keystone/steering.py",
+        "tests/test_steering.py",
+        "keystone/__init__.py",
+        "keystone/plugin.py",
+        "README.md",
+        "docs/ARCHITECTURE.md",
+        "docs/TREE.md",
+        "CHANGELOG.md",
+        ".aikit/decisions.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1794445184.5727067,
+      "timestamp_str": "2026-11-12 03:59:44",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "metric": "collected_tests",
+          "baseline": 1225.0,
+          "command": "python -m pytest --collect-only -q",
+          "unit": "tests",
+          "artifact": "stdout",
+          "candidate": 1246.0
+        },
+        {
+          "metric": "seek_speed_from_3_4_at_2",
+          "baseline": 0.0,
+          "command": "python -m pytest tests/test_steering.py",
+          "unit": "velocity",
+          "artifact": "tests/test_steering.py",
+          "candidate": 2.0
+        },
+        {
+          "metric": "reference_png_bytes",
+          "baseline": 4899.0,
+          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
+          "unit": "bytes",
+          "artifact": "temp PNG",
+          "candidate": 4899.0
+        }
+      ],
+      "checklists": "passed"
+    },
+    {
+      "task_id": "keystone-steering-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-steering-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794445192.2561803,
+      "timestamp_str": "2026-11-12 03:59:52",
       "agent": "kilo:goal"
     }
   ]

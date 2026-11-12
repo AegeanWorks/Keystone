@@ -126,6 +126,7 @@ from keystone.scene import (
 )
 from keystone.scene_snapshot import scene_from_dict, scene_to_dict
 from keystone.skin import bone_matrices, skin_mesh, skin_point
+from keystone.steering import Agent, arrive, seek, separation, steer, steering_report
 from keystone.texture import TextureData
 
 __all__ = [
@@ -134,6 +135,7 @@ __all__ = [
     "SAMPLE_RATE",
     "TRANSCRIPT_SCHEMA",
     "ActionState",
+    "Agent",
     "AnimationClip",
     "AnimationController",
     "AnimationState",
@@ -196,6 +198,7 @@ __all__ = [
     "aabb_visible",
     "animation_report",
     "apply_pose",
+    "arrive",
     "audio_report",
     "blend_poses",
     "bone_matrices",
@@ -238,6 +241,8 @@ __all__ = [
     "scene_boxes",
     "scene_from_dict",
     "scene_to_dict",
+    "seek",
+    "separation",
     "sine",
     "skin_mesh",
     "skin_point",
@@ -245,6 +250,8 @@ __all__ = [
     "spatial_mix",
     "spatial_report",
     "square",
+    "steer",
+    "steering_report",
     "summarize_report",
     "to_command_log",
     "validate_fairness",
