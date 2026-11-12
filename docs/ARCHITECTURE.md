@@ -32,6 +32,7 @@ keystone/
 ├── input.py          ActionState + InputMap
 ├── clock.py          FixedStepClock
 ├── camera_rig.py     camera-following overlay rig for viewmodels and HUD anchors
+├── camera_shake.py   deterministic trauma-based camera shake
 ├── content.py        content digests shared by batching, instancing and assets
 ├── culling.py        frustum planes and AABB visibility
 ├── replay.py         CommandLog + stable_hash()
@@ -164,7 +165,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Prefabs | Implemented | detached subtree capture, versioned `.kprefab` save/load (schema 2), file-backed libraries, deterministic instance IDs, nested prefab instances with rebased links/IDs, component copy isolation, JSON-safe describe |
 | Projects | Implemented | versioned `keystone.json` manifest, `--new` scaffold with starter scene/prefab content, startup scene and component hooks, `--project` loader, `--validate-project` diagnostics, relative asset import as `project:<path>`, editor asset import with manifest update and registry rollback, editor hot reload with scene/history rebinding, editor glTF/GLB scene import as prefabs, project asset inventory and history-and-clipboard-safe forget-from-project, editor runnable builds, CLI glTF/GLB scene-to-prefab import and generated five-op game |
 | Scene queries | Implemented | name/tag/layer/component filters and ID lookup |
-| Camera | Implemented | perspective and view matrices |
+| Camera | Implemented | perspective and view matrices, first-person controls, camera rigs and deterministic trauma-based camera shake |
 | Geometry | Implemented | indexed meshes, materials, vertex colors |
 | Assets | Implemented | indexed meshes, materials, RGBA textures, OBJ, PNG and `.kprefab`; asset registry with stable ids, digests, dependencies and hot reload |
 | State snapshots | Implemented | versioned scene save/load with camera, environment, asset references, typed components and bounded undo/redo history; duplicate ids, dangling parents and cycles rejected |

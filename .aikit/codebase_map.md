@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `200`
-- **Total Classes**: `346`
-- **Total Top-Level Functions**: `570`
-- **Total Class Methods**: `2162`
-- **Total Source Lines**: `53452`
+- **Total Python Modules**: `202`
+- **Total Classes**: `349`
+- **Total Top-Level Functions**: `572`
+- **Total Class Methods**: `2181`
+- **Total Source Lines**: `53710`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`200` module(s))
+- **Indexed**: python (`202` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `297` lines (`6606` bytes)
+**Size**: `301` lines (`6737` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -452,6 +452,28 @@
   - Method `.attach_to(scene)` - *Add the rig root to a scene once and return it.*
   - Method `.attach(name, *, position, rotation, scale, mesh, material, sprite, visible, tags)` - *Attach one part at a camera-space offset and return it.*
   - Method `.sync()` - *Copy the camera pose onto the rig root and return it.*
+
+---
+
+### [`keystone/camera_shake.py`](keystone/camera_shake.py)
+> *Deterministic trauma-based camera shake.*
+
+**Size**: `141` lines (`5356` bytes)
+
+**Classes:**
+- `class ShakeOffset` - *One sampled shake offset: world-ish translation plus yaw and pitch.*
+  - Method `.__post_init__()`
+- `class CameraShake` - *Accumulate trauma, decay it, and sample a deterministic offset.*
+  - Method `.__init__(*, seed, amplitude, rotation_amplitude, frequency, decay)`
+  - Method `.add(amount)` - *Add trauma, clamped to the unit range.*
+  - Method `.update(dt)` - *Advance time and decay trauma linearly.*
+  - Method `.reset()` - *Clear trauma and elapsed time.*
+  - Method `._noise(channel, multiplier)`
+  - Method `.sample()` - *Return the current offset; zero trauma is exactly zero.*
+
+**Functions:**
+- `def _finite(label, value)`
+- `def shake_report(shake)` - *Return a JSON-safe summary of a shake state and its current offset.*
 
 ---
 
@@ -1420,7 +1442,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `152` lines (`5741` bytes)
+**Size**: `153` lines (`5775` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -2915,6 +2937,28 @@
 
 **Functions:**
 - `def _position(node)`
+
+---
+
+### [`tests/test_camera_shake.py`](tests/test_camera_shake.py)
+> *Tests for deterministic camera shake.*
+
+**Size**: `112` lines (`4003` bytes)
+
+**Classes:**
+- `class CameraShakeTest`
+  - Method `.test_no_trauma_produces_no_offset()`
+  - Method `.test_trauma_produces_a_deterministic_offset()`
+  - Method `.test_seeds_diverge()`
+  - Method `.test_trauma_is_clamped_and_decays()`
+  - Method `.test_amplitude_scales_the_offset()`
+  - Method `.test_rotation_channels_move()`
+  - Method `.test_reset_clears_the_state()`
+  - Method `.test_validation()`
+  - Method `.test_report_is_json_safe()`
+  - Method `.test_report_rejects_other_objects()`
+  - Method `.test_offset_is_immutable()`
+  - Method `.test_describe_advertises_camera_shake()`
 
 ---
 

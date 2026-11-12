@@ -44,6 +44,7 @@ from keystone.audio_spatial import (
 )
 from keystone.batch import merge_batches, plan_batches
 from keystone.camera_rig import CameraRig
+from keystone.camera_shake import CameraShake, ShakeOffset, shake_report
 from keystone.culling import (
     aabb_visible,
     cull_scene,
@@ -165,6 +166,7 @@ __all__ = [
     "BloomSettings",
     "BotPolicy",
     "CameraRig",
+    "CameraShake",
     "Checkpoint",
     "ColorSettings",
     "ComponentRuntime",
@@ -207,6 +209,7 @@ __all__ = [
     "SceneOverlap",
     "ScriptedPolicy",
     "ShadowSettings",
+    "ShakeOffset",
     "SoundSource",
     "SpriteSettings",
     "TextureData",
@@ -269,6 +272,7 @@ __all__ = [
     "scene_to_dict",
     "seek",
     "separation",
+    "shake_report",
     "sine",
     "skin_mesh",
     "skin_point",

@@ -415,7 +415,7 @@ Keystone is a small, deterministic 3D engine: a scene graph, a PBR OpenGL
 renderer with shadows, bloom, post grade, tonemapping and FXAA, physics and
 character movement, animation with 1D/2D blend spaces, root motion and state
 machines, navigation with A* and agents, deterministic audio, tile maps, UI
-with text and images, replay evidence, and a native editor and JSON API. The
+with text and images, deterministic camera shake, replay evidence, and a native editor and JSON API. The
 complete itemised list with per-area notes lives in
 [docs/FEATURES.md](docs/FEATURES.md).
 

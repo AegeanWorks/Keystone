@@ -170,6 +170,10 @@ changes that do not bump the release number yet.
   `--describe` reports `capabilities.scene_raycast`.
 - `ray_aabb` and `ray_sphere` now return world-unit distances for non-unit
   ray directions; they normalized the direction and scaled the result again.
+- `keystone.camera_shake` adds `CameraShake`, `ShakeOffset` and
+  `shake_report`: trauma accumulation, linear decay, seeded sine noise and a
+  deterministic position/yaw/pitch offset for game feel.
+  `--describe` reports `capabilities.camera_shake`.
 - `Canvas.line()` and `Canvas.frame()` add clipped pixel lines with a square
   brush and rectangular outlines, useful for minimaps, pointers and debug
   HUDs. `--describe` reports `capabilities.ui_shapes`.
