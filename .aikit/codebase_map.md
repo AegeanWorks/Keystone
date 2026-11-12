@@ -9,8 +9,8 @@
 - **Total Python Modules**: `189`
 - **Total Classes**: `328`
 - **Total Top-Level Functions**: `545`
-- **Total Class Methods**: `2046`
-- **Total Source Lines**: `51042`
+- **Total Class Methods**: `2047`
+- **Total Source Lines**: `51170`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`189` module(s))
@@ -1742,7 +1742,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `94` lines (`2094` bytes)
+**Size**: `96` lines (`2137` bytes)
 
 ---
 
@@ -2167,14 +2167,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `724` lines (`29115` bytes)
+**Size**: `739` lines (`29729` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `3095` lines (`139446` bytes)
+**Size**: `3159` lines (`142680` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -4640,7 +4640,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `6321` lines (`258690` bytes)
+**Size**: `6368` lines (`260571` bytes)
 
 **Classes:**
 - `class Health`
@@ -4751,6 +4751,7 @@
   - Method `.test_editor_state_machine_rename_and_duplicate()`
   - Method `.test_editor_state_machine_restore_collision_is_400()`
   - Method `.test_editor_preview_blend_space()`
+  - Method `.test_editor_navgrid_inspect_and_bake()`
   - Method `.test_editor_tilemap_inspect_and_build()`
   - Method `.test_editor_preview_blend_space2d()`
   - Method `.test_editor_blend_state_console_round_trip()`

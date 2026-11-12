@@ -192,7 +192,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Batching | Implemented | content-keyed static mesh/material grouping with draw-call savings, world-space merge, and skin-aware merge for identical rigs |
 | Inspector | Implemented | web `/api/inspector` with node counts, batch plan, merge summary (incl. skinned rigs), audio, animation and particle state, asset inventory |
 | ECS | Optional/missing | evaluate after a real workload |
-| Editor/tooling | Implemented | web `/api/editor` with hierarchy, selection, transforms, prefabs, assets, validation, 1D/2D blend-space previews and tile-map inspect/build |
+| Editor/tooling | Implemented | web `/api/editor` with hierarchy, selection, transforms, prefabs, assets, validation, 1D/2D blend-space previews, tile-map inspect/build and nav-grid inspect/bake |
 
 ## 6. Roadmap
 

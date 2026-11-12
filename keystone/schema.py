@@ -34,6 +34,8 @@ EDITOR_ACTIONS = (
     "preview_blend_space2d",
     "inspect_tilemap",
     "build_tilemap",
+    "inspect_navgrid",
+    "bake_navgrid",
     "save_animation",
     "delete_animation",
     "restore_animation",

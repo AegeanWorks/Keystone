@@ -5097,6 +5097,53 @@ class WebServerTest(unittest.TestCase):
             )
         self.assertEqual(caught.exception.status, 400)
 
+    def test_editor_navgrid_inspect_and_bake(self):
+        from keystone.pathfinding import NavGrid
+        from keystone.schema import EDITOR_ACTIONS
+
+        self.assertIn("inspect_navgrid", EDITOR_ACTIONS)
+        self.assertIn("bake_navgrid", EDITOR_ACTIONS)
+        session = GameSession(CubeDemo())
+        inspected = session.editor_action(
+            {
+                "action": "inspect_navgrid",
+                "navgrid": {"schema": 1, "width": 4, "height": 3, "blocked": [[1, 1]]},
+            }
+        )
+        self.assertEqual(inspected["navgrid"], {"width": 4, "height": 3, "blocked": 1, "free": 11})
+
+        baked = session.editor_action(
+            {
+                "action": "bake_navgrid",
+                "width": 6,
+                "height": 6,
+                "cell_size": 1.0,
+                "origin": [-3.0, 0.0, -3.0],
+                "clearance": 0.25,
+            }
+        )
+        result = baked["navgrid_bake"]
+        self.assertEqual(result["width"], 6)
+        self.assertEqual(result["height"], 6)
+        self.assertGreaterEqual(result["blocked"], 1)
+        self.assertGreaterEqual(result["boxes"], 1)
+        self.assertEqual(result["clearance"], 0.25)
+        grid = NavGrid.from_dict(result["document"])
+        self.assertEqual(len(grid.blocked), result["blocked"])
+
+        for payload in (
+            {"width": 0, "height": 4},
+            {"width": 4, "height": 4, "origin": [0.0, 0.0]},
+            {"width": 4, "height": 4, "layer": " "},
+            {"width": 4, "height": 4, "clearance": -1.0},
+        ):
+            with self.subTest(payload=payload):
+                request = {"action": "bake_navgrid"}
+                request.update(payload)
+                with self.assertRaises(WebProblem) as caught:
+                    session.editor_action(request)
+                self.assertEqual(caught.exception.status, 400)
+
     def test_editor_tilemap_inspect_and_build(self):
         from keystone.schema import EDITOR_ACTIONS
 

@@ -1,93 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-fxaa-v1",
+    "task_id": "keystone-editor-navgrid-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794452237.6995392,
+    "updated_at": 1794453138.8810167,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
-    "completed_at": 1794452240.6000817
+    "completed_at": 1794453140.6576004
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-editor-blend2d-preview-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/3] Implemented and verified - preview_blend_space2d samples a schema-1 2D space at x/y/time, applies the pose through undo history or record=false, stores blend_space2d_preview (coordinates, updated ids, report) and exposes it in the editor document; the action is registered in EDITOR_ACTIONS, has a schema example and field entry, README documents /api/editor and both previews, ARCHITECTURE marks tooling implemented, and --describe reports capabilities.animation_preview_blend_2d; a 2x2 grid previews 3.0 at (0.5,0.5), unrecorded (1,1) applies 6.0 without undo, NaN/Inf/negative time return 400; 1225 tests green, ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
-      "files_affected": [
-        "keystone/web/server.py",
-        "keystone/web/schema.py",
-        "keystone/schema.py",
-        "keystone/plugin.py",
-        "tests/test_web.py",
-        "README.md",
-        "docs/ARCHITECTURE.md",
-        "CHANGELOG.md",
-        ".aikit/decisions.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794443875.6892223,
-      "timestamp_str": "2026-11-12 03:37:55",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "candidate": 1225.0,
-          "baseline": 1224.0,
-          "artifact": "stdout",
-          "command": "python -m pytest --collect-only -q",
-          "metric": "collected_tests",
-          "unit": "tests"
-        },
-        {
-          "candidate": 3.0,
-          "baseline": 0.0,
-          "artifact": "tests/test_web.py",
-          "command": "python -m pytest tests/test_web.py -k preview_blend_space2d",
-          "metric": "preview_2d_centre_pose",
-          "unit": "pose"
-        },
-        {
-          "candidate": 4899.0,
-          "baseline": 4899.0,
-          "artifact": "temp PNG",
-          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
-          "metric": "reference_png_bytes",
-          "unit": "bytes"
-        }
-      ],
-      "checklists": "passed"
-    },
-    {
-      "task_id": "keystone-editor-blend2d-preview-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-editor-blend2d-preview-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794443906.1517959,
-      "timestamp_str": "2026-11-12 03:38:26",
-      "agent": "kilo:goal"
-    },
-    {
-      "task_id": "keystone-steering-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: add pure deterministic steering (Agent, seek, arrive, separation, steer, steering_report) that shapes wish velocities from navigation into collision-avoiding movement, with quadratic contact repulsion, max-speed clamping and a discovery flag",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794445167.1456795,
-      "timestamp_str": "2026-11-12 03:59:27",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "Navigation routes and PathFollower wishes existed, but nothing kept multiple agents apart; physics pushout is after-the-fact and a full velocity-obstacle solver would be large and hard to verify.",
-        "benefits": "Games can shape a wish velocity around neighbours without a dependency, the layer composes with PathFollower and CharacterController, and AI clients get a JSON steering report.",
-        "risks": "contract: new module, six exports and a capability; dependency: none; concurrency: pure functions; state: frozen agents only.",
-        "mitigation": "Keep functions pure and caller-ordered, validate finite inputs, use quadratic falloff with a deterministic coincident rule, pin seek/arrive/separation/clamps, and keep the canonical evidence unchanged."
-      },
-      "plan_digest": "739078fb64029b440001401473a887a8ad5c72aa5ec2a5ccf33aed2a1dfac835"
-    },
     {
       "task_id": "keystone-steering-v1",
       "phase": "phase 4",
@@ -537,6 +461,81 @@
       "status": "completed",
       "timestamp": 1794452240.600083,
       "timestamp_str": "2026-11-12 05:57:20",
+      "agent": "kilo:goal"
+    },
+    {
+      "task_id": "keystone-editor-navgrid-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: add inspect_navgrid and bake_navgrid editor actions so navigation authoring matches the tile-map loop, with schema examples/fields, document exposure, argument validation and no scene mutation",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794453117.2269514,
+      "timestamp_str": "2026-11-12 06:11:57",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "Nav grids were derivable and persistable in Python but unreachable from the JSON authoring surface; tile maps had just gained inspect/build, leaving navigation inconsistent.",
+        "benefits": "An AI can bake a grid from the live scene, receive the schema-1 document, validate documents, and persist exactly what it measured.",
+        "risks": "contract: two editor actions, editor fields and schema entries; dependency: web server imports nav_authoring and pathfinding; concurrency: session lock; state: one-shot fields reset per action and baking adds no undo step.",
+        "mitigation": "Validate width/height/origin/layer/clearance before baking, return counts plus the document, pin the document round trip and four error paths, and keep the canonical frame unchanged."
+      },
+      "plan_digest": "4c945a2d4ebcabc22c0d42f95e3713b1ee523be74923294241caa4688ff5ade4"
+    },
+    {
+      "task_id": "keystone-editor-navgrid-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/3] Implemented and verified - inspect_navgrid validates a schema-1 document and reports width/height/blocked/free; bake_navgrid parses width/height/cell_size/origin/clearance/layer, bakes scene_boxes through grid_from_boxes, and returns counts, settings, box count and the schema-1 document; both are registered with schema examples and fields and exposed as navgrid/navgrid_bake in the editor document; README, ARCHITECTURE, CHANGELOG and ADR-248 updated; a 6x6 bake reports blocked >= 1 and its document round-trips through NavGrid.from_dict; invalid width, two-element origin, blank layer and negative clearance return 400; 1279 tests green, ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
+      "files_affected": [
+        "keystone/web/server.py",
+        "keystone/web/schema.py",
+        "keystone/schema.py",
+        "tests/test_web.py",
+        "README.md",
+        "docs/ARCHITECTURE.md",
+        "CHANGELOG.md",
+        ".aikit/decisions.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1794453138.8810167,
+      "timestamp_str": "2026-11-12 06:12:18",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "candidate": 1279.0,
+          "metric": "collected_tests",
+          "baseline": 1278.0,
+          "unit": "tests",
+          "command": "python -m pytest --collect-only -q",
+          "artifact": "stdout"
+        },
+        {
+          "candidate": 11.0,
+          "metric": "inspect_navgrid_free_cells",
+          "baseline": 0.0,
+          "unit": "cells",
+          "command": "python -m pytest tests/test_web.py -k navgrid",
+          "artifact": "tests/test_web.py"
+        },
+        {
+          "candidate": 4899.0,
+          "metric": "reference_png_bytes",
+          "baseline": 4899.0,
+          "unit": "bytes",
+          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
+          "artifact": "temp PNG"
+        }
+      ],
+      "checklists": "passed"
+    },
+    {
+      "task_id": "keystone-editor-navgrid-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-editor-navgrid-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794453140.6576018,
+      "timestamp_str": "2026-11-12 06:12:20",
       "agent": "kilo:goal"
     }
   ]

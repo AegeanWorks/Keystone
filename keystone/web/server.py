@@ -23,6 +23,9 @@ from keystone.headless import run_simulation
 from keystone.input import ActionState
 from keystone.lifecycle import ComponentRuntime
 from keystone.material_library import MaterialLibrary, material_from_document
+from keystone.math3d import Vec3
+from keystone.nav_authoring import grid_from_boxes, scene_boxes
+from keystone.pathfinding import NavGrid
 from keystone.plugin import GameModule, describe_game
 from keystone.prefab import Prefab
 from keystone.prefab_library import PrefabLibrary
@@ -311,6 +314,8 @@ class GameSession:
         self.last_blend_space2d_preview: dict[str, object] | None = None
         self.last_tilemap: dict[str, object] | None = None
         self.last_tilemap_build: dict[str, object] | None = None
+        self.last_navgrid: dict[str, object] | None = None
+        self.last_navgrid_bake: dict[str, object] | None = None
         self.last_animation_key: dict[str, object] | None = None
         self.last_validation: dict[str, object] | None = None
         self.last_import: dict[str, object] | None = None
@@ -897,6 +902,8 @@ class GameSession:
         document["blend_space2d_preview"] = self.last_blend_space2d_preview
         document["tilemap"] = self.last_tilemap
         document["tilemap_build"] = self.last_tilemap_build
+        document["navgrid"] = self.last_navgrid
+        document["navgrid_bake"] = self.last_navgrid_bake
         document["animation_key"] = self.last_animation_key
         document["validation"] = self.last_validation
         document["imported_asset"] = self.last_import
@@ -1012,6 +1019,8 @@ class GameSession:
         self.last_blend_space2d_preview = None
         self.last_tilemap = None
         self.last_tilemap_build = None
+        self.last_navgrid = None
+        self.last_navgrid_bake = None
         self.last_animation_key = None
         self.last_validation = None
         self.last_import = None
@@ -1509,6 +1518,61 @@ class GameSession:
                             "triangles": mesh.triangle_count(),
                             "colliders": len(tiles.colliders()),
                             "report": tilemap_report(tiles),
+                        }
+                elif action in ("inspect_navgrid", "bake_navgrid"):
+                    def navgrid_counts(grid: NavGrid) -> dict[str, object]:
+                        return {
+                            "width": grid.width,
+                            "height": grid.height,
+                            "blocked": len(grid.blocked),
+                            "free": grid.width * grid.height - len(grid.blocked),
+                        }
+
+                    if action == "inspect_navgrid":
+                        document = payload.get("navgrid")
+                        if not isinstance(document, dict):
+                            raise TypeError(
+                                "inspect_navgrid navgrid must be a JSON object"
+                            )
+                        grid = NavGrid.from_dict(document)
+                        self.last_navgrid = navgrid_counts(grid)
+                    else:
+                        width = payload.get("width")
+                        height = payload.get("height")
+                        cell_size = payload.get("cell_size", 1.0)
+                        clearance = payload.get("clearance", 0.0)
+                        layer = payload.get("layer")
+                        if layer is not None and (
+                            not isinstance(layer, str) or not layer.strip()
+                        ):
+                            raise ValueError(
+                                "bake_navgrid layer must be a non-blank string or null"
+                            )
+                        raw_origin = payload.get("origin")
+                        if raw_origin is None:
+                            origin = None
+                        elif isinstance(raw_origin, (list, tuple)) and len(raw_origin) == 3:
+                            origin = Vec3(*raw_origin)
+                        else:
+                            raise ValueError(
+                                "bake_navgrid origin must be three numbers or null"
+                            )
+                        boxes = scene_boxes(scene, layer=layer)
+                        grid = grid_from_boxes(
+                            width,
+                            height,
+                            boxes,
+                            cell_size=cell_size,
+                            origin=origin,
+                            clearance=clearance,
+                        )
+                        self.last_navgrid_bake = {
+                            **navgrid_counts(grid),
+                            "cell_size": float(cell_size),
+                            "clearance": float(clearance),
+                            "layer": layer,
+                            "boxes": len(boxes),
+                            "document": grid.to_dict(),
                         }
                 elif action == "save_animation":
                     if self.animation_library is None:

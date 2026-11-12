@@ -190,6 +190,11 @@ changes that do not bump the release number yet.
   choice in snapshots, exposes it through `set_scene` and scene export, and
   reports it in renderer stats. `--describe` reports
   `capabilities.post_tonemap`. Scene export schema is 3, editor schema 60.
+- The editor gains `inspect_navgrid` and `bake_navgrid`: the first validates
+  a schema-1 nav-grid document and reports counts, the second derives a grid
+  from the scene's visible meshes with optional layer, origin, cell size and
+  clearance and returns the document for persistence. The editor document
+  exposes `navgrid` and `navgrid_bake`.
 - The editor gains `inspect_tilemap` and `build_tilemap`: the first reports
   a tile-map document's counts and bounds, the second applies the merged
   mesh to a scene node through undo history, with schema examples and

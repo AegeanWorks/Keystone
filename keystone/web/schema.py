@@ -148,6 +148,17 @@ EDITOR_EXAMPLES = {
         "parameter": 0.5,
         "time": 0.0,
     },
+    "inspect_navgrid": {
+        "action": "inspect_navgrid",
+        "navgrid": {"schema": 1, "width": 8, "height": 6, "blocked": [[2, 2]]},
+    },
+    "bake_navgrid": {
+        "action": "bake_navgrid",
+        "width": 8,
+        "height": 6,
+        "cell_size": 1.0,
+        "clearance": 0.4,
+    },
     "inspect_tilemap": {
         "action": "inspect_tilemap",
         "tilemap": {
@@ -462,6 +473,10 @@ EDITOR_SCHEMA = {
             "time",
             "record",
         ],
+        "inspect_navgrid": ["navgrid"],
+        "bake_navgrid": ["width", "height", "cell_size", "origin", "clearance", "layer"],
+        "navgrid": ["width", "height", "blocked", "free"],
+        "navgrid_bake": ["width", "height", "blocked", "free", "cell_size", "clearance", "layer", "boxes", "document"],
         "inspect_tilemap": ["tilemap"],
         "build_tilemap": ["node", "tilemap"],
         "tilemap": ["width", "height", "tile_size", "wall_height", "solid", "free", "bounds"],
