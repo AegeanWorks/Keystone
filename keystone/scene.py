@@ -425,11 +425,19 @@ class ColorSettings:
     enabled: bool = True
 
 
+POST_TONES = ("none", "reinhard", "aces")
+
+
 @dataclass(frozen=True, slots=True)
 class PostSettings:
-    """Deterministic post color-grade toggle (in-shader exposure + vignette)."""
+    """Deterministic post color grade: exposure, vignette and an opt-in tonemap."""
 
     enabled: bool = True
+    tone: str = "none"
+
+    def __post_init__(self) -> None:
+        if self.tone not in POST_TONES:
+            raise ValueError("post tone must be one of " + ", ".join(POST_TONES))
 
 
 @dataclass(frozen=True, slots=True)

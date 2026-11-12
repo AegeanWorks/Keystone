@@ -261,7 +261,10 @@ def scene_to_dict(scene: Scene, registry: Any = None) -> dict[str, Any]:
             "point_lights": [_point_light_to_dict(light) for light in scene.point_lights],
             "shadow": {"enabled": bool(getattr(scene.shadow, "enabled", True))},
             "color": {"enabled": bool(getattr(scene.color, "enabled", True))},
-            "post": {"enabled": bool(getattr(scene.post, "enabled", True))},
+            "post": {
+                "enabled": bool(getattr(scene.post, "enabled", True)),
+                "tone": getattr(scene.post, "tone", "none"),
+            },
             "bloom": {"enabled": bool(getattr(scene.bloom, "enabled", True))},
             "sprites": {"enabled": bool(getattr(scene.sprite, "enabled", True))},
             "culling": {"enabled": bool(getattr(scene.culling, "enabled", True))},
@@ -358,7 +361,10 @@ def scene_from_dict(
         if post is not None:
             if not isinstance(post, Mapping):
                 raise TypeError("scene snapshot post must be a mapping")
-            scene.post = PostSettings(enabled=bool(post.get("enabled", True)))
+            scene.post = PostSettings(
+                enabled=bool(post.get("enabled", True)),
+                tone=post.get("tone", "none"),
+            )
         bloom = environment.get("bloom")
         if bloom is not None:
             if not isinstance(bloom, Mapping):

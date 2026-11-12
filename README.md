@@ -211,6 +211,16 @@ write_navgrid("levels/hall.navgrid", grid)
 
 `grid_from_boxes()` rasterizes the same AABBs a character collides with: a cell blocks when its world-space centre falls inside a box inflated by the clearance radius on X and Z, so navigation cannot silently drift from the level geometry. `scene_boxes()` derives those AABBs from a scene's visible mesh nodes (skipping the camera-relative overlay layer), so one level can feed the grid directly. `NavGrid.to_dict()`/`from_dict()` and `write_navgrid`/`read_navgrid` persist a schema-1 document that sorts blocked cells, rejects duplicates and rejects out-of-bounds cells. `--describe` reports `capabilities.nav_authoring`.
 
+### Post grade and tonemapping
+
+```python
+from keystone.scene import PostSettings
+
+scene.post = PostSettings(enabled=True, tone="aces")  # or "none", "reinhard"
+```
+
+The post grade applies a fixed exposure and vignette after bloom. `tone` optionally maps the linear colour through Reinhard (`c / (1 + c)`) or the ACES approximation before the grade, which keeps bright emissive surfaces from clipping to white. The default is `none`, so existing frames are unchanged. `scene.post` round-trips through snapshots, the editor's `set_scene` accepts `environment.tone` (editor schema 60, scene export schema 3), and renderer stats report `post_tone`. `--describe` reports `capabilities.post_tonemap`.
+
 ### Tile maps
 
 ```python
@@ -386,7 +396,7 @@ The API sends CORS headers so local AI clients can call it directly. Keep the de
 
 ## 🚀 Features
 
-- **OpenGL 3.3 renderer**: GLSL 330, PBR, shadows, sRGB, post grade, bloom, placed sprite billboards, up to 8 point lights, and profiler stats.
+- **OpenGL 3.3 renderer**: GLSL 330, PBR, shadows, sRGB, post grade with optional Reinhard/ACES tonemapping, bloom, placed sprite billboards, up to 8 point lights, and profiler stats.
 - **Scene graph**: stable IDs, tags, layers, typed components, world transforms, queries, merged tile-map meshes with exact per-cell colliders, and cached GPU meshes.
 - **Prefabs**: capture, versioned `.kprefab` persistence, deterministic instantiation and override-preserving refresh.
 - **Assets**: `MeshData`, primitives, streaming OBJ, PNG/checker `TextureData`, and an id/digest registry with hot reload plus core scene rebinding.

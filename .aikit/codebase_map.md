@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `189`
-- **Total Classes**: `322`
+- **Total Classes**: `324`
 - **Total Top-Level Functions**: `545`
-- **Total Class Methods**: `2016`
-- **Total Source Lines**: `50502`
+- **Total Class Methods**: `2026`
+- **Total Source Lines**: `50666`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`189` module(s))
@@ -815,7 +815,7 @@
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
 > *Blinn-Phong forward renderer with fog, shadows and screenshot readback.*
 
-**Size**: `1291` lines (`51370` bytes)
+**Size**: `1335` lines (`52934` bytes)
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
@@ -840,7 +840,8 @@
   - Method `._camera_basis(scene)`
   - Method `._draw_sprites(scene, particles, view_projection, post_on, bloom_on, *, layer, exclude_layer, include_particles)`
   - Method `._apply_bloom(program, bloom_on)`
-  - Method `._apply_post(program, post_on)`
+  - Method `._apply_post(program, post_on, tone)`
+  - Method `._tone_code(scene)`
   - Method `._apply_shared(program, scene, view_projection, light_vp, shadows_on, srgb_on)`
   - Method `._apply_material(program, material)`
   - Method `._render_shadow_pass(scene, light_vp)`
@@ -1391,7 +1392,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `143` lines (`5429` bytes)
+**Size**: `144` lines (`5463` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1603,7 +1604,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `580` lines (`23003` bytes)
+**Size**: `588` lines (`23233` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -1645,7 +1646,8 @@
   - Method `.__post_init__()`
 - `class ShadowSettings` - *Deterministic directional shadow-map toggle (fixed 1024 map, bias 0.005).*
 - `class ColorSettings` - *Deterministic sRGB-correct linear pipeline toggle (in-shader, pow 2.2).*
-- `class PostSettings` - *Deterministic post color-grade toggle (in-shader exposure + vignette).*
+- `class PostSettings` - *Deterministic post color grade: exposure, vignette and an opt-in tonemap.*
+  - Method `.__post_init__()`
 - `class BloomSettings` - *Deterministic bloom glow toggle (in-shader luminance threshold).*
 - `class SpriteSettings` - *Deterministic GPU point-sprite toggle (one instanced quad per particle).*
 - `class CullingSettings` - *Deterministic CPU view-frustum culling toggle (color pass only).*
@@ -1713,7 +1715,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `514` lines (`21455` bytes)
+**Size**: `520` lines (`21625` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)` - *Serialize a vector as floats.*
@@ -2014,7 +2016,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `3292` lines (`117304` bytes)
+**Size**: `3303` lines (`117747` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -2149,7 +2151,7 @@
 ### [`keystone/web/scene.py`](keystone/web/scene.py)
 > *Export a game-agnostic scene as a JSON document for the browser viewer.*
 
-**Size**: `163` lines (`5913` bytes)
+**Size**: `163` lines (`5952` bytes)
 
 **Functions:**
 - `def _enabled(value)`
@@ -3789,7 +3791,7 @@
 ### [`tests/test_post.py`](tests/test_post.py)
 > *Tests for the deterministic post color-grade (in-shader exposure + vignette).*
 
-**Size**: `100` lines (`4247` bytes)
+**Size**: `194` lines (`7904` bytes)
 
 **Classes:**
 - `class PostMathTest`
@@ -3804,6 +3806,16 @@
   - Method `.test_compare_accepts_legacy_without_post()`
   - Method `.test_snapshot_round_trips_post_flag()`
   - Method `.test_scene_document_and_inspector_expose_post()`
+- `class PostToneTest`
+  - Method `.test_settings_validate_and_round_trip()`
+  - Method `.test_set_scene_accepts_and_rejects_a_tone()`
+  - Method `.test_describe_advertises_tonemapping()`
+- `class PostToneRenderTest`
+  - Method `.setUp()`
+  - Method `._scene(tone)`
+  - Method `._center()`
+  - Method `.test_reinhard_and_aces_darken_a_bright_surface()`
+  - Method `.test_disabled_post_ignores_the_tone()`
 
 ---
 

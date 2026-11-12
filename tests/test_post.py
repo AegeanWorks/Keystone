@@ -93,8 +93,102 @@ class PostContractsTest(unittest.TestCase):
         from keystone.web.scene import scene_document
 
         document = scene_document(CubeDemo().build_scene())
-        self.assertEqual(document["post"], {"enabled": True})
+        self.assertEqual(document["post"], {"enabled": True, "tone": "none"})
 
 
 if __name__ == "__main__":
     unittest.main()
+
+class PostToneTest(unittest.TestCase):
+    def test_settings_validate_and_round_trip(self):
+        self.assertEqual(PostSettings().tone, "none")
+        scene = Scene()
+        scene.post = PostSettings(tone="aces")
+        restored = scene_from_dict(scene_to_dict(scene))
+        self.assertEqual(restored.post.tone, "aces")
+        legacy = scene_to_dict(Scene())
+        legacy["environment"]["post"].pop("tone", None)
+        self.assertEqual(scene_from_dict(legacy).post.tone, "none")
+        with self.assertRaises(ValueError):
+            PostSettings(tone="film")
+        with self.assertRaises(ValueError):
+            scene_from_dict({"schema": 1, "environment": {"post": {"enabled": True, "tone": "film"}}})
+
+    def test_set_scene_accepts_and_rejects_a_tone(self):
+        from keystone.web.editor import set_scene
+
+        scene = CubeDemo().build_scene()
+        set_scene(scene, {"environment": {"tone": "reinhard"}})
+        self.assertEqual(scene.post.tone, "reinhard")
+        with self.assertRaises(ValueError):
+            set_scene(scene, {"environment": {"tone": "film"}})
+
+    def test_describe_advertises_tonemapping(self):
+        capabilities = describe_game(CubeDemo())["capabilities"]
+        self.assertTrue(capabilities["post_tonemap"])
+
+
+class PostToneRenderTest(unittest.TestCase):
+    def setUp(self):
+        from keystone.gpu.context import GLContext
+        from keystone.gpu.renderer import Renderer
+
+        self.context = GLContext(64, 48, visible=False)
+        self.addCleanup(self.context.close)
+        self.renderer = Renderer(64, 48)
+        self.addCleanup(self.renderer.release)
+
+    def _scene(self, tone):
+        from keystone.geometry import Material
+        from keystone.math3d import Vec3
+        from keystone.primitives import cube
+        from keystone.scene import Node, Transform
+
+        scene = Scene()
+        scene.background = Vec3(0.02, 0.02, 0.03)
+        scene.sky = scene.background
+        scene.add(
+            Node(
+                "screen",
+                transform=Transform(position=Vec3(0.0, 0.0, -3.0)),
+                mesh=cube(2.0),
+                material=Material(
+                    color=Vec3(0.0, 0.0, 0.0),
+                    specular=0.0,
+                    metallic=0.0,
+                    roughness=1.0,
+                    emissive=Vec3(0.8, 0.8, 0.8),
+                ),
+            )
+        )
+        scene.post = PostSettings(tone=tone)
+        return scene
+
+    def _center(self):
+        pixels = self.renderer.read_pixels()
+        index = ((48 // 2) * 64 + 64 // 2) * 4
+        return tuple(pixels[index : index + 4])
+
+    def test_reinhard_and_aces_darken_a_bright_surface(self):
+        self.renderer.render(self._scene("none"))
+        none = self._center()[0]
+        stats = self.renderer.last_stats
+        self.assertEqual(stats["post_tone"], "none")
+        self.renderer.render(self._scene("reinhard"))
+        reinhard = self._center()[0]
+        self.assertEqual(self.renderer.last_stats["post_tone"], "reinhard")
+        self.renderer.render(self._scene("aces"))
+        aces = self._center()[0]
+        self.assertGreater(none, reinhard)
+        self.assertNotEqual(aces, reinhard)
+        self.assertLessEqual(aces, none)
+
+    def test_disabled_post_ignores_the_tone(self):
+        off = self._scene("none")
+        off.post = PostSettings(enabled=False, tone="none")
+        self.renderer.render(off)
+        first = self._center()
+        changed = self._scene("aces")
+        changed.post = PostSettings(enabled=False, tone="aces")
+        self.renderer.render(changed)
+        self.assertEqual(first, self._center())

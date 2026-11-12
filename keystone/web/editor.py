@@ -33,6 +33,7 @@ from keystone.math3d import Quat, Vec3
 from keystone.png import png_bytes
 from keystone.prefab import Prefab
 from keystone.scene import (
+    POST_TONES,
     BloomSettings,
     ColorSettings,
     CullingSettings,
@@ -232,6 +233,7 @@ def scene_settings_document(scene: Scene) -> dict[str, object]:
             "shadow": bool(scene.shadow.enabled),
             "color": bool(scene.color.enabled),
             "post": bool(scene.post.enabled),
+            "tone": scene.post.tone,
             "bloom": bool(scene.bloom.enabled),
             "sprites": bool(scene.sprite.enabled),
             "culling": bool(scene.culling.enabled),
@@ -308,6 +310,7 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
     shadow = scene.shadow.enabled
     color = scene.color.enabled
     post = scene.post.enabled
+    tone = scene.post.tone
     bloom = scene.bloom.enabled
     sprites = scene.sprite.enabled
     culling = scene.culling.enabled
@@ -325,6 +328,7 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
                 "shadow",
                 "color",
                 "post",
+                "tone",
                 "bloom",
                 "sprites",
                 "culling",
@@ -467,6 +471,13 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
         bloom = values.get("bloom", bloom)
         sprites = values.get("sprites", sprites)
         culling = values.get("culling", culling)
+        if "tone" in environment_payload:
+            raw_tone = environment_payload["tone"]
+            if not isinstance(raw_tone, str) or raw_tone not in POST_TONES:
+                raise ValueError(
+                    "environment tone must be one of " + ", ".join(POST_TONES)
+                )
+            tone = raw_tone
 
     scene.camera.position = position
     scene.camera.yaw = yaw
@@ -482,7 +493,7 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
     scene.point_lights = point_lights
     scene.shadow = ShadowSettings(enabled=shadow)
     scene.color = ColorSettings(enabled=color)
-    scene.post = PostSettings(enabled=post)
+    scene.post = PostSettings(enabled=post, tone=tone)
     scene.bloom = BloomSettings(enabled=bloom)
     scene.sprite = SpriteSettings(enabled=sprites)
     scene.culling = CullingSettings(enabled=culling)

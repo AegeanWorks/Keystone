@@ -86,6 +86,7 @@ uniform float u_shadows_enabled;
 uniform float u_srgb_enabled;
 uniform float u_post_enabled;
 uniform float u_post_exposure;
+uniform float u_post_tone;
 uniform float u_post_vignette;
 uniform vec2 u_resolution;
 uniform float u_bloom_enabled;
@@ -131,6 +132,16 @@ vec3 apply_bloom(vec3 c) {
     float b = smoothstep(u_bloom_threshold, u_bloom_threshold + u_bloom_knee, l);
     return clamp(c + c * b * u_bloom_intensity, vec3(0.0), vec3(1.0));
 }
+vec3 apply_tone(vec3 c) {
+    if (u_post_tone < 0.5) {
+        return c;
+    }
+    if (u_post_tone < 1.5) {
+        return c / (c + vec3(1.0));
+    }
+    vec3 x = max(c, vec3(0.0));
+    return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), vec3(0.0), vec3(1.0));
+}
 vec3 apply_post(vec3 c) {
     if (u_post_enabled < 0.5) {
         return c;
@@ -138,7 +149,8 @@ vec3 apply_post(vec3 c) {
     vec2 uv = gl_FragCoord.xy / max(u_resolution, vec2(1.0, 1.0));
     vec2 d = uv - vec2(0.5);
     float v = 1.0 - u_post_vignette * dot(d, d) * 2.0;
-    return clamp(c * u_post_exposure * clamp(v, 0.0, 1.0), vec3(0.0), vec3(1.0));
+    vec3 lit = apply_tone(c * u_post_exposure);
+    return clamp(lit * clamp(v, 0.0, 1.0), vec3(0.0), vec3(1.0));
 }
 void main() {
     vec3 normal = normalize(v_normal);
@@ -336,9 +348,20 @@ uniform float u_bloom_knee;
 uniform float u_bloom_intensity;
 uniform float u_post_enabled;
 uniform float u_post_exposure;
+uniform float u_post_tone;
 uniform float u_post_vignette;
 uniform vec2 u_resolution;
 out vec4 frag_color;
+vec3 apply_tone(vec3 c) {
+    if (u_post_tone < 0.5) {
+        return c;
+    }
+    if (u_post_tone < 1.5) {
+        return c / (c + vec3(1.0));
+    }
+    vec3 x = max(c, vec3(0.0));
+    return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), vec3(0.0), vec3(1.0));
+}
 void main() {
     vec2 d = v_uv - vec2(0.5);
     float r = length(d) * 2.0;
@@ -357,7 +380,7 @@ void main() {
         vec2 uv = gl_FragCoord.xy / max(u_resolution, vec2(1.0, 1.0));
         vec2 dd = uv - vec2(0.5);
         float v = 1.0 - u_post_vignette * dot(dd, dd) * 2.0;
-        color = clamp(color * u_post_exposure * clamp(v, 0.0, 1.0), vec3(0.0), vec3(1.0));
+        color = clamp(apply_tone(color * u_post_exposure) * clamp(v, 0.0, 1.0), vec3(0.0), vec3(1.0));
     }
     frag_color = vec4(color, a);
 }
@@ -379,12 +402,23 @@ uniform vec3 u_sky_bottom;
 uniform float u_srgb_enabled;
 uniform float u_post_enabled;
 uniform float u_post_exposure;
+uniform float u_post_tone;
 uniform float u_post_vignette;
 uniform float u_bloom_enabled;
 uniform float u_bloom_threshold;
 uniform float u_bloom_knee;
 uniform float u_bloom_intensity;
 out vec4 frag_color;
+vec3 apply_tone(vec3 c) {
+    if (u_post_tone < 0.5) {
+        return c;
+    }
+    if (u_post_tone < 1.5) {
+        return c / (c + vec3(1.0));
+    }
+    vec3 x = max(c, vec3(0.0));
+    return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), vec3(0.0), vec3(1.0));
+}
 void main() {
     vec3 top = u_sky_top;
     vec3 bottom = u_sky_bottom;
@@ -404,7 +438,7 @@ void main() {
     if (u_post_enabled > 0.5) {
         vec2 d = v_uv - vec2(0.5);
         float v = 1.0 - u_post_vignette * dot(d, d) * 2.0;
-        color = clamp(color * u_post_exposure * clamp(v, 0.0, 1.0), vec3(0.0), vec3(1.0));
+        color = clamp(apply_tone(color * u_post_exposure) * clamp(v, 0.0, 1.0), vec3(0.0), vec3(1.0));
     }
     frag_color = vec4(color, 1.0);
 }
@@ -588,6 +622,7 @@ class Renderer:
             "shadows_enabled": 0,
             "srgb_enabled": 0,
             "post_enabled": 0,
+            "post_tone": "none",
             "bloom_enabled": 0,
             "sprite_calls": 0,
             "sprites": 0,
@@ -690,6 +725,7 @@ class Renderer:
         self._sky_program.set_float("u_post_enabled", 1.0 if post_on else 0.0)
         self._sky_program.set_float("u_post_exposure", POST_EXPOSURE)
         self._sky_program.set_float("u_post_vignette", POST_VIGNETTE)
+        self._sky_program.set_float("u_post_tone", self._tone_code(scene))
         self._sky_program.set_float("u_bloom_enabled", 1.0 if bloom_on else 0.0)
         self._sky_program.set_float("u_bloom_threshold", BLOOM_THRESHOLD)
         self._sky_program.set_float("u_bloom_knee", BLOOM_KNEE)
@@ -853,6 +889,7 @@ class Renderer:
         self._sprite_program.set_float("u_post_enabled", 1.0 if post_on else 0.0)
         self._sprite_program.set_float("u_post_exposure", POST_EXPOSURE)
         self._sprite_program.set_float("u_post_vignette", POST_VIGNETTE)
+        self._sprite_program.set_float("u_post_tone", self._tone_code(scene))
         self._sprite_program.set_vec2("u_resolution", float(self.width), float(self.height))
         GL.glDrawElementsInstanced(GL.GL_TRIANGLES, 6, GL.GL_UNSIGNED_INT, None, count)
         GL.glBindVertexArray(0)
@@ -868,12 +905,17 @@ class Renderer:
         program.set_float("u_bloom_knee", BLOOM_KNEE)
         program.set_float("u_bloom_intensity", BLOOM_INTENSITY)
 
-    def _apply_post(self, program: ShaderProgram, post_on: bool) -> None:
+    def _apply_post(self, program: ShaderProgram, post_on: bool, tone: float = 0.0) -> None:
         program.use()
         program.set_float("u_post_enabled", 1.0 if post_on else 0.0)
         program.set_float("u_post_exposure", POST_EXPOSURE)
         program.set_float("u_post_vignette", POST_VIGNETTE)
+        program.set_float("u_post_tone", tone)
         program.set_vec2("u_resolution", float(self.width), float(self.height))
+
+    def _tone_code(self, scene: Scene) -> float:
+        tone = getattr(getattr(scene, "post", None), "tone", "none")
+        return {"none": 0.0, "reinhard": 1.0, "aces": 2.0}.get(tone, 0.0)
 
     def _apply_shared(
         self,
@@ -995,9 +1037,10 @@ class Renderer:
         self._apply_bloom(self._program, bloom_on)
         self._apply_bloom(self._inst_program, bloom_on)
         self._apply_bloom(self._skin_program, bloom_on)
-        self._apply_post(self._program, post_on)
-        self._apply_post(self._inst_program, post_on)
-        self._apply_post(self._skin_program, post_on)
+        tone = self._tone_code(scene)
+        self._apply_post(self._program, post_on, tone)
+        self._apply_post(self._inst_program, post_on, tone)
+        self._apply_post(self._skin_program, post_on, tone)
         for group in group_instances(scene, planes, layer=layer, exclude_layer=exclude_layer):
             mesh = group["mesh"]
             if not isinstance(mesh, MeshData):
@@ -1242,6 +1285,7 @@ class Renderer:
             "shadows_enabled": 1 if shadows_on else 0,
             "srgb_enabled": 1 if srgb_on else 0,
             "post_enabled": 1 if post_on else 0,
+            "post_tone": getattr(getattr(scene, "post", None), "tone", "none"),
             "bloom_enabled": 1 if bloom_on else 0,
             "sprite_calls": sprite_calls,
             "sprites": sprites,

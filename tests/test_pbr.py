@@ -72,7 +72,7 @@ class PbrMaterialTest(unittest.TestCase):
         self.assertEqual(material["roughness"], 0.2)
         self.assertEqual(material["emissive"], [0.1, 0.0, 0.0])
         document = scene_document(scene)
-        self.assertEqual(document["schema"], 2)
+        self.assertEqual(document["schema"], 3)
         entry = next(node for node in document["nodes"] if node["id"] == "hero")
         self.assertEqual(entry["material"]["metallic"], 0.5)
         self.assertEqual(entry["material"]["emissive"], [0.1, 0.0, 0.0])

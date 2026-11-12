@@ -174,6 +174,11 @@ changes that do not bump the release number yet.
   word boundaries, preserve explicit newlines and blank lines, truncate an
   overlong single word and return the height used. `--describe` reports
   `capabilities.ui_text_wrap`.
+- `PostSettings` gains `tone` (`none`, `reinhard`, `aces`): the post grade
+  optionally tonemaps linear colour before exposure/vignette, persists the
+  choice in snapshots, exposes it through `set_scene` and scene export, and
+  reports it in renderer stats. `--describe` reports
+  `capabilities.post_tonemap`. Scene export schema is 3, editor schema 60.
 - The editor gains `inspect_tilemap` and `build_tilemap`: the first reports
   a tile-map document's counts and bounds, the second applies the merged
   mesh to a scene node through undo history, with schema examples and
