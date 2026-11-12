@@ -209,7 +209,7 @@ grid = grid_from_boxes(48, 32, wall_boxes, cell_size=1.0, clearance=0.4)
 write_navgrid("levels/hall.navgrid", grid)
 ```
 
-The editor's `bake_navgrid` action derives a grid from the current scene's visible meshes (optional layer, clearance and origin) and returns the schema-1 document; `inspect_navgrid` validates a document and reports counts. `grid_from_boxes()` rasterizes the same AABBs a character collides with: a cell blocks when its world-space centre falls inside a box inflated by the clearance radius on X and Z, so navigation cannot silently drift from the level geometry. `scene_boxes()` derives those AABBs from a scene's visible mesh nodes (skipping the camera-relative overlay layer), so one level can feed the grid directly. `NavGrid.to_dict()`/`from_dict()` and `write_navgrid`/`read_navgrid` persist a schema-1 document that sorts blocked cells, rejects duplicates and rejects out-of-bounds cells. `--describe` reports `capabilities.nav_authoring`.
+The editor's `bake_navgrid` action derives a grid from the current scene's visible meshes (optional layer, clearance and origin) and returns the schema-1 document; `inspect_navgrid` validates a document and reports counts; `route_navgrid` runs A* between two cells, optionally with diagonals and smoothing, and returns both the raw and smoothed route. `grid_from_boxes()` rasterizes the same AABBs a character collides with: a cell blocks when its world-space centre falls inside a box inflated by the clearance radius on X and Z, so navigation cannot silently drift from the level geometry. `scene_boxes()` derives those AABBs from a scene's visible mesh nodes (skipping the camera-relative overlay layer), so one level can feed the grid directly. `NavGrid.to_dict()`/`from_dict()` and `write_navgrid`/`read_navgrid` persist a schema-1 document that sorts blocked cells, rejects duplicates and rejects out-of-bounds cells. `--describe` reports `capabilities.nav_authoring`.
 
 ### Post grade and tonemapping
 
@@ -384,7 +384,7 @@ The dashboard can inspect the game contract, run the same action scripts as `--s
 | `/api/describe` | `GET` | the same discovery payload as `--describe`, including `capabilities.web` |
 | `/api/scene` | `GET` | scene document schema 2: camera, lights, atmosphere, node identity, world matrices, shared meshes and RGBA textures |
 | `/api/inspector` | `GET` | batch plan, merge, audio/anim/particles, assets |
-| `/api/editor` | `GET/POST` | scene editor document and actions: hierarchy, selection, transforms, prefabs, assets, animation and 1D/2D blend-space previews, tile-map inspect/build, and nav-grid inspect/bake |
+| `/api/editor` | `GET/POST` | scene editor document and actions: hierarchy, selection, transforms, prefabs, assets, animation and 1D/2D blend-space previews, tile-map inspect/build, and nav-grid inspect/bake/route |
 | `/api/simulate` | `POST` | the same deterministic result as `--simulate`; body `{"frames": 60, "actions": [...], "step": 0.0167, "trace": false}` |
 | `/api` | `GET` | endpoint and schema index |
 

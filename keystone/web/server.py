@@ -25,7 +25,7 @@ from keystone.lifecycle import ComponentRuntime
 from keystone.material_library import MaterialLibrary, material_from_document
 from keystone.math3d import Vec3
 from keystone.nav_authoring import grid_from_boxes, scene_boxes
-from keystone.pathfinding import NavGrid
+from keystone.pathfinding import NavGrid, find_path, path_report, smooth_path
 from keystone.plugin import GameModule, describe_game
 from keystone.prefab import Prefab
 from keystone.prefab_library import PrefabLibrary
@@ -316,6 +316,7 @@ class GameSession:
         self.last_tilemap_build: dict[str, object] | None = None
         self.last_navgrid: dict[str, object] | None = None
         self.last_navgrid_bake: dict[str, object] | None = None
+        self.last_navgrid_route: dict[str, object] | None = None
         self.last_animation_key: dict[str, object] | None = None
         self.last_validation: dict[str, object] | None = None
         self.last_import: dict[str, object] | None = None
@@ -904,6 +905,7 @@ class GameSession:
         document["tilemap_build"] = self.last_tilemap_build
         document["navgrid"] = self.last_navgrid
         document["navgrid_bake"] = self.last_navgrid_bake
+        document["navgrid_route"] = self.last_navgrid_route
         document["animation_key"] = self.last_animation_key
         document["validation"] = self.last_validation
         document["imported_asset"] = self.last_import
@@ -1021,6 +1023,7 @@ class GameSession:
         self.last_tilemap_build = None
         self.last_navgrid = None
         self.last_navgrid_bake = None
+        self.last_navgrid_route = None
         self.last_animation_key = None
         self.last_validation = None
         self.last_import = None
@@ -1574,6 +1577,52 @@ class GameSession:
                             "boxes": len(boxes),
                             "document": grid.to_dict(),
                         }
+                elif action == "route_navgrid":
+                    def route_cell(label: str) -> tuple[int, int]:
+                        raw = payload.get(label)
+                        if (
+                            not isinstance(raw, (list, tuple))
+                            or len(raw) != 2
+                            or not all(
+                                isinstance(part, int) and not isinstance(part, bool)
+                                for part in raw
+                            )
+                        ):
+                            raise ValueError(
+                                f"route_navgrid {label} must be [x, y] integers"
+                            )
+                        return (raw[0], raw[1])
+
+                    document = payload.get("navgrid")
+                    if not isinstance(document, dict):
+                        raise TypeError(
+                            "route_navgrid navgrid must be a JSON object"
+                        )
+                    diagonal = payload.get("diagonal", False)
+                    if not isinstance(diagonal, bool):
+                        raise TypeError("route_navgrid diagonal must be a boolean")
+                    smooth = payload.get("smooth", True)
+                    if not isinstance(smooth, bool):
+                        raise TypeError("route_navgrid smooth must be a boolean")
+                    grid = NavGrid.from_dict(document)
+                    result = find_path(
+                        grid,
+                        route_cell("start"),
+                        route_cell("goal"),
+                        diagonal=diagonal,
+                    )
+                    smoothed = (
+                        smooth_path(grid, result.path)
+                        if smooth and result.found
+                        else result.path
+                    )
+                    self.last_navgrid_route = {
+                        "report": path_report(result),
+                        "route": [[x, y] for x, y in result.path],
+                        "smoothed": [[x, y] for x, y in smoothed],
+                        "diagonal": diagonal,
+                        "smooth": smooth,
+                    }
                 elif action == "save_animation":
                     if self.animation_library is None:
                         raise ValueError("no animation library is configured")

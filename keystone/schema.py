@@ -36,6 +36,7 @@ EDITOR_ACTIONS = (
     "build_tilemap",
     "inspect_navgrid",
     "bake_navgrid",
+    "route_navgrid",
     "save_animation",
     "delete_animation",
     "restore_animation",

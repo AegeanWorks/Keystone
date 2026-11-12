@@ -5097,6 +5097,78 @@ class WebServerTest(unittest.TestCase):
             )
         self.assertEqual(caught.exception.status, 400)
 
+    def test_editor_route_navgrid(self):
+        from keystone.schema import EDITOR_ACTIONS
+
+        self.assertIn("route_navgrid", EDITOR_ACTIONS)
+        session = GameSession(CubeDemo())
+        document = {
+            "schema": 1,
+            "width": 5,
+            "height": 3,
+            "blocked": [[2, 1]],
+        }
+        routed = session.editor_action(
+            {
+                "action": "route_navgrid",
+                "navgrid": document,
+                "start": [0, 1],
+                "goal": [4, 1],
+                "smooth": True,
+            }
+        )
+        result = routed["navgrid_route"]
+        self.assertTrue(result["report"]["found"])
+        self.assertEqual(result["route"][0], [0, 1])
+        self.assertEqual(result["route"][-1], [4, 1])
+        self.assertNotIn([2, 1], result["route"])
+        self.assertGreaterEqual(len(result["route"]), len(result["smoothed"]))
+        self.assertEqual(result["smoothed"][0], [0, 1])
+        self.assertEqual(result["smoothed"][-1], [4, 1])
+        self.assertFalse(result["diagonal"])
+
+        diagonal = session.editor_action(
+            {
+                "action": "route_navgrid",
+                "navgrid": {"schema": 1, "width": 5, "height": 5},
+                "start": [0, 0],
+                "goal": [4, 4],
+                "diagonal": True,
+            }
+        )["navgrid_route"]
+        self.assertTrue(diagonal["report"]["found"])
+        self.assertAlmostEqual(diagonal["report"]["cost"], 4 * 2 ** 0.5, places=5)
+
+        unreachable = session.editor_action(
+            {
+                "action": "route_navgrid",
+                "navgrid": {
+                    "schema": 1,
+                    "width": 3,
+                    "height": 3,
+                    "blocked": [[1, 0], [1, 1], [1, 2]],
+                },
+                "start": [0, 1],
+                "goal": [2, 1],
+            }
+        )["navgrid_route"]
+        self.assertFalse(unreachable["report"]["found"])
+        self.assertEqual(unreachable["smoothed"], [])
+
+        for payload in (
+            {"start": [0.0, 1.0]},
+            {"start": [0, 1], "goal": [9, 9]},
+            {"start": [2, 1], "goal": [4, 1]},
+            {"start": [0, 1], "goal": [4, 1], "diagonal": "yes"},
+            {"start": [0, 1], "goal": [4, 1], "smooth": 1},
+        ):
+            with self.subTest(payload=payload):
+                request = {"action": "route_navgrid", "navgrid": document}
+                request.update(payload)
+                with self.assertRaises(WebProblem) as caught:
+                    session.editor_action(request)
+                self.assertEqual(caught.exception.status, 400)
+
     def test_editor_navgrid_inspect_and_bake(self):
         from keystone.pathfinding import NavGrid
         from keystone.schema import EDITOR_ACTIONS

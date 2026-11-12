@@ -190,6 +190,10 @@ changes that do not bump the release number yet.
   choice in snapshots, exposes it through `set_scene` and scene export, and
   reports it in renderer stats. `--describe` reports
   `capabilities.post_tonemap`. Scene export schema is 3, editor schema 60.
+- The editor gains `route_navgrid`: it runs A* on a schema-1 nav-grid
+  document between two cells with optional diagonals and line-of-sight
+  smoothing, returning the path report, the raw route and the smoothed
+  route under `navgrid_route`.
 - The editor gains `inspect_navgrid` and `bake_navgrid`: the first validates
   a schema-1 nav-grid document and reports counts, the second derives a grid
   from the scene's visible meshes with optional layer, origin, cell size and

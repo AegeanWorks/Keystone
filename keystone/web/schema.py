@@ -148,6 +148,14 @@ EDITOR_EXAMPLES = {
         "parameter": 0.5,
         "time": 0.0,
     },
+    "route_navgrid": {
+        "action": "route_navgrid",
+        "navgrid": {"schema": 1, "width": 5, "height": 3, "blocked": [[2, 1]]},
+        "start": [0, 1],
+        "goal": [4, 1],
+        "diagonal": False,
+        "smooth": True,
+    },
     "inspect_navgrid": {
         "action": "inspect_navgrid",
         "navgrid": {"schema": 1, "width": 8, "height": 6, "blocked": [[2, 2]]},
@@ -473,6 +481,8 @@ EDITOR_SCHEMA = {
             "time",
             "record",
         ],
+        "route_navgrid": ["navgrid", "start", "goal", "diagonal", "smooth"],
+        "navgrid_route": ["report", "route", "smoothed", "diagonal", "smooth"],
         "inspect_navgrid": ["navgrid"],
         "bake_navgrid": ["width", "height", "cell_size", "origin", "clearance", "layer"],
         "navgrid": ["width", "height", "blocked", "free"],
