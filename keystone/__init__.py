@@ -110,6 +110,12 @@ from keystone.playtest import (
 from keystone.plugin import GameModule
 from keystone.prefab import Prefab
 from keystone.rng import RandomStream, RandomStreamState
+from keystone.root_motion import (
+    RootMotion,
+    extract_root_motion,
+    in_place_pose,
+    root_motion_report,
+)
 from keystone.scene import (
     OVERLAY_LAYER,
     BloomSettings,
@@ -184,6 +190,7 @@ __all__ = [
     "RandomPolicy",
     "RandomStream",
     "RandomStreamState",
+    "RootMotion",
     "Route",
     "Scene",
     "SceneGroup",
@@ -215,11 +222,13 @@ __all__ = [
     "diff_transcripts",
     "distance_gain",
     "extract_planes",
+    "extract_root_motion",
     "find_path",
     "grid_from_boxes",
     "grid_path_points",
     "group_instances",
     "hit_report",
+    "in_place_pose",
     "lifecycle_hooks",
     "line_of_sight",
     "load_gltf",
@@ -242,6 +251,7 @@ __all__ = [
     "raycast_scene",
     "read_navgrid",
     "read_wav",
+    "root_motion_report",
     "run_bot",
     "scene_boxes",
     "scene_from_dict",

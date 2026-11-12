@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `192`
-- **Total Classes**: `334`
-- **Total Top-Level Functions**: `553`
-- **Total Class Methods**: `2085`
-- **Total Source Lines**: `52214`
+- **Total Python Modules**: `194`
+- **Total Classes**: `338`
+- **Total Top-Level Functions**: `558`
+- **Total Class Methods**: `2101`
+- **Total Source Lines**: `52512`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`192` module(s))
+- **Indexed**: python (`194` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `276` lines (`6047` bytes)
+**Size**: `286` lines (`6260` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -1420,7 +1420,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `147` lines (`5556` bytes)
+**Size**: `148` lines (`5589` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1610,6 +1610,24 @@
 
 **Functions:**
 - `def _finite(value, label)`
+
+---
+
+### [`keystone/root_motion.py`](keystone/root_motion.py)
+> *Root motion: extract a root node's delta and bake a pose in place.*
+
+**Size**: `151` lines (`6126` bytes)
+
+**Classes:**
+- `class RootMotion` - *A root delta between two clip times: world-space position and rotation.*
+  - Method `.__post_init__()`
+  - Property `.yaw` - *Rotation around Y in radians, in the engine's right-handed frame.*
+
+**Functions:**
+- `def _finite(label, value)`
+- `def extract_root_motion(clip, node_id, start, end, *, planar)` - *Return the root delta between ``start`` and ``end`` clip times.*
+- `def in_place_pose(pose, node_id, reference)` - *Return a copy of ``pose`` with ``node_id`` reset to a reference transform.*
+- `def root_motion_report(motion)` - *Return a JSON-safe summary of one root delta.*
 
 ---
 
@@ -4077,6 +4095,35 @@
 - `class RandomStreamValidationTest`
   - Method `.test_seed_must_be_an_integer()`
   - Method `.test_describe_advertises_deterministic_random()`
+
+---
+
+### [`tests/test_root_motion.py`](tests/test_root_motion.py)
+> *Tests for root-motion extraction and in-place pose baking.*
+
+**Size**: `136` lines (`5663` bytes)
+
+**Classes:**
+- `class ExtractRootMotionTest`
+  - Method `.test_a_full_clip_reports_its_position_delta()`
+  - Method `.test_a_subrange_reports_part_of_the_delta()`
+  - Method `.test_planar_mode_drops_vertical_motion()`
+  - Method `.test_rotation_delta_and_yaw()`
+  - Method `.test_an_empty_interval_is_identity()`
+  - Method `.test_times_clamp_to_the_clip_duration()`
+  - Method `.test_missing_nodes_and_bad_arguments_are_rejected()`
+- `class InPlacePoseTest`
+  - Method `.test_the_root_is_reset_and_the_original_is_untouched()`
+  - Method `.test_a_reference_transform_is_honoured()`
+  - Method `.test_validation()`
+- `class RootMotionReportTest`
+  - Method `.test_report_is_json_safe()`
+  - Method `.test_report_rejects_a_non_motion()`
+  - Method `.test_motion_is_immutable()`
+  - Method `.test_describe_advertises_root_motion()`
+
+**Functions:**
+- `def _clip(positions, rotations)`
 
 ---
 

@@ -1,116 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-ui-images-v1",
+    "task_id": "keystone-root-motion-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794463664.9241264,
+    "updated_at": 1794465059.6318045,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
-    "completed_at": 1794463736.7149332
+    "completed_at": 1794465103.4109037
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-fxaa-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: add opt-in FXAA as PostSettings.anti_alias, implemented as a full-screen luma-edge pass over the scene/composite FBO, persisted through snapshots, scene export and editor set_scene, reported in stats, and leaving the default path byte-identical",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794452217.5472698,
-      "timestamp_str": "2026-11-12 05:56:57",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "Geometry edges were hard aliased and anti-aliasing was the last named post-chain item; the bloom color FBOs already exist, so FXAA needs one program and one extra full-res target when bloom is off.",
-        "benefits": "Opt-in edge smoothing for silhouettes and high-contrast edges, authorable from Python and the editor, visible in reports, with no change to existing frames.",
-        "risks": "contract: PostSettings field, render path branches, scene export schema 5, editor schema 62; dependency: none; concurrency: none; state: additive snapshot field.",
-        "mitigation": "Keep the no-AA/no-bloom direct path untouched, compose bloom into _post_fbo before resolving, test silhouette changes and a uniform-frame no-op, and verify the canonical frame unchanged."
-      },
-      "plan_digest": "1f2799429046da8c7d15f4c2e4a4d377cacb6c67efe6e70959c001f0ad5cfde3"
-    },
-    {
-      "task_id": "keystone-fxaa-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/3] Implemented and verified - PostSettings.anti_alias (none/fxaa) validates; FXAA_FRAGMENT runs as a full-screen luma-edge pass; render routes through _bloom_scene when bloom or FXAA is on, blooms into _post_fbo when both are on, and resolves to the default framebuffer; the no-AA/no-bloom path is unchanged; snapshots, scene export (schema 5), editor set_scene (schema 62) and stats (post_aa) carry it; a rotated cube changes pixels with FXAA, a uniform frame does not, and bloom+FXAA composes; 1278 tests green, ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
-      "files_affected": [
-        "keystone/scene.py",
-        "keystone/gpu/renderer.py",
-        "keystone/scene_snapshot.py",
-        "keystone/web/editor.py",
-        "keystone/web/scene.py",
-        "keystone/schema.py",
-        "keystone/plugin.py",
-        "tests/test_post.py",
-        "tests/test_web.py",
-        "tests/test_pbr.py",
-        "README.md",
-        "docs/ARCHITECTURE.md",
-        "CHANGELOG.md",
-        ".aikit/decisions.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794452237.6995392,
-      "timestamp_str": "2026-11-12 05:57:17",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "baseline": 1272.0,
-          "candidate": 1278.0,
-          "command": "python -m pytest --collect-only -q",
-          "unit": "tests",
-          "artifact": "stdout",
-          "metric": "collected_tests"
-        },
-        {
-          "baseline": 4.0,
-          "candidate": 5.0,
-          "command": "python -m pytest tests/test_web.py",
-          "unit": "schema",
-          "artifact": "tests/test_web.py",
-          "metric": "scene_export_schema"
-        },
-        {
-          "baseline": 4899.0,
-          "candidate": 4899.0,
-          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
-          "unit": "bytes",
-          "artifact": "temp PNG",
-          "metric": "reference_png_bytes"
-        }
-      ],
-      "checklists": "passed"
-    },
-    {
-      "task_id": "keystone-fxaa-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-fxaa-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794452240.600083,
-      "timestamp_str": "2026-11-12 05:57:20",
-      "agent": "kilo:goal"
-    },
-    {
-      "task_id": "keystone-editor-navgrid-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: add inspect_navgrid and bake_navgrid editor actions so navigation authoring matches the tile-map loop, with schema examples/fields, document exposure, argument validation and no scene mutation",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794453117.2269514,
-      "timestamp_str": "2026-11-12 06:11:57",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "Nav grids were derivable and persistable in Python but unreachable from the JSON authoring surface; tile maps had just gained inspect/build, leaving navigation inconsistent.",
-        "benefits": "An AI can bake a grid from the live scene, receive the schema-1 document, validate documents, and persist exactly what it measured.",
-        "risks": "contract: two editor actions, editor fields and schema entries; dependency: web server imports nav_authoring and pathfinding; concurrency: session lock; state: one-shot fields reset per action and baking adds no undo step.",
-        "mitigation": "Validate width/height/origin/layer/clearance before baking, return counts plus the document, pin the document round trip and four error paths, and keep the canonical frame unchanged."
-      },
-      "plan_digest": "4c945a2d4ebcabc22c0d42f95e3713b1ee523be74923294241caa4688ff5ade4"
-    },
     {
       "task_id": "keystone-editor-navgrid-v1",
       "phase": "phase 4",
@@ -504,6 +405,100 @@
       "status": "completed",
       "timestamp": 1794463736.7149348,
       "timestamp_str": "2026-11-12 09:08:56",
+      "agent": "kilo:goal"
+    },
+    {
+      "task_id": "keystone-root-motion-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: add root-motion extraction (RootMotion, extract_root_motion, in_place_pose, root_motion_report) that returns a clip root's position/rotation delta, optional planar mode, yaw and a pose copy with the root reset, plus a discovery flag",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794465035.5806336,
+      "timestamp_str": "2026-11-12 09:30:35",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "Clips animate root nodes but the engine had no first-class way to turn that into movement; games had to sample, subtract and invert themselves, and Unity/Unreal expose root motion directly.",
+        "benefits": "Animation-driven movement and turning become a pure tested delta, with in-place baking for gameplay and a JSON report for evidence.",
+        "risks": "contract: new module, four exports and a capability; dependency: root_motion imports animation and scene.Transform; concurrency: none; state: pure values.",
+        "mitigation": "Validate node IDs and times, normalize rotations, pin deltas/yaw/planar/identity/validation with tests, and keep the canonical frame unchanged."
+      },
+      "plan_digest": "417a15646d5252c5b4738643b9adeb0f845a4376dd4365cd83a589ff5287d538"
+    },
+    {
+      "task_id": "keystone-root-motion-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan (impact-assessed): add root-motion extraction and in-place pose baking via RootMotion, extract_root_motion, in_place_pose and root_motion_report, with optional planar mode, yaw and a discovery flag",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794465049.5979698,
+      "timestamp_str": "2026-11-12 09:30:49",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "Clips animate root nodes but the engine had no first-class way to turn that into movement; games had to sample, subtract and invert, and Unity/Unreal expose root motion directly.",
+        "benefits": "Animation-driven movement and turning become a pure tested delta, with in-place baking for gameplay and a JSON report for evidence.",
+        "risks": "contract: new module, four exports and a capability; dependency: root_motion imports animation and scene.Transform; concurrency: none; state: pure values.",
+        "mitigation": "Validate node ids and times, normalize rotations, pin deltas, yaw, planar, identity and validation with tests, and keep the canonical frame unchanged."
+      },
+      "plan_digest": "1bb550a2f1899a6620165ee63128bb6fceae39fbe3c61472f2aa5461cbea08a2"
+    },
+    {
+      "task_id": "keystone-root-motion-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/3] Implemented and verified - root_motion.py adds RootMotion with normalized rotation and yaw, extract_root_motion with clamped times, planar mode and missing-node errors, in_place_pose copying a pose with the root reset to a reference or identity, and root_motion_report; exports, README bullet, ARCHITECTURE row and tree, docs/TREE, CHANGELOG and ADR-253 updated; --describe reports capabilities.root_motion; a two-unit clip gives 2.0 and its middle half 1.0, a quarter turn gives yaw pi/2 and forward -X, planar drops Y, an empty interval is identity and bad ids/times raise; 14 tests green (1317 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
+      "files_affected": [
+        "keystone/root_motion.py",
+        "tests/test_root_motion.py",
+        "keystone/__init__.py",
+        "keystone/plugin.py",
+        "README.md",
+        "docs/ARCHITECTURE.md",
+        "docs/TREE.md",
+        "CHANGELOG.md",
+        ".aikit/decisions.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1794465059.6318045,
+      "timestamp_str": "2026-11-12 09:30:59",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "unit": "tests",
+          "artifact": "stdout",
+          "baseline": 1303.0,
+          "metric": "collected_tests",
+          "candidate": 1317.0,
+          "command": "python -m pytest --collect-only -q"
+        },
+        {
+          "unit": "world",
+          "artifact": "tests/test_root_motion.py",
+          "baseline": 2.0,
+          "metric": "subrange_delta_z",
+          "candidate": 1.0,
+          "command": "python -m pytest tests/test_root_motion.py"
+        },
+        {
+          "unit": "bytes",
+          "artifact": "temp PNG",
+          "baseline": 4899.0,
+          "metric": "reference_png_bytes",
+          "candidate": 4899.0,
+          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png"
+        }
+      ],
+      "checklists": "passed"
+    },
+    {
+      "task_id": "keystone-root-motion-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-root-motion-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794465103.4109056,
+      "timestamp_str": "2026-11-12 09:31:43",
       "agent": "kilo:goal"
     }
   ]
