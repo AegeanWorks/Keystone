@@ -234,6 +234,9 @@ changes that do not bump the release number yet.
   live machine parameters, round-trips through `.kstate` documents and
   reports axes and parameters. A state may use one space kind only.
   `--describe` reports `capabilities.animation_state_blend_2d`.
+- The itemised feature list moved from the README into
+  `docs/FEATURES.md`; the README keeps a one-paragraph summary and a link,
+  restoring room under its size gate for future feature notes.
 - `RootMotionPresenter` places a container node at a `RootMotionBody`'s
   position and yaw (keeping scale) and applies the in-place pose to its
   children, keeping movement, collision and presentation in sync.

@@ -130,6 +130,7 @@ keystone/
 ├── docs/
 │   ├── ARCHITECTURE.md       <- core layers and contract
 │   ├── AI_GUIDE.md           <- discover, simulate and verify
+│   ├── FEATURES.md           <- itemised feature list
 │   ├── IMPLICIT_STATE_AUDIT.md <- state-machine audit
 │   └── TREE.md               <- this full repository tree
 ├── tests/
