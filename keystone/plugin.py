@@ -110,6 +110,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "game_ui": callable(getattr(game, "draw_ui", None)),
             "ui_text_wrap": True,
             "ui_images": True,
+            "ui_shapes": True,
             "report_schema": REPORT_SCHEMA,
             "web": {
                 "api_version": WEB_API_VERSION,

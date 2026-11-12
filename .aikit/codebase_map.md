@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `199`
-- **Total Classes**: `344`
+- **Total Python Modules**: `200`
+- **Total Classes**: `346`
 - **Total Top-Level Functions**: `570`
-- **Total Class Methods**: `2148`
-- **Total Source Lines**: `53294`
+- **Total Class Methods**: `2162`
+- **Total Source Lines**: `53452`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`199` module(s))
+- **Indexed**: python (`200` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -1420,7 +1420,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `151` lines (`5710` bytes)
+**Size**: `152` lines (`5741` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -2000,7 +2000,7 @@
 ### [`keystone/ui/canvas.py`](keystone/ui/canvas.py)
 > *Screen-space 2D canvas built from clipped color quads and bitmap text.*
 
-**Size**: `281` lines (`10293` bytes)
+**Size**: `338` lines (`12566` bytes)
 
 **Classes:**
 - `class TextElement` - *One text draw call recorded for AI/UI reports.*
@@ -2011,6 +2011,8 @@
   - Property `.labels` - *Return the drawn text values in draw order.*
   - Method `._add(x, y, width, height, color)`
   - Method `.rect(x, y, width, height, color)` - *Append an axis-aligned filled rectangle, clipped to the canvas.*
+  - Method `.line(x0, y0, x1, y1, color, thickness)` - *Draw a clipped pixel line with a square brush of ``thickness``.*
+  - Method `.frame(x, y, width, height, color, thickness)` - *Draw a clipped rectangular outline with the given side thickness.*
   - Method `.image(x, y, width, height, texture, color, u0, v0, u1, v1)` - *Append a textured quad, clipped to the canvas with adjusted UVs.*
   - Method `.text(x, y, text, color, scale)` - *Append bitmap text; lowercase is drawn as uppercase.*
   - Method `.text_width(text, scale)` - *Pixel width of a text run at this canvas scale (shared font metric).*
@@ -4812,6 +4814,29 @@
 **Functions:**
 - `def _solid(red, green, blue, size)`
 - `def _rows(*rows)`
+
+---
+
+### [`tests/test_ui_shapes.py`](tests/test_ui_shapes.py)
+> *Tests for line and frame drawing on the UI canvas.*
+
+**Size**: `100` lines (`3626` bytes)
+
+**Classes:**
+- `class CanvasLineTest`
+  - Method `.test_a_horizontal_line_records_one_quad_per_pixel()`
+  - Method `.test_a_diagonal_line_advances_both_axes()`
+  - Method `.test_thickness_draws_more_pixels()`
+  - Method `.test_a_zero_length_line_draws_one_point()`
+  - Method `.test_lines_clip_at_the_canvas_edge()`
+  - Method `.test_thin_lines_become_vertex_quads()`
+  - Method `.test_validation()`
+- `class CanvasFrameTest`
+  - Method `.test_a_frame_records_four_sides()`
+  - Method `.test_a_thick_frame_overlaps_the_corners()`
+  - Method `.test_frames_clip_and_drop_when_outside()`
+  - Method `.test_validation()`
+  - Method `.test_describe_advertises_ui_shapes()`
 
 ---
 

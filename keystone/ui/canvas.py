@@ -86,6 +86,63 @@ class Canvas:
             raise ValueError("rectangle width and height must be positive")
         self._add(x, y, width, height, color)
 
+    def line(
+        self,
+        x0: float,
+        y0: float,
+        x1: float,
+        y1: float,
+        color: Color,
+        thickness: int = 1,
+    ) -> None:
+        """Draw a clipped pixel line with a square brush of ``thickness``."""
+        for label, value in (("x0", x0), ("y0", y0), ("x1", x1), ("y1", y1)):
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise TypeError(f"line {label} must be a real number")
+            if not math.isfinite(value):
+                raise ValueError(f"line {label} must be finite")
+        if isinstance(thickness, bool) or not isinstance(thickness, int) or thickness < 1:
+            raise ValueError("line thickness must be a positive integer")
+        x, y = round(x0), round(y0)
+        goal_x, goal_y = round(x1), round(y1)
+        delta_x = abs(goal_x - x)
+        step_x = 1 if x < goal_x else -1
+        delta_y = -abs(goal_y - y)
+        step_y = 1 if y < goal_y else -1
+        error = delta_x + delta_y
+        offset = thickness // 2
+        while True:
+            self._add(x - offset, y - offset, thickness, thickness, color)
+            if x == goal_x and y == goal_y:
+                break
+            doubled = 2 * error
+            if doubled >= delta_y:
+                error += delta_y
+                x += step_x
+            if doubled <= delta_x:
+                error += delta_x
+                y += step_y
+
+    def frame(
+        self,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+        color: Color,
+        thickness: int = 1,
+    ) -> None:
+        """Draw a clipped rectangular outline with the given side thickness."""
+        if width <= 0 or height <= 0:
+            raise ValueError("frame width and height must be positive")
+        if isinstance(thickness, bool) or not isinstance(thickness, int) or thickness < 1:
+            raise ValueError("frame thickness must be a positive integer")
+        side = min(thickness, width, height)
+        self._add(x, y, width, side, color)
+        self._add(x, y + height - side, width, side, color)
+        self._add(x, y + side, side, max(0.0, height - 2 * side), color)
+        self._add(x + width - side, y + side, side, max(0.0, height - 2 * side), color)
+
     def image(
         self,
         x: float,

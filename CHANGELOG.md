@@ -170,6 +170,9 @@ changes that do not bump the release number yet.
   `--describe` reports `capabilities.scene_raycast`.
 - `ray_aabb` and `ray_sphere` now return world-unit distances for non-unit
   ray directions; they normalized the direction and scaled the result again.
+- `Canvas.line()` and `Canvas.frame()` add clipped pixel lines with a square
+  brush and rectangular outlines, useful for minimaps, pointers and debug
+  HUDs. `--describe` reports `capabilities.ui_shapes`.
 - `Canvas.image()` adds textured HUD quads with UV subrects, tint, alpha
   and clipping; `UiRenderer` draws them with a cached clamp-to-edge texture
   pass after color primitives. `--describe` reports
