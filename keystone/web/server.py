@@ -18,14 +18,17 @@ from keystone.animation_blend import BlendSpace1D, BlendSpace2D
 from keystone.animation_library import AnimationLibrary
 from keystone.animation_state import AnimationStateMachine
 from keystone.assets import AssetRegistry
+from keystone.character import CharacterBody, CharacterController
 from keystone.component_codec import validate_component_types
 from keystone.headless import run_simulation
 from keystone.input import ActionState
 from keystone.lifecycle import ComponentRuntime
 from keystone.material_library import MaterialLibrary, material_from_document
 from keystone.math3d import Vec3
+from keystone.nav_agent import NavAgent, nav_agent_report
 from keystone.nav_authoring import grid_from_boxes, scene_boxes
 from keystone.pathfinding import NavGrid, find_path, path_report, smooth_path
+from keystone.physics import AABB
 from keystone.plugin import GameModule, describe_game
 from keystone.prefab import Prefab
 from keystone.prefab_library import PrefabLibrary
@@ -317,6 +320,7 @@ class GameSession:
         self.last_navgrid: dict[str, object] | None = None
         self.last_navgrid_bake: dict[str, object] | None = None
         self.last_navgrid_route: dict[str, object] | None = None
+        self.last_navgrid_trace: dict[str, object] | None = None
         self.last_animation_key: dict[str, object] | None = None
         self.last_validation: dict[str, object] | None = None
         self.last_import: dict[str, object] | None = None
@@ -906,6 +910,7 @@ class GameSession:
         document["navgrid"] = self.last_navgrid
         document["navgrid_bake"] = self.last_navgrid_bake
         document["navgrid_route"] = self.last_navgrid_route
+        document["navgrid_trace"] = self.last_navgrid_trace
         document["animation_key"] = self.last_animation_key
         document["validation"] = self.last_validation
         document["imported_asset"] = self.last_import
@@ -1024,6 +1029,7 @@ class GameSession:
         self.last_navgrid = None
         self.last_navgrid_bake = None
         self.last_navgrid_route = None
+        self.last_navgrid_trace = None
         self.last_animation_key = None
         self.last_validation = None
         self.last_import = None
@@ -1623,6 +1629,101 @@ class GameSession:
                         "diagonal": diagonal,
                         "smooth": smooth,
                     }
+                elif action == "trace_navgrid":
+                    def trace_value(label: str, default: float) -> float:
+                        raw = payload.get(label, default)
+                        if (
+                            isinstance(raw, bool)
+                            or not isinstance(raw, (int, float))
+                            or not math.isfinite(raw)
+                        ):
+                            raise ValueError(
+                                f"trace_navgrid {label} must be a finite number"
+                            )
+                        return float(raw)
+
+                    def trace_cell(label: str) -> tuple[int, int]:
+                        raw = payload.get(label)
+                        if (
+                            not isinstance(raw, (list, tuple))
+                            or len(raw) != 2
+                            or not all(
+                                isinstance(part, int) and not isinstance(part, bool)
+                                for part in raw
+                            )
+                        ):
+                            raise ValueError(
+                                f"trace_navgrid {label} must be [x, y] integers"
+                            )
+                        return (raw[0], raw[1])
+
+                    document = payload.get("navgrid")
+                    if not isinstance(document, dict):
+                        raise TypeError(
+                            "trace_navgrid navgrid must be a JSON object"
+                        )
+                    grid = NavGrid.from_dict(document)
+                    cell_size = trace_value("cell_size", 1.0)
+                    height = trace_value("height", 0.95)
+                    speed = trace_value("speed", 2.0)
+                    dt = trace_value("dt", 1.0 / 60.0)
+                    frames = payload.get("frames", 600)
+                    if isinstance(frames, bool) or not isinstance(frames, int) or frames < 1:
+                        raise ValueError("trace_navgrid frames must be a positive integer")
+                    if frames > 100000:
+                        raise ValueError("trace_navgrid frames must be at most 100000")
+                    raw_origin = payload.get("origin")
+                    if raw_origin is None:
+                        origin = Vec3()
+                    elif isinstance(raw_origin, (list, tuple)) and len(raw_origin) == 3:
+                        origin = Vec3(*raw_origin)
+                    else:
+                        raise ValueError(
+                            "trace_navgrid origin must be three numbers or null"
+                        )
+                    start_cell = trace_cell("start")
+                    goal_cell = trace_cell("goal")
+                    body = CharacterBody(
+                        position=Vec3(
+                            origin.x + (start_cell[0] + 0.5) * cell_size,
+                            height,
+                            origin.z + (start_cell[1] + 0.5) * cell_size,
+                        )
+                    )
+                    agent = NavAgent(
+                        grid,
+                        CharacterController(),
+                        body,
+                        cell_size=cell_size,
+                        origin=origin,
+                        height=height,
+                        speed=speed,
+                    )
+                    if not agent.set_goal(goal_cell):
+                        self.last_navgrid_trace = {
+                            "found": False,
+                            "steps": 0,
+                            "reached": False,
+                            "report": nav_agent_report(agent),
+                        }
+                    else:
+                        floor = AABB(
+                            Vec3(0.0, -0.5, 0.0),
+                            Vec3(500.0, 0.5, 500.0),
+                        )
+                        steps = 0
+                        report = nav_agent_report(agent)
+                        for _ in range(frames):
+                            report = agent.step(dt, [floor])
+                            steps += 1
+                            if report["done"]:
+                                break
+                        self.last_navgrid_trace = {
+                            "found": True,
+                            "steps": steps,
+                            "reached": bool(report["done"]),
+                            "report": report,
+                        }
                 elif action == "save_animation":
                     if self.animation_library is None:
                         raise ValueError("no animation library is configured")

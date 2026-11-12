@@ -37,6 +37,7 @@ EDITOR_ACTIONS = (
     "inspect_navgrid",
     "bake_navgrid",
     "route_navgrid",
+    "trace_navgrid",
     "save_animation",
     "delete_animation",
     "restore_animation",

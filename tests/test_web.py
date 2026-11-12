@@ -5097,6 +5097,66 @@ class WebServerTest(unittest.TestCase):
             )
         self.assertEqual(caught.exception.status, 400)
 
+    def test_editor_trace_navgrid(self):
+        from keystone.schema import EDITOR_ACTIONS
+
+        self.assertIn("trace_navgrid", EDITOR_ACTIONS)
+        session = GameSession(CubeDemo())
+        document = {
+            "schema": 1,
+            "width": 5,
+            "height": 3,
+            "blocked": [[2, 1]],
+        }
+        traced = session.editor_action(
+            {
+                "action": "trace_navgrid",
+                "navgrid": document,
+                "start": [0, 1],
+                "goal": [4, 1],
+                "speed": 2.0,
+                "frames": 300,
+            }
+        )
+        result = traced["navgrid_trace"]
+        self.assertTrue(result["found"])
+        self.assertTrue(result["reached"])
+        self.assertGreater(result["steps"], 0)
+        self.assertGreater(result["report"]["position"][0], 4.2)
+        self.assertTrue(result["report"]["on_ground"])
+
+        unreachable = session.editor_action(
+            {
+                "action": "trace_navgrid",
+                "navgrid": {
+                    "schema": 1,
+                    "width": 3,
+                    "height": 3,
+                    "blocked": [[1, 0], [1, 1], [1, 2]],
+                },
+                "start": [0, 1],
+                "goal": [2, 1],
+            }
+        )["navgrid_trace"]
+        self.assertFalse(unreachable["found"])
+        self.assertFalse(unreachable["reached"])
+        self.assertEqual(unreachable["steps"], 0)
+
+        for payload in (
+            {"start": [0, 1], "goal": [4, 1], "frames": 0},
+            {"start": [0, 1], "goal": [4, 1], "frames": 100001},
+            {"start": [0.0, 1.0], "goal": [4, 1]},
+            {"start": [0, 1], "goal": [4, 1], "dt": 0.0},
+            {"start": [0, 1], "goal": [4, 1], "speed": 0.0},
+            {"start": [2, 1], "goal": [4, 1]},
+        ):
+            with self.subTest(payload=payload):
+                request = {"action": "trace_navgrid", "navgrid": document}
+                request.update(payload)
+                with self.assertRaises(WebProblem) as caught:
+                    session.editor_action(request)
+                self.assertEqual(caught.exception.status, 400)
+
     def test_editor_route_navgrid(self):
         from keystone.schema import EDITOR_ACTIONS
 
