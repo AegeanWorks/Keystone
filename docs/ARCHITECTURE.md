@@ -46,6 +46,7 @@ keystone/
 ├── analysis.py       frame statistics, projected scene and report diff
 ├── testing.py        deterministic AI/CI scenario helpers
 ├── physics.py        Ray, AABB, Sphere, queries, raycasts and pushout
+├── persistence.py    versioned JSON store with migrations and recovery
 ├── picking.py        scene ray queries, node hits and JSON-safe hit reports
 ├── broadphase.py     deterministic spatial-grid broadphase
 ├── pathfinding.py    deterministic A* over a bounded nav grid
@@ -181,7 +182,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Randomness | Implemented | SplitMix64 streams with pinned reference vectors, labelled forks, inclusive unbiased integers, permutations and snapshot/restore for saves |
 | Plugin | Implemented | GameModule + loader |
 | Replay | Implemented (basic) | action log, stable hash |
-| Persistence | Implemented (basic) | atomic JSON with backup |
+| Persistence | Implemented | atomic JSON with backup, plus `VersionedStore` schema migrations, quarantine, backup fallback and an advisory lock with stale reclamation |
 | Headless | Implemented | no-GL simulation and action scripts |
 | AI discovery | Implemented | describe_game/--describe contract introspection |
 | AI testing | Implemented | deterministic scenario helpers |

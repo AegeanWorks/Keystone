@@ -86,6 +86,7 @@ from keystone.pathfinding import (
     path_report,
     smooth_path,
 )
+from keystone.persistence import LoadResult, VersionedStore
 from keystone.picking import (
     SceneHit,
     SceneOverlap,
@@ -182,6 +183,7 @@ __all__ = [
     "History",
     "InputMap",
     "LifecycleContext",
+    "LoadResult",
     "Mat4",
     "MaterialGraph",
     "MaterialGraphNode",
@@ -219,6 +221,7 @@ __all__ = [
     "Track",
     "Transform",
     "Vec3",
+    "VersionedStore",
     "__version__",
     "aabb_visible",
     "animation_report",

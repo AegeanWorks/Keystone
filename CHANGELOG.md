@@ -170,6 +170,11 @@ changes that do not bump the release number yet.
   `--describe` reports `capabilities.scene_raycast`.
 - `ray_aabb` and `ray_sphere` now return world-unit distances for non-unit
   ray directions; they normalized the direction and scaled the result again.
+- `keystone.persistence` adds `VersionedStore` and `LoadResult`: schema
+  migrations, unsupported-schema refusal without touching the file,
+  quarantine with `.bak` fallback, default factories, validation and an
+  advisory lock with stale reclamation. `--describe` reports
+  `capabilities.persistence`.
 - `CameraShaker` composes a `CameraShake` offset onto an immutable base
   camera pose, in world or camera-local space, and reports base, pose and
   shake state. `--describe` reports `capabilities.camera_shaker`.

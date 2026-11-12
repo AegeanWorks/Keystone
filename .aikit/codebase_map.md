@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `204`
-- **Total Classes**: `351`
-- **Total Top-Level Functions**: `573`
-- **Total Class Methods**: `2194`
-- **Total Source Lines**: `53904`
+- **Total Python Modules**: `206`
+- **Total Classes**: `354`
+- **Total Top-Level Functions**: `576`
+- **Total Class Methods**: `2219`
+- **Total Source Lines**: `54299`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`204` module(s))
+- **Indexed**: python (`206` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `304` lines (`6855` bytes)
+**Size**: `307` lines (`6955` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -1369,6 +1369,29 @@
 
 ---
 
+### [`keystone/persistence.py`](keystone/persistence.py)
+> *A versioned JSON store with migrations, quarantine and backup fallback.*
+
+**Size**: `218` lines (`8895` bytes)
+
+**Classes:**
+- `class LoadResult` - *The loaded state plus how it was obtained.*
+- `class VersionedStore` - *Load and save one versioned JSON document with recovery policy.*
+  - Method `.__init__(path, *, schema, default, migrations, validate, stale_lock_seconds)`
+  - Method `._default_state()`
+  - Method `._normalized(state)`
+  - Method `._read_document(path)` - *Return ``(status, state, migrated)``; status is missing/ok/corrupt/unsupported.*
+  - Method `._quarantine(path)`
+  - Method `._lock_path()`
+  - Method `._acquire_lock()`
+  - Method `.load()` - *Load the document, migrating or recovering as configured.*
+  - Method `.save(state)` - *Normalize and atomically save; False when another writer holds the lock.*
+
+**Functions:**
+- `def _constant(label, value)`
+
+---
+
 ### [`keystone/physics.py`](keystone/physics.py)
 > *Generic collision primitives and ray queries for the engine core.*
 
@@ -1459,7 +1482,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `154` lines (`5810` bytes)
+**Size**: `155` lines (`5843` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -3828,6 +3851,36 @@
   - Method `.test_gltf_preserves_pbr_factors()`
   - Method `.test_material_graph_pbr_node()`
   - Method `.test_report_and_scene_document_include_pbr()`
+
+---
+
+### [`tests/test_persistence.py`](tests/test_persistence.py)
+> *Tests for the versioned persistence store.*
+
+**Size**: `173` lines (`7451` bytes)
+
+**Classes:**
+- `class VersionedStoreTest`
+  - Method `.setUp()`
+  - Method `.test_a_missing_file_returns_a_fresh_default()`
+  - Method `.test_save_and_load_round_trip()`
+  - Method `.test_a_corrupt_file_falls_back_to_the_backup_and_is_quarantined()`
+  - Method `.test_a_corrupt_file_without_a_backup_returns_the_default()`
+  - Method `.test_old_documents_migrate_through_every_step()`
+  - Method `.test_a_future_schema_is_refused_without_touching_the_file()`
+  - Method `.test_a_missing_migration_step_is_refused()`
+  - Method `.test_validation_failure_quarantines_and_uses_the_backup()`
+  - Method `.test_invalid_state_is_not_saved()`
+  - Method `.test_save_is_refused_while_a_fresh_lock_exists()`
+  - Method `.test_a_stale_lock_is_reclaimed()`
+  - Method `.test_a_validated_state_is_normalized_before_saving()`
+  - Method `.test_malformed_documents_are_treated_as_corrupt()`
+  - Method `.test_validation()`
+  - Method `.test_describe_advertises_persistence()`
+
+**Functions:**
+- `def _default()`
+- `def _store(directory, **kwargs)`
 
 ---
 

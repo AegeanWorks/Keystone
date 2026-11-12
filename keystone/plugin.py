@@ -73,6 +73,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "nav_agent": True,
             "steering": True,
             "tilemap": True,
+            "persistence": True,
             "agents": True,
             "profiler": True,
             "input_bindings": True,

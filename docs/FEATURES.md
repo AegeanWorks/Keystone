@@ -6,6 +6,7 @@ README. The README keeps a one-paragraph summary and links here.
 - **OpenGL 3.3 renderer**: GLSL 330, PBR, shadows, sRGB, post grade with configurable exposure/vignette, optional Reinhard/ACES tonemapping and FXAA, bloom, placed sprite billboards, up to 8 point lights, and profiler stats.
 - **Scene graph**: stable IDs, tags, layers, typed components, world transforms, queries, merged tile-map meshes with exact per-cell colliders, and cached GPU meshes.
 - **Prefabs**: capture, versioned `.kprefab` persistence, deterministic instantiation and override-preserving refresh.
+- **Persistence**: `VersionedStore` with schema migrations, quarantine of corrupt documents, `.bak` fallback, a fresh default factory and an advisory lock with stale-lock reclamation.
 - **Assets**: `MeshData`, primitives, streaming OBJ, PNG/checker `TextureData`, and an id/digest registry with hot reload plus core scene rebinding.
 - **PBR materials**: specular/shininess plus metallic/roughness/emissive, wrapped/mipmapped textures and material graphs.
 - **Runtime**: fixed-step clock with bounded catch-up; headless one-step-per-frame determinism.
