@@ -264,6 +264,8 @@ def scene_to_dict(scene: Scene, registry: Any = None) -> dict[str, Any]:
             "post": {
                 "enabled": bool(getattr(scene.post, "enabled", True)),
                 "tone": getattr(scene.post, "tone", "none"),
+                "exposure": getattr(scene.post, "exposure", 1.12),
+                "vignette": getattr(scene.post, "vignette", 0.28),
             },
             "bloom": {"enabled": bool(getattr(scene.bloom, "enabled", True))},
             "sprites": {"enabled": bool(getattr(scene.sprite, "enabled", True))},
@@ -364,6 +366,8 @@ def scene_from_dict(
             scene.post = PostSettings(
                 enabled=bool(post.get("enabled", True)),
                 tone=post.get("tone", "none"),
+                exposure=post.get("exposure", 1.12),
+                vignette=post.get("vignette", 0.28),
             )
         bloom = environment.get("bloom")
         if bloom is not None:

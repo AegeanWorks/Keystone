@@ -1,92 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-tonemap-v1",
+    "task_id": "keystone-grade-controls-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794449674.8540473,
+    "updated_at": 1794450944.810564,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
-    "completed_at": 1794449679.8816707
+    "completed_at": 1794450951.861411
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-rng-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-rng-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794440768.4709675,
-      "timestamp_str": "2026-11-12 02:46:08",
-      "agent": "kilo:goal"
-    },
-    {
-      "task_id": "keystone-state-blend2d-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: let AnimationState drive a BlendSpace2D with two parameter names, one-space-only validation, document round trips and report exposure, so the 2D space added in ADR-238 is usable from state machines",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794442250.1910396,
-      "timestamp_str": "2026-11-12 03:10:50",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "BlendSpace2D existed but no consumer could sample it; 2D locomotion still needed game code outside the state machine.",
-        "benefits": "One state samples the bilinear grid from live parameters, with schema-1 documents and a discovery flag, while 1D behaviour is unchanged.",
-        "risks": "contract: AnimationState gains two fields and document keys; dependency: none; concurrency: none; state: .kstate documents stay schema 1 and remain backward compatible.",
-        "mitigation": "Reject both-space states, validate exactly two parameter names, keep the 1D sampler untouched, pin sampling/transitions/documents with failing-first tests, and keep the canonical evidence unchanged."
-      },
-      "plan_digest": "3ae9934da0f65b9e5026eb2f72fb0d91179a8dd0053cd57f9ab114ac1f7de24a"
-    },
-    {
-      "task_id": "keystone-state-blend2d-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/3] Implemented and verified - AnimationState accepts blend_space2d plus exactly two blend_parameters, rejects mixed space kinds, samples live machine parameters through the pose provider, round-trips documents and reports axes/parameters; the 1D path and existing state tests are unchanged; exports not needed, README/ARCHITECTURE/docs/TREE/CHANGELOG and ADR-240 updated; --describe reports capabilities.animation_state_blend_2d; 9 new tests green (1224 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
-      "files_affected": [
-        "keystone/animation_state.py",
-        "tests/test_animation_state_blend2d.py",
-        "keystone/plugin.py",
-        "README.md",
-        "docs/ARCHITECTURE.md",
-        "docs/TREE.md",
-        "CHANGELOG.md",
-        ".aikit/decisions.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794442289.1601334,
-      "timestamp_str": "2026-11-12 03:11:29",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "artifact": "stdout",
-          "baseline": 1215.0,
-          "candidate": 1224.0,
-          "metric": "collected_tests",
-          "command": "python -m pytest --collect-only -q",
-          "unit": "tests"
-        },
-        {
-          "artifact": "tests/test_animation_state_blend2d.py",
-          "baseline": 0.0,
-          "candidate": 15.0,
-          "metric": "state_2d_centre_pose",
-          "command": "python -m pytest tests/test_animation_state_blend2d.py",
-          "unit": "pose"
-        },
-        {
-          "artifact": "temp PNG",
-          "baseline": 4899.0,
-          "candidate": 4899.0,
-          "metric": "reference_png_bytes",
-          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
-          "unit": "bytes"
-        }
-      ],
-      "checklists": "passed"
-    },
     {
       "task_id": "keystone-state-blend2d-v1",
       "phase": "completed",
@@ -497,6 +422,86 @@
       "status": "completed",
       "timestamp": 1794449679.8816721,
       "timestamp_str": "2026-11-12 05:14:39",
+      "agent": "kilo:goal"
+    },
+    {
+      "task_id": "keystone-grade-controls-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: make post exposure and vignette per-scene settings (defaults 1.12 and 0.28), persist them through snapshots, scene export and editor set_scene, report them in renderer stats, and keep the canonical frame identical",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794450912.0416446,
+      "timestamp_str": "2026-11-12 05:35:12",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "The tonemap was configurable but exposure and vignette stayed compile-time constants, so games could not tune grade brightness or corner falloff and AI clients could not diff them.",
+        "benefits": "Authorable grade controls from Python, snapshots and the editor, visible in reports, with defaults that preserve every existing frame.",
+        "risks": "contract: two PostSettings fields, scene export schema 4 and editor schema 61; dependency: none; concurrency: none; state: additive snapshot fields with defaults.",
+        "mitigation": "Validate ranges at construction/editor/load, pin rendered brightness and corner darkening, keep defaults equal to the constants, and run strict gates."
+      },
+      "plan_digest": "71230a183ff6251d485d31338155767086455f594bbc769dbbb862265914d324"
+    },
+    {
+      "task_id": "keystone-grade-controls-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/3] Implemented and verified - PostSettings.exposure (finite, non-negative, default 1.12) and vignette (0..1, default 0.28) validate; the renderer, sky and sprite passes read scene values and stats report post_exposure/post_vignette; snapshots, scene export (schema 4), editor document/set_scene (schema 61) carry both; CPU defaults match POST_EXPOSURE/POST_VIGNETTE; exposure 2.0 renders brighter and vignette 1.0 darkens the corner while 0.0 does not; disable post still ignores both; 1272 tests green, ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
+      "files_affected": [
+        "keystone/scene.py",
+        "keystone/scene_snapshot.py",
+        "keystone/gpu/renderer.py",
+        "keystone/web/editor.py",
+        "keystone/web/scene.py",
+        "keystone/schema.py",
+        "tests/test_post.py",
+        "tests/test_web.py",
+        "tests/test_pbr.py",
+        "README.md",
+        "docs/ARCHITECTURE.md",
+        "CHANGELOG.md",
+        ".aikit/decisions.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1794450944.810564,
+      "timestamp_str": "2026-11-12 05:35:44",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "command": "python -m pytest --collect-only -q",
+          "metric": "collected_tests",
+          "unit": "tests",
+          "baseline": 1266.0,
+          "artifact": "stdout",
+          "candidate": 1272.0
+        },
+        {
+          "command": "python -m pytest tests/test_web.py",
+          "metric": "scene_export_schema",
+          "unit": "schema",
+          "baseline": 3.0,
+          "artifact": "tests/test_web.py",
+          "candidate": 4.0
+        },
+        {
+          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
+          "metric": "reference_png_bytes",
+          "unit": "bytes",
+          "baseline": 4899.0,
+          "artifact": "temp PNG",
+          "candidate": 4899.0
+        }
+      ],
+      "checklists": "passed"
+    },
+    {
+      "task_id": "keystone-grade-controls-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-grade-controls-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794450951.861413,
+      "timestamp_str": "2026-11-12 05:35:51",
       "agent": "kilo:goal"
     }
   ]

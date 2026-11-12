@@ -623,6 +623,8 @@ class Renderer:
             "srgb_enabled": 0,
             "post_enabled": 0,
             "post_tone": "none",
+            "post_exposure": POST_EXPOSURE,
+            "post_vignette": POST_VIGNETTE,
             "bloom_enabled": 0,
             "sprite_calls": 0,
             "sprites": 0,
@@ -723,8 +725,12 @@ class Renderer:
         self._sky_program.set_vec3("u_sky_bottom", scene.background)
         self._sky_program.set_float("u_srgb_enabled", 1.0 if srgb_on else 0.0)
         self._sky_program.set_float("u_post_enabled", 1.0 if post_on else 0.0)
-        self._sky_program.set_float("u_post_exposure", POST_EXPOSURE)
-        self._sky_program.set_float("u_post_vignette", POST_VIGNETTE)
+        self._sky_program.set_float(
+            "u_post_exposure", float(getattr(getattr(scene, "post", None), "exposure", POST_EXPOSURE))
+        )
+        self._sky_program.set_float(
+            "u_post_vignette", float(getattr(getattr(scene, "post", None), "vignette", POST_VIGNETTE))
+        )
         self._sky_program.set_float("u_post_tone", self._tone_code(scene))
         self._sky_program.set_float("u_bloom_enabled", 1.0 if bloom_on else 0.0)
         self._sky_program.set_float("u_bloom_threshold", BLOOM_THRESHOLD)
@@ -887,8 +893,12 @@ class Renderer:
         self._sprite_program.set_float("u_bloom_knee", BLOOM_KNEE)
         self._sprite_program.set_float("u_bloom_intensity", BLOOM_INTENSITY)
         self._sprite_program.set_float("u_post_enabled", 1.0 if post_on else 0.0)
-        self._sprite_program.set_float("u_post_exposure", POST_EXPOSURE)
-        self._sprite_program.set_float("u_post_vignette", POST_VIGNETTE)
+        self._sprite_program.set_float(
+            "u_post_exposure", float(getattr(getattr(scene, "post", None), "exposure", POST_EXPOSURE))
+        )
+        self._sprite_program.set_float(
+            "u_post_vignette", float(getattr(getattr(scene, "post", None), "vignette", POST_VIGNETTE))
+        )
         self._sprite_program.set_float("u_post_tone", self._tone_code(scene))
         self._sprite_program.set_vec2("u_resolution", float(self.width), float(self.height))
         GL.glDrawElementsInstanced(GL.GL_TRIANGLES, 6, GL.GL_UNSIGNED_INT, None, count)
@@ -905,12 +915,13 @@ class Renderer:
         program.set_float("u_bloom_knee", BLOOM_KNEE)
         program.set_float("u_bloom_intensity", BLOOM_INTENSITY)
 
-    def _apply_post(self, program: ShaderProgram, post_on: bool, tone: float = 0.0) -> None:
+    def _apply_post(self, program: ShaderProgram, scene: Scene, post_on: bool) -> None:
+        post = getattr(scene, "post", None)
         program.use()
         program.set_float("u_post_enabled", 1.0 if post_on else 0.0)
-        program.set_float("u_post_exposure", POST_EXPOSURE)
-        program.set_float("u_post_vignette", POST_VIGNETTE)
-        program.set_float("u_post_tone", tone)
+        program.set_float("u_post_exposure", float(getattr(post, "exposure", POST_EXPOSURE)))
+        program.set_float("u_post_vignette", float(getattr(post, "vignette", POST_VIGNETTE)))
+        program.set_float("u_post_tone", self._tone_code(scene))
         program.set_vec2("u_resolution", float(self.width), float(self.height))
 
     def _tone_code(self, scene: Scene) -> float:
@@ -1037,10 +1048,9 @@ class Renderer:
         self._apply_bloom(self._program, bloom_on)
         self._apply_bloom(self._inst_program, bloom_on)
         self._apply_bloom(self._skin_program, bloom_on)
-        tone = self._tone_code(scene)
-        self._apply_post(self._program, post_on, tone)
-        self._apply_post(self._inst_program, post_on, tone)
-        self._apply_post(self._skin_program, post_on, tone)
+        self._apply_post(self._program, scene, post_on)
+        self._apply_post(self._inst_program, scene, post_on)
+        self._apply_post(self._skin_program, scene, post_on)
         for group in group_instances(scene, planes, layer=layer, exclude_layer=exclude_layer):
             mesh = group["mesh"]
             if not isinstance(mesh, MeshData):
@@ -1286,6 +1296,8 @@ class Renderer:
             "srgb_enabled": 1 if srgb_on else 0,
             "post_enabled": 1 if post_on else 0,
             "post_tone": getattr(getattr(scene, "post", None), "tone", "none"),
+            "post_exposure": float(getattr(getattr(scene, "post", None), "exposure", POST_EXPOSURE)),
+            "post_vignette": float(getattr(getattr(scene, "post", None), "vignette", POST_VIGNETTE)),
             "bloom_enabled": 1 if bloom_on else 0,
             "sprite_calls": sprite_calls,
             "sprites": sprites,

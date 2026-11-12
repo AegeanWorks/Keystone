@@ -174,6 +174,11 @@ changes that do not bump the release number yet.
   word boundaries, preserve explicit newlines and blank lines, truncate an
   overlong single word and return the height used. `--describe` reports
   `capabilities.ui_text_wrap`.
+- `PostSettings` gains `exposure` (default 1.12) and `vignette` (default
+  0.28): the shaders read both, snapshots persist them, `set_scene` accepts
+  `environment.exposure`/`vignette`, and renderer stats report them.
+  Defaults preserve every existing frame; scene export schema is 4 and
+  editor schema 61.
 - `PostSettings` gains `tone` (`none`, `reinhard`, `aces`): the post grade
   optionally tonemaps linear colour before exposure/vignette, persists the
   choice in snapshots, exposes it through `set_scene` and scene export, and

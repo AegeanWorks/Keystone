@@ -234,6 +234,8 @@ def scene_settings_document(scene: Scene) -> dict[str, object]:
             "color": bool(scene.color.enabled),
             "post": bool(scene.post.enabled),
             "tone": scene.post.tone,
+            "exposure": scene.post.exposure,
+            "vignette": scene.post.vignette,
             "bloom": bool(scene.bloom.enabled),
             "sprites": bool(scene.sprite.enabled),
             "culling": bool(scene.culling.enabled),
@@ -311,6 +313,8 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
     color = scene.color.enabled
     post = scene.post.enabled
     tone = scene.post.tone
+    exposure = scene.post.exposure
+    vignette = scene.post.vignette
     bloom = scene.bloom.enabled
     sprites = scene.sprite.enabled
     culling = scene.culling.enabled
@@ -329,6 +333,8 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
                 "color",
                 "post",
                 "tone",
+                "exposure",
+                "vignette",
                 "bloom",
                 "sprites",
                 "culling",
@@ -478,6 +484,18 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
                     "environment tone must be one of " + ", ".join(POST_TONES)
                 )
             tone = raw_tone
+        if "exposure" in environment_payload:
+            exposure = _finite_number(
+                environment_payload["exposure"], "environment exposure"
+            )
+            if exposure < 0.0:
+                raise ValueError("environment exposure must be non-negative")
+        if "vignette" in environment_payload:
+            vignette = _finite_number(
+                environment_payload["vignette"], "environment vignette"
+            )
+            if not 0.0 <= vignette <= 1.0:
+                raise ValueError("environment vignette must be within [0, 1]")
 
     scene.camera.position = position
     scene.camera.yaw = yaw
@@ -493,7 +511,9 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
     scene.point_lights = point_lights
     scene.shadow = ShadowSettings(enabled=shadow)
     scene.color = ColorSettings(enabled=color)
-    scene.post = PostSettings(enabled=post, tone=tone)
+    scene.post = PostSettings(
+        enabled=post, tone=tone, exposure=exposure, vignette=vignette
+    )
     scene.bloom = BloomSettings(enabled=bloom)
     scene.sprite = SpriteSettings(enabled=sprites)
     scene.culling = CullingSettings(enabled=culling)

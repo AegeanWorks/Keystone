@@ -434,10 +434,20 @@ class PostSettings:
 
     enabled: bool = True
     tone: str = "none"
+    exposure: float = 1.12
+    vignette: float = 0.28
 
     def __post_init__(self) -> None:
         if self.tone not in POST_TONES:
             raise ValueError("post tone must be one of " + ", ".join(POST_TONES))
+        if isinstance(self.exposure, bool) or not isinstance(self.exposure, (int, float)):
+            raise TypeError("post exposure must be a real number")
+        if not math.isfinite(self.exposure) or self.exposure < 0.0:
+            raise ValueError("post exposure must be finite and non-negative")
+        if isinstance(self.vignette, bool) or not isinstance(self.vignette, (int, float)):
+            raise TypeError("post vignette must be a real number")
+        if not math.isfinite(self.vignette) or not 0.0 <= self.vignette <= 1.0:
+            raise ValueError("post vignette must be within [0, 1]")
 
 
 @dataclass(frozen=True, slots=True)

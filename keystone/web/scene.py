@@ -114,7 +114,12 @@ def scene_document(scene: Scene, game: str = "game") -> dict:
         "texture_count": len(textures),
         "shadows": {"enabled": _enabled(shadow), "size": 1024 if _enabled(shadow) else 0},
         "color": {"enabled": _enabled(color)},
-        "post": {"enabled": _enabled(post), "tone": getattr(post, "tone", "none")},
+        "post": {
+            "enabled": _enabled(post),
+            "tone": getattr(post, "tone", "none"),
+            "exposure": getattr(post, "exposure", 1.12),
+            "vignette": getattr(post, "vignette", 0.28),
+        },
         "bloom": {"enabled": _enabled(bloom)},
         "sprites": {"enabled": _enabled(sprite)},
         "culling": {"enabled": _enabled(culling)},

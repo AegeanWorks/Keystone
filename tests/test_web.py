@@ -207,7 +207,7 @@ class LifecycleDemo(CubeDemo):
 class SceneDocumentTest(unittest.TestCase):
     def test_sample_scene_document_has_identity_geometry_and_texture(self):
         document = scene_document(CubeDemo().build_scene(), game="cube-demo")
-        self.assertEqual(document["schema"], 3)
+        self.assertEqual(document["schema"], 4)
         self.assertEqual(document["game"], "cube-demo")
         self.assertEqual(document["node_count"], 6)
         self.assertEqual(document["mesh_count"], 3)
@@ -265,13 +265,13 @@ class SceneDocumentTest(unittest.TestCase):
         json.dumps(EDITOR_SCHEMA, allow_nan=False)
 
     def test_schema_describes_export_fields(self):
-        self.assertEqual(SCENE_SCHEMA["version"], 3)
+        self.assertEqual(SCENE_SCHEMA["version"], 4)
         self.assertIn("world", SCENE_SCHEMA["fields"]["node"])
         self.assertIn("tags", SCENE_SCHEMA["fields"]["node"])
         self.assertIn("rgba_base64", SCENE_SCHEMA["fields"]["texture"])
 
     def test_public_web_exports_are_available(self):
-        self.assertEqual(web.SCENE_SCHEMA["version"], 3)
+        self.assertEqual(web.SCENE_SCHEMA["version"], 4)
         self.assertTrue(callable(web.scene_document))
         self.assertTrue(callable(web.create_server))
         self.assertTrue(callable(web.serve))
@@ -342,7 +342,7 @@ class WebServerTest(unittest.TestCase):
     def test_scene_endpoint_returns_the_scene_document(self):
         status, _, payload = self._json("/api/scene")
         self.assertEqual(status, 200)
-        self.assertEqual(payload["schema"], 3)
+        self.assertEqual(payload["schema"], 4)
         self.assertEqual(payload["node_count"], 6)
         self.assertEqual(payload["mesh_count"], 3)
         self.assertEqual(payload["texture_count"], 1)

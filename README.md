@@ -219,7 +219,7 @@ from keystone.scene import PostSettings
 scene.post = PostSettings(enabled=True, tone="aces")  # or "none", "reinhard"
 ```
 
-The post grade applies a fixed exposure and vignette after bloom. `tone` optionally maps the linear colour through Reinhard (`c / (1 + c)`) or the ACES approximation before the grade, which keeps bright emissive surfaces from clipping to white. The default is `none`, so existing frames are unchanged. `scene.post` round-trips through snapshots, the editor's `set_scene` accepts `environment.tone` (editor schema 60, scene export schema 3), and renderer stats report `post_tone`. `--describe` reports `capabilities.post_tonemap`.
+The post grade applies `scene.post.exposure` and `scene.post.vignette` after bloom. `tone` optionally maps the linear colour through Reinhard (`c / (1 + c)`) or the ACES approximation before the grade, which keeps bright emissive surfaces from clipping to white. The default is `none`, so existing frames are unchanged. Defaults are 1.12 and 0.28, so existing frames stay unchanged. `scene.post` round-trips through snapshots, the editor's `set_scene` accepts `environment.tone`, `environment.exposure` and `environment.vignette` (editor schema 61, scene export schema 4), and renderer stats report `post_tone`, `post_exposure` and `post_vignette`. `--describe` reports `capabilities.post_tonemap`.
 
 ### Tile maps
 
@@ -396,7 +396,7 @@ The API sends CORS headers so local AI clients can call it directly. Keep the de
 
 ## 🚀 Features
 
-- **OpenGL 3.3 renderer**: GLSL 330, PBR, shadows, sRGB, post grade with optional Reinhard/ACES tonemapping, bloom, placed sprite billboards, up to 8 point lights, and profiler stats.
+- **OpenGL 3.3 renderer**: GLSL 330, PBR, shadows, sRGB, post grade with configurable exposure/vignette and optional Reinhard/ACES tonemapping, bloom, placed sprite billboards, up to 8 point lights, and profiler stats.
 - **Scene graph**: stable IDs, tags, layers, typed components, world transforms, queries, merged tile-map meshes with exact per-cell colliders, and cached GPU meshes.
 - **Prefabs**: capture, versioned `.kprefab` persistence, deterministic instantiation and override-preserving refresh.
 - **Assets**: `MeshData`, primitives, streaming OBJ, PNG/checker `TextureData`, and an id/digest registry with hot reload plus core scene rebinding.

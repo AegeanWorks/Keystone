@@ -93,7 +93,10 @@ class PostContractsTest(unittest.TestCase):
         from keystone.web.scene import scene_document
 
         document = scene_document(CubeDemo().build_scene())
-        self.assertEqual(document["post"], {"enabled": True, "tone": "none"})
+        self.assertEqual(
+            document["post"],
+            {"enabled": True, "tone": "none", "exposure": 1.12, "vignette": 0.28},
+        )
 
 
 if __name__ == "__main__":
@@ -192,3 +195,106 @@ class PostToneRenderTest(unittest.TestCase):
         changed.post = PostSettings(enabled=False, tone="aces")
         self.renderer.render(changed)
         self.assertEqual(first, self._center())
+
+class PostExposureTest(unittest.TestCase):
+    def test_defaults_match_the_grade_constants(self):
+        settings = PostSettings()
+        self.assertAlmostEqual(settings.exposure, POST_EXPOSURE)
+        self.assertAlmostEqual(settings.vignette, POST_VIGNETTE)
+
+    def test_settings_validate(self):
+        self.assertEqual(PostSettings(exposure=0.0, vignette=0.0).exposure, 0.0)
+        self.assertEqual(PostSettings(exposure=2.5, vignette=1.0).vignette, 1.0)
+        for bad in (-0.1, float("nan"), float("inf")):
+            with self.subTest(exposure=bad), self.assertRaises(ValueError):
+                PostSettings(exposure=bad)
+        for bad in (-0.1, 1.1, float("nan")):
+            with self.subTest(vignette=bad), self.assertRaises(ValueError):
+                PostSettings(vignette=bad)
+        with self.assertRaises(TypeError):
+            PostSettings(exposure=True)  # type: ignore[arg-type]
+
+    def test_snapshot_round_trips_exposure_and_vignette(self):
+        scene = Scene()
+        scene.post = PostSettings(exposure=2.0, vignette=0.0)
+        restored = scene_from_dict(scene_to_dict(scene))
+        self.assertEqual(restored.post.exposure, 2.0)
+        self.assertEqual(restored.post.vignette, 0.0)
+        legacy = scene_to_dict(Scene())
+        legacy["environment"]["post"].pop("exposure")
+        legacy["environment"]["post"].pop("vignette")
+        self.assertEqual(scene_from_dict(legacy).post.exposure, POST_EXPOSURE)
+
+    def test_set_scene_accepts_and_rejects_grade_values(self):
+        from keystone.web.editor import set_scene
+
+        scene = CubeDemo().build_scene()
+        set_scene(scene, {"environment": {"exposure": 1.5, "vignette": 0.1}})
+        self.assertEqual(scene.post.exposure, 1.5)
+        self.assertEqual(scene.post.vignette, 0.1)
+        with self.assertRaises(ValueError):
+            set_scene(scene, {"environment": {"exposure": -1.0}})
+        with self.assertRaises(ValueError):
+            set_scene(scene, {"environment": {"vignette": 2.0}})
+
+
+class PostExposureRenderTest(unittest.TestCase):
+    def setUp(self):
+        from keystone.gpu.context import GLContext
+        from keystone.gpu.renderer import Renderer
+
+        self.context = GLContext(64, 48, visible=False)
+        self.addCleanup(self.context.close)
+        self.renderer = Renderer(64, 48)
+        self.addCleanup(self.renderer.release)
+
+    def _scene(self, exposure: float, vignette: float = 0.0) -> Scene:
+        from keystone.geometry import Material
+        from keystone.math3d import Vec3
+        from keystone.primitives import cube
+        from keystone.scene import Node, Transform
+
+        scene = Scene()
+        scene.background = Vec3(0.02, 0.02, 0.03)
+        scene.sky = scene.background
+        scene.add(
+            Node(
+                "screen",
+                transform=Transform(position=Vec3(0.0, 0.0, -3.0)),
+                mesh=cube(2.0),
+                material=Material(
+                    color=Vec3(0.30, 0.30, 0.30),
+                    specular=0.0,
+                    metallic=0.0,
+                    roughness=1.0,
+                ),
+            )
+        )
+        scene.post = PostSettings(exposure=exposure, vignette=vignette)
+        return scene
+
+    def _center(self):
+        pixels = self.renderer.read_pixels()
+        index = ((48 // 2) * 64 + 64 // 2) * 4
+        return tuple(pixels[index : index + 4])
+
+    def _corner(self):
+        pixels = self.renderer.read_pixels()
+        return tuple(pixels[0:4])
+
+    def test_exposure_brightens_and_reports(self):
+        self.renderer.render(self._scene(1.0))
+        base = self._center()[0]
+        self.assertEqual(self.renderer.last_stats["post_exposure"], 1.0)
+        self.renderer.render(self._scene(2.0))
+        brighter = self._center()[0]
+        self.assertGreater(brighter, base)
+        self.assertEqual(self.renderer.last_stats["post_exposure"], 2.0)
+
+    def test_vignette_darkens_the_corner(self):
+        self.renderer.render(self._scene(1.0, vignette=0.0))
+        clear = self._corner()
+        self.renderer.render(self._scene(1.0, vignette=1.0))
+        dark = self._corner()
+        self.assertLess(dark[0], clear[0])
+        self.assertEqual(self.renderer.last_stats["post_vignette"], 1.0)

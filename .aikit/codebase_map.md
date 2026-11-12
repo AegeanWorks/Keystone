@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `189`
-- **Total Classes**: `324`
+- **Total Classes**: `326`
 - **Total Top-Level Functions**: `545`
-- **Total Class Methods**: `2026`
-- **Total Source Lines**: `50666`
+- **Total Class Methods**: `2036`
+- **Total Source Lines**: `50823`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`189` module(s))
@@ -815,7 +815,7 @@
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
 > *Blinn-Phong forward renderer with fog, shadows and screenshot readback.*
 
-**Size**: `1335` lines (`52934` bytes)
+**Size**: `1347` lines (`53636` bytes)
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
@@ -840,7 +840,7 @@
   - Method `._camera_basis(scene)`
   - Method `._draw_sprites(scene, particles, view_projection, post_on, bloom_on, *, layer, exclude_layer, include_particles)`
   - Method `._apply_bloom(program, bloom_on)`
-  - Method `._apply_post(program, post_on, tone)`
+  - Method `._apply_post(program, scene, post_on)`
   - Method `._tone_code(scene)`
   - Method `._apply_shared(program, scene, view_projection, light_vp, shadows_on, srgb_on)`
   - Method `._apply_material(program, material)`
@@ -1604,7 +1604,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `588` lines (`23233` bytes)
+**Size**: `598` lines (`23897` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -1715,7 +1715,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `520` lines (`21625` bytes)
+**Size**: `524` lines (`21865` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)` - *Serialize a vector as floats.*
@@ -2016,7 +2016,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `3303` lines (`117747` bytes)
+**Size**: `3323` lines (`118588` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -2151,7 +2151,7 @@
 ### [`keystone/web/scene.py`](keystone/web/scene.py)
 > *Export a game-agnostic scene as a JSON document for the browser viewer.*
 
-**Size**: `163` lines (`5952` bytes)
+**Size**: `168` lines (`6101` bytes)
 
 **Functions:**
 - `def _enabled(value)`
@@ -3791,7 +3791,7 @@
 ### [`tests/test_post.py`](tests/test_post.py)
 > *Tests for the deterministic post color-grade (in-shader exposure + vignette).*
 
-**Size**: `194` lines (`7904` bytes)
+**Size**: `300` lines (`12222` bytes)
 
 **Classes:**
 - `class PostMathTest`
@@ -3816,6 +3816,18 @@
   - Method `._center()`
   - Method `.test_reinhard_and_aces_darken_a_bright_surface()`
   - Method `.test_disabled_post_ignores_the_tone()`
+- `class PostExposureTest`
+  - Method `.test_defaults_match_the_grade_constants()`
+  - Method `.test_settings_validate()`
+  - Method `.test_snapshot_round_trips_exposure_and_vignette()`
+  - Method `.test_set_scene_accepts_and_rejects_grade_values()`
+- `class PostExposureRenderTest`
+  - Method `.setUp()`
+  - Method `._scene(exposure, vignette)`
+  - Method `._center()`
+  - Method `._corner()`
+  - Method `.test_exposure_brightens_and_reports()`
+  - Method `.test_vignette_darkens_the_corner()`
 
 ---
 
