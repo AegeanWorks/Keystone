@@ -117,6 +117,7 @@ from keystone.root_motion import (
     in_place_pose,
     root_motion_report,
 )
+from keystone.root_motion_body import RootMotionBody, root_motion_body_report
 from keystone.scene import (
     OVERLAY_LAYER,
     BloomSettings,
@@ -192,6 +193,7 @@ __all__ = [
     "RandomStream",
     "RandomStreamState",
     "RootMotion",
+    "RootMotionBody",
     "RootMotionPlayer",
     "Route",
     "Scene",
@@ -253,6 +255,7 @@ __all__ = [
     "raycast_scene",
     "read_navgrid",
     "read_wav",
+    "root_motion_body_report",
     "root_motion_report",
     "run_bot",
     "scene_boxes",

@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `195`
-- **Total Classes**: `340`
-- **Total Top-Level Functions**: `561`
-- **Total Class Methods**: `2118`
-- **Total Source Lines**: `52784`
+- **Total Python Modules**: `197`
+- **Total Classes**: `342`
+- **Total Top-Level Functions**: `565`
+- **Total Class Methods**: `2136`
+- **Total Source Lines**: `53058`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`195` module(s))
+- **Indexed**: python (`197` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `288` lines (`6306` bytes)
+**Size**: `291` lines (`6437` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -1420,7 +1420,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `149` lines (`5629` bytes)
+**Size**: `150` lines (`5667` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1636,6 +1636,26 @@
 - `def in_place_pose(pose, node_id, reference)` - *Return a copy of ``pose`` with ``node_id`` reset to a reference transform.*
 - `def root_motion_report(motion)` - *Return a JSON-safe summary of one root delta.*
 - `def _compose(first, second)` - *Compose two deltas: apply ``first``, then ``second``.*
+
+---
+
+### [`keystone/root_motion_body.py`](keystone/root_motion_body.py)
+> *Drive a character body from a root-motion clip.*
+
+**Size**: `125` lines (`4206` bytes)
+
+**Classes:**
+- `class RootMotionBody` - *A controller body advanced by one clip's root motion.*
+  - Method `.__init__(clip, node_id, controller, body, *, speed, loop, planar)`
+  - Property `.node_id`
+  - Property `.clip`
+  - Property `.yaw`
+  - Property `.done`
+  - Method `.reset()` - *Rewind the clip, the accumulated turn and the last motion.*
+  - Method `.step(dt, colliders)` - *Advance the clip, move the body and return the in-place pose and delta.*
+
+**Functions:**
+- `def root_motion_body_report(rig)` - *Return a JSON-safe summary of a root-motion body.*
 
 ---
 
@@ -4132,6 +4152,32 @@
 
 **Functions:**
 - `def _clip(positions, rotations)`
+
+---
+
+### [`tests/test_root_motion_body.py`](tests/test_root_motion_body.py)
+> *Tests for driving a character body from a root-motion clip.*
+
+**Size**: `145` lines (`5321` bytes)
+
+**Classes:**
+- `class RootMotionBodyTest`
+  - Method `.test_a_forward_clip_moves_the_body_at_clip_speed()`
+  - Method `.test_steps_compose_across_loop_wraps()`
+  - Method `.test_turning_accumulates_yaw()`
+  - Method `.test_a_wall_blocks_the_body_without_teleporting()`
+  - Method `.test_in_place_pose_keeps_the_root_clamped()`
+  - Method `.test_non_loop_playback_finishes()`
+  - Method `.test_planar_mode_ignores_vertical_root_motion()`
+  - Method `.test_reset_rewinds_the_rig()`
+  - Method `.test_report_is_json_safe()`
+  - Method `.test_validation()`
+  - Method `.test_describe_advertises_root_motion_bodies()`
+
+**Functions:**
+- `def _walk(units)`
+- `def _turn()`
+- `def _rig(clip, **kwargs)`
 
 ---
 

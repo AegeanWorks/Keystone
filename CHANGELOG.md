@@ -234,6 +234,10 @@ changes that do not bump the release number yet.
   live machine parameters, round-trips through `.kstate` documents and
   reports axes and parameters. A state may use one space kind only.
   `--describe` reports `capabilities.animation_state_blend_2d`.
+- `RootMotionBody` drives a `CharacterController` body from a root-motion
+  clip: each step converts horizontal motion into wish velocity, accumulates
+  the turn, moves against colliders and returns an in-place pose plus the
+  consumed delta. `--describe` reports `capabilities.root_motion_body`.
 - `RootMotionPlayer` advances one clip and returns its pose plus the root
   delta consumed, composing loop wraps and full cycles, clamping non-loop
   playback and reporting clip, node, time, looped and done.
