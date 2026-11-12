@@ -62,6 +62,7 @@ keystone/
 │   ├── prefab_library.py    <- file-backed prefab library
 │   ├── library_trash.py      <- recoverable library deletes
 │   ├── scene.py              <- hierarchy, identity, components, transforms and lights
+│   ├── tilemap.py            <- tile grids, colliders and merged meshes
 │   ├── geometry.py           <- MeshData, Material
 │   ├── skin.py               <- bone palettes, CPU skinning
 │   ├── mesh_builder.py       <- merge boxes, quads, meshes, skinned rigs
@@ -130,6 +131,7 @@ keystone/
 ├── tests/
 │   ├── test_math3d.py        <- math core
 │   ├── test_scene.py         <- hierarchy, camera and lights
+│   ├── test_tilemap.py       <- tile colliders, meshes and documents
 │   ├── test_geometry.py      <- meshes, primitives, builder and OBJ
 │   ├── test_png.py           <- PNG writer and reader
 │   ├── test_texture.py       <- texture data, checker and PNG loading

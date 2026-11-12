@@ -1,93 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-steering-v1",
+    "task_id": "keystone-tilemap-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794445184.5727067,
+    "updated_at": 1794446336.8781576,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
-    "completed_at": 1794445192.2561789
+    "completed_at": 1794446359.2343044
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-scene-overlap-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: add sphere and box overlap queries over scene bounds (SceneOverlap, overlap_scene, overlap_report) sharing the picking bounds walk, with layer/ignore filters, deterministic distance-then-id ordering and JSON-safe reports",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794437327.003204,
-      "timestamp_str": "2026-11-12 01:48:47",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "Picking answered ray queries but there was no area query for proximity, triggers or AI perception; callers would rebuild scene bounds exactly as picking did.",
-        "benefits": "One scene answers ray and area queries from one bounds rule, with deterministic ordering and reports an AI can log.",
-        "risks": "contract: picking gains three exports and a capability; refactor risk in shared bounds walking; dependency: none; concurrency: none; state: pure queries.",
-        "mitigation": "Factor one _scene_meshes walker used by both queries, keep filters identical, pin ordering and filters with failing-first tests, and keep the canonical evidence unchanged."
-      },
-      "plan_digest": "4021ccaa15b00698fc2fe6b3ccd00fbebc5465080245ce99cb7305a4c6a6b86c"
-    },
-    {
-      "task_id": "keystone-scene-overlap-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/3] Implemented and verified - picking.py now shares one _scene_meshes bounds walker between ray and area queries and adds SceneOverlap, overlap_scene (Sphere or AABB, layer/ignore filters, distance-then-id ordering) and overlap_report; exports, README, ARCHITECTURE, docs/TREE, CHANGELOG and ADR-237 updated; --describe reports capabilities.scene_overlap; 12 overlap tests plus the picking suite green (1183 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
-      "files_affected": [
-        "keystone/picking.py",
-        "tests/test_overlap.py",
-        "keystone/__init__.py",
-        "keystone/plugin.py",
-        "README.md",
-        "docs/ARCHITECTURE.md",
-        "docs/TREE.md",
-        "CHANGELOG.md",
-        ".aikit/decisions.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794437368.9853742,
-      "timestamp_str": "2026-11-12 01:49:28",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "unit": "tests",
-          "candidate": 1183.0,
-          "artifact": "stdout",
-          "command": "python -m pytest --collect-only -q",
-          "baseline": 1171.0,
-          "metric": "collected_tests"
-        },
-        {
-          "unit": "nodes",
-          "candidate": 2.0,
-          "artifact": "tests/test_overlap.py",
-          "command": "python -m pytest tests/test_overlap.py::OverlapSceneTest::test_a_sphere_returns_every_overlapping_visible_mesh",
-          "baseline": 1.0,
-          "metric": "sphere_overlap_hits"
-        },
-        {
-          "unit": "bytes",
-          "candidate": 4899.0,
-          "artifact": "temp PNG",
-          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
-          "baseline": 4899.0,
-          "metric": "reference_png_bytes"
-        }
-      ],
-      "checklists": "passed"
-    },
-    {
-      "task_id": "keystone-scene-overlap-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-scene-overlap-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794437392.0303972,
-      "timestamp_str": "2026-11-12 01:49:52",
-      "agent": "kilo:goal"
-    },
     {
       "task_id": "keystone-blend2d-v1",
       "phase": "phase 2",
@@ -507,6 +431,82 @@
       "status": "completed",
       "timestamp": 1794445192.2561803,
       "timestamp_str": "2026-11-12 03:59:52",
+      "agent": "kilo:goal"
+    },
+    {
+      "task_id": "keystone-tilemap-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: add immutable tile maps (TileMap, tilemap_report) with exact per-cell AABB colliders, a merged floor-and-wall MeshData in one draw, with_cell copies, schema-1 documents and a discovery flag",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794446314.9204922,
+      "timestamp_str": "2026-11-12 04:18:34",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "A grid level still had to be assembled by hand from nodes and colliders; navigation authoring already treats blockers as cell data, so one authored tile map is the missing form shared by rendering, physics and navigation.",
+        "benefits": "One document and one node produce a level, collision and navigation input from the same cells, with deterministic order and reports for AI clients.",
+        "risks": "contract: new module, two exports and a capability; dependency: tilemap uses mesh_builder and physics.AABB; concurrency: none; state: schema-1 document is new and does not touch scene snapshots.",
+        "mitigation": "Keep the map immutable, validate cells/colors/geometry strictly, prove mesh counts/normals/bounds and a physics ray, and keep the canonical evidence unchanged."
+      },
+      "plan_digest": "71d86f0aaed64940406956f81bc184f9cb585d9c5f5c0276ee96e6ab7841ce9a"
+    },
+    {
+      "task_id": "keystone-tilemap-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/3] Implemented and verified - keystone/tilemap.py adds immutable TileMap with cell math, with_cell copies, per-cell AABB colliders in x-major order, a merged floor-quad/wall-box MeshData (28 verts and 14 tris for one free plus one solid cell) facing up and spanning the wall height, schema-1 documents with strict validation and tilemap_report; exports, README section and scene bullet, ARCHITECTURE row and tree, docs/TREE, CHANGELOG and ADR-243 updated; --describe reports capabilities.tilemap; 14 tilemap tests green including a physics ray against the colliders (1260 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
+      "files_affected": [
+        "keystone/tilemap.py",
+        "tests/test_tilemap.py",
+        "keystone/__init__.py",
+        "keystone/plugin.py",
+        "README.md",
+        "docs/ARCHITECTURE.md",
+        "docs/TREE.md",
+        "CHANGELOG.md",
+        ".aikit/decisions.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1794446336.8781576,
+      "timestamp_str": "2026-11-12 04:18:56",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "metric": "collected_tests",
+          "artifact": "stdout",
+          "baseline": 1246.0,
+          "unit": "tests",
+          "candidate": 1260.0,
+          "command": "python -m pytest --collect-only -q"
+        },
+        {
+          "metric": "one_wall_mesh_vertices",
+          "artifact": "tests/test_tilemap.py",
+          "baseline": 0.0,
+          "unit": "vertices",
+          "candidate": 28.0,
+          "command": "python -m pytest tests/test_tilemap.py"
+        },
+        {
+          "metric": "reference_png_bytes",
+          "artifact": "temp PNG",
+          "baseline": 4899.0,
+          "unit": "bytes",
+          "candidate": 4899.0,
+          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png"
+        }
+      ],
+      "checklists": "passed"
+    },
+    {
+      "task_id": "keystone-tilemap-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-tilemap-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794446359.234306,
+      "timestamp_str": "2026-11-12 04:19:19",
       "agent": "kilo:goal"
     }
   ]

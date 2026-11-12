@@ -174,6 +174,10 @@ changes that do not bump the release number yet.
   word boundaries, preserve explicit newlines and blank lines, truncate an
   overlong single word and return the height used. `--describe` reports
   `capabilities.ui_text_wrap`.
+- `keystone.tilemap` adds an immutable `TileMap` with exact `AABB`
+  colliders per solid cell, a merged floor-and-wall `MeshData` in one draw,
+  `with_cell()` copies, schema-1 documents and a JSON-safe
+  `tilemap_report()`. `--describe` reports `capabilities.tilemap`.
 - `keystone.steering` adds deterministic `Agent`, `seek`, `arrive`,
   `separation`, `steer` and `steering_report`: pure wish-velocity shaping
   with quadratic contact repulsion and a max-speed clamp, no time step or

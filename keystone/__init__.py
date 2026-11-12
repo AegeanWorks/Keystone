@@ -128,6 +128,7 @@ from keystone.scene_snapshot import scene_from_dict, scene_to_dict
 from keystone.skin import bone_matrices, skin_mesh, skin_point
 from keystone.steering import Agent, arrive, seek, separation, steer, steering_report
 from keystone.texture import TextureData
+from keystone.tilemap import TileMap, tilemap_report
 
 __all__ = [
     "OVERLAY_LAYER",
@@ -191,6 +192,7 @@ __all__ = [
     "SoundSource",
     "SpriteSettings",
     "TextureData",
+    "TileMap",
     "Track",
     "Transform",
     "Vec3",
@@ -253,6 +255,7 @@ __all__ = [
     "steer",
     "steering_report",
     "summarize_report",
+    "tilemap_report",
     "to_command_log",
     "validate_fairness",
     "world_bounds",

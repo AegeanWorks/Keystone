@@ -211,6 +211,18 @@ write_navgrid("levels/hall.navgrid", grid)
 
 `grid_from_boxes()` rasterizes the same AABBs a character collides with: a cell blocks when its world-space centre falls inside a box inflated by the clearance radius on X and Z, so navigation cannot silently drift from the level geometry. `scene_boxes()` derives those AABBs from a scene's visible mesh nodes (skipping the camera-relative overlay layer), so one level can feed the grid directly. `NavGrid.to_dict()`/`from_dict()` and `write_navgrid`/`read_navgrid` persist a schema-1 document that sorts blocked cells, rejects duplicates and rejects out-of-bounds cells. `--describe` reports `capabilities.nav_authoring`.
 
+### Tile maps
+
+```python
+from keystone.tilemap import TileMap, tilemap_report
+
+tiles = TileMap(16, 12, tile_size=2.0, solid={(3, y) for y in range(6)})
+scene.add(Node("level", mesh=tiles.mesh(), material=Material()))
+walls = tiles.colliders()  # feed to physics, nav_authoring or picking
+```
+
+`TileMap` is an immutable grid with one wall height. `colliders()` returns one exact `AABB` per solid cell (x-major order) for `raycast`, `CharacterController` or `grid_from_boxes`; `mesh()` merges a floor quad per free cell and a wall box per solid cell into one `MeshData`, colored by the map's floor and wall colors; `with_cell()` returns a modified copy. `to_dict()`/`from_dict()` persist a schema-1 document, and `tilemap_report()` emits counts and world bounds for agent logs. `--describe` reports `capabilities.tilemap`.
+
 ### Scene picking
 
 ```python
@@ -375,7 +387,7 @@ The API sends CORS headers so local AI clients can call it directly. Keep the de
 ## 🚀 Features
 
 - **OpenGL 3.3 renderer**: GLSL 330, PBR, shadows, sRGB, post grade, bloom, placed sprite billboards, up to 8 point lights, and profiler stats.
-- **Scene graph**: stable IDs, tags, layers, typed components, world transforms, queries and cached GPU meshes.
+- **Scene graph**: stable IDs, tags, layers, typed components, world transforms, queries, merged tile-map meshes with exact per-cell colliders, and cached GPU meshes.
 - **Prefabs**: capture, versioned `.kprefab` persistence, deterministic instantiation and override-preserving refresh.
 - **Assets**: `MeshData`, primitives, streaming OBJ, PNG/checker `TextureData`, and an id/digest registry with hot reload plus core scene rebinding.
 - **PBR materials**: specular/shininess plus metallic/roughness/emissive, wrapped/mipmapped textures and material graphs.

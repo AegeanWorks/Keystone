@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `187`
-- **Total Classes**: `320`
-- **Total Top-Level Functions**: `539`
-- **Total Class Methods**: `1992`
-- **Total Source Lines**: `49982`
+- **Total Python Modules**: `189`
+- **Total Classes**: `322`
+- **Total Top-Level Functions**: `545`
+- **Total Class Methods**: `2015`
+- **Total Source Lines**: `50393`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`187` module(s))
+- **Indexed**: python (`189` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `270` lines (`5859` bytes)
+**Size**: `273` lines (`5949` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -1391,7 +1391,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `142` lines (`5400` bytes)
+**Size**: `143` lines (`5429` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1852,6 +1852,33 @@
 - `def _panel(size, base, accent, seed)` - *Recessed plate: brighter bevel near the edges, darker centre.*
 - `def _rivets(size, base, accent, seed)` - *A panel with four corner studs.*
 - `def _noise(size, base, accent, seed)` - *Seeded speckle; the same seed always yields the same pixels.*
+
+---
+
+### [`keystone/tilemap.py`](keystone/tilemap.py)
+> *Grid tile maps: collision boxes, a merged level mesh and JSON documents.*
+
+**Size**: `268` lines (`10493` bytes)
+
+**Classes:**
+- `class TileMap` - *An immutable grid of free and solid cells with one wall height.*
+  - Method `.__post_init__()`
+  - Method `.in_bounds(cell)`
+  - Method `.is_solid(cell)`
+  - Method `.cell_center(cell)`
+  - Method `.with_cell(cell, solid)` - *Return a copy with one cell made solid or free.*
+  - Method `.colliders()` - *One world AABB per solid cell, ordered by cell y then x.*
+  - Method `.mesh()` - *Merge a floor quad per free cell and a wall box per solid cell.*
+  - Method `.to_dict()`
+  - Method `.from_dict(data)`
+
+**Functions:**
+- `def _positive_int(label, value)`
+- `def _finite(label, value)`
+- `def _point(label, value)`
+- `def _color(label, value)`
+- `def _cell(label, value)`
+- `def tilemap_report(tiles)` - *Return a JSON-safe summary of a tile map for agents and diagnostics.*
 
 ---
 
@@ -4424,6 +4451,30 @@
   - Method `.test_sha256_distinguishes_shapes()`
   - Method `.test_checker_rejects_bad_channel_counts()`
   - Method `.test_texture_rejects_non_bytes_payload()`
+
+---
+
+### [`tests/test_tilemap.py`](tests/test_tilemap.py)
+> *Tests for tile maps: collision boxes, merged mesh and documents.*
+
+**Size**: `139` lines (`5854` bytes)
+
+**Classes:**
+- `class TileMapTest`
+  - Method `.test_cells_map_to_world_centres()`
+  - Method `.test_each_solid_cell_is_one_collision_box()`
+  - Method `.test_colliders_are_sorted_and_immutable()`
+  - Method `.test_with_cell_returns_a_copy()`
+  - Method `.test_mesh_covers_free_cells_and_walls()`
+  - Method `.test_mesh_floor_faces_up()`
+  - Method `.test_mesh_bounds_cover_the_walls()`
+  - Method `.test_colliders_feed_physics_rays()`
+  - Method `.test_documents_round_trip_and_are_json_safe()`
+  - Method `.test_documents_reject_malformed_input()`
+  - Method `.test_malformed_maps_are_rejected()`
+  - Method `.test_report_is_json_safe()`
+  - Method `.test_report_rejects_a_non_map()`
+  - Method `.test_describe_advertises_tilemaps()`
 
 ---
 

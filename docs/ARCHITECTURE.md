@@ -51,6 +51,7 @@ keystone/
 ├── triggers.py       trigger volumes and enter/exit tracking
 ├── schema.py         versioned core schema constants
 ├── scene.py          Node, Transform, Scene identity/queries, DirectionalLight, PointLight
+├── tilemap.py        immutable tile grid, per-cell colliders, merged mesh and documents
 ├── camera.py         PerspectiveCamera
 ├── geometry.py       MeshData, Material
 ├── mesh_builder.py   static geometry composition
@@ -154,7 +155,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | System | Status | Responsibility |
 |---|---|---|
 | Math | Implemented | Vec3, Mat4, Quat, transforms |
-| Scene | Implemented | hierarchy, visibility, lights, IDs, tags, layers and components |
+| Scene | Implemented | hierarchy, visibility, lights, IDs, tags, layers, components and immutable tile maps with merged meshes and per-cell colliders |
 | Camera rig | Implemented | `CameraRig` keeps a scene root on the camera pose; parts use camera-space offsets on the reserved `overlay` layer, which draws after a depth clear and is excluded from world culling, batch plans, merges and shadows |
 | Prefabs | Implemented | detached subtree capture, versioned `.kprefab` save/load (schema 2), file-backed libraries, deterministic instance IDs, nested prefab instances with rebased links/IDs, component copy isolation, JSON-safe describe |
 | Projects | Implemented | versioned `keystone.json` manifest, `--new` scaffold with starter scene/prefab content, startup scene and component hooks, `--project` loader, `--validate-project` diagnostics, relative asset import as `project:<path>`, editor asset import with manifest update and registry rollback, editor hot reload with scene/history rebinding, editor glTF/GLB scene import as prefabs, project asset inventory and history-and-clipboard-safe forget-from-project, editor runnable builds, CLI glTF/GLB scene-to-prefab import and generated five-op game |
