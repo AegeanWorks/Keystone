@@ -426,6 +426,7 @@ class ColorSettings:
 
 
 POST_TONES = ("none", "reinhard", "aces")
+POST_AA_MODES = ("none", "fxaa")
 
 
 @dataclass(frozen=True, slots=True)
@@ -436,10 +437,13 @@ class PostSettings:
     tone: str = "none"
     exposure: float = 1.12
     vignette: float = 0.28
+    anti_alias: str = "none"
 
     def __post_init__(self) -> None:
         if self.tone not in POST_TONES:
             raise ValueError("post tone must be one of " + ", ".join(POST_TONES))
+        if self.anti_alias not in POST_AA_MODES:
+            raise ValueError("post anti_alias must be one of " + ", ".join(POST_AA_MODES))
         if isinstance(self.exposure, bool) or not isinstance(self.exposure, (int, float)):
             raise TypeError("post exposure must be a real number")
         if not math.isfinite(self.exposure) or self.exposure < 0.0:

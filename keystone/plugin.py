@@ -53,6 +53,7 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "srgb": True,
             "post": True,
             "post_tonemap": True,
+            "post_fxaa": True,
             "bloom": True,
             "sprites": True,
             "sprite_nodes": True,

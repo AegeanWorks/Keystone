@@ -33,6 +33,7 @@ from keystone.math3d import Quat, Vec3
 from keystone.png import png_bytes
 from keystone.prefab import Prefab
 from keystone.scene import (
+    POST_AA_MODES,
     POST_TONES,
     BloomSettings,
     ColorSettings,
@@ -236,6 +237,7 @@ def scene_settings_document(scene: Scene) -> dict[str, object]:
             "tone": scene.post.tone,
             "exposure": scene.post.exposure,
             "vignette": scene.post.vignette,
+            "anti_alias": scene.post.anti_alias,
             "bloom": bool(scene.bloom.enabled),
             "sprites": bool(scene.sprite.enabled),
             "culling": bool(scene.culling.enabled),
@@ -315,6 +317,7 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
     tone = scene.post.tone
     exposure = scene.post.exposure
     vignette = scene.post.vignette
+    anti_alias = scene.post.anti_alias
     bloom = scene.bloom.enabled
     sprites = scene.sprite.enabled
     culling = scene.culling.enabled
@@ -335,6 +338,7 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
                 "tone",
                 "exposure",
                 "vignette",
+                "anti_alias",
                 "bloom",
                 "sprites",
                 "culling",
@@ -496,6 +500,13 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
             )
             if not 0.0 <= vignette <= 1.0:
                 raise ValueError("environment vignette must be within [0, 1]")
+        if "anti_alias" in environment_payload:
+            raw_aa = environment_payload["anti_alias"]
+            if not isinstance(raw_aa, str) or raw_aa not in POST_AA_MODES:
+                raise ValueError(
+                    "environment anti_alias must be one of " + ", ".join(POST_AA_MODES)
+                )
+            anti_alias = raw_aa
 
     scene.camera.position = position
     scene.camera.yaw = yaw
@@ -512,7 +523,11 @@ def set_scene(scene: Scene, payload: Mapping[str, object]) -> Scene:
     scene.shadow = ShadowSettings(enabled=shadow)
     scene.color = ColorSettings(enabled=color)
     scene.post = PostSettings(
-        enabled=post, tone=tone, exposure=exposure, vignette=vignette
+        enabled=post,
+        tone=tone,
+        exposure=exposure,
+        vignette=vignette,
+        anti_alias=anti_alias,
     )
     scene.bloom = BloomSettings(enabled=bloom)
     scene.sprite = SpriteSettings(enabled=sprites)

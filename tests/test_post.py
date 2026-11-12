@@ -95,7 +95,13 @@ class PostContractsTest(unittest.TestCase):
         document = scene_document(CubeDemo().build_scene())
         self.assertEqual(
             document["post"],
-            {"enabled": True, "tone": "none", "exposure": 1.12, "vignette": 0.28},
+            {
+                "enabled": True,
+                "tone": "none",
+                "exposure": 1.12,
+                "vignette": 0.28,
+                "anti_alias": "none",
+            },
         )
 
 
@@ -298,3 +304,104 @@ class PostExposureRenderTest(unittest.TestCase):
         dark = self._corner()
         self.assertLess(dark[0], clear[0])
         self.assertEqual(self.renderer.last_stats["post_vignette"], 1.0)
+
+class PostFxaaTest(unittest.TestCase):
+    def test_settings_validate_and_round_trip(self):
+        self.assertEqual(PostSettings().anti_alias, "none")
+        scene = Scene()
+        scene.post = PostSettings(anti_alias="fxaa")
+        restored = scene_from_dict(scene_to_dict(scene))
+        self.assertEqual(restored.post.anti_alias, "fxaa")
+        legacy = scene_to_dict(Scene())
+        legacy["environment"]["post"].pop("anti_alias")
+        self.assertEqual(scene_from_dict(legacy).post.anti_alias, "none")
+        with self.assertRaises(ValueError):
+            PostSettings(anti_alias="smaa")
+        with self.assertRaises(ValueError):
+            scene_from_dict(
+                {"schema": 1, "environment": {"post": {"enabled": True, "anti_alias": "smaa"}}}
+            )
+
+    def test_set_scene_accepts_and_rejects_anti_alias(self):
+        from keystone.web.editor import set_scene
+
+        scene = CubeDemo().build_scene()
+        set_scene(scene, {"environment": {"anti_alias": "fxaa"}})
+        self.assertEqual(scene.post.anti_alias, "fxaa")
+        set_scene(scene, {"environment": {"anti_alias": "none"}})
+        self.assertEqual(scene.post.anti_alias, "none")
+        with self.assertRaises(ValueError):
+            set_scene(scene, {"environment": {"anti_alias": "smaa"}})
+
+    def test_describe_advertises_fxaa(self):
+        capabilities = describe_game(CubeDemo())["capabilities"]
+        self.assertTrue(capabilities["post_fxaa"])
+
+
+class PostFxaaRenderTest(unittest.TestCase):
+    def setUp(self):
+        from keystone.gpu.context import GLContext
+        from keystone.gpu.renderer import Renderer
+
+        self.context = GLContext(64, 48, visible=False)
+        self.addCleanup(self.context.close)
+        self.renderer = Renderer(64, 48)
+        self.addCleanup(self.renderer.release)
+
+    def _scene(self, anti_alias: str) -> Scene:
+        from keystone.geometry import Material
+        from keystone.math3d import Vec3
+        from keystone.primitives import cube
+        from keystone.scene import Node, Transform
+
+        scene = Scene()
+        scene.background = Vec3(0.02, 0.02, 0.03)
+        scene.sky = scene.background
+        scene.add(
+            Node(
+                "screen",
+                transform=Transform(
+                    position=Vec3(0.0, 0.0, -3.0),
+                    rotation=__import__("keystone.math3d", fromlist=["Quat"]).Quat.from_axis_angle(
+                        Vec3.UP, 0.3
+                    ),
+                ),
+                mesh=cube(2.0),
+                material=Material(color=Vec3(0.9, 0.2, 0.2), specular=0.0),
+            )
+        )
+        scene.post = PostSettings(anti_alias=anti_alias)
+        return scene
+
+    def test_fxaa_changes_silhouette_pixels_and_reports(self):
+        self.renderer.render(self._scene("none"))
+        off = self.renderer.read_pixels()
+        self.assertEqual(self.renderer.last_stats["post_aa"], "none")
+        self.renderer.render(self._scene("fxaa"))
+        on = self.renderer.read_pixels()
+        self.assertEqual(self.renderer.last_stats["post_aa"], "fxaa")
+        self.assertNotEqual(off, on)
+
+
+    def test_bloom_and_fxaa_compose(self):
+        self.renderer.render(self._scene("none"))
+        off = self.renderer.read_pixels()
+        self.assertEqual(self.renderer.last_stats["bloom_enabled"], 1)
+        self.renderer.render(self._scene("fxaa"))
+        on = self.renderer.read_pixels()
+        self.assertEqual(self.renderer.last_stats["post_aa"], "fxaa")
+        self.assertEqual(self.renderer.last_stats["bloom_enabled"], 1)
+        self.assertNotEqual(off, on)
+
+    def test_fxaa_leaves_a_uniform_frame_alone(self):
+        from keystone.math3d import Vec3
+
+        scene = Scene()
+        scene.background = Vec3(0.1, 0.2, 0.3)
+        scene.sky = scene.background
+        scene.post = PostSettings(anti_alias="fxaa")
+        self.renderer.render(scene)
+        with_aa = self.renderer.read_pixels()
+        scene.post = PostSettings(anti_alias="none")
+        self.renderer.render(scene)
+        self.assertEqual(with_aa, self.renderer.read_pixels())

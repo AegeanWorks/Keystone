@@ -512,6 +512,47 @@ void main() {
 """
 
 
+FXAA_FRAGMENT = """#version 330 core
+in vec2 v_uv;
+uniform sampler2D u_scene;
+uniform vec2 u_texel;
+out vec4 frag_color;
+float luma(vec3 c) {
+    return dot(c, vec3(0.299, 0.587, 0.114));
+}
+void main() {
+    vec3 rgb_m = texture(u_scene, v_uv).rgb;
+    float l_m = luma(rgb_m);
+    float l_n = luma(texture(u_scene, v_uv + vec2(0.0, u_texel.y)).rgb);
+    float l_s = luma(texture(u_scene, v_uv - vec2(0.0, u_texel.y)).rgb);
+    float l_e = luma(texture(u_scene, v_uv + vec2(u_texel.x, 0.0)).rgb);
+    float l_w = luma(texture(u_scene, v_uv - vec2(u_texel.x, 0.0)).rgb);
+    float l_min = min(l_m, min(min(l_n, l_s), min(l_e, l_w)));
+    float l_max = max(l_m, max(max(l_n, l_s), max(l_e, l_w)));
+    if (l_max - l_min < max(0.0312, l_max * 0.125)) {
+        frag_color = vec4(rgb_m, 1.0);
+        return;
+    }
+    vec2 dir = vec2(-((l_n + l_s) - 2.0 * l_m), (l_e + l_w) - 2.0 * l_m);
+    float magnitude = abs(dir.x) + abs(dir.y);
+    if (magnitude < 1e-5) {
+        frag_color = vec4(rgb_m, 1.0);
+        return;
+    }
+    dir = clamp(dir / magnitude, vec2(-1.0), vec2(1.0)) * u_texel;
+    vec3 a = 0.5 * (
+        texture(u_scene, v_uv + dir * 0.5).rgb + texture(u_scene, v_uv - dir * 0.5).rgb
+    );
+    vec3 b = a * 0.5 + 0.25 * (
+        texture(u_scene, v_uv + dir * 1.5).rgb + texture(u_scene, v_uv - dir * 1.5).rgb
+    );
+    float l_b = luma(b);
+    vec3 result = (l_b < l_min || l_b > l_max) ? a : b;
+    frag_color = vec4(result, 1.0);
+}
+"""
+
+
 def normal_matrix(model: Mat4) -> tuple[float, ...]:
     """Return transpose(inverse(upper 3x3)) in column-major order.
 
@@ -547,6 +588,7 @@ class Renderer:
         bright_program: ShaderProgram | None = None
         blur_program: ShaderProgram | None = None
         composite_program: ShaderProgram | None = None
+        fxaa_program: ShaderProgram | None = None
         try:
             inst_program = ShaderProgram(VERTEX_SHADER_INSTANCED, FRAGMENT_SHADER)
             sky_program = ShaderProgram(SKY_VERTEX_SHADER, SKY_FRAGMENT_SHADER)
@@ -557,10 +599,13 @@ class Renderer:
             bright_program = ShaderProgram(BLOOM_QUAD_VERTEX, BLOOM_BRIGHT_FRAGMENT)
             blur_program = ShaderProgram(BLOOM_QUAD_VERTEX, BLOOM_BLUR_FRAGMENT)
             composite_program = ShaderProgram(BLOOM_QUAD_VERTEX, BLOOM_COMPOSITE_FRAGMENT)
+            fxaa_program = ShaderProgram(BLOOM_QUAD_VERTEX, FXAA_FRAGMENT)
             self._sky_vao = GL.glGenVertexArrays(1)
         except Exception:
             if sprite_program is not None:
                 sprite_program.release()
+            if fxaa_program is not None:
+                fxaa_program.release()
             if composite_program is not None:
                 composite_program.release()
             if blur_program is not None:
@@ -593,6 +638,7 @@ class Renderer:
         self._bloom_bright = bright_program
         self._bloom_blur = blur_program
         self._bloom_composite = composite_program
+        self._fxaa_program = fxaa_program
         self._shadow: ShadowMap | None = None
         self._shadow_error: str | None = None
         try:
@@ -602,6 +648,7 @@ class Renderer:
         self._bloom_scene: BloomFbo | None = None
         self._bloom_a: BloomFbo | None = None
         self._bloom_b: BloomFbo | None = None
+        self._post_fbo: BloomFbo | None = None
         self._bloom_error: str | None = None
         try:
             self._create_bloom_fbos()
@@ -625,6 +672,7 @@ class Renderer:
             "post_tone": "none",
             "post_exposure": POST_EXPOSURE,
             "post_vignette": POST_VIGNETTE,
+            "post_aa": "none",
             "bloom_enabled": 0,
             "sprite_calls": 0,
             "sprites": 0,
@@ -660,25 +708,29 @@ class Renderer:
         self._bloom_scene = BloomFbo(self.width, self.height)
         self._bloom_a = BloomFbo(half_w, half_h)
         self._bloom_b = BloomFbo(half_w, half_h)
+        self._post_fbo = BloomFbo(self.width, self.height)
 
     def _release_bloom_fbos(self) -> None:
-        for fbo in (self._bloom_scene, self._bloom_a, self._bloom_b):
+        for fbo in (self._bloom_scene, self._bloom_a, self._bloom_b, self._post_fbo):
             if fbo is not None:
                 fbo.release()
         self._bloom_scene = None
         self._bloom_a = None
         self._bloom_b = None
+        self._post_fbo = None
 
     def _ensure_bloom_fbos(self) -> None:
         half_w, half_h = bloom_blur_size(self.width, self.height)
         scene = self._bloom_scene
         first = self._bloom_a
         second = self._bloom_b
+        post = self._post_fbo
         if (
-            scene is None or first is None or second is None
+            scene is None or first is None or second is None or post is None
             or scene.width != self.width or scene.height != self.height
             or first.width != half_w or first.height != half_h
             or second.width != half_w or second.height != half_h
+            or post.width != self.width or post.height != self.height
         ):
             self._create_bloom_fbos()
 
@@ -757,6 +809,10 @@ class Renderer:
     def _bloom_requested(self, scene: Scene) -> bool:
         bloom = getattr(scene, "bloom", None)
         return bool(getattr(bloom, "enabled", True))
+
+    def _aa_requested(self, scene: Scene) -> bool:
+        post = getattr(scene, "post", None)
+        return getattr(post, "anti_alias", "none") == "fxaa"
 
     def _sprites_requested(self, scene: Scene) -> bool:
         sprite = getattr(scene, "sprite", None)
@@ -1142,7 +1198,7 @@ class Renderer:
         )
         return (draw_calls + sprite_calls, triangles + sprites * 2, nodes)
 
-    def _run_bloom_chain(self) -> None:
+    def _run_bloom_chain(self, target: BloomFbo | None = None) -> None:
         assert self._bloom_scene is not None
         assert self._bloom_a is not None
         assert self._bloom_b is not None
@@ -1173,8 +1229,11 @@ class Renderer:
         self._bloom_blur.set_vec2("u_direction", 0.0, 1.0)
         self._draw_quad()
         self._bloom_b.unbind_after_read(2)
-        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
-        GL.glViewport(0, 0, self.width, self.height)
+        if target is None:
+            GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
+            GL.glViewport(0, 0, self.width, self.height)
+        else:
+            target.bind_for_write()
         self._bloom_composite.use()
         self._bloom_scene.bind_for_read(2)
         self._bloom_a.bind_for_read(3)
@@ -1184,6 +1243,25 @@ class Renderer:
         self._draw_quad()
         self._bloom_scene.unbind_after_read(2)
         self._bloom_a.unbind_after_read(3)
+        if target is not None:
+            target.unbind_after_write(self.width, self.height)
+        GL.glDepthMask(GL.GL_TRUE)
+        GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glActiveTexture(GL.GL_TEXTURE0)
+
+    def _run_fxaa(self, source: BloomFbo) -> None:
+        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
+        GL.glViewport(0, 0, self.width, self.height)
+        GL.glDisable(GL.GL_DEPTH_TEST)
+        GL.glDepthMask(GL.GL_FALSE)
+        self._fxaa_program.use()
+        source.bind_for_read(2)
+        self._fxaa_program.set_int("u_scene", 2)
+        self._fxaa_program.set_vec2(
+            "u_texel", 1.0 / max(1, self.width), 1.0 / max(1, self.height)
+        )
+        self._draw_quad()
+        source.unbind_after_read(2)
         GL.glDepthMask(GL.GL_TRUE)
         GL.glEnable(GL.GL_DEPTH_TEST)
         GL.glActiveTexture(GL.GL_TEXTURE0)
@@ -1209,13 +1287,17 @@ class Renderer:
         bloom_on = self._bloom_requested(scene)
         sprites_on = self._sprites_requested(scene)
         culling_on = self._culling_requested(scene)
-        if bloom_on and (
-            self._bloom_scene is None or self._bloom_a is None or self._bloom_b is None
+        aa_on = self._aa_requested(scene)
+        if (bloom_on or aa_on) and (
+            self._bloom_scene is None
+            or self._bloom_a is None
+            or self._bloom_b is None
+            or self._post_fbo is None
         ):
             raise RuntimeError(
-                f"{self._bloom_error or 'Bloom framebuffers unavailable.'}\n"
-                "Why: bloom diffusion is enabled but the color FBOs failed.\n"
-                "Fix: update the GPU driver, or re-run with --no-bloom."
+                f"{self._bloom_error or 'Color framebuffers unavailable.'}\n"
+                "Why: bloom or FXAA is enabled but the color FBOs failed.\n"
+                "Fix: update the GPU driver, or disable bloom/FXAA in the scene."
             )
         light_vp = light_vp_for(scene.light)
         if shadows_on:
@@ -1240,7 +1322,7 @@ class Renderer:
                         and node.layer != OVERLAY_LAYER
                     ):
                         total_mesh += 1
-        if not bloom_on:
+        if not bloom_on and not aa_on:
             GL.glViewport(0, 0, self.width, self.height)
             GL.glClearColor(background.x, background.y, background.z, 1.0)
             GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
@@ -1279,7 +1361,13 @@ class Renderer:
                 scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on
             )
             GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
-            self._run_bloom_chain()
+            if bloom_on:
+                assert self._post_fbo is not None
+                self._run_bloom_chain(self._post_fbo if aa_on else None)
+                if aa_on:
+                    self._run_fxaa(self._post_fbo)
+            else:
+                self._run_fxaa(self._bloom_scene)
         GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
         if shadows_on:
             assert self._shadow is not None
@@ -1298,6 +1386,7 @@ class Renderer:
             "post_tone": getattr(getattr(scene, "post", None), "tone", "none"),
             "post_exposure": float(getattr(getattr(scene, "post", None), "exposure", POST_EXPOSURE)),
             "post_vignette": float(getattr(getattr(scene, "post", None), "vignette", POST_VIGNETTE)),
+            "post_aa": getattr(getattr(scene, "post", None), "anti_alias", "none"),
             "bloom_enabled": 1 if bloom_on else 0,
             "sprite_calls": sprite_calls,
             "sprites": sprites,

@@ -266,6 +266,7 @@ def scene_to_dict(scene: Scene, registry: Any = None) -> dict[str, Any]:
                 "tone": getattr(scene.post, "tone", "none"),
                 "exposure": getattr(scene.post, "exposure", 1.12),
                 "vignette": getattr(scene.post, "vignette", 0.28),
+                "anti_alias": getattr(scene.post, "anti_alias", "none"),
             },
             "bloom": {"enabled": bool(getattr(scene.bloom, "enabled", True))},
             "sprites": {"enabled": bool(getattr(scene.sprite, "enabled", True))},
@@ -368,6 +369,7 @@ def scene_from_dict(
                 tone=post.get("tone", "none"),
                 exposure=post.get("exposure", 1.12),
                 vignette=post.get("vignette", 0.28),
+                anti_alias=post.get("anti_alias", "none"),
             )
         bloom = environment.get("bloom")
         if bloom is not None:

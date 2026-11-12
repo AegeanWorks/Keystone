@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `189`
-- **Total Classes**: `326`
+- **Total Classes**: `328`
 - **Total Top-Level Functions**: `545`
-- **Total Class Methods**: `2036`
-- **Total Source Lines**: `50823`
+- **Total Class Methods**: `2046`
+- **Total Source Lines**: `51042`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`189` module(s))
@@ -815,7 +815,7 @@
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
 > *Blinn-Phong forward renderer with fog, shadows and screenshot readback.*
 
-**Size**: `1347` lines (`53636` bytes)
+**Size**: `1436` lines (`57128` bytes)
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
@@ -833,6 +833,7 @@
   - Method `._srgb_requested(scene)`
   - Method `._post_requested(scene)`
   - Method `._bloom_requested(scene)`
+  - Method `._aa_requested(scene)`
   - Method `._sprites_requested(scene)`
   - Method `._culling_requested(scene)`
   - Method `._init_sprite_buffers()`
@@ -848,7 +849,8 @@
   - Method `._draw_quad()`
   - Method `._draw_geometry(scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on, planes, *, layer, exclude_layer)`
   - Method `._draw_overlay(scene, view_projection, light_vp, shadows_on, srgb_on, post_on, bloom_on)` - *Draw camera-relative content over the world, or return zeros.*
-  - Method `._run_bloom_chain()`
+  - Method `._run_bloom_chain(target)`
+  - Method `._run_fxaa(source)`
   - Method `.render(scene, particles)`
   - Method `.read_pixels()`
   - Method `.save_png(path)`
@@ -1392,7 +1394,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `144` lines (`5463` bytes)
+**Size**: `145` lines (`5494` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1604,7 +1606,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `598` lines (`23897` bytes)
+**Size**: `602` lines (`24099` bytes)
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -1715,7 +1717,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `524` lines (`21865` bytes)
+**Size**: `526` lines (`21997` bytes)
 
 **Functions:**
 - `def _vec3_to_list(value)` - *Serialize a vector as floats.*
@@ -2016,7 +2018,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `3323` lines (`118588` bytes)
+**Size**: `3338` lines (`119131` bytes)
 
 **Classes:**
 - `class _HistoryEntry`
@@ -2151,7 +2153,7 @@
 ### [`keystone/web/scene.py`](keystone/web/scene.py)
 > *Export a game-agnostic scene as a JSON document for the browser viewer.*
 
-**Size**: `168` lines (`6101` bytes)
+**Size**: `169` lines (`6164` bytes)
 
 **Functions:**
 - `def _enabled(value)`
@@ -3791,7 +3793,7 @@
 ### [`tests/test_post.py`](tests/test_post.py)
 > *Tests for the deterministic post color-grade (in-shader exposure + vignette).*
 
-**Size**: `300` lines (`12222` bytes)
+**Size**: `407` lines (`16437` bytes)
 
 **Classes:**
 - `class PostMathTest`
@@ -3828,6 +3830,16 @@
   - Method `._corner()`
   - Method `.test_exposure_brightens_and_reports()`
   - Method `.test_vignette_darkens_the_corner()`
+- `class PostFxaaTest`
+  - Method `.test_settings_validate_and_round_trip()`
+  - Method `.test_set_scene_accepts_and_rejects_anti_alias()`
+  - Method `.test_describe_advertises_fxaa()`
+- `class PostFxaaRenderTest`
+  - Method `.setUp()`
+  - Method `._scene(anti_alias)`
+  - Method `.test_fxaa_changes_silhouette_pixels_and_reports()`
+  - Method `.test_bloom_and_fxaa_compose()`
+  - Method `.test_fxaa_leaves_a_uniform_frame_alone()`
 
 ---
 

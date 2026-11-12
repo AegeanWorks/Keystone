@@ -174,6 +174,12 @@ changes that do not bump the release number yet.
   word boundaries, preserve explicit newlines and blank lines, truncate an
   overlong single word and return the height used. `--describe` reports
   `capabilities.ui_text_wrap`.
+- `PostSettings.anti_alias` accepts `none` or `fxaa`: an opt-in
+  full-screen FXAA pass renders through the color FBOs and blends luma
+  edges, leaving uniform frames and the default path byte-identical.
+  Snapshots, scene export (schema 5), editor `set_scene` (schema 62) and
+  renderer stats (`post_aa`) carry it; `--describe` reports
+  `capabilities.post_fxaa`.
 - `PostSettings` gains `exposure` (default 1.12) and `vignette` (default
   0.28): the shaders read both, snapshots persist them, `set_scene` accepts
   `environment.exposure`/`vignette`, and renderer stats report them.

@@ -1,63 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-grade-controls-v1",
+    "task_id": "keystone-fxaa-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794450944.810564,
+    "updated_at": 1794452237.6995392,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
-    "completed_at": 1794450951.861411
+    "completed_at": 1794452240.6000817
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-state-blend2d-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-state-blend2d-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794442302.8664453,
-      "timestamp_str": "2026-11-12 03:11:42",
-      "agent": "kilo:goal"
-    },
-    {
-      "task_id": "keystone-editor-blend2d-preview-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: add the preview_blend_space2d editor action (x, y, time, record) with history support, editor document exposure, schema example/fields, action registration and a discovery flag, completing the 2D animation authoring loop",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794443853.0550911,
-      "timestamp_str": "2026-11-12 03:37:33",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "ADR-240 made states drive a 2D space, but the editor could only scrub 1D, so people and AI clients could not preview 2D locomotion on the authoring surface.",
-        "benefits": "The editor applies a sampled 2D pose through undo history or unrecorded, reports axes/parameters, and both preview actions are documented in the API index and schema.",
-        "risks": "contract: new editor action, editor document field, capability and schema entries; dependency: none; concurrency: none; state: preview fields reset per action like the existing previews.",
-        "mitigation": "Mirror the 1D action's validation and history path, keep the schema example test green, reject non-finite coordinates and negative time before applying, and keep the canonical frame unchanged."
-      },
-      "plan_digest": "716e24dbc141acfda9552b3a7d6a0322c1750f7778b9ba7407dbf759fdc1a429"
-    },
-    {
-      "task_id": "keystone-editor-blend2d-preview-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan (impact-assessed): add preview_blend_space2d to the editor API with x/y/time/record, history support, editor document exposure, schema example and fields, action registration and animation_preview_blend_2d",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794443868.3805559,
-      "timestamp_str": "2026-11-12 03:37:48",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "ADR-240 made states drive a 2D space, but the editor could only scrub 1D, so people and AI clients could not preview 2D locomotion on the authoring surface.",
-        "benefits": "A sampled 2D pose applies through undo history or unrecorded, with axes and parameters reported, and both preview actions are discoverable from the API index, schema and describe payload.",
-        "risks": "contract: new editor action, editor field, capability and schema entries; dependency: none; concurrency: none; state: preview records reset per action as the existing previews do.",
-        "mitigation": "Mirror the 1D validation and history path, keep the schema example test green, reject non-finite coordinates and negative time before applying, and keep the canonical frame unchanged."
-      },
-      "plan_digest": "fcd0eb87536b0a6c9a90aed4d156feea31ab8fcc25c30d5181f537288e25a692"
-    },
     {
       "task_id": "keystone-editor-blend2d-preview-v1",
       "phase": "phase 4",
@@ -502,6 +456,87 @@
       "status": "completed",
       "timestamp": 1794450951.861413,
       "timestamp_str": "2026-11-12 05:35:51",
+      "agent": "kilo:goal"
+    },
+    {
+      "task_id": "keystone-fxaa-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: add opt-in FXAA as PostSettings.anti_alias, implemented as a full-screen luma-edge pass over the scene/composite FBO, persisted through snapshots, scene export and editor set_scene, reported in stats, and leaving the default path byte-identical",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794452217.5472698,
+      "timestamp_str": "2026-11-12 05:56:57",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "Geometry edges were hard aliased and anti-aliasing was the last named post-chain item; the bloom color FBOs already exist, so FXAA needs one program and one extra full-res target when bloom is off.",
+        "benefits": "Opt-in edge smoothing for silhouettes and high-contrast edges, authorable from Python and the editor, visible in reports, with no change to existing frames.",
+        "risks": "contract: PostSettings field, render path branches, scene export schema 5, editor schema 62; dependency: none; concurrency: none; state: additive snapshot field.",
+        "mitigation": "Keep the no-AA/no-bloom direct path untouched, compose bloom into _post_fbo before resolving, test silhouette changes and a uniform-frame no-op, and verify the canonical frame unchanged."
+      },
+      "plan_digest": "1f2799429046da8c7d15f4c2e4a4d377cacb6c67efe6e70959c001f0ad5cfde3"
+    },
+    {
+      "task_id": "keystone-fxaa-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/3] Implemented and verified - PostSettings.anti_alias (none/fxaa) validates; FXAA_FRAGMENT runs as a full-screen luma-edge pass; render routes through _bloom_scene when bloom or FXAA is on, blooms into _post_fbo when both are on, and resolves to the default framebuffer; the no-AA/no-bloom path is unchanged; snapshots, scene export (schema 5), editor set_scene (schema 62) and stats (post_aa) carry it; a rotated cube changes pixels with FXAA, a uniform frame does not, and bloom+FXAA composes; 1278 tests green, ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
+      "files_affected": [
+        "keystone/scene.py",
+        "keystone/gpu/renderer.py",
+        "keystone/scene_snapshot.py",
+        "keystone/web/editor.py",
+        "keystone/web/scene.py",
+        "keystone/schema.py",
+        "keystone/plugin.py",
+        "tests/test_post.py",
+        "tests/test_web.py",
+        "tests/test_pbr.py",
+        "README.md",
+        "docs/ARCHITECTURE.md",
+        "CHANGELOG.md",
+        ".aikit/decisions.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1794452237.6995392,
+      "timestamp_str": "2026-11-12 05:57:17",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "baseline": 1272.0,
+          "candidate": 1278.0,
+          "command": "python -m pytest --collect-only -q",
+          "unit": "tests",
+          "artifact": "stdout",
+          "metric": "collected_tests"
+        },
+        {
+          "baseline": 4.0,
+          "candidate": 5.0,
+          "command": "python -m pytest tests/test_web.py",
+          "unit": "schema",
+          "artifact": "tests/test_web.py",
+          "metric": "scene_export_schema"
+        },
+        {
+          "baseline": 4899.0,
+          "candidate": 4899.0,
+          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
+          "unit": "bytes",
+          "artifact": "temp PNG",
+          "metric": "reference_png_bytes"
+        }
+      ],
+      "checklists": "passed"
+    },
+    {
+      "task_id": "keystone-fxaa-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-fxaa-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794452240.600083,
+      "timestamp_str": "2026-11-12 05:57:20",
       "agent": "kilo:goal"
     }
   ]

@@ -119,6 +119,7 @@ def scene_document(scene: Scene, game: str = "game") -> dict:
             "tone": getattr(post, "tone", "none"),
             "exposure": getattr(post, "exposure", 1.12),
             "vignette": getattr(post, "vignette", 0.28),
+            "anti_alias": getattr(post, "anti_alias", "none"),
         },
         "bloom": {"enabled": _enabled(bloom)},
         "sprites": {"enabled": _enabled(sprite)},
