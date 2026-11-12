@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `194`
-- **Total Classes**: `338`
-- **Total Top-Level Functions**: `558`
-- **Total Class Methods**: `2101`
-- **Total Source Lines**: `52512`
+- **Total Python Modules**: `195`
+- **Total Classes**: `340`
+- **Total Top-Level Functions**: `561`
+- **Total Class Methods**: `2118`
+- **Total Source Lines**: `52784`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`194` module(s))
+- **Indexed**: python (`195` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `286` lines (`6260` bytes)
+**Size**: `288` lines (`6306` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -1420,7 +1420,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `148` lines (`5589` bytes)
+**Size**: `149` lines (`5629` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1616,18 +1616,26 @@
 ### [`keystone/root_motion.py`](keystone/root_motion.py)
 > *Root motion: extract a root node's delta and bake a pose in place.*
 
-**Size**: `151` lines (`6126` bytes)
+**Size**: `281` lines (`11162` bytes)
 
 **Classes:**
 - `class RootMotion` - *A root delta between two clip times: world-space position and rotation.*
   - Method `.__post_init__()`
   - Property `.yaw` - *Rotation around Y in radians, in the engine's right-handed frame.*
+- `class RootMotionPlayer` - *Advance one clip and return its pose and consumed root delta.*
+  - Method `.__init__(clip, node_id, *, speed, loop, planar)`
+  - Property `.duration`
+  - Property `.done`
+  - Method `.reset()` - *Return the clip clock to the start.*
+  - Method `.advance(dt)` - *Advance the clip and return its pose at the new time plus the delta.*
+  - Method `.report(motion)` - *Return a JSON-safe summary of the player and one delta.*
 
 **Functions:**
 - `def _finite(label, value)`
 - `def extract_root_motion(clip, node_id, start, end, *, planar)` - *Return the root delta between ``start`` and ``end`` clip times.*
 - `def in_place_pose(pose, node_id, reference)` - *Return a copy of ``pose`` with ``node_id`` reset to a reference transform.*
 - `def root_motion_report(motion)` - *Return a JSON-safe summary of one root delta.*
+- `def _compose(first, second)` - *Compose two deltas: apply ``first``, then ``second``.*
 
 ---
 
@@ -4124,6 +4132,31 @@
 
 **Functions:**
 - `def _clip(positions, rotations)`
+
+---
+
+### [`tests/test_root_motion_player.py`](tests/test_root_motion_player.py)
+> *Tests for the root-motion player.*
+
+**Size**: `139` lines (`5427` bytes)
+
+**Classes:**
+- `class RootMotionPlayerTest`
+  - Method `.test_each_step_returns_its_own_delta()`
+  - Method `.test_a_loop_wrap_composes_the_tail_and_head()`
+  - Method `.test_multiple_wraps_count_full_cycles()`
+  - Method `.test_rotation_wraps_compose()`
+  - Method `.test_non_looping_playback_clamps_and_reports_done()`
+  - Method `.test_planar_mode_drops_vertical_motion()`
+  - Method `.test_speed_scales_clip_time()`
+  - Method `.test_reset_returns_to_the_start()`
+  - Method `.test_validation()`
+  - Method `.test_report_is_json_safe()`
+  - Method `.test_describe_advertises_the_player()`
+
+**Functions:**
+- `def _walk()`
+- `def _turn()`
 
 ---
 

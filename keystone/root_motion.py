@@ -21,7 +21,13 @@ from keystone.animation import AnimationClip
 from keystone.math3d import Quat, Vec3
 from keystone.scene import Transform
 
-__all__ = ["RootMotion", "extract_root_motion", "in_place_pose", "root_motion_report"]
+__all__ = [
+    "RootMotion",
+    "RootMotionPlayer",
+    "extract_root_motion",
+    "in_place_pose",
+    "root_motion_report",
+]
 
 
 def _finite(label: str, value: object) -> float:
@@ -149,3 +155,127 @@ def root_motion_report(motion: RootMotion) -> dict:
         ],
         "yaw": round(motion.yaw, 6),
     }
+
+def _compose(first: RootMotion, second: RootMotion) -> RootMotion:
+    """Compose two deltas: apply ``first``, then ``second``."""
+    return RootMotion(
+        first.position + second.position,
+        (second.rotation * first.rotation).normalized(),
+    )
+
+
+class RootMotionPlayer:
+    """Advance one clip and return its pose and consumed root delta.
+
+    Unlike `AnimationController`, this player does not blend or manage state
+    machines; it owns a single clip's clock and answers the question a
+    root-motion game asks every frame: how much did the root move while the
+    clip advanced? Looping wraps compose the tail of the old cycle with the
+    head of the new one, so a walk cycle reports continuous motion across the
+    seam. Playback is forward-only and speed is positive.
+    """
+
+    def __init__(
+        self,
+        clip: AnimationClip,
+        node_id: str,
+        *,
+        speed: float = 1.0,
+        loop: bool = True,
+        planar: bool = True,
+    ) -> None:
+        if not isinstance(clip, AnimationClip):
+            raise TypeError("root motion player needs an AnimationClip")
+        if not isinstance(node_id, str):
+            raise TypeError("root motion player node id must be a string")
+        if not node_id.strip():
+            raise ValueError("root motion player node id must be a non-blank string")
+        if node_id not in clip.node_ids():
+            raise ValueError(f"clip {clip.name!r} does not animate {node_id!r}")
+        rate = _finite("root motion player speed", speed)
+        if rate <= 0.0:
+            raise ValueError("root motion player speed must be positive")
+        if not isinstance(loop, bool):
+            raise TypeError("root motion player loop must be a boolean")
+        if not isinstance(planar, bool):
+            raise TypeError("root motion player planar must be a boolean")
+        if clip.duration() <= 0.0:
+            raise ValueError("root motion player clip must have positive duration")
+        self.clip = clip
+        self.node_id = node_id
+        self.speed = rate
+        self.loop = loop
+        self.planar = planar
+        self.time = 0.0
+        self.looped = False
+
+    @property
+    def duration(self) -> float:
+        return self.clip.duration()
+
+    @property
+    def done(self) -> bool:
+        return not self.loop and self.time >= self.duration - 1e-12
+
+    def reset(self) -> None:
+        """Return the clip clock to the start."""
+        self.time = 0.0
+        self.looped = False
+
+    def advance(self, dt: float) -> tuple[dict[str, Transform], RootMotion]:
+        """Advance the clip and return its pose at the new time plus the delta."""
+        seconds = _finite("root motion player dt", dt)
+        if seconds < 0.0:
+            raise ValueError("root motion player dt must be non-negative")
+        distance = seconds * self.speed
+        if distance / max(self.duration, 1e-12) > 1000.0:
+            raise ValueError("root motion player dt spans too many loops")
+        self.looped = False
+        if not self.loop:
+            begin = min(self.time, self.duration)
+            finish = min(self.time + distance, self.duration)
+            self.time = finish
+            motion = (
+                extract_root_motion(self.clip, self.node_id, begin, finish, planar=self.planar)
+                if finish > begin
+                else RootMotion(Vec3(), Quat())
+            )
+            return self.clip.sample(finish), motion
+        phase = self.time % self.duration
+        end_absolute = phase + distance
+        cycles = int(end_absolute // self.duration)
+        end = end_absolute - cycles * self.duration
+        if cycles == 0:
+            motion = extract_root_motion(
+                self.clip, self.node_id, phase, end, planar=self.planar
+            )
+        else:
+            motion = extract_root_motion(
+                self.clip, self.node_id, phase, self.duration, planar=self.planar
+            )
+            cycle = extract_root_motion(
+                self.clip, self.node_id, 0.0, self.duration, planar=self.planar
+            )
+            for _ in range(cycles - 1):
+                motion = _compose(motion, cycle)
+            motion = _compose(
+                motion,
+                extract_root_motion(self.clip, self.node_id, 0.0, end, planar=self.planar),
+            )
+            self.looped = True
+        self.time += distance
+        return self.clip.sample(end), motion
+
+    def report(self, motion: RootMotion) -> dict:
+        """Return a JSON-safe summary of the player and one delta."""
+        if not isinstance(motion, RootMotion):
+            raise TypeError("root motion player report needs a RootMotion")
+        return {
+            "schema": 1,
+            "clip": self.clip.name,
+            "node": self.node_id,
+            "time": round(self.time % self.duration if self.loop else self.time, 6),
+            "looped": self.looped,
+            "done": self.done,
+            "motion": root_motion_report(motion),
+        }

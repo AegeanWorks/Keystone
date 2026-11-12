@@ -112,6 +112,7 @@ from keystone.prefab import Prefab
 from keystone.rng import RandomStream, RandomStreamState
 from keystone.root_motion import (
     RootMotion,
+    RootMotionPlayer,
     extract_root_motion,
     in_place_pose,
     root_motion_report,
@@ -191,6 +192,7 @@ __all__ = [
     "RandomStream",
     "RandomStreamState",
     "RootMotion",
+    "RootMotionPlayer",
     "Route",
     "Scene",
     "SceneGroup",

@@ -207,6 +207,7 @@ keystone/
 │   ├── test_replay.py        <- command log and hashes
 │   ├── test_rng.py           <- reference vectors, forks and snapshots
 │   ├── test_root_motion.py   <- deltas, yaw and in-place poses
+│   ├── test_root_motion_player.py <- clip deltas across loop wraps
 │   ├── test_serialization.py <- atomic JSON persistence
 │   ├── test_component_codec.py <- typed component JSON codec
 │   ├── test_library_trash.py <- recoverable library deletes

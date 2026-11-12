@@ -234,6 +234,10 @@ changes that do not bump the release number yet.
   live machine parameters, round-trips through `.kstate` documents and
   reports axes and parameters. A state may use one space kind only.
   `--describe` reports `capabilities.animation_state_blend_2d`.
+- `RootMotionPlayer` advances one clip and returns its pose plus the root
+  delta consumed, composing loop wraps and full cycles, clamping non-loop
+  playback and reporting clip, node, time, looped and done.
+  `--describe` reports `capabilities.root_motion_player`.
 - `keystone.root_motion` adds `RootMotion`, `extract_root_motion`,
   `in_place_pose` and `root_motion_report`: a clip's root delta between two
   times (planar or full), its yaw, and a copy of a pose with the root reset
