@@ -221,7 +221,7 @@ scene.add(Node("level", mesh=tiles.mesh(), material=Material()))
 walls = tiles.colliders()  # feed to physics, nav_authoring or picking
 ```
 
-`TileMap` is an immutable grid with one wall height. `colliders()` returns one exact `AABB` per solid cell (x-major order) for `raycast`, `CharacterController` or `grid_from_boxes`; `mesh()` merges a floor quad per free cell and a wall box per solid cell into one `MeshData`, colored by the map's floor and wall colors; `with_cell()` returns a modified copy. `to_dict()`/`from_dict()` persist a schema-1 document, and `tilemap_report()` emits counts and world bounds for agent logs. `--describe` reports `capabilities.tilemap`.
+`TileMap` is an immutable grid with one wall height. The editor's `inspect_tilemap` action reports a document's counts and bounds, and `build_tilemap` applies its merged mesh to a scene node through undo history. `colliders()` returns one exact `AABB` per solid cell (x-major order) for `raycast`, `CharacterController` or `grid_from_boxes`; `mesh()` merges a floor quad per free cell and a wall box per solid cell into one `MeshData`, colored by the map's floor and wall colors; `with_cell()` returns a modified copy. `to_dict()`/`from_dict()` persist a schema-1 document, and `tilemap_report()` emits counts and world bounds for agent logs. `--describe` reports `capabilities.tilemap`.
 
 ### Scene picking
 
@@ -374,7 +374,7 @@ The dashboard can inspect the game contract, run the same action scripts as `--s
 | `/api/describe` | `GET` | the same discovery payload as `--describe`, including `capabilities.web` |
 | `/api/scene` | `GET` | scene document schema 2: camera, lights, atmosphere, node identity, world matrices, shared meshes and RGBA textures |
 | `/api/inspector` | `GET` | batch plan, merge, audio/anim/particles, assets |
-| `/api/editor` | `GET/POST` | scene editor document and actions: hierarchy, selection, transforms, prefabs, assets, animation and 1D/2D blend-space previews |
+| `/api/editor` | `GET/POST` | scene editor document and actions: hierarchy, selection, transforms, prefabs, assets, animation and 1D/2D blend-space previews, and tile-map inspect/build |
 | `/api/simulate` | `POST` | the same deterministic result as `--simulate`; body `{"frames": 60, "actions": [...], "step": 0.0167, "trace": false}` |
 | `/api` | `GET` | endpoint and schema index |
 

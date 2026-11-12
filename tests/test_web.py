@@ -5097,6 +5097,46 @@ class WebServerTest(unittest.TestCase):
             )
         self.assertEqual(caught.exception.status, 400)
 
+    def test_editor_tilemap_inspect_and_build(self):
+        from keystone.schema import EDITOR_ACTIONS
+
+        self.assertIn("inspect_tilemap", EDITOR_ACTIONS)
+        self.assertIn("build_tilemap", EDITOR_ACTIONS)
+        session = GameSession(CubeDemo())
+        document = {
+            "schema": 1,
+            "width": 3,
+            "height": 2,
+            "solid": [[1, 0]],
+            "wall_height": 2.0,
+        }
+        inspected = session.editor_action(
+            {"action": "inspect_tilemap", "tilemap": document}
+        )
+        self.assertEqual(inspected["tilemap"]["solid"], 1)
+        self.assertEqual(inspected["tilemap"]["free"], 5)
+        self.assertEqual(inspected["tilemap"]["bounds"]["max"], [3.0, 2.0, 2.0])
+
+        before = inspected["history"]["undo"]
+        built = session.editor_action(
+            {"action": "build_tilemap", "node": "cube-0", "tilemap": document}
+        )
+        result = built["tilemap_build"]
+        self.assertEqual(result["node"], "cube-0")
+        self.assertEqual(result["colliders"], 1)
+        self.assertEqual(result["vertices"], 5 * 4 + 24)
+        self.assertEqual(result["triangles"], 5 * 2 + 12)
+        self.assertEqual(built["history"]["undo"], before + 1)
+
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action(
+                {"action": "build_tilemap", "node": "missing", "tilemap": document}
+            )
+        self.assertEqual(caught.exception.status, 400)
+        with self.assertRaises(WebProblem) as caught:
+            session.editor_action({"action": "inspect_tilemap", "tilemap": {"schema": 1}})
+        self.assertEqual(caught.exception.status, 400)
+
     def test_editor_preview_blend_space2d(self):
         from keystone.schema import EDITOR_ACTIONS
 

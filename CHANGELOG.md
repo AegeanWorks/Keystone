@@ -174,6 +174,11 @@ changes that do not bump the release number yet.
   word boundaries, preserve explicit newlines and blank lines, truncate an
   overlong single word and return the height used. `--describe` reports
   `capabilities.ui_text_wrap`.
+- The editor gains `inspect_tilemap` and `build_tilemap`: the first reports
+  a tile-map document's counts and bounds, the second applies the merged
+  mesh to a scene node through undo history, with schema examples and
+  document fields. The editor document exposes `tilemap` and
+  `tilemap_build`.
 - `keystone.tilemap` adds an immutable `TileMap` with exact `AABB`
   colliders per solid cell, a merged floor-and-wall `MeshData` in one draw,
   `with_cell()` copies, schema-1 documents and a JSON-safe

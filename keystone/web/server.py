@@ -41,6 +41,7 @@ from keystone.scene_diff import diff_scene_documents
 from keystone.scene_library import SceneLibrary
 from keystone.scene_snapshot import restore_scene, scene_to_dict
 from keystone.state_machine_library import StateMachineLibrary
+from keystone.tilemap import TileMap, tilemap_report
 from keystone.web.editor import (
     EDITOR_ACTIONS,
     EditorHistory,
@@ -308,6 +309,8 @@ class GameSession:
         self.last_animation_preview: dict[str, object] | None = None
         self.last_blend_space_preview: dict[str, object] | None = None
         self.last_blend_space2d_preview: dict[str, object] | None = None
+        self.last_tilemap: dict[str, object] | None = None
+        self.last_tilemap_build: dict[str, object] | None = None
         self.last_animation_key: dict[str, object] | None = None
         self.last_validation: dict[str, object] | None = None
         self.last_import: dict[str, object] | None = None
@@ -892,6 +895,8 @@ class GameSession:
         document["animation_preview"] = self.last_animation_preview
         document["blend_space_preview"] = self.last_blend_space_preview
         document["blend_space2d_preview"] = self.last_blend_space2d_preview
+        document["tilemap"] = self.last_tilemap
+        document["tilemap_build"] = self.last_tilemap_build
         document["animation_key"] = self.last_animation_key
         document["validation"] = self.last_validation
         document["imported_asset"] = self.last_import
@@ -1005,6 +1010,8 @@ class GameSession:
         self.last_animation_preview = None
         self.last_blend_space_preview = None
         self.last_blend_space2d_preview = None
+        self.last_tilemap = None
+        self.last_tilemap_build = None
         self.last_animation_key = None
         self.last_validation = None
         self.last_import = None
@@ -1466,6 +1473,43 @@ class GameSession:
                         "record": record,
                         "report": space2d.report(),
                     }
+                elif action in ("inspect_tilemap", "build_tilemap"):
+                    document = payload.get("tilemap")
+                    if not isinstance(document, dict):
+                        raise TypeError(
+                            f"{action} tilemap must be a JSON object"
+                        )
+                    tiles = TileMap.from_dict(document)
+                    if action == "inspect_tilemap":
+                        self.last_tilemap = tilemap_report(tiles)
+                    else:
+                        mesh_payload = payload.get("node")
+                        if not isinstance(mesh_payload, str) or not mesh_payload.strip():
+                            raise ValueError(
+                                "build_tilemap node must be a non-blank string"
+                            )
+                        target = next(
+                            (
+                                node
+                                for node in scene.traverse()
+                                if node.id == mesh_payload or node.name == mesh_payload
+                            ),
+                            None,
+                        )
+                        if target is None:
+                            raise ValueError(f"no scene node matches {mesh_payload!r}")
+                        mesh = tiles.mesh()
+                        self._apply_history(
+                            scene,
+                            lambda: setattr(target, "mesh", mesh),
+                        )
+                        self.last_tilemap_build = {
+                            "node": target.id,
+                            "vertices": len(mesh.positions),
+                            "triangles": mesh.triangle_count(),
+                            "colliders": len(tiles.colliders()),
+                            "report": tilemap_report(tiles),
+                        }
                 elif action == "save_animation":
                     if self.animation_library is None:
                         raise ValueError("no animation library is configured")

@@ -148,6 +148,25 @@ EDITOR_EXAMPLES = {
         "parameter": 0.5,
         "time": 0.0,
     },
+    "inspect_tilemap": {
+        "action": "inspect_tilemap",
+        "tilemap": {
+            "schema": 1,
+            "width": 4,
+            "height": 3,
+            "solid": [[1, 1], [2, 1]],
+        },
+    },
+    "build_tilemap": {
+        "action": "build_tilemap",
+        "node": "cube-0",
+        "tilemap": {
+            "schema": 1,
+            "width": 4,
+            "height": 3,
+            "solid": [[1, 1], [2, 1]],
+        },
+    },
     "preview_blend_space2d": {
         "action": "preview_blend_space2d",
         "blend_space": {
@@ -443,6 +462,10 @@ EDITOR_SCHEMA = {
             "time",
             "record",
         ],
+        "inspect_tilemap": ["tilemap"],
+        "build_tilemap": ["node", "tilemap"],
+        "tilemap": ["width", "height", "tile_size", "wall_height", "solid", "free", "bounds"],
+        "tilemap_build": ["node", "vertices", "triangles", "colliders", "report"],
         "preview_blend_space2d": [
             "blend_space",
             "x",

@@ -32,6 +32,8 @@ EDITOR_ACTIONS = (
     "preview_animation",
     "preview_blend_space",
     "preview_blend_space2d",
+    "inspect_tilemap",
+    "build_tilemap",
     "save_animation",
     "delete_animation",
     "restore_animation",
