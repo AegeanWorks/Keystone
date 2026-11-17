@@ -3,8 +3,8 @@
   "active_task": {
     "task_id": "keystone-camera-path-editor-v1",
     "last_phase": "phase 4",
-    "active_phase": 4,
-    "status": "in_progress",
+    "active_phase": 5,
+    "status": "completed",
     "updated_at": 1794948960.9937065,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
@@ -14,27 +14,12 @@
         "name": "keystone",
         "path": "projects/keystone"
       }
-    ]
+    ],
+    "completed_at": 1794949024.19865,
+    "completed_head": "f2bf541239342739968099dc02588eea0c882100",
+    "completed_tree": "3cd88c9e2494016345bae3cabf5cb0c5d53cc990"
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-ui-shapes-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan (impact-assessed): add Canvas.line and Canvas.frame as clipped pixel primitives that reuse the quad stream, with a square brush, validation and a ui_shapes capability",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794478459.9351187,
-      "timestamp_str": "2026-11-12 13:14:19",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "The HUD could draw rects, text and images but no lines; minimaps, compasses, crosshairs and box outlines required many manual rect calls in game code.",
-        "benefits": "Clipped pixel lines and frames become one call each, preserve draw order, reuse the existing quad stream and match the bitmap display style.",
-        "risks": "contract: two canvas methods and a capability; dependency: none; concurrency: none; state: no schema or renderer change.",
-        "mitigation": "Use integer Bresenham through the clipped _add, cap frame sides by box size, validate coordinates and thickness, pin rasterisation and clipping, and keep the canonical frame unchanged."
-      },
-      "plan_digest": "3735ae35ab7605ec2abd2b61749bc4d188f8465d5518b5e8a8616c113a31e881"
-    },
     {
       "task_id": "keystone-ui-shapes-v1",
       "phase": "phase 4",
@@ -577,6 +562,23 @@
           "path": "projects/keystone"
         }
       ]
+    },
+    {
+      "task_id": "keystone-camera-path-editor-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-camera-path-editor-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794949024.2717211,
+      "timestamp_str": "2026-11-17 23:57:04",
+      "agent": "kilo:goal",
+      "head": "f2bf541239342739968099dc02588eea0c882100",
+      "delivery": {
+        "roots": [
+          "."
+        ],
+        "forced": false
+      }
     }
   ]
 }
