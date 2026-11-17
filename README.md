@@ -246,7 +246,7 @@ from keystone.scene import PostSettings
 scene.post = PostSettings(enabled=True, tone="aces", anti_alias="fxaa")
 ```
 
-The post grade applies `scene.post.exposure` and `scene.post.vignette` after bloom. `tone` optionally maps the linear colour through Reinhard (`c / (1 + c)`) or the ACES approximation before the grade, which keeps bright emissive surfaces from clipping to white. The default is `none`, so existing frames are unchanged. Defaults are 1.12 and 0.28, so existing frames stay unchanged. `anti_alias` accepts `none` or `fxaa`; FXAA runs as a full-screen pass over the rendered frame and leaves a uniform frame byte-identical. `scene.post` round-trips through snapshots, the editor's `set_scene` accepts `environment.tone`, `environment.exposure`, `environment.vignette` and `environment.anti_alias` (editor schema 62, scene export schema 5), and renderer stats report `post_tone`, `post_exposure`, `post_vignette` and `post_aa`. `--describe` reports `capabilities.post_tonemap`.
+The post grade applies `scene.post.exposure` and `scene.post.vignette` after bloom. `tone` optionally maps the linear colour through Reinhard (`c / (1 + c)`) or the ACES approximation before the grade, which keeps bright emissive surfaces from clipping to white. The default is `none`, so existing frames are unchanged. Defaults are 1.12 and 0.28, so existing frames stay unchanged. `anti_alias` accepts `none` or `fxaa`; FXAA runs as a full-screen pass over the rendered frame and leaves a uniform frame byte-identical. `scene.post` round-trips through snapshots, the editor's `set_scene` accepts `environment.tone`, `environment.exposure`, `environment.vignette` and `environment.anti_alias` (editor schema 63, scene export schema 5), and renderer stats report `post_tone`, `post_exposure`, `post_vignette` and `post_aa`. `--describe` reports `capabilities.post_tonemap`.
 
 ### Tile maps
 
@@ -426,11 +426,11 @@ The dashboard can inspect the game contract, run the same action scripts as `--s
 | `/api/describe` | `GET` | the same discovery payload as `--describe`, including `capabilities.web` |
 | `/api/scene` | `GET` | scene document schema 2: camera, lights, atmosphere, node identity, world matrices, shared meshes and RGBA textures |
 | `/api/inspector` | `GET` | batch plan, merge, audio/anim/particles, assets |
-| `/api/editor` | `GET/POST` | scene editor document and actions: hierarchy, selection, transforms, prefabs, assets, animation and 1D/2D blend-space previews, tile-map inspect/build, and nav-grid inspect/bake/route/trace |
+| `/api/editor` | `GET/POST` | scene editor document and actions: hierarchy, selection, transforms, prefabs, assets, animation and 1D/2D blend-space previews, camera path save/delete/restore/preview, tile-map inspect/build, and nav-grid inspect/bake/route/trace |
 | `/api/simulate` | `POST` | the same deterministic result as `--simulate`; body `{"frames": 60, "actions": [...], "step": 0.0167, "trace": false}` |
 | `/api` | `GET` | endpoint and schema index |
 
-`POST /api/editor` takes `{"action": ..., ...}`; `preview_blend_space` and `preview_blend_space2d` apply a sampled pose from a 1D or 2D space and record it in editor history unless `record` is false.
+`POST /api/editor` takes `{"action": ..., ...}`; `preview_blend_space` and `preview_blend_space2d` apply a sampled pose from a 1D or 2D space and record it in editor history unless `record` is false. Camera path actions manage `.kpath` files when `--serve` is given a camera path directory (default for `--project`: `DIR/paths`); `preview_camera_path` samples a library or inline path without touching the scene or history.
 
 The API sends CORS headers so local AI clients can call it directly. Keep the default loopback host; pass `--host 0.0.0.0` for deliberate exposure. The server never opens a GL context.
 

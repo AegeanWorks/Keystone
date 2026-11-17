@@ -315,6 +315,37 @@ EDITOR_EXAMPLES = {
         "step": 0.0167,
         "record": True,
     },
+    "save_camera_path": {
+        "action": "save_camera_path",
+        "name": "intro",
+        "path": {
+            "schema": 1,
+            "loop": False,
+            "keys": [
+                {
+                    "time": 0.0,
+                    "position": [0.0, 1.8, 6.0],
+                    "rotation": [0.0, 0.0, 0.0, 1.0],
+                },
+                {
+                    "time": 2.0,
+                    "position": [2.0, 2.5, 3.0],
+                    "rotation": [0.0, 0.0, 0.0, 1.0],
+                    "fov_y": 50.0,
+                },
+            ],
+        },
+    },
+    "delete_camera_path": {"action": "delete_camera_path", "name": "intro"},
+    "restore_camera_path": {
+        "action": "restore_camera_path",
+        "trash": "intro.deadbeef.kpath",
+    },
+    "preview_camera_path": {
+        "action": "preview_camera_path",
+        "name": "intro",
+        "time": 1.0,
+    },
     "save_material": {
         "action": "save_material",
         "name": "gold",
@@ -554,6 +585,10 @@ EDITOR_SCHEMA = {
             "step",
             "record",
         ],
+        "save_camera_path": ["name", "path"],
+        "delete_camera_path": ["name"],
+        "restore_camera_path": ["trash"],
+        "preview_camera_path": ["name", "path", "time"],
         "state_machine_entry": [
             "name",
             "states",
@@ -733,6 +768,7 @@ EDITOR_SCHEMA = {
         "schema 57 adds node lock state plus set_nodes_locked; locked nodes and descendants reject transforms, deletes, reparenting, asset/component edits and prefab revert/apply",
         "schema 58 adds rename_state_machine and duplicate_state_machine for .kstate library entries",
         "schema 59 adds preview_blend_space for inline 1D blend-space previews and export",
+        "schema 63 adds the .kpath camera path library with save/delete/restore actions and a non-mutating preview_camera_path pose sample",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

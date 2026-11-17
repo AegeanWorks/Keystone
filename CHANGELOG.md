@@ -194,6 +194,13 @@ changes that do not bump the release number yet.
   `CameraPathLibrary` stores `.kpath` files with safe names, atomic writes,
   rename, duplicate, per-entry error reporting and recoverable trash deletes.
   `--describe` reports `capabilities.camera_path_library`.
+- The editor gains `save_camera_path`, `delete_camera_path`,
+  `restore_camera_path` and `preview_camera_path` (editor schema 63) backed by
+  a `--camera-path-dir` library directory (default for `--project`:
+  `DIR/paths`). The editor document lists `camera_paths`,
+  `trash.camera_paths`, `camera_path_preview` and `workspace.camera_path_dir`;
+  preview accepts a library name or an inline document, samples a pose and
+  never touches the scene or undo history.
 - `keystone.camera_shake` adds `CameraShake`, `ShakeOffset` and
   `shake_report`: trauma accumulation, linear decay, seeded sine noise and a
   deterministic position/yaw/pitch offset for game feel.

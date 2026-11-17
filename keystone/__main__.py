@@ -116,6 +116,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--prefab-dir", type=Path, default=None, metavar="DIR", help="persist editor prefabs as .kprefab files (default for --project: DIR/prefabs)")
     parser.add_argument("--scene-dir", type=Path, default=None, metavar="DIR", help="persist editor scenes as .kscene files (default for --project: DIR/scenes)")
     parser.add_argument("--animation-dir", type=Path, default=None, metavar="DIR", help="persist editor animation clips as .kanim files (default for --project: DIR/animations)")
+    parser.add_argument("--camera-path-dir", type=Path, default=None, metavar="DIR", help="persist editor camera paths as .kpath files (default for --project: DIR/paths)")
     parser.add_argument("--material-dir", type=Path, default=None, metavar="DIR", help="persist editor materials as .kmaterial files (default for --project: DIR/materials)")
     parser.add_argument("--scene", default=None, metavar="NAME", help="open a saved scene from the editor library at startup (requires --serve)")
     parser.add_argument("--out", type=Path, default=None, help="PNG for rendering; JSON report for --simulate")
@@ -252,11 +253,12 @@ def main(argv: list[str] | None = None) -> int:
         or args.port is not None
         or args.prefab_dir is not None
         or args.animation_dir is not None
+        or args.camera_path_dir is not None
         or args.material_dir is not None
     ) and not args.serve:
         parser.error(
-            "--host, --port, --prefab-dir, --animation-dir and --material-dir "
-            "require --serve"
+            "--host, --port, --prefab-dir, --animation-dir, --camera-path-dir "
+            "and --material-dir require --serve"
         )
     if args.scene_dir is not None and not (args.serve or args.scene is not None):
         parser.error("--scene-dir requires --serve or --scene")
@@ -404,6 +406,7 @@ def main(argv: list[str] | None = None) -> int:
         prefab_dir = args.prefab_dir
         scene_dir = args.scene_dir
         animation_dir = args.animation_dir
+        camera_path_dir = args.camera_path_dir
         material_dir = args.material_dir
         if project_context is not None:
             if prefab_dir is None:
@@ -412,6 +415,8 @@ def main(argv: list[str] | None = None) -> int:
                 scene_dir = project_context.directory / "scenes"
             if animation_dir is None:
                 animation_dir = project_context.directory / "animations"
+            if camera_path_dir is None:
+                camera_path_dir = project_context.directory / "paths"
             if material_dir is None:
                 material_dir = project_context.directory / "materials"
         def make_game():
@@ -455,6 +460,7 @@ def main(argv: list[str] | None = None) -> int:
                 prefab_dir=prefab_dir,
                 scene_dir=scene_dir,
                 animation_dir=animation_dir,
+                camera_path_dir=camera_path_dir,
                 material_dir=material_dir,
                 initial_scene=selected_scene,
                 project_dir=(

@@ -120,6 +120,26 @@ def _state_machine_document():
     ).to_dict()
 
 
+def _camera_path_document(*, loop: bool = False):
+    keys = [
+        {
+            "time": 0.0,
+            "position": [0.0, 1.0, 6.0],
+            "rotation": [0.0, 0.0, 0.0, 1.0],
+        },
+        {
+            "time": 2.0,
+            "position": [2.0, 1.0, 4.0],
+            "rotation": [0.0, 0.0, 0.0, 1.0],
+            "fov_y": 50.0,
+        },
+    ]
+    document = {"schema": 1, "loop": loop, "keys": keys}
+    if loop:
+        document["duration"] = 3.0
+    return document
+
+
 def _blend_space2d_document():
     def clip(name, x):
         return AnimationClip(
@@ -1731,6 +1751,7 @@ class WebServerTest(unittest.TestCase):
                     "prefab_dir": prefab_dir.as_posix(),
                     "scene_dir": None,
                     "animation_dir": None,
+                    "camera_path_dir": None,
                     "material_dir": None,
                 },
             )
@@ -5048,6 +5069,137 @@ class WebServerTest(unittest.TestCase):
                 )
             self.assertEqual(caught.exception.status, 400)
             self.assertIn("already exists", caught.exception.why)
+
+    def test_editor_camera_path_library_and_preview(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path_dir = Path(directory) / "paths"
+            session = GameSession(CubeDemo(), camera_path_dir=path_dir)
+            document = _camera_path_document()
+            saved = session.editor_action(
+                {
+                    "action": "save_camera_path",
+                    "name": "intro",
+                    "path": document,
+                }
+            )
+            self.assertTrue((path_dir / "intro.kpath").is_file())
+            entry = next(
+                item for item in saved["camera_paths"] if item["name"] == "intro"
+            )
+            self.assertEqual(entry["keys"], 2)
+            self.assertEqual(entry["duration"], 2.0)
+            self.assertFalse(entry["loop"])
+            self.assertEqual(saved["workspace"]["camera_path_dir"], path_dir.as_posix())
+
+            previewed = session.editor_action(
+                {"action": "preview_camera_path", "name": "intro", "time": 1.0}
+            )
+            preview = previewed["camera_path_preview"]
+            self.assertEqual(preview["name"], "intro")
+            self.assertEqual(preview["source"], "library")
+            self.assertEqual(preview["time"], 1.0)
+            self.assertEqual(preview["pose"]["position"], [1.0, 1.0, 5.0])
+            self.assertEqual(preview["pose"]["fov_y"], 55.0)
+            self.assertEqual(preview["path"]["keys"][1]["fov_y"], 50.0)
+            self.assertEqual(previewed["history"]["undo"], 0)
+
+            inline = session.editor_action(
+                {
+                    "action": "preview_camera_path",
+                    "path": _camera_path_document(loop=True),
+                    "time": 3.0,
+                }
+            )
+            inline_preview = inline["camera_path_preview"]
+            self.assertIsNone(inline_preview["name"])
+            self.assertEqual(inline_preview["source"], "inline")
+            self.assertEqual(inline_preview["pose"]["position"], [0.0, 1.0, 6.0])
+            self.assertTrue(inline_preview["path"]["loop"])
+
+            deleted = session.editor_action(
+                {"action": "delete_camera_path", "name": "intro"}
+            )
+            self.assertEqual(deleted["camera_paths"], [])
+            trash = deleted["trash"]["camera_paths"]
+            self.assertEqual(trash[0]["name"], "intro")
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "preview_camera_path", "name": "intro", "time": 0.0}
+                )
+            self.assertEqual(caught.exception.status, 404)
+            restored = session.editor_action(
+                {"action": "restore_camera_path", "trash": trash[0]["trash"]}
+            )
+            self.assertIn(
+                "intro", {item["name"] for item in restored["camera_paths"]}
+            )
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "restore_camera_path",
+                        "trash": trash[0]["trash"],
+                    }
+                )
+            self.assertEqual(caught.exception.status, 404)
+
+    def test_editor_camera_path_validation_and_collision(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path_dir = Path(directory) / "paths"
+            session = GameSession(CubeDemo(), camera_path_dir=path_dir)
+            document = _camera_path_document()
+            session.editor_action(
+                {"action": "save_camera_path", "name": "walk", "path": document}
+            )
+            deleted = session.editor_action(
+                {"action": "delete_camera_path", "name": "walk"}
+            )
+            trash = deleted["trash"]["camera_paths"][0]["trash"]
+            session.editor_action(
+                {"action": "save_camera_path", "name": "walk", "path": document}
+            )
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "restore_camera_path", "trash": trash}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("already exists", caught.exception.why)
+
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "save_camera_path", "name": "bad", "path": {"keys": []}}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "save_camera_path", "name": "bad", "path": "nope"}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "preview_camera_path", "name": "walk", "path": document}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "preview_camera_path", "name": "walk", "time": -1.0}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "preview_camera_path", "name": "walk", "time": True}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action({"action": "delete_camera_path", "name": "absent"})
+            self.assertEqual(caught.exception.status, 404)
+
+            standalone = GameSession(CubeDemo())
+            with self.assertRaises(WebProblem) as caught:
+                standalone.editor_action(
+                    {"action": "save_camera_path", "name": "walk", "path": document}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("--camera-path-dir", caught.exception.fix)
 
     def test_editor_preview_blend_space(self):
         session = GameSession(CubeDemo())

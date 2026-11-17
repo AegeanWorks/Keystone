@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `210`
 - **Total Classes**: `363`
-- **Total Top-Level Functions**: `590`
-- **Total Class Methods**: `2287`
-- **Total Source Lines**: `55713`
+- **Total Top-Level Functions**: `591`
+- **Total Class Methods**: `2289`
+- **Total Source Lines**: `56042`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`210` module(s))
@@ -35,7 +35,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `747` lines (`39601` bytes)
+**Size**: `753` lines (`40042` bytes)
 
 **Functions:**
 - `def _size(text)`
@@ -1958,7 +1958,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `98` lines (`2179` bytes)
+**Size**: `102` lines (`2283` bytes)
 
 ---
 
@@ -2387,20 +2387,20 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `760` lines (`30574` bytes)
+**Size**: `796` lines (`31813` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `3309` lines (`149919` bytes)
+**Size**: `3440` lines (`156058` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
   - Method `.__init__(status, why, fix)`
 - `class GameSession` - *One in-memory game guarded by a lock for concurrent HTTP requests.*
-  - Method `.__init__(game, prefab_dir, scene_dir, animation_dir, material_dir, initial_scene, project_dir)`
+  - Method `.__init__(game, prefab_dir, scene_dir, animation_dir, camera_path_dir, material_dir, initial_scene, project_dir)`
   - Property `.name`
   - Property `.selected_ids`
   - Method `.selected_ids(value)`
@@ -2461,8 +2461,8 @@
 - `def _copy_scene_settings(source, target)` - *Copy camera and environment settings without copying scene nodes.*
 - `def _enabled(value)`
 - `def _action_fix(message)` - *Turn one editor-action failure into the fix that actually applies.*
-- `def create_server(game, host, port, prefab_dir, scene_dir, animation_dir, material_dir, initial_scene, project_dir)` - *Create a bound server; port 0 asks the OS for a free port.*
-- `def serve(game, host, port, prefab_dir, scene_dir, animation_dir, material_dir, initial_scene, project_dir)` - *Run the local console until interrupted.*
+- `def create_server(game, host, port, prefab_dir, scene_dir, animation_dir, camera_path_dir, material_dir, initial_scene, project_dir)` - *Create a bound server; port 0 asks the OS for a free port.*
+- `def serve(game, host, port, prefab_dir, scene_dir, animation_dir, camera_path_dir, material_dir, initial_scene, project_dir)` - *Run the local console until interrupted.*
 
 ---
 
@@ -5181,7 +5181,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `6500` lines (`265419` bytes)
+**Size**: `6652` lines (`272140` bytes)
 
 **Classes:**
 - `class Health`
@@ -5291,6 +5291,8 @@
   - Method `.test_editor_state_machine_library_and_preview()`
   - Method `.test_editor_state_machine_rename_and_duplicate()`
   - Method `.test_editor_state_machine_restore_collision_is_400()`
+  - Method `.test_editor_camera_path_library_and_preview()`
+  - Method `.test_editor_camera_path_validation_and_collision()`
   - Method `.test_editor_preview_blend_space()`
   - Method `.test_editor_trace_navgrid()`
   - Method `.test_editor_route_navgrid()`
@@ -5315,6 +5317,7 @@
 **Functions:**
 - `def _triangle_gltf()`
 - `def _state_machine_document()`
+- `def _camera_path_document(*, loop)`
 - `def _blend_space2d_document()`
 - `def _blend_space_document()`
 

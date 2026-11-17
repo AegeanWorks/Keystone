@@ -18,6 +18,11 @@ from keystone.animation_blend import BlendSpace1D, BlendSpace2D
 from keystone.animation_library import AnimationLibrary
 from keystone.animation_state import AnimationStateMachine
 from keystone.assets import AssetRegistry
+from keystone.camera_path import (
+    camera_path_from_dict,
+    camera_path_report,
+)
+from keystone.camera_path_library import CameraPathLibrary
 from keystone.character import CharacterBody, CharacterController
 from keystone.component_codec import validate_component_types
 from keystone.headless import run_simulation
@@ -155,6 +160,9 @@ SCENE_NEUTRAL_ACTIONS = frozenset(
         "duplicate_state_machine",
         "delete_state_machine",
         "restore_state_machine",
+        "save_camera_path",
+        "delete_camera_path",
+        "restore_camera_path",
         "save_material",
         "delete_material",
         "restore_material",
@@ -247,6 +255,11 @@ def _action_fix(message: str) -> str:
     was met with "send a valid editor action with finite transform values".
     Each branch here names the thing the caller has to change.
     """
+    if "no camera path library is configured" in message:
+        return (
+            "pass --camera-path-dir to --serve so the camera path library "
+            "exists, then retry"
+        )
     if message.startswith("no ") and "library is configured" in message:
         kind = message.split()[1]
         return (
@@ -280,6 +293,7 @@ class GameSession:
         prefab_dir: str | Path | None = None,
         scene_dir: str | Path | None = None,
         animation_dir: str | Path | None = None,
+        camera_path_dir: str | Path | None = None,
         material_dir: str | Path | None = None,
         initial_scene: str | None = None,
         project_dir: str | Path | None = None,
@@ -361,6 +375,10 @@ class GameSession:
         self.state_machine_library: StateMachineLibrary | None = None
         if animation_dir is not None:
             self.state_machine_library = StateMachineLibrary(animation_dir)
+        self.camera_path_library: CameraPathLibrary | None = None
+        if camera_path_dir is not None:
+            self.camera_path_library = CameraPathLibrary(camera_path_dir)
+        self.last_camera_path_preview: dict | None = None
         self.material_library: MaterialLibrary | None = None
         if material_dir is not None:
             self.material_library = MaterialLibrary(
@@ -968,6 +986,17 @@ class GameSession:
         )
         document["state_machine_preview"] = self.last_state_machine_preview
         document["state_machine_document"] = self.last_state_machine_document
+        document["camera_paths"] = (
+            [entry.describe() for entry in self.camera_path_library.entries()]
+            if self.camera_path_library is not None
+            else []
+        )
+        document["trash"]["camera_paths"] = (
+            self.camera_path_library.trash()
+            if self.camera_path_library is not None
+            else []
+        )
+        document["camera_path_preview"] = self.last_camera_path_preview
         document["trash"]["materials"] = (
             self.material_library.trash()
             if self.material_library is not None
@@ -995,6 +1024,11 @@ class GameSession:
             "animation_dir": (
                 self.animation_library.directory.as_posix()
                 if self.animation_library is not None
+                else None
+            ),
+            "camera_path_dir": (
+                self.camera_path_library.directory.as_posix()
+                if self.camera_path_library is not None
                 else None
             ),
             "material_dir": (
@@ -1956,6 +1990,99 @@ class GameSession:
                         "updated": list(updated),
                         "record": record,
                         "report": machine.report(),
+                    }
+                elif action == "save_camera_path":
+                    if self.camera_path_library is None:
+                        raise ValueError(
+                            "no camera path library is configured"
+                        )
+                    name = payload.get("name")
+                    if not isinstance(name, str) or not name.strip():
+                        raise ValueError(
+                            "camera path name must be a non-blank string"
+                        )
+                    data = payload.get("path")
+                    if not isinstance(data, dict):
+                        raise TypeError(
+                            "save_camera_path path must be a JSON object"
+                        )
+                    camera_path = camera_path_from_dict(data)
+                    self.camera_path_library.save(name, camera_path)
+                elif action == "delete_camera_path":
+                    if self.camera_path_library is None:
+                        raise ValueError(
+                            "no camera path library is configured"
+                        )
+                    self.camera_path_library.delete(payload.get("name"))
+                elif action == "restore_camera_path":
+                    if self.camera_path_library is None:
+                        raise ValueError(
+                            "no camera path library is configured"
+                        )
+                    try:
+                        self.camera_path_library.restore(
+                            payload.get("trash")
+                        )
+                    except FileExistsError as exc:
+                        raise WebProblem(
+                            400,
+                            str(exc),
+                            "rename or delete the live camera path before restoring",
+                        ) from exc
+                elif action == "preview_camera_path":
+                    name = payload.get("name")
+                    path_payload = payload.get("path")
+                    if name is not None and path_payload is not None:
+                        raise ValueError(
+                            "preview_camera_path needs name or path, not both"
+                        )
+                    if name is not None:
+                        if self.camera_path_library is None:
+                            raise ValueError(
+                                "no camera path library is configured"
+                            )
+                        camera_path = self.camera_path_library.load(name)
+                        source = "library"
+                    else:
+                        if not isinstance(path_payload, dict):
+                            raise TypeError(
+                                "preview_camera_path path must be a JSON object"
+                            )
+                        camera_path = camera_path_from_dict(path_payload)
+                        name = None
+                        source = "inline"
+                    time = payload.get("time", 0.0)
+                    if (
+                        isinstance(time, bool)
+                        or not isinstance(time, (int, float))
+                        or not math.isfinite(time)
+                        or time < 0.0
+                    ):
+                        raise ValueError(
+                            "preview_camera_path time must be a non-negative finite number"
+                        )
+                    pose = camera_path.sample(float(time))
+                    self.last_camera_path_preview = {
+                        "name": name,
+                        "source": source,
+                        "time": round(float(time), 6),
+                        "pose": {
+                            "position": [
+                                round(pose.position.x, 6),
+                                round(pose.position.y, 6),
+                                round(pose.position.z, 6),
+                            ],
+                            "rotation": [
+                                round(pose.rotation.x, 6),
+                                round(pose.rotation.y, 6),
+                                round(pose.rotation.z, 6),
+                                round(pose.rotation.w, 6),
+                            ],
+                            "fov_y": round(pose.fov_y, 6),
+                            "yaw": round(pose.yaw, 6),
+                            "pitch": round(pose.pitch, 6),
+                        },
+                        "path": camera_path_report(camera_path),
                     }
                 elif action == "save_material":
                     if self.material_library is None:
@@ -3243,6 +3370,7 @@ def create_server(
     prefab_dir: str | Path | None = None,
     scene_dir: str | Path | None = None,
     animation_dir: str | Path | None = None,
+    camera_path_dir: str | Path | None = None,
     material_dir: str | Path | None = None,
     initial_scene: str | None = None,
     project_dir: str | Path | None = None,
@@ -3257,6 +3385,7 @@ def create_server(
             prefab_dir=prefab_dir,
             scene_dir=scene_dir,
             animation_dir=animation_dir,
+            camera_path_dir=camera_path_dir,
             material_dir=material_dir,
             initial_scene=initial_scene,
             project_dir=project_dir,
@@ -3271,6 +3400,7 @@ def serve(
     prefab_dir: str | Path | None = None,
     scene_dir: str | Path | None = None,
     animation_dir: str | Path | None = None,
+    camera_path_dir: str | Path | None = None,
     material_dir: str | Path | None = None,
     initial_scene: str | None = None,
     project_dir: str | Path | None = None,
@@ -3284,6 +3414,7 @@ def serve(
             prefab_dir=prefab_dir,
             scene_dir=scene_dir,
             animation_dir=animation_dir,
+            camera_path_dir=camera_path_dir,
             material_dir=material_dir,
             initial_scene=initial_scene,
             project_dir=project_dir,
