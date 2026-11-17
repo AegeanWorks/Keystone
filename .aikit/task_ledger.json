@@ -3,8 +3,8 @@
   "active_task": {
     "task_id": "keystone-camera-path-assets-v1",
     "last_phase": "phase 4",
-    "active_phase": 4,
-    "status": "in_progress",
+    "active_phase": 5,
+    "status": "completed",
     "updated_at": 1794945840.6302073,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
@@ -14,27 +14,12 @@
         "name": "keystone",
         "path": "projects/keystone"
       }
-    ]
+    ],
+    "completed_at": 1794945897.053181,
+    "completed_head": "7a1345e450c9b83def6f71d9a435da21b9ea4c72",
+    "completed_tree": "a8bc02a08d70d0748afa4329daa948b891685800"
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-features-doc-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: move the README's 2.6k-character itemised feature list into docs/FEATURES.md, leave a one-paragraph summary with a link, and record the new doc in docs/TREE.md and the CHANGELOG",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794477058.7735405,
-      "timestamp_str": "2026-11-12 12:50:58",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "README sat at 32,379 of the 32,500-character gate, leaving 121 characters, so every further feature note risked the guideline gate.",
-        "benefits": "README keeps onboarding and the four required labels; the full feature list stays available in docs/FEATURES.md and the README drops to about 30.2k with room for future work.",
-        "risks": "contract: documentation locations only; dependency: none; concurrency: none; state: the link must resolve for the knowledge-base check.",
-        "mitigation": "Keep the summary factual, create the doc before linking, add it to docs/TREE.md, and run the full guideline and link gates."
-      },
-      "plan_digest": "bfe14bb473e6010a554b4adcc89cc9256add4c009f7ad80e37996f145edaa8cf"
-    },
     {
       "task_id": "keystone-features-doc-v1",
       "phase": "phase 4",
@@ -557,6 +542,23 @@
           "path": "projects/keystone"
         }
       ]
+    },
+    {
+      "task_id": "keystone-camera-path-assets-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-camera-path-assets-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794945897.4561641,
+      "timestamp_str": "2026-11-17 23:04:57",
+      "agent": "kilo:goal",
+      "head": "7a1345e450c9b83def6f71d9a435da21b9ea4c72",
+      "delivery": {
+        "roots": [
+          "."
+        ],
+        "forced": false
+      }
     }
   ]
 }
