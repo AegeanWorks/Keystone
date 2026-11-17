@@ -10,7 +10,7 @@
 - **Total Classes**: `363`
 - **Total Top-Level Functions**: `591`
 - **Total Class Methods**: `2289`
-- **Total Source Lines**: `56042`
+- **Total Source Lines**: `56114`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`210` module(s))
@@ -1958,7 +1958,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `102` lines (`2283` bytes)
+**Size**: `103` lines (`2307` bytes)
 
 ---
 
@@ -2387,14 +2387,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `796` lines (`31813` bytes)
+**Size**: `799` lines (`32027` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `3440` lines (`156058` bytes)
+**Size**: `3461` lines (`157088` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -5181,7 +5181,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `6652` lines (`272140` bytes)
+**Size**: `6699` lines (`274408` bytes)
 
 **Classes:**
 - `class Health`

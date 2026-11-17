@@ -336,6 +336,7 @@ EDITOR_EXAMPLES = {
             ],
         },
     },
+    "load_camera_path": {"action": "load_camera_path", "name": "intro"},
     "delete_camera_path": {"action": "delete_camera_path", "name": "intro"},
     "restore_camera_path": {
         "action": "restore_camera_path",
@@ -586,6 +587,7 @@ EDITOR_SCHEMA = {
             "record",
         ],
         "save_camera_path": ["name", "path"],
+        "load_camera_path": ["name"],
         "delete_camera_path": ["name"],
         "restore_camera_path": ["trash"],
         "preview_camera_path": ["name", "path", "time"],
@@ -769,6 +771,7 @@ EDITOR_SCHEMA = {
         "schema 58 adds rename_state_machine and duplicate_state_machine for .kstate library entries",
         "schema 59 adds preview_blend_space for inline 1D blend-space previews and export",
         "schema 63 adds the .kpath camera path library with save/delete/restore actions and a non-mutating preview_camera_path pose sample",
+        "schema 64 adds load_camera_path, returning the saved path document for console JSON editing",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

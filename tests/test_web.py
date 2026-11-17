@@ -28,6 +28,7 @@ from keystone.animation_state import (
     AnimationTransition,
 )
 from keystone.assets import AssetRegistry
+from keystone.camera_path import camera_path_from_dict, camera_path_to_dict
 from keystone.geometry import Material
 from keystone.math3d import Vec3
 from keystone.png import write_png
@@ -5091,6 +5092,15 @@ class WebServerTest(unittest.TestCase):
             self.assertFalse(entry["loop"])
             self.assertEqual(saved["workspace"]["camera_path_dir"], path_dir.as_posix())
 
+            loaded = session.editor_action(
+                {"action": "load_camera_path", "name": "intro"}
+            )
+            self.assertEqual(loaded["camera_path_document"]["name"], "intro")
+            self.assertEqual(
+                loaded["camera_path_document"]["path"],
+                camera_path_to_dict(camera_path_from_dict(document)),
+            )
+
             previewed = session.editor_action(
                 {"action": "preview_camera_path", "name": "intro", "time": 1.0}
             )
@@ -5192,11 +5202,23 @@ class WebServerTest(unittest.TestCase):
             with self.assertRaises(WebProblem) as caught:
                 session.editor_action({"action": "delete_camera_path", "name": "absent"})
             self.assertEqual(caught.exception.status, 404)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action({"action": "load_camera_path", "name": "absent"})
+            self.assertEqual(caught.exception.status, 404)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action({"action": "load_camera_path", "name": "  "})
+            self.assertEqual(caught.exception.status, 400)
 
             standalone = GameSession(CubeDemo())
             with self.assertRaises(WebProblem) as caught:
                 standalone.editor_action(
                     {"action": "save_camera_path", "name": "walk", "path": document}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("--camera-path-dir", caught.exception.fix)
+            with self.assertRaises(WebProblem) as caught:
+                standalone.editor_action(
+                    {"action": "load_camera_path", "name": "walk"}
                 )
             self.assertEqual(caught.exception.status, 400)
             self.assertIn("--camera-path-dir", caught.exception.fix)
@@ -6092,6 +6114,16 @@ class WebServerTest(unittest.TestCase):
             "state-machine-delete",
             "state-machine-restore",
             "state-machine-state",
+            "camera-path-json",
+            "camera-path-name",
+            "camera-path-names",
+            "camera-path-time",
+            "camera-path-load",
+            "camera-path-preview",
+            "camera-path-save",
+            "camera-path-delete",
+            "camera-path-restore",
+            "camera-path-state",
             "blend-space-json",
             "blend-space-name",
             "blend-space-parameter",
@@ -6447,6 +6479,21 @@ class WebServerTest(unittest.TestCase):
         self.assertIn('id="blend-space-json" spellcheck="false"', text)
         self.assertNotIn('"samples":[]', text)
         self.assertIn("fillStateMachineDatalist", script)
+        self.assertIn("loadCameraPath", script)
+        self.assertIn("saveCameraPath", script)
+        self.assertIn("previewCameraPath", script)
+        self.assertIn("deleteCameraPath", script)
+        self.assertIn("restoreCameraPath", script)
+        self.assertIn("applyCameraPathPose", script)
+        self.assertIn("load_camera_path", script)
+        self.assertIn("camera_path_document", script)
+        self.assertIn("save_camera_path", script)
+        self.assertIn("preview_camera_path", script)
+        self.assertIn("delete_camera_path", script)
+        self.assertIn("restore_camera_path", script)
+        self.assertIn("camera_path_preview", script)
+        self.assertIn("fillCameraPathDatalist", script)
+        self.assertIn("camera-path-json", script)
         self.assertIn("animation_preview", script)
         self.assertIn("playFrames", script)
         self.assertIn("set_node", script)

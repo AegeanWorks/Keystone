@@ -4,7 +4,7 @@ from __future__ import annotations
 
 WEB_API_VERSION = 1
 SCENE_SCHEMA_VERSION = 5
-EDITOR_SCHEMA_VERSION = 63
+EDITOR_SCHEMA_VERSION = 64
 PREFAB_SCHEMA_VERSION = 2
 EDITOR_ACTIONS = (
     "select",
@@ -51,6 +51,7 @@ EDITOR_ACTIONS = (
     "restore_state_machine",
     "preview_state_machine",
     "save_camera_path",
+    "load_camera_path",
     "delete_camera_path",
     "restore_camera_path",
     "preview_camera_path",

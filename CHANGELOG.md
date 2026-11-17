@@ -201,6 +201,11 @@ changes that do not bump the release number yet.
   `trash.camera_paths`, `camera_path_preview` and `workspace.camera_path_dir`;
   preview accepts a library name or an inline document, samples a pose and
   never touches the scene or undo history.
+- Editor schema 64 adds `load_camera_path`, which returns
+  `camera_path_document` (`name`, normalized path document) for editing, and
+  the console gains a camera path panel that loads, previews (moving the
+  scene view camera to the sampled pose), saves, deletes and restores
+  `.kpath` entries.
 - `keystone.camera_shake` adds `CameraShake`, `ShakeOffset` and
   `shake_report`: trauma accumulation, linear decay, seeded sine noise and a
   deterministic position/yaw/pitch offset for game feel.

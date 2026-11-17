@@ -21,6 +21,7 @@ from keystone.assets import AssetRegistry
 from keystone.camera_path import (
     camera_path_from_dict,
     camera_path_report,
+    camera_path_to_dict,
 )
 from keystone.camera_path_library import CameraPathLibrary
 from keystone.character import CharacterBody, CharacterController
@@ -161,6 +162,7 @@ SCENE_NEUTRAL_ACTIONS = frozenset(
         "delete_state_machine",
         "restore_state_machine",
         "save_camera_path",
+        "load_camera_path",
         "delete_camera_path",
         "restore_camera_path",
         "save_material",
@@ -379,6 +381,7 @@ class GameSession:
         if camera_path_dir is not None:
             self.camera_path_library = CameraPathLibrary(camera_path_dir)
         self.last_camera_path_preview: dict | None = None
+        self.last_camera_path_document: dict | None = None
         self.material_library: MaterialLibrary | None = None
         if material_dir is not None:
             self.material_library = MaterialLibrary(
@@ -997,6 +1000,7 @@ class GameSession:
             else []
         )
         document["camera_path_preview"] = self.last_camera_path_preview
+        document["camera_path_document"] = self.last_camera_path_document
         document["trash"]["materials"] = (
             self.material_library.trash()
             if self.material_library is not None
@@ -1075,6 +1079,8 @@ class GameSession:
         self.last_build = None
         self.last_state_machine_preview = None
         self.last_state_machine_document = None
+        self.last_camera_path_preview = None
+        self.last_camera_path_document = None
         with self.lock:
             scene = self._scene_locked()
             try:
@@ -2008,6 +2014,21 @@ class GameSession:
                         )
                     camera_path = camera_path_from_dict(data)
                     self.camera_path_library.save(name, camera_path)
+                elif action == "load_camera_path":
+                    if self.camera_path_library is None:
+                        raise ValueError(
+                            "no camera path library is configured"
+                        )
+                    name = payload.get("name")
+                    if not isinstance(name, str) or not name.strip():
+                        raise ValueError(
+                            "camera path name must be a non-blank string"
+                        )
+                    camera_path = self.camera_path_library.load(name)
+                    self.last_camera_path_document = {
+                        "name": name,
+                        "path": camera_path_to_dict(camera_path),
+                    }
                 elif action == "delete_camera_path":
                     if self.camera_path_library is None:
                         raise ValueError(
