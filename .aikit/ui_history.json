@@ -54,5 +54,26 @@
     "final_snapshot_digest": "",
     "final_snapshot_entries": 0,
     "surface_digest": "f7bc6b3c1a7b5501d6d08ec17e1028df630d21183aaf4cbcda588a1703ae2caf"
+  },
+  {
+    "schema": 1,
+    "surface": "web",
+    "mode": "visual",
+    "visual_change": true,
+    "changed_paths": [],
+    "no_visual_reason": "",
+    "no_change_reason": "Camera path console panel was reviewed live in a browser at 127.0.0.1: save wrote intro.kpath and populated the datalist, load normalized the document (fov default 60), preview moved the readout to the sampled pose at t=1; the change itself was committed as ef0c2f6 before opening the task, so begin and finish share one digest.",
+    "baseline_commit": "ef0c2f61b38ba5e062a91fdc3580677e736e38e7",
+    "contract_hash": "3a546ec6c38368b241e33bcb645e3e37095307e6a89c5c44678d752a3526399c",
+    "started_at": 1794951964.938685,
+    "finished_at": 1794952207.292157,
+    "strikes": 0,
+    "reviewer": "kilo:goal",
+    "allowed_removals": [],
+    "allowed_tests": [],
+    "final_snapshot_digest": "",
+    "final_snapshot_entries": 0,
+    "surface_digest": "8cdf46d8fc7006426e87dfecdf25ce6053d14c9c19cb5cbc1e41393c4f514219",
+    "baseline_digest": "8cdf46d8fc7006426e87dfecdf25ce6053d14c9c19cb5cbc1e41393c4f514219"
   }
 ]
