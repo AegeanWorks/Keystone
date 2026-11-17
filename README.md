@@ -136,6 +136,30 @@ The renderer draws the overlay layer after a depth clear, so level geometry
 cannot occlude it, and world culling, batch plans, merges and shadows skip
 it. `--describe` reports `capabilities.camera_rig` and `overlay_layer`.
 
+### Camera paths
+
+`CameraPath` turns timed keys into a deterministic camera move. Position
+follows a Catmull-Rom spline, rotation slerps, and the lens interpolates; a
+looping path declares a duration past its last key for the return leg:
+
+```python
+from keystone.camera_path import CameraKey, CameraPath, CameraPathPlayer
+
+path = CameraPath(
+    [
+        CameraKey.look_at(0.0, Vec3(0.0, 1.8, 6.0), Vec3(0.0, 1.0, 0.0)),
+        CameraKey.look_at(2.0, Vec3(2.0, 2.5, 3.0), Vec3(0.0, 1.0, 0.0), fov_y=50.0),
+    ]
+)
+player = CameraPathPlayer(path)
+camera = player.advance(dt).to_camera(scene.camera)
+```
+
+`to_camera()` returns a new camera and reuses only the base near/far, so a
+game can compose path poses with `CameraShaker` or render a dedicated
+cutscene camera. `--describe` reports `capabilities.camera_path` and
+`camera_path_player`.
+
 ### Scene identity and components
 
 A node carries a stable scene ID, tags, one layer and optional typed components:
@@ -415,7 +439,7 @@ Keystone is a small, deterministic 3D engine: a scene graph, a PBR OpenGL
 renderer with shadows, bloom, post grade, tonemapping and FXAA, physics and
 character movement, animation with 1D/2D blend spaces, root motion and state
 machines, navigation with A* and agents, deterministic audio, tile maps, UI
-with text and images, deterministic camera shake with a composing shaker, a versioned persistence store, replay evidence, and a native editor and JSON API. The
+with text and images, deterministic camera shake with a composing shaker, timed camera paths, a versioned persistence store, replay evidence, and a native editor and JSON API. The
 complete itemised list with per-area notes lives in
 [docs/FEATURES.md](docs/FEATURES.md).
 

@@ -178,6 +178,14 @@ changes that do not bump the release number yet.
 - `CameraShaker` composes a `CameraShake` offset onto an immutable base
   camera pose, in world or camera-local space, and reports base, pose and
   shake state. `--describe` reports `capabilities.camera_shaker`.
+- `keystone.camera_path` adds `CameraKey`, `CameraPose`, `CameraPath` and
+  `CameraPathPlayer` plus two reports: timed keys sampled through a
+  non-uniform Catmull-Rom position spline with slerped orientation and linear
+  lens keys, a loop duration that closes the return leg with continuous seam
+  position and velocity, and one-shot clamping or looping playback with
+  speed, seek, reset and done state. `CameraPose.to_camera()` builds a new
+  camera from the pose without mutating a base. `--describe` reports
+  `capabilities.camera_path` and `camera_path_player`.
 - `keystone.camera_shake` adds `CameraShake`, `ShakeOffset` and
   `shake_report`: trauma accumulation, linear decay, seeded sine noise and a
   deterministic position/yaw/pitch offset for game feel.

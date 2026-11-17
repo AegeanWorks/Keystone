@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `206`
-- **Total Classes**: `354`
-- **Total Top-Level Functions**: `576`
-- **Total Class Methods**: `2219`
-- **Total Source Lines**: `54299`
+- **Total Python Modules**: `208`
+- **Total Classes**: `359`
+- **Total Top-Level Functions**: `586`
+- **Total Class Methods**: `2256`
+- **Total Source Lines**: `55083`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`206` module(s))
+- **Indexed**: python (`208` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `307` lines (`6955` bytes)
+**Size**: `321` lines (`7252` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -438,6 +438,46 @@
   - Method `.move(forward, right, up)`
   - Method `.rotate(yaw_delta, pitch_delta)`
   - Method `.look_at(target)`
+
+---
+
+### [`keystone/camera_path.py`](keystone/camera_path.py)
+> *Deterministic camera paths: timed keys sampled into camera poses.*
+
+**Size**: `411` lines (`15061` bytes)
+
+**Classes:**
+- `class CameraKey` - *One authored camera pose at a path time in seconds.*
+  - Method `.__post_init__()`
+  - Method `.look_at(time, position, target, *, fov_y)` - *Build a key aimed at ``target`` using the engine camera convention.*
+- `class CameraPose` - *A sampled camera state; independent of any camera instance.*
+  - Method `.__post_init__()`
+  - Method `.forward()` - *The direction the pose looks along, matching ``PerspectiveCamera``.*
+  - Property `.yaw`
+  - Property `.pitch`
+  - Method `.to_camera(base)` - *Build a new camera from the pose, reusing the base lens range.*
+- `class CameraPath` - *Timed camera keys sampled as smooth, deterministic poses.*
+  - Method `.__init__(keys, *, loop, duration)`
+  - Method `._build_tangents()`
+  - Method `._pose(key)`
+  - Method `.sample(time)` - *Sample the pose at ``time`` seconds; wraps when looping, else clamps.*
+- `class CameraPathPlayer` - *Own one path's clock and return its pose as time advances.*
+  - Method `.__init__(path, *, loop, speed)`
+  - Method `.sample()` - *Return the pose at the current time.*
+  - Method `.advance(dt)` - *Advance the clock and return the pose at the new time.*
+  - Method `.seek(time)` - *Jump to a time, wrapping when looping and clamping otherwise.*
+  - Method `.reset()` - *Rewind the clock to the start.*
+
+**Functions:**
+- `def _finite(label, value)`
+- `def _finite_vec3(label, value)`
+- `def _finite_quat(label, value)`
+- `def _lens(value, label)`
+- `def _position_list(position)`
+- `def _rotation_list(rotation)`
+- `def _hermite(start, end, start_tangent, end_tangent, span, factor)`
+- `def camera_path_report(path)` - *Return a JSON-safe summary of an authored path.*
+- `def camera_path_player_report(player)` - *Return a JSON-safe summary of a player and its current pose.*
 
 ---
 
@@ -1482,7 +1522,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `155` lines (`5843` bytes)
+**Size**: `157` lines (`5916` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -2953,6 +2993,40 @@
   - Method `.test_enormous_proxy_is_rejected_instead_of_hanging()`
   - Method `.test_pairs_are_unique_and_ordered_by_insertion()`
   - Method `.test_clear_and_validation()`
+
+---
+
+### [`tests/test_camera_path.py`](tests/test_camera_path.py)
+> *Tests for deterministic camera paths.*
+
+**Size**: `357` lines (`14604` bytes)
+
+**Classes:**
+- `class CameraPathTest`
+  - Method `.test_sample_matches_the_endpoint_keys()`
+  - Method `.test_two_key_position_is_linear()`
+  - Method `.test_multi_key_position_uses_a_catmull_rom_spline()`
+  - Method `.test_rotation_slerps_between_keys()`
+  - Method `.test_fov_interpolates_linearly()`
+  - Method `.test_open_path_clamps_after_the_duration()`
+  - Method `.test_loop_wraps_and_closes_the_seam()`
+  - Method `.test_loop_seam_keeps_position_and_velocity_continuous()`
+  - Method `.test_player_advances_and_clamps()`
+  - Method `.test_player_speed_scales_time()`
+  - Method `.test_player_seek_clamps_or_wraps()`
+  - Method `.test_player_loop_can_override_the_path()`
+  - Method `.test_player_reset_rewinds_the_clock()`
+  - Method `.test_pose_builds_a_camera_without_mutating_the_base()`
+  - Method `.test_pose_rejects_a_bad_base_camera()`
+  - Method `.test_look_at_keys_aim_at_their_targets()`
+  - Method `.test_keys_and_poses_are_immutable()`
+  - Method `.test_validation()`
+  - Method `.test_reports_are_json_safe()`
+  - Method `.test_reports_are_deterministic()`
+  - Method `.test_discovery_advertises_camera_paths()`
+
+**Functions:**
+- `def _line_path(**player_options)`
 
 ---
 

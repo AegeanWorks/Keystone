@@ -43,6 +43,14 @@ from keystone.audio_spatial import (
     spatial_report,
 )
 from keystone.batch import merge_batches, plan_batches
+from keystone.camera_path import (
+    CameraKey,
+    CameraPath,
+    CameraPathPlayer,
+    CameraPose,
+    camera_path_player_report,
+    camera_path_report,
+)
 from keystone.camera_rig import CameraRig
 from keystone.camera_shake import CameraShake, ShakeOffset, shake_report
 from keystone.camera_shaker import CameraShaker, camera_shaker_report
@@ -167,6 +175,10 @@ __all__ = [
     "BlendSpace2D",
     "BloomSettings",
     "BotPolicy",
+    "CameraKey",
+    "CameraPath",
+    "CameraPathPlayer",
+    "CameraPose",
     "CameraRig",
     "CameraShake",
     "CameraShaker",
@@ -230,6 +242,8 @@ __all__ = [
     "audio_report",
     "blend_poses",
     "bone_matrices",
+    "camera_path_player_report",
+    "camera_path_report",
     "camera_shaker_report",
     "canon",
     "canon_hash",
