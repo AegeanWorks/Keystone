@@ -6,14 +6,14 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `208`
-- **Total Classes**: `359`
-- **Total Top-Level Functions**: `586`
-- **Total Class Methods**: `2256`
-- **Total Source Lines**: `55083`
+- **Total Python Modules**: `210`
+- **Total Classes**: `363`
+- **Total Top-Level Functions**: `590`
+- **Total Class Methods**: `2287`
+- **Total Source Lines**: `55713`
 
 ## 🧭 Map Coverage
-- **Indexed**: python (`208` module(s))
+- **Indexed**: python (`210` module(s))
 - **Not indexed by this map**: javascript (`2` file(s))
 
 > Only Python symbols are catalogued. A language above is reported as not indexed, never as verified by this map.
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `321` lines (`7252` bytes)
+**Size**: `335` lines (`7597` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -444,7 +444,7 @@
 ### [`keystone/camera_path.py`](keystone/camera_path.py)
 > *Deterministic camera paths: timed keys sampled into camera poses.*
 
-**Size**: `411` lines (`15061` bytes)
+**Size**: `529` lines (`19632` bytes)
 
 **Classes:**
 - `class CameraKey` - *One authored camera pose at a path time in seconds.*
@@ -478,6 +478,32 @@
 - `def _hermite(start, end, start_tangent, end_tangent, span, factor)`
 - `def camera_path_report(path)` - *Return a JSON-safe summary of an authored path.*
 - `def camera_path_player_report(player)` - *Return a JSON-safe summary of a player and its current pose.*
+- `def _number_list(label, value, length)`
+- `def camera_path_to_dict(path)` - *Return the schema-1 document for one camera path.*
+- `def camera_path_from_dict(document)` - *Build a camera path from a schema-1 document, refusing drift.*
+
+---
+
+### [`keystone/camera_path_library.py`](keystone/camera_path_library.py)
+> *File-backed camera path libraries for editors, tools and AI clients.*
+
+**Size**: `178` lines (`6886` bytes)
+
+**Classes:**
+- `class CameraPathEntry` - *One library file and its path summary, or why it could not load.*
+  - Method `.describe()` - *Return a JSON-safe entry for editor and AI documents.*
+- `class CameraPathLibrary` - *Discover, save and load ``.kpath`` camera paths in one directory.*
+  - Method `.__init__(directory)`
+  - Method `.path_for(name)` - *Return the safe file path for one library name.*
+  - Method `.save(name, path)` - *Write one camera path atomically and return its summary.*
+  - Method `.load(name)` - *Load one path or raise KeyError when the entry is absent.*
+  - Method `.rename(old, new)` - *Rename one entry, rejecting collisions and updating the file.*
+  - Method `.duplicate(old, new)` - *Copy one entry to a new name, rejecting collisions.*
+  - Method `.delete(name)` - *Move one entry to the library trash and return its former path.*
+  - Method `.trash()` - *Return recoverable deleted entries.*
+  - Method `.restore(trash_name)` - *Restore one trashed entry and return its summary.*
+  - Method `.entry(name)` - *Load one entry's summary, capturing load failures as ``error``.*
+  - Method `.entries()` - *Return every ``.kpath`` file in stable name order.*
 
 ---
 
@@ -1522,7 +1548,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `157` lines (`5916` bytes)
+**Size**: `158` lines (`5957` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -3027,6 +3053,39 @@
 
 **Functions:**
 - `def _line_path(**player_options)`
+
+---
+
+### [`tests/test_camera_path_library.py`](tests/test_camera_path_library.py)
+> *Tests for camera path documents and file-backed .kpath libraries.*
+
+**Size**: `319` lines (`13768` bytes)
+
+**Classes:**
+- `class CameraPathDocumentTest`
+  - Method `.test_one_shot_document_round_trips()`
+  - Method `.test_loop_document_round_trips()`
+  - Method `.test_document_uses_engine_rotation_order()`
+  - Method `.test_document_defaults_a_minimal_key()`
+  - Method `.test_document_is_json_safe()`
+  - Method `.test_document_refuses_schema_drift()`
+  - Method `.test_document_refuses_unknown_fields()`
+  - Method `.test_document_refuses_malformed_keys()`
+  - Method `.test_document_loop_and_duration_must_agree()`
+  - Method `.test_document_requires_a_mapping()`
+- `class CameraPathLibraryTest`
+  - Method `.test_save_load_entries_and_describe()`
+  - Method `.test_save_validates_payload_and_names()`
+  - Method `.test_load_reports_a_missing_entry()`
+  - Method `.test_rename_and_duplicate()`
+  - Method `.test_delete_trash_and_restore()`
+  - Method `.test_restore_refuses_traversal_and_collisions()`
+  - Method `.test_corrupt_and_unsupported_entries_are_reported()`
+  - Method `.test_missing_directory_lists_empty_and_a_file_is_not_a_library()`
+  - Method `.test_discovery_advertises_the_library()`
+
+**Functions:**
+- `def _path(*, loop)`
 
 ---
 

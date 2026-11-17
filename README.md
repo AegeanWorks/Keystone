@@ -157,8 +157,11 @@ camera = player.advance(dt).to_camera(scene.camera)
 
 `to_camera()` returns a new camera and reuses only the base near/far, so a
 game can compose path poses with `CameraShaker` or render a dedicated
-cutscene camera. `--describe` reports `capabilities.camera_path` and
-`camera_path_player`.
+cutscene camera. Paths round-trip through a schema-1 document
+(`camera_path_to_dict`/`camera_path_from_dict`), and `CameraPathLibrary`
+stores them as `.kpath` files with rename, duplicate and recoverable deletes.
+`--describe` reports `capabilities.camera_path`, `camera_path_player` and
+`camera_path_library`.
 
 ### Scene identity and components
 

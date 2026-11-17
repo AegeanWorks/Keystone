@@ -33,6 +33,7 @@ keystone/
 ├── clock.py          FixedStepClock
 ├── camera_rig.py     camera-following overlay rig for viewmodels and HUD anchors
 ├── camera_path.py    timed camera keys sampled into spline poses
+├── camera_path_library.py  file-backed .kpath camera path library
 ├── camera_shake.py   deterministic trauma-based camera shake
 ├── camera_shaker.py  shake offsets composed onto a base camera pose
 ├── content.py        content digests shared by batching, instancing and assets
@@ -168,7 +169,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Prefabs | Implemented | detached subtree capture, versioned `.kprefab` save/load (schema 2), file-backed libraries, deterministic instance IDs, nested prefab instances with rebased links/IDs, component copy isolation, JSON-safe describe |
 | Projects | Implemented | versioned `keystone.json` manifest, `--new` scaffold with starter scene/prefab content, startup scene and component hooks, `--project` loader, `--validate-project` diagnostics, relative asset import as `project:<path>`, editor asset import with manifest update and registry rollback, editor hot reload with scene/history rebinding, editor glTF/GLB scene import as prefabs, project asset inventory and history-and-clipboard-safe forget-from-project, editor runnable builds, CLI glTF/GLB scene-to-prefab import and generated five-op game |
 | Scene queries | Implemented | name/tag/layer/component filters and ID lookup |
-| Camera | Implemented | perspective and view matrices, first-person controls, camera rigs, deterministic trauma-based camera shake, a shaker that composes offsets without mutating the base pose, and timed camera paths with Catmull-Rom positions, slerped orientation, lens keys, closed loops and a clamping or looping player |
+| Camera | Implemented | perspective and view matrices, first-person controls, camera rigs, deterministic trauma-based camera shake, a shaker that composes offsets without mutating the base pose, and timed camera paths with Catmull-Rom positions, slerped orientation, lens keys, closed loops, a clamping or looping player, schema-1 documents and a `.kpath` library |
 | Geometry | Implemented | indexed meshes, materials, vertex colors |
 | Assets | Implemented | indexed meshes, materials, RGBA textures, OBJ, PNG and `.kprefab`; asset registry with stable ids, digests, dependencies and hot reload |
 | State snapshots | Implemented | versioned scene save/load with camera, environment, asset references, typed components and bounded undo/redo history; duplicate ids, dangling parents and cycles rejected |

@@ -186,6 +186,14 @@ changes that do not bump the release number yet.
   speed, seek, reset and done state. `CameraPose.to_camera()` builds a new
   camera from the pose without mutating a base. `--describe` reports
   `capabilities.camera_path` and `camera_path_player`.
+- `keystone.camera_path` gains a schema-1 document
+  (`camera_path_to_dict`/`camera_path_from_dict`) that stores quaternions in
+  engine order `[x, y, z, w]`, defaults an omitted rotation and lens, writes a
+  loop duration only for looping paths, and refuses schema drift, unknown
+  keys, malformed numbers and a duration that disagrees with the loop flag.
+  `CameraPathLibrary` stores `.kpath` files with safe names, atomic writes,
+  rename, duplicate, per-entry error reporting and recoverable trash deletes.
+  `--describe` reports `capabilities.camera_path_library`.
 - `keystone.camera_shake` adds `CameraShake`, `ShakeOffset` and
   `shake_report`: trauma accumulation, linear decay, seeded sine noise and a
   deterministic position/yaw/pitch offset for game feel.

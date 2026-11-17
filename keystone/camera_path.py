@@ -29,13 +29,20 @@ from keystone.camera import MAX_PITCH, PerspectiveCamera
 from keystone.math3d import Quat, Vec3
 
 __all__ = [
+    "CAMERA_PATH_SCHEMA",
     "CameraKey",
     "CameraPath",
     "CameraPathPlayer",
     "CameraPose",
+    "camera_path_from_dict",
     "camera_path_player_report",
     "camera_path_report",
+    "camera_path_to_dict",
 ]
+
+CAMERA_PATH_SCHEMA = 1
+_DOCUMENT_KEYS = frozenset({"schema", "loop", "duration", "keys"})
+_KEY_DOCUMENT_KEYS = frozenset({"time", "position", "rotation", "fov_y"})
 
 
 def _finite(label: str, value: object) -> float:
@@ -409,3 +416,114 @@ def camera_path_player_report(player: CameraPathPlayer) -> dict:
         },
         "path": camera_path_report(player.path),
     }
+
+
+def _number_list(label: str, value: object, length: int) -> list[float]:
+    if not isinstance(value, (list, tuple)):
+        raise TypeError(f"{label} must be a list of {length} numbers")
+    if len(value) != length:
+        raise ValueError(f"{label} must have {length} values")
+    numbers: list[float] = []
+    for component in value:
+        if isinstance(component, bool) or not isinstance(component, (int, float)):
+            raise TypeError(f"{label} must hold real numbers")
+        number = float(component)
+        if not math.isfinite(number):
+            raise ValueError(f"{label} must be finite")
+        numbers.append(number)
+    return numbers
+
+
+def camera_path_to_dict(path: CameraPath) -> dict:
+    """Return the schema-1 document for one camera path.
+
+    Quaternions use the engine document order ``[x, y, z, w]``. A looping
+    path writes its declared ``duration``; a one-shot path omits it because
+    the last key time is the duration.
+    """
+    if not isinstance(path, CameraPath):
+        raise TypeError("camera_path_to_dict needs a CameraPath")
+    document: dict[str, object] = {
+        "schema": CAMERA_PATH_SCHEMA,
+        "loop": path.loop,
+        "keys": [
+            {
+                "time": float(key.time),
+                "position": [
+                    float(key.position.x),
+                    float(key.position.y),
+                    float(key.position.z),
+                ],
+                "rotation": [
+                    float(key.rotation.x),
+                    float(key.rotation.y),
+                    float(key.rotation.z),
+                    float(key.rotation.w),
+                ],
+                "fov_y": float(key.fov_y),
+            }
+            for key in path.keys
+        ],
+    }
+    if path.loop:
+        document["duration"] = float(path.duration)
+    return document
+
+
+def camera_path_from_dict(document: object) -> CameraPath:
+    """Build a camera path from a schema-1 document, refusing drift."""
+    if not isinstance(document, dict):
+        raise TypeError("camera path document must be a JSON object")
+    schema = document.get("schema", CAMERA_PATH_SCHEMA)
+    if isinstance(schema, bool) or schema != CAMERA_PATH_SCHEMA:
+        raise ValueError(
+            f"unsupported camera path schema; expected {CAMERA_PATH_SCHEMA}"
+        )
+    unknown = set(document) - _DOCUMENT_KEYS
+    if unknown:
+        raise ValueError(f"camera path has unknown keys: {sorted(unknown)}")
+    loop = document.get("loop", False)
+    if not isinstance(loop, bool):
+        raise TypeError("camera path document loop must be a boolean")
+    raw_keys = document.get("keys")
+    if not isinstance(raw_keys, (list, tuple)):
+        raise TypeError("camera path document keys must be a list")
+    keys: list[CameraKey] = []
+    for item in raw_keys:
+        if not isinstance(item, dict):
+            raise TypeError("camera path key must be a JSON object")
+        key_unknown = set(item) - _KEY_DOCUMENT_KEYS
+        if key_unknown:
+            raise ValueError(
+                f"camera path key has unknown keys: {sorted(key_unknown)}"
+            )
+        if "time" not in item:
+            raise ValueError("camera path key needs a time")
+        if "position" not in item:
+            raise ValueError("camera path key needs a position")
+        rotation = _number_list(
+            "camera path key rotation", item.get("rotation", (0.0, 0.0, 0.0, 1.0)), 4
+        )
+        keys.append(
+            CameraKey(
+                time=_finite("camera path key time", item["time"]),
+                position=Vec3(
+                    *_number_list(
+                        "camera path key position", item["position"], 3
+                    )
+                ),
+                rotation=Quat(rotation[3], rotation[0], rotation[1], rotation[2]),
+                fov_y=_lens(
+                    item.get("fov_y", 60.0), "camera path key fov_y"
+                ),
+            )
+        )
+    if loop:
+        if "duration" not in document:
+            raise ValueError("a looping camera path document needs a duration")
+        return CameraPath(keys, loop=True, duration=document["duration"])
+    if "duration" in document:
+        raise ValueError(
+            "a one-shot camera path document must omit duration"
+        )
+    return CameraPath(keys)

@@ -44,12 +44,20 @@ from keystone.audio_spatial import (
 )
 from keystone.batch import merge_batches, plan_batches
 from keystone.camera_path import (
+    CAMERA_PATH_SCHEMA,
     CameraKey,
     CameraPath,
     CameraPathPlayer,
     CameraPose,
+    camera_path_from_dict,
     camera_path_player_report,
     camera_path_report,
+    camera_path_to_dict,
+)
+from keystone.camera_path_library import (
+    CAMERA_PATH_SUFFIX,
+    CameraPathEntry,
+    CameraPathLibrary,
 )
 from keystone.camera_rig import CameraRig
 from keystone.camera_shake import CameraShake, ShakeOffset, shake_report
@@ -155,6 +163,8 @@ from keystone.texture import TextureData
 from keystone.tilemap import TileMap, tilemap_report
 
 __all__ = [
+    "CAMERA_PATH_SCHEMA",
+    "CAMERA_PATH_SUFFIX",
     "OVERLAY_LAYER",
     "PLAYTEST_REPORT_SCHEMA",
     "SAMPLE_RATE",
@@ -177,6 +187,8 @@ __all__ = [
     "BotPolicy",
     "CameraKey",
     "CameraPath",
+    "CameraPathEntry",
+    "CameraPathLibrary",
     "CameraPathPlayer",
     "CameraPose",
     "CameraRig",
@@ -242,8 +254,10 @@ __all__ = [
     "audio_report",
     "blend_poses",
     "bone_matrices",
+    "camera_path_from_dict",
     "camera_path_player_report",
     "camera_path_report",
+    "camera_path_to_dict",
     "camera_shaker_report",
     "canon",
     "canon_hash",

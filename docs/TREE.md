@@ -23,6 +23,7 @@ keystone/
 │   ├── clock.py              <- fixed-step clock
 │   ├── camera_rig.py          <- camera-following overlay rig for viewmodels and HUD anchors
 │   ├── camera_path.py         <- timed camera keys sampled into spline poses
+│   ├── camera_path_library.py <- file-backed .kpath camera path library
 │   ├── camera_shake.py       <- trauma decay and seeded shake offsets
 │   ├── camera_shaker.py      <- shake offsets composed onto a base camera
 │   ├── content.py             <- content digests for batching, instancing and assets
@@ -197,6 +198,7 @@ keystone/
 │   ├── test_camera_shake.py  <- trauma, decay and deterministic offsets
 │   ├── test_camera_shaker.py <- base poses, local offsets and reports
 │   ├── test_camera_path.py   <- key validation, spline samples, loops and player state
+│   ├── test_camera_path_library.py <- path documents, .kpath lifecycle and trash recovery
 │   ├── test_content.py        <- mesh and material digest cache
 │   ├── test_evidence.py       <- capture routes, reruns and evidence diffs
 │   ├── test_feature_composition.py <- rig routes and overlay instancing seams
