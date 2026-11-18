@@ -3,8 +3,8 @@
   "active_task": {
     "task_id": "keystone-canonical-gates-v1",
     "last_phase": "phase 4",
-    "active_phase": 4,
-    "status": "in_progress",
+    "active_phase": 5,
+    "status": "completed",
     "updated_at": 1795029146.7247071,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
@@ -14,41 +14,12 @@
         "name": "keystone",
         "path": "projects/keystone"
       }
-    ]
+    ],
+    "completed_at": 1795029207.9953923,
+    "completed_head": "8954477a45f270fdbcac2d3fe8bbc1cea8493482",
+    "completed_tree": "0be2a52049f3ecbe46260dea770f59e39a557c06"
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-camera-path-playback-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] UI review recorded - ui begin/verify/finish --reviewed closed the web surface as a no-change review of 1630f6a after a live browser pass (play to the end pose, pause froze the clock, auto-stop at the one-shot duration), and the review record is committed as 23b0764",
-      "files_affected": [
-        ".aikit/ui_history.json"
-      ],
-      "status": "in_progress",
-      "timestamp": 1795011297.5849462,
-      "timestamp_str": "2026-11-18 17:14:57",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "metric": "ui_verify_findings",
-          "unit": "findings",
-          "command": "python aikit.py ui verify keystone --json",
-          "candidate": 0.0,
-          "drift": "unchanged",
-          "baseline": 0.0,
-          "artifact": "stdout",
-          "qualified": "no"
-        }
-      ],
-      "checklists": "passed",
-      "workspaces": [
-        {
-          "name": "keystone",
-          "path": "projects/keystone"
-        }
-      ]
-    },
     {
       "task_id": "keystone-camera-path-playback-v1",
       "phase": "completed",
@@ -611,6 +582,23 @@
           "path": "projects/keystone"
         }
       ]
+    },
+    {
+      "task_id": "keystone-canonical-gates-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-canonical-gates-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1795029208.1353893,
+      "timestamp_str": "2026-11-18 22:13:28",
+      "agent": "kilo:goal",
+      "head": "8954477a45f270fdbcac2d3fe8bbc1cea8493482",
+      "delivery": {
+        "roots": [
+          "."
+        ],
+        "forced": false
+      }
     }
   ]
 }
