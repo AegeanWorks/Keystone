@@ -225,11 +225,17 @@ changes that do not bump the release number yet.
   stops a one-shot path at its duration with the final pose applied, halts
   on any editor action, and refreshes the path readout without re-rendering
   the hierarchy or the JSON editor.
-- camera_path_route(path, frames=..., step=..., checkpoints=...) builds a
+- `camera_path_route(path, frames=..., step=..., checkpoints=...)` builds a
   deterministic evidence capture route from an authored camera path: frame 1
   samples time 0, each later frame advances one step, looping paths wrap and
   one-shot paths hold their final pose, the scene camera near/far range is
   preserved, and the default checkpoint is the final frame.
+- `CameraPose.blend(other, factor)` adds camera transitions: position and
+  lens lerp while heading slerps on the shortest arc, including mirrored
+  target quaternions, and the blended pose keeps composing with `to_camera`,
+  `CameraShaker` and camera paths. `--describe` reports
+  `capabilities.camera_pose_blend` and now also names the camera-path
+  evidence route as `capabilities.camera_path_route`.
 - `keystone.camera_shake` adds `CameraShake`, `ShakeOffset` and
   `shake_report`: trauma accumulation, linear decay, seeded sine noise and a
   deterministic position/yaw/pitch offset for game feel.

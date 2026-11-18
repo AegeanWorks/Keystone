@@ -165,9 +165,11 @@ stores them as `.kpath` files with rename, duplicate and recoverable deletes.
 lens, so keys come from a live view instead of hand-written quaternions.
 `camera_path_route(path, frames=...)` turns an authored move into a
 deterministic evidence capture route, sampling the path once per fixed tick
-and keeping the scene camera's near/far range.
-`--describe` reports `capabilities.camera_path`, `camera_path_player` and
-`camera_path_library`.
+and keeping the scene camera's near/far range. `CameraPose.blend(other,
+factor)` lerps position and lens and slerps heading on the shortest arc, so
+two authored camera states can cross-fade for a cutscene transition.
+`--describe` reports `capabilities.camera_path`, `camera_path_player`,
+`camera_path_library`, `camera_path_route` and `camera_pose_blend`.
 
 ### Scene identity and components
 

@@ -100,6 +100,8 @@ def describe_game(game: GameModule) -> dict[str, object]:
             "camera_path": True,
             "camera_path_player": True,
             "camera_path_library": True,
+            "camera_path_route": True,
+            "camera_pose_blend": True,
             "animation_preview_blend_2d": True,
             "animation_binding": True,
             "replay": True,

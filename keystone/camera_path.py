@@ -213,6 +213,27 @@ class CameraPose:
             far=base.far if base is not None else 1000.0,
         )
 
+    def blend(self, other: CameraPose, factor: float) -> CameraPose:
+        """Blend toward ``other`` by ``factor`` in [0, 1].
+
+        Position and lens interpolate linearly while orientation slerps, so a
+        cutscene transition stays on the shortest rotation arc even when the
+        target quaternion is written as the mirrored equivalent.
+        """
+        if not isinstance(other, CameraPose):
+            raise TypeError("camera pose blend target must be a CameraPose")
+        amount = _finite("camera pose blend factor", factor)
+        if amount < 0.0 or amount > 1.0:
+            raise ValueError("camera pose blend factor must be between 0 and 1")
+        position = self.position * (1.0 - amount) + other.position * amount
+        rotation = (
+            self.rotation.normalized()
+            .slerp(other.rotation.normalized(), amount)
+            .normalized()
+        )
+        fov_y = self.fov_y + (other.fov_y - self.fov_y) * amount
+        return CameraPose(position, rotation, fov_y)
+
 
 class CameraPath:
     """Timed camera keys sampled as smooth, deterministic poses.

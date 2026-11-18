@@ -355,6 +355,7 @@ class CameraPathTest(unittest.TestCase):
         capabilities = describe_game(CubeDemo())["capabilities"]
         self.assertTrue(capabilities["camera_path"])
         self.assertTrue(capabilities["camera_path_player"])
+        self.assertTrue(capabilities["camera_pose_blend"])
 
 
 if __name__ == "__main__":
@@ -525,3 +526,63 @@ class CameraKeyEditingTest(unittest.TestCase):
             camera_key_from_dict({"time": 0.0, "position": [0.0, 0.0, 0.0], "yaw": 0.0})
         with self.assertRaises(TypeError):
             camera_key_from_dict([])  # type: ignore[arg-type]
+
+
+class CameraPoseBlendTest(unittest.TestCase):
+    def _pose(self, yaw: float = 0.0, fov_y: float = 60.0) -> CameraPose:
+        rotation = Quat.from_axis_angle(Vec3.UP, -yaw)
+        return CameraPose(Vec3(2.0, 1.5, 0.0), rotation, fov_y)
+
+    def test_blend_endpoints_return_each_pose(self):
+        start = self._pose()
+        end = CameraPose(
+            Vec3(6.0, 3.5, 4.0),
+            Quat.from_axis_angle(Vec3.UP, -math.pi / 2.0),
+            90.0,
+        )
+        self.assertEqual(start.blend(end, 0.0), start)
+        self.assertEqual(start.blend(end, 1.0), end)
+
+    def test_blend_midpoint_lerps_position_and_lens_and_slerps_heading(self):
+        start = self._pose()
+        end = CameraPose(
+            Vec3(6.0, 3.5, 4.0),
+            Quat.from_axis_angle(Vec3.UP, -math.pi / 2.0),
+            90.0,
+        )
+        middle = start.blend(end, 0.5)
+        self.assertEqual(middle.position, Vec3(4.0, 2.5, 2.0))
+        self.assertEqual(middle.fov_y, 75.0)
+        self.assertAlmostEqual(middle.yaw, math.pi / 4.0, places=6)
+        self.assertAlmostEqual(middle.pitch, 0.0, places=6)
+        forward = middle.forward()
+        self.assertAlmostEqual(forward.x, math.sqrt(0.5), places=6)
+        self.assertAlmostEqual(forward.z, -math.sqrt(0.5), places=6)
+
+    def test_blend_takes_the_shortest_arc_for_mirrored_quaternions(self):
+        start = self._pose()
+        mirrored = Quat(-1.0, 0.0, 0.0, 0.0)
+        target = CameraPose(start.position, mirrored, start.fov_y)
+        halfway = start.blend(target, 0.5)
+        self.assertLess((halfway.forward() - start.forward()).length(), 1e-9)
+        self.assertEqual(halfway.position, start.position)
+
+    def test_blend_validates_its_arguments(self):
+        pose = self._pose()
+        with self.assertRaises(TypeError):
+            pose.blend(object(), 0.5)  # type: ignore[arg-type]
+        for factor in (-0.1, 1.1, float("nan"), float("inf")):
+            with self.subTest(factor=factor), self.assertRaises(ValueError):
+                pose.blend(pose, factor)
+        with self.assertRaises(TypeError):
+            pose.blend(pose, True)  # type: ignore[arg-type]
+
+    def test_blend_composes_with_a_camera_and_stays_immutable(self):
+        start = self._pose()
+        end = self._pose(math.pi / 2.0, 90.0)
+        base = start.to_camera()
+        blended = start.blend(end, 0.25).to_camera(base)
+        self.assertEqual((blended.near, blended.far), (base.near, base.far))
+        self.assertEqual(start.position, Vec3(2.0, 1.5, 0.0))
+        self.assertEqual(start.fov_y, 60.0)
+        self.assertEqual(start.rotation, Quat())

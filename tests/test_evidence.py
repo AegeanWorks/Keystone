@@ -59,6 +59,7 @@ class RouteValidationTest(unittest.TestCase):
     def test_describe_advertises_evidence(self):
         capabilities = describe_game(CubeDemo())["capabilities"]
         self.assertTrue(capabilities["evidence"])
+        self.assertTrue(capabilities["camera_path_route"])
 
 
 class CaptureRouteTest(unittest.TestCase):

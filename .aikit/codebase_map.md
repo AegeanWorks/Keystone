@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `210`
-- **Total Classes**: `365`
+- **Total Classes**: `366`
 - **Total Top-Level Functions**: `598`
-- **Total Class Methods**: `2316`
-- **Total Source Lines**: `57083`
+- **Total Class Methods**: `2323`
+- **Total Source Lines**: `57168`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`210` module(s))
@@ -444,7 +444,7 @@
 ### [`keystone/camera_path.py`](keystone/camera_path.py)
 > *Deterministic camera paths: timed keys sampled into camera poses.*
 
-**Size**: `657` lines (`24322` bytes)
+**Size**: `678` lines (`25336` bytes)
 
 **Classes:**
 - `class CameraKey` - *One authored camera pose at a path time in seconds.*
@@ -458,6 +458,7 @@
   - Property `.yaw`
   - Property `.pitch`
   - Method `.to_camera(base)` - *Build a new camera from the pose, reusing the base lens range.*
+  - Method `.blend(other, factor)` - *Blend toward ``other`` by ``factor`` in [0, 1].*
 - `class CameraPath` - *Timed camera keys sampled as smooth, deterministic poses.*
   - Method `.__init__(keys, *, loop, duration)`
   - Method `._build_tangents()`
@@ -1556,7 +1557,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `158` lines (`5957` bytes)
+**Size**: `160` lines (`6035` bytes)
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -3034,7 +3035,7 @@
 ### [`tests/test_camera_path.py`](tests/test_camera_path.py)
 > *Tests for deterministic camera paths.*
 
-**Size**: `527` lines (`22321` bytes)
+**Size**: `588` lines (`24993` bytes)
 
 **Classes:**
 - `class CameraPathTest`
@@ -3073,6 +3074,13 @@
   - Method `.test_remove_keeps_loop_shape()`
   - Method `.test_remove_validates_inputs()`
   - Method `.test_key_document_round_trips_through_the_parser()`
+- `class CameraPoseBlendTest`
+  - Method `._pose(yaw, fov_y)`
+  - Method `.test_blend_endpoints_return_each_pose()`
+  - Method `.test_blend_midpoint_lerps_position_and_lens_and_slerps_heading()`
+  - Method `.test_blend_takes_the_shortest_arc_for_mirrored_quaternions()`
+  - Method `.test_blend_validates_its_arguments()`
+  - Method `.test_blend_composes_with_a_camera_and_stays_immutable()`
 
 **Functions:**
 - `def _line_path(**player_options)`
@@ -3318,7 +3326,7 @@
 ### [`tests/test_evidence.py`](tests/test_evidence.py)
 > *Tests for deterministic capture routes and evidence diffs.*
 
-**Size**: `290` lines (`12116` bytes)
+**Size**: `291` lines (`12175` bytes)
 
 **Classes:**
 - `class RouteValidationTest`

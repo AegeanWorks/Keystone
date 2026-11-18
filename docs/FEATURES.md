@@ -4,7 +4,7 @@ Every implemented area of Keystone, with the notes that used to live in the
 README. The README keeps a one-paragraph summary and links here.
 
 - **OpenGL 3.3 renderer**: GLSL 330, PBR, shadows, sRGB, post grade with configurable exposure/vignette, optional Reinhard/ACES tonemapping and FXAA, bloom, placed sprite billboards, up to 8 point lights, and profiler stats.
-- **Camera**: perspective camera and view matrices, first-person controls, viewmodel rigs, deterministic trauma-based shake with a composing shaker, and timed camera paths with spline positions, slerped orientation, lens keys, closed loops, one-shot or looping playback, schema-1 documents and a `.kpath` library with recoverable deletes.
+- **Camera**: perspective camera and view matrices, first-person controls, viewmodel rigs, deterministic trauma-based shake with a composing shaker, pose blending with slerped heading and lerped position and lens, and timed camera paths with spline positions, slerped orientation, lens keys, closed loops, one-shot or looping playback, schema-1 documents and a `.kpath` library with recoverable deletes.
 - **Scene graph**: stable IDs, tags, layers, typed components, world transforms, queries, merged tile-map meshes with exact per-cell colliders, and cached GPU meshes.
 - **Prefabs**: capture, versioned `.kprefab` persistence, deterministic instantiation and override-preserving refresh.
 - **Persistence**: `VersionedStore` with schema migrations, quarantine of corrupt documents, `.bak` fallback, a fresh default factory and an advisory lock with stale-lock reclamation.
