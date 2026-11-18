@@ -9,6 +9,11 @@ from keystone.headless import load_actions, run_simulation
 from keystone.input import ActionState
 from keystone.samples import CubeDemo
 
+# The 120-frame CubeDemo run is the engine's canonical evidence hash. Update
+# this constant only for an intentional simulation change, and say why in the
+# changelog; accidental drift must fail here rather than in a manual check.
+CANONICAL_CUBE_HASH = "772cac5232a0947b8f6d1914a5cf0cde"
+
 
 class HeadlessTest(unittest.TestCase):
     def test_simulation_advances_without_a_window(self):
@@ -23,6 +28,11 @@ class HeadlessTest(unittest.TestCase):
         first = run_simulation(CubeDemo(), 4, [ActionState(forward=1.0, look_yaw=0.1)])
         second = run_simulation(CubeDemo(), 4, [ActionState(forward=1.0, look_yaw=0.1)])
         self.assertEqual(first["hash"], second["hash"])
+
+    def test_canonical_cube_demo_hash_is_pinned(self):
+        result = run_simulation(CubeDemo(), 120)
+        self.assertEqual(result["frames"], 120)
+        self.assertEqual(result["hash"], CANONICAL_CUBE_HASH)
 
     def test_provided_scene_skips_rebuilding(self):
         class CountingGame(CubeDemo):

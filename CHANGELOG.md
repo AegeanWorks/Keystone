@@ -229,6 +229,11 @@ changes that do not bump the release number yet.
   preview time, takes its maximum from the previewed path duration, stops
   playback while dragging and previews the chosen time on release. Playback
   moves the slider with the clock.
+- The 120-frame CubeDemo canonical hash is pinned in `tests/test_headless.py`
+  (`772cac5232a0947b8f6d1914a5cf0cde`), so accidental simulation drift fails
+  the ordinary test gate instead of only a manual check. The architecture
+  table drops its duplicate basic Replay row, and the README roadmap stops
+  listing the shipped post chain as remaining work.
 - `camera_path_route(path, frames=..., step=..., checkpoints=...)` builds a
   deterministic evidence capture route from an authored camera path: frame 1
   samples time 0, each later frame advances one step, looping paths wrap and

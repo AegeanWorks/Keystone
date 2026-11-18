@@ -143,7 +143,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 - `describe_game()` exposes `name`, `actions()`, `snapshot()`, capabilities (`simulate`, `render`, `human_ui`, `game_ui`, `web`) and the versioned report/scene schemas; `--describe` prints it without a window.
 - `--serve` starts the local JSON API and browser console without OpenGL; `keystone.web.scene.scene_document()` exports the viewer document and `/api/editor` exposes hierarchy, selection, node authoring, transforms, undo/redo and prefab insertion.
 - `ActionState` includes `mouse_clicked` as a one-frame edge so games and menus can react without importing GLFW.
-- `testing.run_script()`, `verify_determinism()` and `assert_deterministic()` turn an action script into test evidence; `--verify-determinism` exposes the two-run check to agents; `--expect-hash` pins a final result.
+- `testing.run_script()`, `verify_determinism()` and `assert_deterministic()` turn an action script into test evidence; `--verify-determinism` exposes the two-run check to agents; `--expect-hash` pins a final result. The 120-frame `CubeDemo` canonical hash is pinned in `tests/test_headless.py`, so accidental simulation drift fails the ordinary test gate.
 - `--simulate` requires no GPU; `--headless` renders off-screen; `--ui` adds the human overlay to a capture; `--start-paused` renders the pause menu; `--no-ui` disables it; `--report` documents a rendered frame; `--compare-baseline` gates visual changes; `--describe` discovers the contract.
 - `docs/AI_GUIDE.md` is the end-to-end workflow reference.
 - These are core APIs, not a game harness: they never import a game module or know a genre.
@@ -183,7 +183,6 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Replay | Implemented | CommandLog runner and verifier without a window; --replay log.json with hash pinning |
 | Randomness | Implemented | SplitMix64 streams with pinned reference vectors, labelled forks, inclusive unbiased integers, permutations and snapshot/restore for saves |
 | Plugin | Implemented | GameModule + loader |
-| Replay | Implemented (basic) | action log, stable hash |
 | Persistence | Implemented | atomic JSON with backup, plus `VersionedStore` schema migrations, quarantine, backup fallback and an advisory lock with stale reclamation |
 | Headless | Implemented | no-GL simulation and action scripts |
 | AI discovery | Implemented | describe_game/--describe contract introspection |

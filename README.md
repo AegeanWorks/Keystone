@@ -620,7 +620,7 @@ snapshot = history.undo()
 
 ## 🗺️ Core Roadmap
 
-Scene identity, physics, assets, PBR, batching, animation, particles, replay and AI adapters shipped through v0.45.0; the remaining renderer work is the full post chain, and editor hooks continue.
+Scene identity, physics, assets, PBR, batching, animation, particles, replay, evidence and AI adapters shipped through v0.45.0; the post chain shipped after that release, and editor hooks continue to deepen.
 
 Games are external modules; they are not added to this repository.
 

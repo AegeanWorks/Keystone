@@ -9,8 +9,8 @@
 - **Total Python Modules**: `210`
 - **Total Classes**: `366`
 - **Total Top-Level Functions**: `598`
-- **Total Class Methods**: `2323`
-- **Total Source Lines**: `57171`
+- **Total Class Methods**: `2324`
+- **Total Source Lines**: `57181`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`210` module(s))
@@ -3506,12 +3506,13 @@
 ### [`tests/test_headless.py`](tests/test_headless.py)
 > *Tests for no-OpenGL simulation and action scripts.*
 
-**Size**: `188` lines (`6608` bytes)
+**Size**: `198` lines (`7112` bytes)
 
 **Classes:**
 - `class HeadlessTest`
   - Method `.test_simulation_advances_without_a_window()`
   - Method `.test_same_script_is_deterministic()`
+  - Method `.test_canonical_cube_demo_hash_is_pinned()`
   - Method `.test_provided_scene_skips_rebuilding()`
   - Method `.test_trace_contains_each_frame()`
   - Method `.test_load_actions_accepts_list_and_object()`

@@ -1,11 +1,11 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-camera-path-scrub-v1",
+    "task_id": "keystone-canonical-hash-pin-v1",
     "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1795021876.2552288,
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1795025949.5914562,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
@@ -14,61 +14,9 @@
         "name": "keystone",
         "path": "projects/keystone"
       }
-    ],
-    "completed_at": 1795021876.8344202,
-    "completed_head": "cfb68c3f7df504e949d55b3b3e82b6c67ecac488",
-    "completed_tree": "856b755a8576fb42ff28c8110c81f778fadc487f"
+    ]
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-readme-tree-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[1/1] Verified - README.md lists .gitattributes in the root tree (commit 30d9830) and aikit check keystone reports 6/6 gates passed on the committed tree",
-      "files_affected": [
-        "README.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794992360.8394792,
-      "timestamp_str": "2026-11-18 11:59:20",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "candidate": 0.0,
-          "unit": "entries",
-          "artifact": "stdout",
-          "baseline": 1.0,
-          "drift": "resolved",
-          "command": "python scripts/update_knowledge_base.py --workspace projects/keystone --check",
-          "metric": "readme_tree_drift",
-          "qualified": "no"
-        }
-      ],
-      "checklists": "passed",
-      "workspaces": [
-        {
-          "name": "keystone",
-          "path": "projects/keystone"
-        }
-      ]
-    },
-    {
-      "task_id": "keystone-readme-tree-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-readme-tree-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794992368.6736758,
-      "timestamp_str": "2026-11-18 11:59:28",
-      "agent": "kilo:goal",
-      "head": "30d9830e310fcb22a615340dcb987b45557afebd",
-      "delivery": {
-        "roots": [
-          "."
-        ],
-        "forced": false
-      }
-    },
     {
       "task_id": "keystone-camera-path-rename-v1",
       "phase": "phase 2",
@@ -622,6 +570,77 @@
         ],
         "forced": false
       }
+    },
+    {
+      "task_id": "keystone-canonical-hash-pin-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Plan: pin the canonical simulation hash in the test suite and correct stale capability claims - a golden test asserts the 120-frame CubeDemo run hashes to 772cac5232a0947b8f6d1914a5cf0cde so renderer or simulation drift fails the normal test gate, remove the duplicated basic Replay row from the architecture table, and fix the README roadmap sentence that still calls the shipped post chain remaining work",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1795025324.2935526,
+      "timestamp_str": "2026-11-18 21:08:44",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "Every delivery cites the canonical 120-frame hash as evidence, but only manual runs verify it, and the architecture table still carries a stale basic Replay row while the README claims the post chain is unfinished on the same page that documents it as shipped.",
+        "benefits": "Determinism becomes a gate-enforced contract instead of a claim, cold-start readers stop seeing a finished feature listed as remaining, and the subsystem table names Replay once.",
+        "risks": "contract: one pinned test constant, no production change; dependency: none; concurrency: none; state: none",
+        "mitigation": "Pin the hash with a clear comment so an intentional change updates one constant, run the full suite and gates, and verify the canonical hash and reference PNG unchanged"
+      },
+      "plan_digest": "dbb172bad7a690bc3002fdd7c7e6e5c6969a5c1e5b636ea45051762c7eb71af3",
+      "workspaces": [
+        {
+          "name": "keystone",
+          "path": "projects/keystone"
+        }
+      ]
+    },
+    {
+      "task_id": "keystone-canonical-hash-pin-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Implemented and verified - tests/test_headless.py pins CANONICAL_CUBE_HASH = 772cac5232a0947b8f6d1914a5cf0cde and asserts the 120-frame CubeDemo run returns it, with a comment directing intentional changes to update the constant and changelog; the architecture testing note documents the pin, the duplicate basic Replay row is removed, the README roadmap now says the post chain shipped after v0.45.0, and CHANGELOG plus ADR-271 record the change; full pytest and ruff pass, canonical hash and 4899-byte reference PNG unchanged",
+      "files_affected": [
+        "tests/test_headless.py",
+        "docs/ARCHITECTURE.md",
+        "README.md",
+        "CHANGELOG.md",
+        ".aikit/decisions.md",
+        ".aikit/codebase_map.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1795025949.5914562,
+      "timestamp_str": "2026-11-18 21:19:09",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "candidate": 1468.0,
+          "command": "python -m pytest --collect-only -q",
+          "metric": "collected_tests",
+          "artifact": "stdout",
+          "baseline": 1467.0,
+          "unit": "tests",
+          "drift": "+1",
+          "qualified": "no"
+        },
+        {
+          "candidate": 1.0,
+          "command": "python -m pytest tests/test_headless.py -q",
+          "metric": "canonical_hash_pin_coverage",
+          "artifact": "stdout",
+          "baseline": 0.0,
+          "unit": "tests",
+          "drift": "pinned",
+          "qualified": "no"
+        }
+      ],
+      "checklists": "passed",
+      "workspaces": [
+        {
+          "name": "keystone",
+          "path": "projects/keystone"
+        }
+      ]
     }
   ]
 }
