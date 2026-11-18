@@ -539,6 +539,7 @@ keystone/
 ├── assets/                  <- brand and sample assets
 ├── LICENSES/                <- REUSE license texts
 ├── .aikit/                  <- project memory: guidelines, ledger, decisions
+├── .gitattributes           <- LF checkout policy and ledger merge union
 ├── .gitignore               <- transient AIKit state excluded
 ├── CHANGELOG.md             <- release history
 ├── COMMERCIAL.md            <- commercial licensing terms
