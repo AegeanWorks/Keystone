@@ -138,5 +138,26 @@
     "final_snapshot_entries": 0,
     "surface_digest": "2582ffa061c2cba91911b61d1be1f3ce50c28118a15c7ac650a6db3a240729cd",
     "baseline_digest": "2582ffa061c2cba91911b61d1be1f3ce50c28118a15c7ac650a6db3a240729cd"
+  },
+  {
+    "schema": 1,
+    "surface": "web",
+    "mode": "visual",
+    "visual_change": true,
+    "changed_paths": [],
+    "no_visual_reason": "",
+    "no_change_reason": "Camera path timeline scrubbing was reviewed live in a browser at 127.0.0.1:57212: previewing a two-key two-second path set the slider max to 2, scrubbing to 1 previewed the midpoint pose 2.00, 1.50, 6.00 and updated the time field, and playback moves the slider; the change is committed as be91ef5 before this task opened.",
+    "baseline_commit": "be91ef5570f51ca9d0da6bc5c5fb2cd62f14c89d",
+    "contract_hash": "ea5b2f48986c4bd68c0a2da75659c6d8030ef7dc31574c8b7ab67394fb7789d6",
+    "started_at": 1795021689.4225345,
+    "finished_at": 1795021833.5285962,
+    "strikes": 0,
+    "reviewer": "kilo:goal",
+    "allowed_removals": [],
+    "allowed_tests": [],
+    "final_snapshot_digest": "",
+    "final_snapshot_entries": 0,
+    "surface_digest": "280199b3ef755a483ebbf07ffefcbafc03bd46d505a1813dea4d408dc0a35beb",
+    "baseline_digest": "280199b3ef755a483ebbf07ffefcbafc03bd46d505a1813dea4d408dc0a35beb"
   }
 ]
