@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `210`
-- **Total Classes**: `363`
-- **Total Top-Level Functions**: `591`
-- **Total Class Methods**: `2289`
-- **Total Source Lines**: `56114`
+- **Total Classes**: `364`
+- **Total Top-Level Functions**: `597`
+- **Total Class Methods**: `2307`
+- **Total Source Lines**: `56765`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`210` module(s))
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `335` lines (`7597` bytes)
+**Size**: `341` lines (`7747` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -444,12 +444,14 @@
 ### [`keystone/camera_path.py`](keystone/camera_path.py)
 > *Deterministic camera paths: timed keys sampled into camera poses.*
 
-**Size**: `529` lines (`19632` bytes)
+**Size**: `657` lines (`24322` bytes)
 
 **Classes:**
 - `class CameraKey` - *One authored camera pose at a path time in seconds.*
   - Method `.__post_init__()`
   - Method `.look_at(time, position, target, *, fov_y)` - *Build a key aimed at ``target`` using the engine camera convention.*
+  - Method `.from_view(time, position, yaw, pitch, *, fov_y)` - *Build a key from an engine-camera yaw/pitch view.*
+  - Method `.from_camera(time, camera)` - *Build a key from a camera's position, heading and lens.*
 - `class CameraPose` - *A sampled camera state; independent of any camera instance.*
   - Method `.__post_init__()`
   - Method `.forward()` - *The direction the pose looks along, matching ``PerspectiveCamera``.*
@@ -479,8 +481,13 @@
 - `def camera_path_report(path)` - *Return a JSON-safe summary of an authored path.*
 - `def camera_path_player_report(player)` - *Return a JSON-safe summary of a player and its current pose.*
 - `def _number_list(label, value, length)`
+- `def camera_key_from_dict(document)` - *Build one camera key from its document form, refusing drift.*
 - `def camera_path_to_dict(path)` - *Return the schema-1 document for one camera path.*
 - `def camera_path_from_dict(document)` - *Build a camera path from a schema-1 document, refusing drift.*
+- `def _gap(epsilon)`
+- `def insert_camera_key(path, key, *, epsilon)` - *Insert or replace one key, returning the path and whether it replaced.*
+- `def remove_camera_key(path, time, *, epsilon)` - *Remove the key at ``time``, returning the path and removed count.*
+- `def _rebuild(path, keys)`
 
 ---
 
@@ -1958,7 +1965,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `103` lines (`2307` bytes)
+**Size**: `105` lines (`2364` bytes)
 
 ---
 
@@ -2387,14 +2394,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `799` lines (`32027` bytes)
+**Size**: `818` lines (`32690` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `3461` lines (`157088` bytes)
+**Size**: `3577` lines (`162436` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2460,6 +2467,7 @@
 **Functions:**
 - `def _copy_scene_settings(source, target)` - *Copy camera and environment settings without copying scene nodes.*
 - `def _enabled(value)`
+- `def _camera_key_from_pose(moment, pose)` - *Build a key from a viewport pose: position plus quat or yaw/pitch.*
 - `def _action_fix(message)` - *Turn one editor-action failure into the fix that actually applies.*
 - `def create_server(game, host, port, prefab_dir, scene_dir, animation_dir, camera_path_dir, material_dir, initial_scene, project_dir)` - *Create a bound server; port 0 asks the OS for a free port.*
 - `def serve(game, host, port, prefab_dir, scene_dir, animation_dir, camera_path_dir, material_dir, initial_scene, project_dir)` - *Run the local console until interrupted.*
@@ -3025,7 +3033,7 @@
 ### [`tests/test_camera_path.py`](tests/test_camera_path.py)
 > *Tests for deterministic camera paths.*
 
-**Size**: `357` lines (`14604` bytes)
+**Size**: `527` lines (`22321` bytes)
 
 **Classes:**
 - `class CameraPathTest`
@@ -3050,6 +3058,20 @@
   - Method `.test_reports_are_json_safe()`
   - Method `.test_reports_are_deterministic()`
   - Method `.test_discovery_advertises_camera_paths()`
+- `class CameraKeyEditingTest`
+  - Method `.test_from_camera_round_trips_heading_and_lens()`
+  - Method `.test_from_view_clamps_pitch_like_a_camera()`
+  - Method `.test_from_camera_rejects_other_objects()`
+  - Method `.test_insert_starts_a_one_shot_path()`
+  - Method `.test_insert_sorts_keys_and_replaces_near_duplicates()`
+  - Method `.test_insert_replacing_the_anchor_keeps_time_zero()`
+  - Method `.test_insert_respects_a_loop_duration()`
+  - Method `.test_insert_validates_inputs()`
+  - Method `.test_remove_deletes_by_time_and_keeps_constraints()`
+  - Method `.test_remove_refuses_to_unanchor_or_empty_a_path()`
+  - Method `.test_remove_keeps_loop_shape()`
+  - Method `.test_remove_validates_inputs()`
+  - Method `.test_key_document_round_trips_through_the_parser()`
 
 **Functions:**
 - `def _line_path(**player_options)`
@@ -5181,7 +5203,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `6699` lines (`274408` bytes)
+**Size**: `6909` lines (`284043` bytes)
 
 **Classes:**
 - `class Health`
@@ -5293,6 +5315,9 @@
   - Method `.test_editor_state_machine_restore_collision_is_400()`
   - Method `.test_editor_camera_path_library_and_preview()`
   - Method `.test_editor_camera_path_validation_and_collision()`
+  - Method `.test_editor_camera_path_key_authoring()`
+  - Method `.test_editor_camera_path_key_validation()`
+  - Method `.test_editor_camera_path_actions_keep_the_scene_clean()`
   - Method `.test_editor_preview_blend_space()`
   - Method `.test_editor_trace_navgrid()`
   - Method `.test_editor_route_navgrid()`

@@ -60,6 +60,8 @@ const elements = {
   cameraPathSave: document.getElementById("camera-path-save"),
   cameraPathDelete: document.getElementById("camera-path-delete"),
   cameraPathRestore: document.getElementById("camera-path-restore"),
+  cameraPathKeySet: document.getElementById("camera-path-key-set"),
+  cameraPathKeyRemove: document.getElementById("camera-path-key-remove"),
   cameraPathState: document.getElementById("camera-path-state"),
   blendSpaceJson: document.getElementById("blend-space-json"),
   blendSpaceName: document.getElementById("blend-space-name"),
@@ -608,6 +610,10 @@ function fillStateMachineDatalist(list, entries) {
   }
 }
 
+function cameraKeyLabel(count) {
+  return `${count} ${count === 1 ? "key" : "keys"}`;
+}
+
 function fillCameraPathDatalist(list, entries) {
   list.replaceChildren();
   for (const entry of entries) {
@@ -1074,13 +1080,19 @@ function showEditor(editor) {
       `${statePreview.frames} frames · ${statePreview.updated.length} nodes`
     : "No state machine preview.";
   const cameraPathPreview = editor.camera_path_preview;
-  elements.cameraPathState.textContent = cameraPathPreview
-    ? `Path ${cameraPathPreview.name || "inline"} @ ${cameraPathPreview.time}s · ` +
-      `${cameraPathPreview.path.keys.length} keys · ` +
-      `pos ${cameraPathPreview.pose.position
-        .map((value) => value.toFixed(2))
-        .join(", ")}`
-    : "No camera path preview.";
+  const cameraPathKey = editor.camera_path_key;
+  elements.cameraPathState.textContent = cameraPathKey
+    ? `${cameraPathKey.action === "set_camera_path_key" ? "Set" : "Removed"} ` +
+      `key @ ${cameraPathKey.time}s · ${cameraKeyLabel(cameraPathKey.keys)}` +
+      `${cameraPathKey.replaced ? " · replaced" : ""}` +
+      `${cameraPathKey.removed ? ` · ${cameraPathKey.removed} removed` : ""}`
+    : cameraPathPreview
+      ? `Path ${cameraPathPreview.name || "inline"} @ ${cameraPathPreview.time}s · ` +
+        `${cameraKeyLabel(cameraPathPreview.path.keys.length)} · ` +
+        `pos ${cameraPathPreview.pose.position
+          .map((value) => value.toFixed(2))
+          .join(", ")}`
+      : "No camera path preview.";
   const blendPreview = editor.blend_space_preview;
   elements.blendSpaceState.textContent = blendPreview
     ? `Blend ${blendPreview.parameter} @ ${blendPreview.time}s · ` +
@@ -2550,6 +2562,75 @@ async function restoreCameraPath() {
   );
 }
 
+function cameraPathViewPose() {
+  if (!viewer) {
+    throw new Error("The scene view camera is not ready.");
+  }
+  const bookmark = viewer.cameraBookmark();
+  const position = viewer.cameraPosition();
+  if (!bookmark || !position) {
+    throw new Error("The scene view camera is not ready.");
+  }
+  const camera =
+    editorState && editorState.scene_settings
+      ? editorState.scene_settings.camera
+      : null;
+  const fov = camera ? Number(camera.fov_y) : NaN;
+  return {
+    position,
+    yaw: bookmark.yaw,
+    pitch: bookmark.pitch,
+    fov_y: Number.isFinite(fov) ? fov : 60,
+  };
+}
+
+function readCameraPathTime() {
+  const time = Number(elements.cameraPathTime.value);
+  if (!Number.isFinite(time) || time < 0) {
+    throw new Error("Camera path time must be non-negative.");
+  }
+  return time;
+}
+
+function showCameraPathDocument(editor) {
+  const document = editor.camera_path_document;
+  if (document) {
+    elements.cameraPathName.value = document.name;
+    elements.cameraPathJson.value = JSON.stringify(document.path, null, 2);
+  }
+}
+
+async function setCameraPathKey() {
+  const name = elements.cameraPathName.value.trim();
+  if (!name) {
+    throw new Error("Enter a camera path name before setting a key.");
+  }
+  const time = readCameraPathTime();
+  const editor = await editorAction(
+    {
+      action: "set_camera_path_key",
+      name,
+      time,
+      pose: cameraPathViewPose(),
+    },
+    `setting camera path key at ${time}s`,
+  );
+  showCameraPathDocument(editor);
+}
+
+async function removeCameraPathKey() {
+  const name = elements.cameraPathName.value.trim();
+  if (!name) {
+    throw new Error("Enter the camera path name to edit.");
+  }
+  const time = readCameraPathTime();
+  const editor = await editorAction(
+    { action: "remove_camera_path_key", name, time },
+    `removing camera path key at ${time}s`,
+  );
+  showCameraPathDocument(editor);
+}
+
 function readBlendSpaceJson() {
   let blendSpace;
   try {
@@ -3512,6 +3593,12 @@ elements.cameraPathDelete.addEventListener("click", () =>
 );
 elements.cameraPathRestore.addEventListener("click", () =>
   run(restoreCameraPath),
+);
+elements.cameraPathKeySet.addEventListener("click", () =>
+  run(setCameraPathKey),
+);
+elements.cameraPathKeyRemove.addEventListener("click", () =>
+  run(removeCameraPathKey),
 );
 elements.blendSpacePreview.addEventListener("click", () =>
   run(previewBlendSpace),

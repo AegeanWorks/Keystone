@@ -34,10 +34,13 @@ __all__ = [
     "CameraPath",
     "CameraPathPlayer",
     "CameraPose",
+    "camera_key_from_dict",
     "camera_path_from_dict",
     "camera_path_player_report",
     "camera_path_report",
     "camera_path_to_dict",
+    "insert_camera_key",
+    "remove_camera_key",
 ]
 
 CAMERA_PATH_SCHEMA = 1
@@ -130,6 +133,44 @@ class CameraKey:
             * Quat.from_axis_angle(Vec3(1.0, 0.0, 0.0), pitch)
         ).normalized()
         return cls(time=time, position=position, rotation=rotation, fov_y=fov_y)
+
+    @classmethod
+    def from_view(
+        cls,
+        time: float,
+        position: Vec3,
+        yaw: float,
+        pitch: float,
+        *,
+        fov_y: float = 60.0,
+    ) -> CameraKey:
+        """Build a key from an engine-camera yaw/pitch view.
+
+        This is the inverse of ``CameraPose.yaw``/``pitch``, so a key captured
+        from a ``PerspectiveCamera`` samples back to the same heading. Pitch
+        is clamped to the camera limit, matching ``PerspectiveCamera``.
+        """
+        position = _finite_vec3("camera key position", position)
+        heading = _finite("camera key yaw", yaw)
+        tilt = max(-MAX_PITCH, min(MAX_PITCH, _finite("camera key pitch", pitch)))
+        rotation = (
+            Quat.from_axis_angle(Vec3.UP, -heading)
+            * Quat.from_axis_angle(Vec3(1.0, 0.0, 0.0), tilt)
+        ).normalized()
+        return cls(time=time, position=position, rotation=rotation, fov_y=fov_y)
+
+    @classmethod
+    def from_camera(cls, time: float, camera: PerspectiveCamera) -> CameraKey:
+        """Build a key from a camera's position, heading and lens."""
+        if not isinstance(camera, PerspectiveCamera):
+            raise TypeError("camera key source must be a PerspectiveCamera")
+        return cls.from_view(
+            time,
+            camera.position,
+            camera.yaw,
+            camera.pitch,
+            fov_y=camera.fov_y,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -434,6 +475,32 @@ def _number_list(label: str, value: object, length: int) -> list[float]:
     return numbers
 
 
+def camera_key_from_dict(document: object) -> CameraKey:
+    """Build one camera key from its document form, refusing drift."""
+    if not isinstance(document, dict):
+        raise TypeError("camera path key must be a JSON object")
+    unknown = set(document) - _KEY_DOCUMENT_KEYS
+    if unknown:
+        raise ValueError(f"camera path key has unknown keys: {sorted(unknown)}")
+    if "time" not in document:
+        raise ValueError("camera path key needs a time")
+    if "position" not in document:
+        raise ValueError("camera path key needs a position")
+    rotation = _number_list(
+        "camera path key rotation",
+        document.get("rotation", (0.0, 0.0, 0.0, 1.0)),
+        4,
+    )
+    return CameraKey(
+        time=_finite("camera path key time", document["time"]),
+        position=Vec3(
+            *_number_list("camera path key position", document["position"], 3)
+        ),
+        rotation=Quat(rotation[3], rotation[0], rotation[1], rotation[2]),
+        fov_y=_lens(document.get("fov_y", 60.0), "camera path key fov_y"),
+    )
+
+
 def camera_path_to_dict(path: CameraPath) -> dict:
     """Return the schema-1 document for one camera path.
 
@@ -490,34 +557,7 @@ def camera_path_from_dict(document: object) -> CameraPath:
         raise TypeError("camera path document keys must be a list")
     keys: list[CameraKey] = []
     for item in raw_keys:
-        if not isinstance(item, dict):
-            raise TypeError("camera path key must be a JSON object")
-        key_unknown = set(item) - _KEY_DOCUMENT_KEYS
-        if key_unknown:
-            raise ValueError(
-                f"camera path key has unknown keys: {sorted(key_unknown)}"
-            )
-        if "time" not in item:
-            raise ValueError("camera path key needs a time")
-        if "position" not in item:
-            raise ValueError("camera path key needs a position")
-        rotation = _number_list(
-            "camera path key rotation", item.get("rotation", (0.0, 0.0, 0.0, 1.0)), 4
-        )
-        keys.append(
-            CameraKey(
-                time=_finite("camera path key time", item["time"]),
-                position=Vec3(
-                    *_number_list(
-                        "camera path key position", item["position"], 3
-                    )
-                ),
-                rotation=Quat(rotation[3], rotation[0], rotation[1], rotation[2]),
-                fov_y=_lens(
-                    item.get("fov_y", 60.0), "camera path key fov_y"
-                ),
-            )
-        )
+        keys.append(camera_key_from_dict(item))
     if loop:
         if "duration" not in document:
             raise ValueError("a looping camera path document needs a duration")
@@ -526,4 +566,92 @@ def camera_path_from_dict(document: object) -> CameraPath:
         raise ValueError(
             "a one-shot camera path document must omit duration"
         )
+    return CameraPath(keys)
+
+
+def _gap(epsilon: object) -> float:
+    gap = _finite("camera key epsilon", epsilon)
+    if gap <= 0.0:
+        raise ValueError("camera key epsilon must be positive")
+    return gap
+
+
+def insert_camera_key(
+    path: CameraPath | None,
+    key: CameraKey,
+    *,
+    epsilon: float = 1e-6,
+) -> tuple[CameraPath, bool]:
+    """Insert or replace one key, returning the path and whether it replaced.
+
+    ``None`` starts a new one-shot path, which needs its first key at time 0.
+    A key within ``epsilon`` of an existing key replaces that key's pose at the
+    existing time, so float noise cannot reshuffle or unanchor a path. A
+    looping path refuses a key at or past its declared duration, because the
+    spare span is its return leg.
+    """
+    if path is not None and not isinstance(path, CameraPath):
+        raise TypeError("camera key target must be a CameraPath or None")
+    if not isinstance(key, CameraKey):
+        raise TypeError("insert_camera_key needs a CameraKey")
+    gap = _gap(epsilon)
+    if path is None:
+        if key.time != 0.0:
+            raise ValueError("a new camera path needs its first key at time 0")
+        return CameraPath([key]), False
+    for existing in path.keys:
+        if abs(existing.time - key.time) <= gap:
+            replacement = CameraKey(
+                existing.time, key.position, key.rotation, key.fov_y
+            )
+            keys = tuple(
+                replacement if item is existing else item for item in path.keys
+            )
+            return _rebuild(path, keys), True
+    if path.loop and key.time >= path.duration:
+        raise ValueError(
+            "a looping camera path key must fall before its duration"
+        )
+    keys = tuple(sorted(path.keys + (key,), key=lambda item: item.time))
+    return _rebuild(path, keys), False
+
+
+def remove_camera_key(
+    path: CameraPath,
+    time: float,
+    *,
+    epsilon: float = 1e-6,
+) -> tuple[CameraPath, int]:
+    """Remove the key at ``time``, returning the path and removed count.
+
+    A missing time removes nothing so callers can report ``removed: 0``.
+    Removing every key or the anchoring key at time 0 is refused; delete the
+    path or empty it by other means rather than leaving an unanchored spline.
+    """
+    if not isinstance(path, CameraPath):
+        raise TypeError("remove_camera_key needs a CameraPath")
+    gap = _gap(epsilon)
+    moment = _finite("camera path time", time)
+    if moment < 0.0:
+        raise ValueError("camera path time must be non-negative")
+    doomed = tuple(
+        item for item in path.keys if abs(item.time - moment) <= gap
+    )
+    if not doomed:
+        return path, 0
+    keys = tuple(item for item in path.keys if not any(item is hit for hit in doomed))
+    if not keys:
+        raise ValueError(
+            "a camera path needs at least one key; delete the path instead"
+        )
+    if keys[0].time != 0.0:
+        raise ValueError(
+            "a camera path must start at time 0; remove the later keys first"
+        )
+    return _rebuild(path, keys), len(doomed)
+
+
+def _rebuild(path: CameraPath, keys: tuple[CameraKey, ...]) -> CameraPath:
+    if path.loop:
+        return CameraPath(keys, loop=True, duration=path.duration)
     return CameraPath(keys)

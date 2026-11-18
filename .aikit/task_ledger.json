@@ -1,11 +1,11 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-camera-path-console-v1",
-    "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1794952278.095962,
+    "task_id": "keystone-camera-path-keys-v1",
+    "last_phase": "phase 2",
+    "active_phase": 2,
+    "status": "in_progress",
+    "updated_at": 1794978211.5095696,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
@@ -15,59 +15,14 @@
         "path": "projects/keystone"
       }
     ],
-    "completed_at": 1794952287.5030115,
-    "completed_head": "3816dbcde66fb00e3fd49f25062be55e73f608a3",
-    "completed_tree": "c525ead2120f31b1e214690b2d46b2fa990fec22"
+    "impact_assessment": {
+      "why": "Paths could be saved and previewed, but every key had to be typed as JSON with a quaternion, unlike animation clips that capture the current transform; and previewing a path marked the scene dirty even though it never touches it.",
+      "benefits": "Cutscene keys become one click from the viewport, loops and one-shot paths stay validated through the same document rules, and the dirty indicator stops lying after a preview.",
+      "risks": "contract: four engine exports, two editor actions, editor schema 65, one editor document key and a dirty-state classification; dependency: server reuses CameraPathLibrary and camera path documents; concurrency: unchanged session lock; state: no scene, snapshot or render format change",
+      "mitigation": "Keep insert/remove pure and unit-tested, validate times and poses through the existing helpers, pin the dirty-state regression and the action reports in tests, smoke the console panel in a browser, and keep the canonical hash and reference PNG unchanged"
+    }
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-camera-shake-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/3] Implemented and verified - camera_shake.py adds CameraShake with trauma accumulation/clamping and linear decay, seeded sine phases drawn once from RandomStream, amplitude and rotation-amplitude controls, pure sample() and reset(); ShakeOffset validates finite values and shake_report emits schema-1 trauma/position/yaw/pitch; zero trauma is exactly zero, same seeds agree and different seeds diverge, decay reaches zero, rotation-only shake leaves position zero, reset clears time and trauma, and validation covers seed, amplitudes, frequency, decay, trauma and dt; exports, README summary, ARCHITECTURE camera row and tree, docs/TREE, CHANGELOG and ADR-258 updated; --describe reports capabilities.camera_shake; 12 tests green (1372 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
-      "files_affected": [
-        "keystone/camera_shake.py",
-        "tests/test_camera_shake.py",
-        "keystone/__init__.py",
-        "keystone/plugin.py",
-        "README.md",
-        "docs/ARCHITECTURE.md",
-        "docs/TREE.md",
-        "CHANGELOG.md",
-        ".aikit/decisions.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794479659.652853,
-      "timestamp_str": "2026-11-12 13:34:19",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "unit": "tests",
-          "candidate": 1372.0,
-          "artifact": "stdout",
-          "command": "python -m pytest --collect-only -q",
-          "baseline": 1360.0,
-          "metric": "collected_tests"
-        },
-        {
-          "unit": "trauma",
-          "candidate": 0.5,
-          "artifact": "tests/test_camera_shake.py",
-          "command": "python -m pytest tests/test_camera_shake.py",
-          "baseline": 1.0,
-          "metric": "shake_decay_after_quarter_second"
-        },
-        {
-          "unit": "bytes",
-          "candidate": 4899.0,
-          "artifact": "temp PNG",
-          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
-          "baseline": 4899.0,
-          "metric": "reference_png_bytes"
-        }
-      ],
-      "checklists": "passed"
-    },
     {
       "task_id": "keystone-camera-shake-v1",
       "phase": "completed",
@@ -589,6 +544,30 @@
         ],
         "forced": false
       }
+    },
+    {
+      "task_id": "keystone-camera-path-keys-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Plan: author camera path keys without hand-written JSON - CameraKey.from_camera/from_view plus camera_key_from_dict, pure insert_camera_key/remove_camera_key helpers, set_camera_path_key/remove_camera_path_key editor actions (schema 65) that capture the scene camera or an explicit viewport pose, console Set key from view/Remove key buttons, and a fix so preview_camera_path no longer marks the scene dirty",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794978211.5095696,
+      "timestamp_str": "2026-11-18 08:03:31",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "Paths could be saved and previewed, but every key had to be typed as JSON with a quaternion, unlike animation clips that capture the current transform; and previewing a path marked the scene dirty even though it never touches it.",
+        "benefits": "Cutscene keys become one click from the viewport, loops and one-shot paths stay validated through the same document rules, and the dirty indicator stops lying after a preview.",
+        "risks": "contract: four engine exports, two editor actions, editor schema 65, one editor document key and a dirty-state classification; dependency: server reuses CameraPathLibrary and camera path documents; concurrency: unchanged session lock; state: no scene, snapshot or render format change",
+        "mitigation": "Keep insert/remove pure and unit-tested, validate times and poses through the existing helpers, pin the dirty-state regression and the action reports in tests, smoke the console panel in a browser, and keep the canonical hash and reference PNG unchanged"
+      },
+      "plan_digest": "fe6c4da6211e19a009a5c4c2902943a67c7c6196c0ff54dcf3bee1ca7c8ca71f",
+      "workspaces": [
+        {
+          "name": "keystone",
+          "path": "projects/keystone"
+        }
+      ]
     }
   ]
 }

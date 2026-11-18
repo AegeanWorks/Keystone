@@ -4,14 +4,18 @@ import json
 import math
 import unittest
 
-from keystone.camera import PerspectiveCamera
+from keystone.camera import MAX_PITCH, PerspectiveCamera
 from keystone.camera_path import (
     CameraKey,
     CameraPath,
     CameraPathPlayer,
     CameraPose,
+    camera_key_from_dict,
     camera_path_player_report,
     camera_path_report,
+    camera_path_to_dict,
+    insert_camera_key,
+    remove_camera_key,
 )
 from keystone.math3d import Quat, Vec3
 from keystone.plugin import describe_game
@@ -355,3 +359,169 @@ class CameraPathTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CameraKeyEditingTest(unittest.TestCase):
+    def test_from_camera_round_trips_heading_and_lens(self):
+        for yaw in (0.0, 0.5, -1.2, 2.9):
+            for pitch in (-0.4, 0.0, 0.35):
+                with self.subTest(yaw=yaw, pitch=pitch):
+                    camera = PerspectiveCamera(
+                        position=Vec3(1.0, 2.0, 3.0),
+                        yaw=yaw,
+                        pitch=pitch,
+                        fov_y=55.0,
+                    )
+                    key = CameraKey.from_camera(0.0, camera)
+                    pose = CameraPose(key.position, key.rotation)
+                    self.assertEqual(key.position, Vec3(1.0, 2.0, 3.0))
+                    self.assertEqual(key.fov_y, 55.0)
+                    self.assertAlmostEqual(
+                        math.atan2(math.sin(pose.yaw - yaw), math.cos(pose.yaw - yaw)),
+                        0.0,
+                        places=6,
+                    )
+                    self.assertAlmostEqual(pose.pitch, pitch, places=6)
+                    self.assertLess(
+                        (pose.forward() - camera.forward()).length(), 1e-6
+                    )
+
+    def test_from_view_clamps_pitch_like_a_camera(self):
+        key = CameraKey.from_view(0.0, Vec3(), 0.0, 10.0)
+        self.assertAlmostEqual(CameraPose(key.position, key.rotation).pitch, MAX_PITCH)
+        falling = CameraKey.from_view(0.0, Vec3(), 0.0, -10.0)
+        self.assertAlmostEqual(
+            CameraPose(falling.position, falling.rotation).pitch, -MAX_PITCH
+        )
+
+    def test_from_camera_rejects_other_objects(self):
+        with self.assertRaises(TypeError):
+            CameraKey.from_camera(0.0, object())  # type: ignore[arg-type]
+        with self.assertRaises(ValueError):
+            CameraKey.from_view(0.0, Vec3(), float("nan"), 0.0)
+        with self.assertRaises(TypeError):
+            CameraKey.from_view(0.0, (0.0, 0.0, 0.0), 0.0, 0.0)  # type: ignore[arg-type]
+
+    def test_insert_starts_a_one_shot_path(self):
+        created, replaced = insert_camera_key(None, CameraKey(0.0, Vec3(1.0, 0.0, 0.0)))
+        self.assertFalse(replaced)
+        self.assertEqual(len(created.keys), 1)
+        self.assertFalse(created.loop)
+        self.assertEqual(created.duration, 0.0)
+        with self.assertRaises(ValueError):
+            insert_camera_key(None, CameraKey(1.0, Vec3()))
+
+    def test_insert_sorts_keys_and_replaces_near_duplicates(self):
+        path = CameraPath(
+            [
+                CameraKey(0.0, Vec3()),
+                CameraKey(2.0, Vec3(2.0, 0.0, 0.0)),
+            ]
+        )
+        grown, replaced = insert_camera_key(path, CameraKey(1.0, Vec3(1.0, 0.0, 0.0)))
+        self.assertFalse(replaced)
+        self.assertEqual([key.time for key in grown.keys], [0.0, 1.0, 2.0])
+        hits, replaced = insert_camera_key(
+            grown, CameraKey(1.0 + 1e-9, Vec3(5.0, 0.0, 0.0))
+        )
+        self.assertTrue(replaced)
+        self.assertEqual(len(hits.keys), 3)
+        self.assertEqual(hits.keys[1].time, 1.0)
+        self.assertEqual(hits.keys[1].position, Vec3(5.0, 0.0, 0.0))
+
+    def test_insert_replacing_the_anchor_keeps_time_zero(self):
+        path = CameraPath([CameraKey(0.0, Vec3()), CameraKey(1.0, Vec3(1.0, 0.0, 0.0))])
+        updated, replaced = insert_camera_key(
+            path, CameraKey(1e-9, Vec3(3.0, 0.0, 0.0))
+        )
+        self.assertTrue(replaced)
+        self.assertEqual(updated.keys[0].time, 0.0)
+        self.assertEqual(updated.keys[0].position, Vec3(3.0, 0.0, 0.0))
+
+    def test_insert_respects_a_loop_duration(self):
+        loop = CameraPath(
+            [CameraKey(0.0, Vec3()), CameraKey(1.0, Vec3(1.0, 0.0, 0.0))],
+            loop=True,
+            duration=3.0,
+        )
+        grown, replaced = insert_camera_key(loop, CameraKey(2.0, Vec3(2.0, 0.0, 0.0)))
+        self.assertFalse(replaced)
+        self.assertEqual(grown.duration, 3.0)
+        self.assertTrue(grown.loop)
+        with self.assertRaises(ValueError):
+            insert_camera_key(loop, CameraKey(3.0, Vec3()))
+        with self.assertRaises(ValueError):
+            insert_camera_key(loop, CameraKey(4.0, Vec3()))
+
+    def test_insert_validates_inputs(self):
+        path = CameraPath([CameraKey(0.0, Vec3())])
+        with self.assertRaises(TypeError):
+            insert_camera_key(object(), CameraKey(0.0, Vec3()))  # type: ignore[arg-type]
+        with self.assertRaises(TypeError):
+            insert_camera_key(path, object())  # type: ignore[arg-type]
+        for epsilon in (0.0, -1.0, float("nan"), True):
+            with self.subTest(epsilon=epsilon), self.assertRaises((TypeError, ValueError)):
+                insert_camera_key(path, CameraKey(1.0, Vec3()), epsilon=epsilon)
+
+    def test_remove_deletes_by_time_and_keeps_constraints(self):
+        path = CameraPath(
+            [
+                CameraKey(0.0, Vec3()),
+                CameraKey(1.0, Vec3(1.0, 0.0, 0.0)),
+                CameraKey(3.0, Vec3(3.0, 0.0, 0.0)),
+            ]
+        )
+        trimmed, removed = remove_camera_key(path, 1.0 + 1e-9)
+        self.assertEqual(removed, 1)
+        self.assertEqual([key.time for key in trimmed.keys], [0.0, 3.0])
+        self.assertEqual(trimmed.duration, 3.0)
+        last, removed = remove_camera_key(trimmed, 3.0)
+        self.assertEqual(removed, 1)
+        self.assertEqual(last.duration, 0.0)
+        same, removed = remove_camera_key(last, 5.0)
+        self.assertEqual(removed, 0)
+        self.assertEqual(same.keys, last.keys)
+
+    def test_remove_refuses_to_unanchor_or_empty_a_path(self):
+        path = CameraPath([CameraKey(0.0, Vec3()), CameraKey(1.0, Vec3(1.0, 0.0, 0.0))])
+        with self.assertRaises(ValueError):
+            remove_camera_key(path, 0.0)
+        single = CameraPath([CameraKey(0.0, Vec3())])
+        with self.assertRaises(ValueError):
+            remove_camera_key(single, 0.0)
+
+    def test_remove_keeps_loop_shape(self):
+        loop = CameraPath(
+            [CameraKey(0.0, Vec3()), CameraKey(1.0, Vec3(1.0, 0.0, 0.0)), CameraKey(2.0, Vec3())],
+            loop=True,
+            duration=4.0,
+        )
+        trimmed, removed = remove_camera_key(loop, 1.0)
+        self.assertEqual(removed, 1)
+        self.assertTrue(trimmed.loop)
+        self.assertEqual(trimmed.duration, 4.0)
+        self.assertEqual([key.time for key in trimmed.keys], [0.0, 2.0])
+
+    def test_remove_validates_inputs(self):
+        path = CameraPath([CameraKey(0.0, Vec3()), CameraKey(1.0, Vec3(1.0, 0.0, 0.0))])
+        with self.assertRaises(TypeError):
+            remove_camera_key(object(), 0.0)  # type: ignore[arg-type]
+        with self.assertRaises(ValueError):
+            remove_camera_key(path, -1.0)
+        with self.assertRaises(ValueError):
+            remove_camera_key(path, float("nan"))
+        with self.assertRaises(ValueError):
+            remove_camera_key(path, 1.0, epsilon=0.0)
+
+    def test_key_document_round_trips_through_the_parser(self):
+        key = CameraKey.from_view(0.0, Vec3(1.0, 2.0, 3.0), 0.7, 0.2, fov_y=42.0)
+        document = camera_path_to_dict(CameraPath([key]))["keys"][0]
+        self.assertEqual(camera_key_from_dict(document), key)
+        with self.assertRaises(ValueError):
+            camera_key_from_dict({"time": 0.0})
+        with self.assertRaises(ValueError):
+            camera_key_from_dict({"position": [0.0, 0.0, 0.0]})
+        with self.assertRaises(ValueError):
+            camera_key_from_dict({"time": 0.0, "position": [0.0, 0.0, 0.0], "yaw": 0.0})
+        with self.assertRaises(TypeError):
+            camera_key_from_dict([])  # type: ignore[arg-type]

@@ -347,6 +347,22 @@ EDITOR_EXAMPLES = {
         "name": "intro",
         "time": 1.0,
     },
+    "set_camera_path_key": {
+        "action": "set_camera_path_key",
+        "name": "intro",
+        "time": 1.0,
+        "pose": {
+            "position": [1.0, 2.0, 3.0],
+            "yaw": 0.5,
+            "pitch": -0.1,
+            "fov_y": 60.0,
+        },
+    },
+    "remove_camera_path_key": {
+        "action": "remove_camera_path_key",
+        "name": "intro",
+        "time": 1.0,
+    },
     "save_material": {
         "action": "save_material",
         "name": "gold",
@@ -591,6 +607,8 @@ EDITOR_SCHEMA = {
         "delete_camera_path": ["name"],
         "restore_camera_path": ["trash"],
         "preview_camera_path": ["name", "path", "time"],
+        "set_camera_path_key": ["name", "time", "pose"],
+        "remove_camera_path_key": ["name", "time"],
         "state_machine_entry": [
             "name",
             "states",
@@ -772,6 +790,7 @@ EDITOR_SCHEMA = {
         "schema 59 adds preview_blend_space for inline 1D blend-space previews and export",
         "schema 63 adds the .kpath camera path library with save/delete/restore actions and a non-mutating preview_camera_path pose sample",
         "schema 64 adds load_camera_path, returning the saved path document for console JSON editing",
+        "schema 65 adds set_camera_path_key/remove_camera_path_key, which author keys from the scene camera or an explicit position plus yaw/pitch pose",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

@@ -28,7 +28,8 @@ from keystone.animation_state import (
     AnimationTransition,
 )
 from keystone.assets import AssetRegistry
-from keystone.camera_path import camera_path_from_dict, camera_path_to_dict
+from keystone.camera_path import CameraPose, camera_path_from_dict, camera_path_to_dict
+from keystone.camera_path_library import CameraPathLibrary
 from keystone.geometry import Material
 from keystone.math3d import Vec3
 from keystone.png import write_png
@@ -5223,6 +5224,207 @@ class WebServerTest(unittest.TestCase):
             self.assertEqual(caught.exception.status, 400)
             self.assertIn("--camera-path-dir", caught.exception.fix)
 
+    def test_editor_camera_path_key_authoring(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path_dir = Path(directory) / "paths"
+            session = GameSession(CubeDemo(), camera_path_dir=path_dir)
+            library = CameraPathLibrary(path_dir)
+            settings = session.editor()["scene_settings"]["camera"]
+            created = session.editor_action(
+                {"action": "set_camera_path_key", "name": "intro", "time": 0.0}
+            )
+            report = created["camera_path_key"]
+            self.assertEqual(report["action"], "set_camera_path_key")
+            self.assertEqual(report["source"], "camera")
+            self.assertEqual(report["keys"], 1)
+            self.assertFalse(report["replaced"])
+            self.assertEqual(report["removed"], 0)
+            self.assertEqual(created["camera_path_document"]["name"], "intro")
+            path = library.load("intro")
+            self.assertEqual(len(path.keys), 1)
+            self.assertEqual(path.keys[0].position, Vec3(*settings["position"]))
+            self.assertEqual(path.keys[0].fov_y, settings["fov_y"])
+            pose = CameraPose(path.keys[0].position, path.keys[0].rotation)
+            self.assertAlmostEqual(pose.yaw, settings["yaw"], places=6)
+            self.assertAlmostEqual(pose.pitch, settings["pitch"], places=6)
+
+            posed = session.editor_action(
+                {
+                    "action": "set_camera_path_key",
+                    "name": "intro",
+                    "time": 2.0,
+                    "pose": {
+                        "position": [2.0, 1.0, 0.0],
+                        "yaw": 0.25,
+                        "pitch": -0.1,
+                        "fov_y": 40.0,
+                    },
+                }
+            )
+            self.assertEqual(posed["camera_path_key"]["source"], "pose")
+            self.assertEqual(posed["camera_path_key"]["keys"], 2)
+            self.assertEqual(posed["camera_path_key"]["duration"], 2.0)
+            path = library.load("intro")
+            self.assertEqual(path.keys[1].position, Vec3(2.0, 1.0, 0.0))
+            self.assertEqual(path.keys[1].fov_y, 40.0)
+
+            replaced = session.editor_action(
+                {
+                    "action": "set_camera_path_key",
+                    "name": "intro",
+                    "time": 2.0 + 1e-9,
+                    "pose": {"position": [3.0, 1.0, 0.0], "rotation": [0.0, 0.0, 0.0, 1.0]},
+                }
+            )
+            self.assertTrue(replaced["camera_path_key"]["replaced"])
+            self.assertEqual(replaced["camera_path_key"]["keys"], 2)
+            path = library.load("intro")
+            self.assertEqual(path.keys[1].time, 2.0)
+            self.assertEqual(path.keys[1].position, Vec3(3.0, 1.0, 0.0))
+
+            trimmed = session.editor_action(
+                {"action": "remove_camera_path_key", "name": "intro", "time": 2.0}
+            )
+            self.assertEqual(trimmed["camera_path_key"]["removed"], 1)
+            self.assertEqual(trimmed["camera_path_key"]["keys"], 1)
+            self.assertEqual(trimmed["camera_path_key"]["duration"], 0.0)
+            emptied = session.editor_action(
+                {"action": "remove_camera_path_key", "name": "intro", "time": 5.0}
+            )
+            self.assertEqual(emptied["camera_path_key"]["removed"], 0)
+            self.assertEqual(emptied["camera_path_key"]["keys"], 1)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "remove_camera_path_key", "name": "intro", "time": 0.0}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("delete the camera path", caught.exception.fix)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "remove_camera_path_key", "name": "absent", "time": 0.0}
+                )
+            self.assertEqual(caught.exception.status, 404)
+
+            reset = session.editor_action({"action": "select", "id": None})
+            self.assertIsNone(reset["camera_path_key"])
+            self.assertIsNone(reset["camera_path_document"])
+
+    def test_editor_camera_path_key_validation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path_dir = Path(directory) / "paths"
+            session = GameSession(CubeDemo(), camera_path_dir=path_dir)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "set_camera_path_key", "name": "late", "time": 1.0}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("time 0", caught.exception.fix)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "set_camera_path_key",
+                        "name": "intro",
+                        "time": 0.0,
+                        "pose": {"yaw": 0.0},
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "set_camera_path_key",
+                        "name": "intro",
+                        "time": 0.0,
+                        "pose": {
+                            "position": [0.0, 0.0, 0.0],
+                            "rotation": [0.0, 0.0, 0.0, 1.0],
+                            "yaw": 0.0,
+                        },
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "set_camera_path_key",
+                        "name": "intro",
+                        "time": 0.0,
+                        "pose": {"position": [0.0, 0.0, 0.0], "ease": "linear"},
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "set_camera_path_key", "name": "intro", "time": True}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "set_camera_path_key", "name": "", "time": 0.0}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            session.editor_action(
+                {
+                    "action": "save_camera_path",
+                    "name": "loop",
+                    "path": _camera_path_document(loop=True),
+                }
+            )
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {"action": "set_camera_path_key", "name": "loop", "time": 3.0}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("duration", caught.exception.fix)
+
+            standalone = GameSession(CubeDemo())
+            with self.assertRaises(WebProblem) as caught:
+                standalone.editor_action(
+                    {"action": "set_camera_path_key", "name": "intro", "time": 0.0}
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("--camera-path-dir", caught.exception.fix)
+
+    def test_editor_camera_path_actions_keep_the_scene_clean(self):
+        with tempfile.TemporaryDirectory() as directory:
+            session = GameSession(
+                CubeDemo(), camera_path_dir=Path(directory) / "paths"
+            )
+            self.assertFalse(session.editor()["scene_dirty"])
+            saved = session.editor_action(
+                {
+                    "action": "save_camera_path",
+                    "name": "intro",
+                    "path": _camera_path_document(),
+                }
+            )
+            self.assertFalse(saved["scene_dirty"])
+            self.assertFalse(
+                session.editor_action(
+                    {"action": "preview_camera_path", "name": "intro", "time": 1.0}
+                )["scene_dirty"]
+            )
+            self.assertFalse(
+                session.editor_action(
+                    {"action": "set_camera_path_key", "name": "intro", "time": 1.0}
+                )["scene_dirty"]
+            )
+            self.assertFalse(
+                session.editor_action(
+                    {"action": "remove_camera_path_key", "name": "intro", "time": 1.0}
+                )["scene_dirty"]
+            )
+            cube = next(
+                node
+                for node in session.editor()["nodes"]
+                if node["name"] == "cube-0"
+            )
+            self.assertTrue(
+                session.editor_action(
+                    {"action": "transform", "id": cube["id"], "position": [1.0, 0.0, 0.0]}
+                )["scene_dirty"]
+            )
+
     def test_editor_preview_blend_space(self):
         session = GameSession(CubeDemo())
         document = _blend_space_document()
@@ -6123,6 +6325,8 @@ class WebServerTest(unittest.TestCase):
             "camera-path-save",
             "camera-path-delete",
             "camera-path-restore",
+            "camera-path-key-set",
+            "camera-path-key-remove",
             "camera-path-state",
             "blend-space-json",
             "blend-space-name",
@@ -6494,6 +6698,13 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("camera_path_preview", script)
         self.assertIn("fillCameraPathDatalist", script)
         self.assertIn("camera-path-json", script)
+        self.assertIn("setCameraPathKey", script)
+        self.assertIn("removeCameraPathKey", script)
+        self.assertIn("set_camera_path_key", script)
+        self.assertIn("remove_camera_path_key", script)
+        self.assertIn("camera_path_key", script)
+        self.assertIn("cameraPathViewPose", script)
+        self.assertIn("cameraKeyLabel", script)
         self.assertIn("animation_preview", script)
         self.assertIn("playFrames", script)
         self.assertIn("set_node", script)

@@ -206,6 +206,15 @@ changes that do not bump the release number yet.
   the console gains a camera path panel that loads, previews (moving the
   scene view camera to the sampled pose), saves, deletes and restores
   `.kpath` entries.
+- Camera path keys are authorable from a live view: `CameraKey.from_camera`
+  and `from_view` capture an engine camera's heading and lens, `camera_key_from_dict`
+  parses one key, and `insert_camera_key`/`remove_camera_key` edit a path
+  immutably while preserving its loop shape and the anchoring key at time 0.
+  Editor schema 65 adds `set_camera_path_key` (scene camera or explicit
+  pose, replacing within 1e-6s) and `remove_camera_path_key`, both reporting
+  `camera_path_key` and refreshing `camera_path_document`; the console gains
+  Set key from view and Remove key. `preview_camera_path` no longer marks the
+  scene dirty.
 - `keystone.camera_shake` adds `CameraShake`, `ShakeOffset` and
   `shake_report`: trauma accumulation, linear decay, seeded sine noise and a
   deterministic position/yaw/pitch offset for game feel.

@@ -19,9 +19,13 @@ from keystone.animation_library import AnimationLibrary
 from keystone.animation_state import AnimationStateMachine
 from keystone.assets import AssetRegistry
 from keystone.camera_path import (
+    CameraKey,
+    camera_key_from_dict,
     camera_path_from_dict,
     camera_path_report,
     camera_path_to_dict,
+    insert_camera_key,
+    remove_camera_key,
 )
 from keystone.camera_path_library import CameraPathLibrary
 from keystone.character import CharacterBody, CharacterController
@@ -165,6 +169,9 @@ SCENE_NEUTRAL_ACTIONS = frozenset(
         "load_camera_path",
         "delete_camera_path",
         "restore_camera_path",
+        "preview_camera_path",
+        "set_camera_path_key",
+        "remove_camera_path_key",
         "save_material",
         "delete_material",
         "restore_material",
@@ -250,6 +257,47 @@ class WebProblem(Exception):
         self.fix = fix
 
 
+def _camera_key_from_pose(moment: float, pose: object) -> CameraKey:
+    """Build a key from a viewport pose: position plus quat or yaw/pitch.
+
+    The stored key document always carries a quaternion; yaw/pitch is an input
+    convenience for clients that own an orbit camera, never a storage shape.
+    """
+    if not isinstance(pose, dict):
+        raise TypeError("set_camera_path_key pose must be a JSON object")
+    if "position" not in pose:
+        raise ValueError("set_camera_path_key pose needs a position")
+    anchor = camera_key_from_dict(
+        {"time": moment, "position": pose["position"]}
+    )
+    if "yaw" in pose or "pitch" in pose:
+        unknown = set(pose) - {"position", "yaw", "pitch", "fov_y"}
+        if unknown:
+            raise ValueError(
+                f"camera path pose has unknown keys: {sorted(unknown)}"
+            )
+        if "rotation" in pose:
+            raise ValueError(
+                "camera path pose takes rotation or yaw/pitch, not both"
+            )
+        return CameraKey.from_view(
+            moment,
+            anchor.position,
+            pose.get("yaw", 0.0),
+            pose.get("pitch", 0.0),
+            fov_y=pose.get("fov_y", 60.0),
+        )
+    unknown = set(pose) - {"position", "rotation", "fov_y"}
+    if unknown:
+        raise ValueError(f"camera path pose has unknown keys: {sorted(unknown)}")
+    document = {"time": moment, "position": pose["position"]}
+    if "rotation" in pose:
+        document["rotation"] = pose["rotation"]
+    if "fov_y" in pose:
+        document["fov_y"] = pose["fov_y"]
+    return camera_key_from_dict(document)
+
+
 def _action_fix(message: str) -> str:
     """Turn one editor-action failure into the fix that actually applies.
 
@@ -257,6 +305,14 @@ def _action_fix(message: str) -> str:
     was met with "send a valid editor action with finite transform values".
     Each branch here names the thing the caller has to change.
     """
+    if "a new camera path needs its first key at time 0" in message:
+        return "author the first camera path key at time 0 before adding later keys"
+    if "a looping camera path key must fall before its duration" in message:
+        return "pick a key time before the path duration or save a one-shot path"
+    if message.startswith("a camera path must start at time 0"):
+        return "remove the later camera path keys first, or delete the path"
+    if message.startswith("a camera path needs at least one key"):
+        return "delete the camera path instead of removing its last key"
     if "no camera path library is configured" in message:
         return (
             "pass --camera-path-dir to --serve so the camera path library "
@@ -382,6 +438,7 @@ class GameSession:
             self.camera_path_library = CameraPathLibrary(camera_path_dir)
         self.last_camera_path_preview: dict | None = None
         self.last_camera_path_document: dict | None = None
+        self.last_camera_path_key: dict | None = None
         self.material_library: MaterialLibrary | None = None
         if material_dir is not None:
             self.material_library = MaterialLibrary(
@@ -1001,6 +1058,7 @@ class GameSession:
         )
         document["camera_path_preview"] = self.last_camera_path_preview
         document["camera_path_document"] = self.last_camera_path_document
+        document["camera_path_key"] = self.last_camera_path_key
         document["trash"]["materials"] = (
             self.material_library.trash()
             if self.material_library is not None
@@ -1081,6 +1139,7 @@ class GameSession:
         self.last_state_machine_document = None
         self.last_camera_path_preview = None
         self.last_camera_path_document = None
+        self.last_camera_path_key = None
         with self.lock:
             scene = self._scene_locked()
             try:
@@ -2104,6 +2163,63 @@ class GameSession:
                             "pitch": round(pose.pitch, 6),
                         },
                         "path": camera_path_report(camera_path),
+                    }
+                elif action in ("set_camera_path_key", "remove_camera_path_key"):
+                    if self.camera_path_library is None:
+                        raise ValueError(
+                            "no camera path library is configured"
+                        )
+                    name = payload.get("name")
+                    if not isinstance(name, str) or not name.strip():
+                        raise ValueError(
+                            "camera path name must be a non-blank string"
+                        )
+                    time = payload.get("time")
+                    if (
+                        isinstance(time, bool)
+                        or not isinstance(time, (int, float))
+                        or not math.isfinite(time)
+                        or time < 0.0
+                    ):
+                        raise ValueError(
+                            "camera path key time must be a finite non-negative number"
+                        )
+                    existing = None
+                    try:
+                        existing = self.camera_path_library.load(name)
+                    except KeyError:
+                        if action == "remove_camera_path_key":
+                            raise
+                    if action == "set_camera_path_key":
+                        pose = payload.get("pose")
+                        if pose is None:
+                            key = CameraKey.from_camera(float(time), scene.camera)
+                            source = "camera"
+                        else:
+                            key = _camera_key_from_pose(float(time), pose)
+                            source = "pose"
+                        updated, replaced = insert_camera_key(existing, key)
+                        self.camera_path_library.save(name, updated)
+                        removed = 0
+                    else:
+                        updated, removed = remove_camera_key(existing, float(time))
+                        self.camera_path_library.save(name, updated)
+                        replaced = False
+                        source = None
+                    self.last_camera_path_key = {
+                        "action": action,
+                        "name": name,
+                        "time": round(float(time), 6),
+                        "source": source,
+                        "keys": len(updated.keys),
+                        "replaced": replaced,
+                        "removed": removed,
+                        "duration": round(updated.duration, 6),
+                        "loop": updated.loop,
+                    }
+                    self.last_camera_path_document = {
+                        "name": name,
+                        "path": camera_path_to_dict(updated),
                     }
                 elif action == "save_material":
                     if self.material_library is None:
