@@ -191,7 +191,6 @@ keystone/
 │   ├── test_merge_skin.py    <- skin-aware merge
 │   ├── test_assets.py          <- registry ids, digests, dependencies and reload
 │   ├── test_audio.py         <- synth, mixer buses and WAV I/O
-│   ├── audio_spatial.py      <- distance attenuation and spatial mixdown
 │   ├── test_audio_spatial.py <- distance gain, spatial mixes and reports
 │   ├── test_batch.py         <- batch planning and world-space merge
 │   ├── test_camera_rig.py     <- camera-space parts and rig sync
