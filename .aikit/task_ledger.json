@@ -3,8 +3,8 @@
   "active_task": {
     "task_id": "keystone-canonical-hash-pin-v1",
     "last_phase": "phase 4",
-    "active_phase": 4,
-    "status": "in_progress",
+    "active_phase": 5,
+    "status": "completed",
     "updated_at": 1795025949.5914562,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
@@ -14,33 +14,12 @@
         "name": "keystone",
         "path": "projects/keystone"
       }
-    ]
+    ],
+    "completed_at": 1795026019.4338734,
+    "completed_head": "5d873cb924dde2a3df4c37de5815a29fc5ef8300",
+    "completed_tree": "f555b095d788fcb189297028a854f2f8c20021c1"
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-camera-path-rename-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: expose the camera path library's existing rename and duplicate through the editor API - rename_camera_path and duplicate_camera_path actions (editor schema 66) taking name plus new_name, mapping collisions to 400 and missing entries to 404, refreshing camera_path_document under the new name, console Path name/New name inputs with Rename and Duplicate buttons, web schema examples and required fields, tests and docs",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794993521.7946694,
-      "timestamp_str": "2026-11-18 12:18:41",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "CameraPathLibrary has supported rename and duplicate since it shipped, but the editor and console could not reach them while state machines expose both actions, so a copied cutscene route required saving a new JSON document by hand.",
-        "benefits": "Camera paths reach lifecycle parity with clips and state machines: an authored route can be renamed or forked from the console and API without touching files, and the panel keeps editing the new entry.",
-        "risks": "contract: two editor actions, editor schema 66, a new console input and two buttons; dependency: server reuses CameraPathLibrary rename/duplicate; concurrency: unchanged session lock; state: no scene, snapshot or render format change",
-        "mitigation": "Reuse the library's collision and traversal guards, pin success, collision, missing-entry and missing-library behaviour in web tests, keep one web schema example per action, smoke the panel in a browser, and verify the canonical hash and reference PNG unchanged"
-      },
-      "plan_digest": "87c7a17bff5d24ce2ab914ead2d4658c83ae36f01c5765f7e2083906336f7f3b",
-      "workspaces": [
-        {
-          "name": "keystone",
-          "path": "projects/keystone"
-        }
-      ]
-    },
     {
       "task_id": "keystone-camera-path-rename-v1",
       "phase": "phase 4",
@@ -641,6 +620,23 @@
           "path": "projects/keystone"
         }
       ]
+    },
+    {
+      "task_id": "keystone-canonical-hash-pin-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-canonical-hash-pin-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1795026019.5648067,
+      "timestamp_str": "2026-11-18 21:20:19",
+      "agent": "kilo:goal",
+      "head": "5d873cb924dde2a3df4c37de5815a29fc5ef8300",
+      "delivery": {
+        "roots": [
+          "."
+        ],
+        "forced": false
+      }
     }
   ]
 }
