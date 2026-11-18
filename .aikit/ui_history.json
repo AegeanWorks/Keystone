@@ -96,5 +96,26 @@
     "final_snapshot_entries": 0,
     "surface_digest": "23d5cf2330bd04d061a33ea898877f4685ae9f053b248315e3aa18a120145da9",
     "baseline_digest": "23d5cf2330bd04d061a33ea898877f4685ae9f053b248315e3aa18a120145da9"
+  },
+  {
+    "schema": 1,
+    "surface": "web",
+    "mode": "visual",
+    "visual_change": true,
+    "changed_paths": [],
+    "no_visual_reason": "",
+    "no_change_reason": "Camera path rename and duplicate were reviewed live in a browser at 127.0.0.1:63156: Set key from view wrote intro.kpath, Rename moved it to opening and the panel/name list followed, Duplicate created opening-copy with the same key and both names listed; the change is committed as fc6734e before this task opened.",
+    "baseline_commit": "fc6734ed5428159777adfba1bafec503a59d62a7",
+    "contract_hash": "ea5b2f48986c4bd68c0a2da75659c6d8030ef7dc31574c8b7ab67394fb7789d6",
+    "started_at": 1795002811.6693676,
+    "finished_at": 1795004066.2367313,
+    "strikes": 2,
+    "reviewer": "kilo:goal",
+    "allowed_removals": [],
+    "allowed_tests": [],
+    "final_snapshot_digest": "",
+    "final_snapshot_entries": 0,
+    "surface_digest": "cfbffe0faf58ce72b91edc968ca2e9ad090cb927061805ac65ba8e8842706360",
+    "baseline_digest": "cfbffe0faf58ce72b91edc968ca2e9ad090cb927061805ac65ba8e8842706360"
   }
 ]
