@@ -13,7 +13,12 @@
     "opengl",
     "python"
   ],
-  "gates": {},
+  "gates": {
+    "describe": "python -m keystone --describe",
+    "determinism": "python -m keystone --verify-determinism --frames 120",
+    "golden_hash": "python -m keystone --simulate --frames 120 --expect-hash 772cac5232a0947b8f6d1914a5cf0cde",
+    "headless": "python -m keystone --headless --frames 1 --size 64x48 --no-ui --out .git/keystone-gate-frame.png"
+  },
   "ui_required": true,
   "mechanics_required": true,
   "created": "2026-10-30",

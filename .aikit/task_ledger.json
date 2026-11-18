@@ -1,11 +1,11 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-map-format-refresh-v1",
+    "task_id": "keystone-canonical-gates-v1",
     "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1795026401.6851692,
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1795029146.7247071,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
@@ -14,85 +14,9 @@
         "name": "keystone",
         "path": "projects/keystone"
       }
-    ],
-    "completed_at": 1795026440.5327206,
-    "completed_head": "fffed3ad4af77eda966751df5289a7e4e4a727b4",
-    "completed_tree": "ccf4e7417be80274e033ea2e97e118b62aa75e18"
+    ]
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-camera-path-playback-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: play a camera path in the console - a Play path/Pause path button that advances preview_camera_path time with the same capped 33ms tick used by animation preview, reapplying the sampled pose to the scene view camera, wrapping for looping paths, stopping at the duration for one-shot paths, halting on any editor action, and updating the path readout without clobbering the JSON editor",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1795010155.5501244,
-      "timestamp_str": "2026-11-18 16:55:55",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "The console could sample a single camera path pose but not watch the authored move, so a cutscene route had to be scrubbed one time value at a time while animation clips already had a real playback button.",
-        "benefits": "Authors see the actual spline, lens and heading behavior in the viewport, loop and one-shot playback match the runtime player semantics, and nothing new is needed in the API because preview_camera_path already samples arbitrary times.",
-        "risks": "contract: console-only, no editor schema or API change; dependency: reuses preview_camera_path and the existing bookmark pose application; concurrency: one in-flight tick guarded by a busy flag; state: no scene, snapshot or render format change",
-        "mitigation": "Mirror the proven animation playback loop, stop playback on every editor action, pin the controls and handlers in the static console test, smoke play, pause and auto-stop in a browser, and keep the canonical hash and reference PNG unchanged"
-      },
-      "plan_digest": "e8807c5369cd1bd4a473f863d6b6a6befb574fc9a191b702a46610c79758f2ec",
-      "workspaces": [
-        {
-          "name": "keystone",
-          "path": "projects/keystone"
-        }
-      ]
-    },
-    {
-      "task_id": "keystone-camera-path-playback-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/3] Implemented and verified - the console path panel gains Play path/Pause path backed by preview_camera_path on the animation preview loop (33ms timer, busy guard, 0.2s clamped ticks), wrapping looping paths, stopping one-shot paths at duration with the final pose applied, halting on every editor action, and refreshing a readout extracted into renderCameraPathState so ticks never re-render the hierarchy or the JSON editor; README, AI_GUIDE, CHANGELOG and ADR-267 updated; the static console test pins camera-path-play and the playback handler names; browser smoke played a two-key two-second path from 0 to 2 with the end pose 4.00, 1.50, 4.00, paused at 0.672 and held the time, and auto-stopped at the end; full pytest and ruff pass, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged",
-      "files_affected": [
-        "keystone/web/static/app.js",
-        "keystone/web/static/index.html",
-        "tests/test_web.py",
-        "README.md",
-        "docs/AI_GUIDE.md",
-        "CHANGELOG.md",
-        ".aikit/decisions.md",
-        ".aikit/codebase_map.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1795010880.0417955,
-      "timestamp_str": "2026-11-18 17:08:00",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "candidate": 1455.0,
-          "metric": "collected_tests",
-          "artifact": "stdout",
-          "command": "python -m pytest --collect-only -q",
-          "unit": "tests",
-          "baseline": 1455.0,
-          "drift": "unchanged",
-          "qualified": "no"
-        },
-        {
-          "candidate": 4899.0,
-          "metric": "reference_png_bytes",
-          "artifact": "temp PNG",
-          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
-          "unit": "bytes",
-          "baseline": 4899.0,
-          "drift": "unchanged",
-          "qualified": "no"
-        }
-      ],
-      "checklists": "passed",
-      "workspaces": [
-        {
-          "name": "keystone",
-          "path": "projects/keystone"
-        }
-      ]
-    },
     {
       "task_id": "keystone-camera-path-playback-v1",
       "phase": "phase 4",
@@ -608,6 +532,85 @@
         ],
         "forced": false
       }
+    },
+    {
+      "task_id": "keystone-canonical-gates-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Plan: gate the documented canonical commands - add three no-GL gates to .aikit/project.json: describe, determinism (--verify-determinism --frames 120) and golden_hash (--simulate --frames 120 --expect-hash 772cac...), so contract introspection, two-run determinism and the pinned canonical hash are enforced by aikit check rather than only by tests and manual runs",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1795027286.989252,
+      "timestamp_str": "2026-11-18 21:41:26",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "The kit warns that documented commands are not covered by any gate. Three of them need no GPU and run in about three seconds total, while headless rendering is already exercised by the test suite through the Engine.",
+        "benefits": "Contract drift, non-determinism and canonical hash changes now fail check directly, the advisories shrink to the genuinely GPU-bound headless commands, and the CLI surface agents are told to use is continuously exercised.",
+        "risks": "contract: project gate config gains three commands and check grows by roughly three seconds; dependency: none; concurrency: gates run sequentially as before; state: none",
+        "mitigation": "Verify each command exits 0 before registering it, keep the hash in one place by reading it from the pinned test constant when updating, confirm the gate count and remaining advisories after the change, and keep the reference PNG untouched"
+      },
+      "plan_digest": "dc91c8c4ac93d5502ef119405905f9de7cba46dc72b25da1cb0ae8055125d2dc",
+      "workspaces": [
+        {
+          "name": "keystone",
+          "path": "projects/keystone"
+        }
+      ]
+    },
+    {
+      "task_id": "keystone-canonical-gates-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Implemented and verified - .aikit/project.json adds describe, determinism, golden_hash and headless gates; each command was run manually first (1.5s, 0.9s, 0.6s, 1.4s, all exit 0), the golden hash matches the CANONICAL_CUBE_HASH pinned in tests/test_headless.py, and the headless gate writes only to .git/keystone-gate-frame.png; aikit check now reports 10/10 gates passing (describe 1.0s, determinism 0.4s, golden_hash 0.4s, headless 1.2s) with the advisory list reduced from 10 to the single expected uncommitted-change notice; ARCHITECTURE, CHANGELOG and ADR-272 updated; full pytest and ruff pass, canonical hash and 4899-byte reference PNG unchanged",
+      "files_affected": [
+        ".aikit/project.json",
+        "docs/ARCHITECTURE.md",
+        "CHANGELOG.md",
+        ".aikit/decisions.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1795029146.7247071,
+      "timestamp_str": "2026-11-18 22:12:26",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "drift": "+4",
+          "candidate": 10.0,
+          "command": "python aikit.py check keystone",
+          "metric": "project_gates",
+          "baseline": 6.0,
+          "unit": "gates",
+          "artifact": "stdout",
+          "qualified": "no"
+        },
+        {
+          "drift": "-10",
+          "candidate": 0.0,
+          "command": "python aikit.py check keystone --verbose",
+          "metric": "documented_command_advisories",
+          "baseline": 10.0,
+          "unit": "advisories",
+          "artifact": "stdout",
+          "qualified": "no"
+        },
+        {
+          "drift": "+3",
+          "candidate": 3.0,
+          "command": "python aikit.py check keystone",
+          "metric": "check_seconds_added",
+          "baseline": 0.0,
+          "unit": "seconds",
+          "artifact": "stdout",
+          "qualified": "no"
+        }
+      ],
+      "checklists": "passed",
+      "workspaces": [
+        {
+          "name": "keystone",
+          "path": "projects/keystone"
+        }
+      ]
     }
   ]
 }

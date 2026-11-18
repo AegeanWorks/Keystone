@@ -234,6 +234,12 @@ changes that do not bump the release number yet.
   the ordinary test gate instead of only a manual check. The architecture
   table drops its duplicate basic Replay row, and the README roadmap stops
   listing the shipped post chain as remaining work.
+- `.aikit/project.json` now gates the documented canonical commands:
+  `describe`, `determinism` (`--verify-determinism --frames 120`),
+  `golden_hash` (`--simulate --frames 120 --expect-hash 772cac...`) and
+  `headless` (`--headless --frames 1 --size 64x48 --no-ui`, writing only
+  under `.git/`). `aikit check keystone` runs 10 gates and reports no
+  documented-command advisories.
 - `camera_path_route(path, frames=..., step=..., checkpoints=...)` builds a
   deterministic evidence capture route from an authored camera path: frame 1
   samples time 0, each later frame advances one step, looping paths wrap and
