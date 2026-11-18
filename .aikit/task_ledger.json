@@ -3,8 +3,8 @@
   "active_task": {
     "task_id": "keystone-camera-pose-blend-v1",
     "last_phase": "phase 4",
-    "active_phase": 4,
-    "status": "in_progress",
+    "active_phase": 5,
+    "status": "completed",
     "updated_at": 1795020189.869319,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
@@ -14,26 +14,12 @@
         "name": "keystone",
         "path": "projects/keystone"
       }
-    ]
+    ],
+    "completed_at": 1795020260.6954007,
+    "completed_head": "9dc655a3a56374e423bf2a7df8c88d741d234500",
+    "completed_tree": "707f268e656abd396f582a8dde5699d47302fc8f"
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-map-refresh-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-map-refresh-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794991496.3256748,
-      "timestamp_str": "2026-11-18 11:44:56",
-      "agent": "kilo:goal",
-      "head": "e659b56359110a6e7742a52813fd958085d3c04e",
-      "delivery": {
-        "roots": [
-          "."
-        ],
-        "forced": true
-      }
-    },
     {
       "task_id": "keystone-project-hygiene-files-v1",
       "phase": "phase 2",
@@ -596,6 +582,23 @@
           "path": "projects/keystone"
         }
       ]
+    },
+    {
+      "task_id": "keystone-camera-pose-blend-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-camera-pose-blend-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1795020260.7801344,
+      "timestamp_str": "2026-11-18 19:44:20",
+      "agent": "kilo:goal",
+      "head": "9dc655a3a56374e423bf2a7df8c88d741d234500",
+      "delivery": {
+        "roots": [
+          "."
+        ],
+        "forced": false
+      }
     }
   ]
 }
