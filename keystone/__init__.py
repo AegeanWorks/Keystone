@@ -77,6 +77,7 @@ from keystone.culling import (
 from keystone.evidence import (
     Checkpoint,
     Route,
+    camera_path_route,
     capture_route,
     diff_evidence,
     write_evidence,
@@ -261,6 +262,7 @@ __all__ = [
     "camera_path_from_dict",
     "camera_path_player_report",
     "camera_path_report",
+    "camera_path_route",
     "camera_path_to_dict",
     "camera_shaker_report",
     "canon",

@@ -114,6 +114,17 @@ print(diff["changed"], diff["checkpoints"])
 
 `capture_route` runs one fixed step per frame, calls `stage(frame, scene)` before each step, and at each checkpoint writes `NNNN-label.png` and `NNNN-label.json` plus a `route_hash` over the checkpoint evidence. Two runs of one route over one game are byte-identical, so an observed hash difference is real rather than noise. `diff_evidence` matches checkpoints by label and reports image changes, luminance/content deltas and draw-counter deltas, with `missing`/`added` labels called out. `--describe` lists `capabilities.evidence`.
 
+`camera_path_route(path, frames=..., step=1/60, checkpoints=...)` builds the same `Route` from an authored camera path instead of a hand-written stage: frame 1 samples time 0, each later frame advances one step, a looping path wraps and a one-shot path holds its final pose after the duration, and the sampled pose reuses the scene camera's near/far range. Without checkpoints it captures one `final` frame:
+
+```python
+from keystone.camera_path import CameraKey, CameraPath
+from keystone.evidence import camera_path_route
+
+path = CameraPath([CameraKey(0.0, Vec3(0.0, 1.5, 8.0)), CameraKey(2.0, Vec3(6.0, 1.5, 3.0))])
+route = camera_path_route(path, frames=120, checkpoints=(Checkpoint(60, "mid"), Checkpoint(120, "end")))
+```
+
+
 ## 4. Bot-playtest a game
 
 ```bash

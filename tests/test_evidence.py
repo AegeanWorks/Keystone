@@ -5,9 +5,11 @@ import unittest
 from pathlib import Path
 
 from keystone.app import Engine
+from keystone.camera_path import CameraKey, CameraPath
 from keystone.evidence import (
     Checkpoint,
     Route,
+    camera_path_route,
     capture_route,
     diff_evidence,
     write_evidence,
@@ -15,6 +17,7 @@ from keystone.evidence import (
 from keystone.math3d import Vec3
 from keystone.plugin import describe_game
 from keystone.samples import CubeDemo
+from keystone.scene import Scene
 
 
 class RouteValidationTest(unittest.TestCase):
@@ -190,3 +193,98 @@ class CaptureRouteTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CameraPathRouteTest(unittest.TestCase):
+    def _path(self, *, loop: bool = False) -> CameraPath:
+        keys = [
+            CameraKey(0.0, Vec3(0.0, 1.5, 8.0)),
+            CameraKey(2.0, Vec3(10.0, 1.5, 8.0)),
+        ]
+        if loop:
+            return CameraPath(keys, loop=True, duration=3.0)
+        return CameraPath(keys)
+
+    def test_defaults_to_one_final_checkpoint(self):
+        route = camera_path_route(self._path(), frames=90)
+        self.assertEqual(route.name, "camera-path")
+        self.assertEqual(route.frames, 90)
+        self.assertEqual(route.checkpoints, (Checkpoint(90, "final"),))
+        self.assertTrue(callable(route.stage))
+
+    def test_custom_name_and_checkpoints_pass_through(self):
+        route = camera_path_route(
+            self._path(),
+            frames=30,
+            name="intro",
+            checkpoints=(Checkpoint(5, "enter"), Checkpoint(30, "end")),
+        )
+        self.assertEqual(route.name, "intro")
+        self.assertEqual(route.frame_numbers(), (5, 30))
+
+    def test_stage_samples_by_frame_step_and_keeps_the_lens_depth(self):
+        route = camera_path_route(self._path(), frames=121)
+        scene = Scene()
+        scene.camera.near = 0.5
+        scene.camera.far = 250.0
+        route.stage(1, scene)
+        self.assertEqual(scene.camera.position, Vec3(0.0, 1.5, 8.0))
+        self.assertEqual((scene.camera.near, scene.camera.far), (0.5, 250.0))
+        route.stage(61, scene)
+        self.assertEqual(scene.camera.position, Vec3(5.0, 1.5, 8.0))
+        route.stage(121, scene)
+        self.assertEqual(scene.camera.position, Vec3(10.0, 1.5, 8.0))
+        route.stage(500, scene)
+        self.assertEqual(scene.camera.position, Vec3(10.0, 1.5, 8.0))
+
+    def test_a_looping_path_wraps_instead_of_holding(self):
+        route = camera_path_route(self._path(loop=True), frames=181)
+        scene = Scene()
+        route.stage(121, scene)
+        self.assertEqual(scene.camera.position, Vec3(10.0, 1.5, 8.0))
+        route.stage(181, scene)
+        self.assertEqual(scene.camera.position, Vec3(0.0, 1.5, 8.0))
+        route.stage(151, scene)
+        self.assertGreater(scene.camera.position.x, 0.0)
+        self.assertLess(scene.camera.position.x, 10.0)
+
+    def test_path_and_step_are_validated(self):
+        with self.assertRaises(TypeError):
+            camera_path_route(object(), frames=1)  # type: ignore[arg-type]
+        for step in (0.0, -1.0, float("nan"), float("inf")):
+            with self.subTest(step=step), self.assertRaises(ValueError):
+                camera_path_route(self._path(), frames=1, step=step)
+        for step in (True, "0.1", None):
+            with self.subTest(step=step), self.assertRaises(TypeError):
+                camera_path_route(self._path(), frames=1, step=step)  # type: ignore[arg-type]
+
+    def test_route_rules_still_apply(self):
+        with self.assertRaises(ValueError):
+            camera_path_route(self._path(), frames=0)
+        with self.assertRaises(ValueError):
+            camera_path_route(
+                self._path(), frames=3, checkpoints=(Checkpoint(4, "past"),)
+            )
+        with self.assertRaises(ValueError):
+            camera_path_route(self._path(), frames=3, name=" ")
+
+    def test_capture_route_renders_the_authored_move(self):
+        route = camera_path_route(
+            self._path(),
+            frames=10,
+            step=0.2,
+            checkpoints=(Checkpoint(1, "first"), Checkpoint(10, "last")),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            engine = Engine(CubeDemo(), 24, 18, visible=False)
+            try:
+                summary = capture_route(engine, route, Path(directory))
+            finally:
+                engine.close()
+        self.assertEqual(
+            [sample["label"] for sample in summary["checkpoints"]],
+            ["first", "last"],
+        )
+        hashes = [sample["image_sha256"] for sample in summary["checkpoints"]]
+        self.assertTrue(all(hashes))
+        self.assertNotEqual(hashes[0], hashes[1])

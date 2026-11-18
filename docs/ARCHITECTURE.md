@@ -197,7 +197,7 @@ Headless runs advance exactly one fixed step per rendered frame. Visible runs us
 | Pathfinding | Implemented | immutable nav grids, deterministic A* over 4 or 8 neighbours, corner-cut refusal, line-of-sight smoothing, JSON-safe path reports, scene/box-derived schema-1 nav-grid documents, a waypoint follower, seek/arrive/separation steering, and a composed `NavAgent` that walks a route with collision and avoidance |
 | AI adapters | Implemented | validated action parsing, fused observations, report summaries, hash-chained audit trail |
 | Playtest | Implemented | seeded bot policies, CommandLog-compatible transcripts, transcript diffing, schema-1 reports, fairness validation |
-| Evidence | Implemented | deterministic capture routes with per-frame staging callbacks, per-checkpoint PNG and frame reports, route hashes and label-keyed evidence diffs |
+| Evidence | Implemented | deterministic capture routes with per-frame staging callbacks, per-checkpoint PNG and frame reports, route hashes, label-keyed evidence diffs and camera-path routes that stage the scene camera from an authored move |
 | Batching | Implemented | content-keyed static mesh/material grouping with draw-call savings, world-space merge, and skin-aware merge for identical rigs |
 | Inspector | Implemented | web `/api/inspector` with node counts, batch plan, merge summary (incl. skinned rigs), audio, animation and particle state, asset inventory |
 | ECS | Optional/missing | evaluate after a real workload |

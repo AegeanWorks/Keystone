@@ -19,15 +19,23 @@ The module is engine-agnostic: it drives anything with ``run(frames)``,
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
+from keystone.camera_path import CameraPath
 from keystone.replay import stable_hash
 from keystone.scene import Scene
 from keystone.serialization import read_json, write_json_atomic
 
-__all__ = ["Checkpoint", "Route", "capture_route", "diff_evidence", "write_evidence"]
+__all__ = [
+    "Checkpoint",
+    "Route",
+    "camera_path_route",
+    "capture_route",
+    "diff_evidence",
+    "write_evidence",
+]
 
 EVIDENCE_SCHEMA = 1
 
@@ -240,3 +248,38 @@ def diff_evidence(before: dict, after: dict) -> dict:
         "added": sorted(set(new) - set(old)),
         "checkpoints": sorted(comparisons, key=lambda item: item["label"]),
     }
+
+
+def camera_path_route(
+    path: CameraPath,
+    *,
+    frames: int,
+    name: str = "camera-path",
+    checkpoints: Sequence[Checkpoint] = (),
+    step: float = 1.0 / 60.0,
+) -> Route:
+    """Build a capture route that drives the scene camera along ``path``.
+
+    The stage runs before every frame, so frame 1 samples the path at time 0
+    and each later frame advances by ``step`` seconds. ``CameraPath.sample``
+    already wraps a looping path and clamps a one-shot path at its duration,
+    so a route longer than the path holds the final pose. Without explicit
+    checkpoints the route captures one final frame, which is the usual case
+    for a camera move; pass your own to capture intermediate poses. The
+    sampled pose reuses the scene camera's near/far range through
+    ``CameraPose.to_camera``, so the authored lens depth stays intact.
+    """
+    if not isinstance(path, CameraPath):
+        raise TypeError("camera_path_route needs a CameraPath")
+    if isinstance(step, bool) or not isinstance(step, (int, float)):
+        raise TypeError("camera path route step must be a real number")
+    seconds = float(step)
+    if not math.isfinite(seconds) or seconds <= 0.0:
+        raise ValueError("camera path route step must be a positive finite number")
+    points = tuple(checkpoints) or (Checkpoint(frames, "final"),)
+
+    def stage(frame: int, scene: Scene) -> None:
+        pose = path.sample((frame - 1) * seconds)
+        scene.camera = pose.to_camera(scene.camera)
+
+    return Route(name=name, frames=frames, checkpoints=points, stage=stage)

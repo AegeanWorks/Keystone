@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `210`
-- **Total Classes**: `364`
-- **Total Top-Level Functions**: `597`
-- **Total Class Methods**: `2308`
-- **Total Source Lines**: `56940`
+- **Total Classes**: `365`
+- **Total Top-Level Functions**: `598`
+- **Total Class Methods**: `2316`
+- **Total Source Lines**: `57083`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`210` module(s))
@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `341` lines (`7747` bytes)
+**Size**: `343` lines (`7795` bytes)
 
 **Functions:**
 - `def __getattr__(name)`
@@ -651,7 +651,7 @@
 ### [`keystone/evidence.py`](keystone/evidence.py)
 > *Deterministic capture routes and evidence diffs.*
 
-**Size**: `242` lines (`9486` bytes)
+**Size**: `285` lines (`11154` bytes)
 
 **Classes:**
 - `class Checkpoint` - *One frame to capture, under a label that survives report diffs.*
@@ -668,6 +668,7 @@
 - `def write_evidence(path, summary)` - *Write a route summary atomically, with the project's usual ``.bak``.*
 - `def _delta(before, after)`
 - `def diff_evidence(before, after)` - *Compare two route summaries checkpoint by checkpoint.*
+- `def camera_path_route(path, *, frames, name, checkpoints, step)` - *Build a capture route that drives the scene camera along ``path``.*
 
 ---
 
@@ -3317,7 +3318,7 @@
 ### [`tests/test_evidence.py`](tests/test_evidence.py)
 > *Tests for deterministic capture routes and evidence diffs.*
 
-**Size**: `192` lines (`7964` bytes)
+**Size**: `290` lines (`12116` bytes)
 
 **Classes:**
 - `class RouteValidationTest`
@@ -3339,6 +3340,15 @@
   - Method `.test_write_evidence_round_trips_atomically()`
   - Method `.test_engine_and_route_types_are_checked()`
   - Method `.test_stage_failure_names_the_frame()`
+- `class CameraPathRouteTest`
+  - Method `._path(*, loop)`
+  - Method `.test_defaults_to_one_final_checkpoint()`
+  - Method `.test_custom_name_and_checkpoints_pass_through()`
+  - Method `.test_stage_samples_by_frame_step_and_keeps_the_lens_depth()`
+  - Method `.test_a_looping_path_wraps_instead_of_holding()`
+  - Method `.test_path_and_step_are_validated()`
+  - Method `.test_route_rules_still_apply()`
+  - Method `.test_capture_route_renders_the_authored_move()`
 
 ---
 

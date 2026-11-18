@@ -163,6 +163,9 @@ stores them as `.kpath` files with rename, duplicate and recoverable deletes.
 `insert_camera_key`/`remove_camera_key` edit one path immutably, and
 `CameraKey.from_camera`/`from_view` capture an engine camera's heading and
 lens, so keys come from a live view instead of hand-written quaternions.
+`camera_path_route(path, frames=...)` turns an authored move into a
+deterministic evidence capture route, sampling the path once per fixed tick
+and keeping the scene camera's near/far range.
 `--describe` reports `capabilities.camera_path`, `camera_path_player` and
 `camera_path_library`.
 
