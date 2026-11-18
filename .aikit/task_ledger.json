@@ -1,11 +1,11 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-camera-pose-blend-v1",
+    "task_id": "keystone-camera-path-scrub-v1",
     "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1795020189.869319,
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1795021602.0686774,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
@@ -14,70 +14,9 @@
         "name": "keystone",
         "path": "projects/keystone"
       }
-    ],
-    "completed_at": 1795020260.6954007,
-    "completed_head": "9dc655a3a56374e423bf2a7df8c88d741d234500",
-    "completed_tree": "707f268e656abd396f582a8dde5699d47302fc8f"
+    ]
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-project-hygiene-files-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/1] Record the committed project hygiene files - the reviewed UI date stamp in .aikit/project.json, the .aikit/reforge.reviews ignore rule and the LF checkout policy .gitattributes landed in 123abbd as the close-out of the reviewed camera path key surface",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794991660.8680341,
-      "timestamp_str": "2026-11-18 11:47:40",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "The UI close-out wrote the reviewed date and the kit's line-ending and ignore policy after the key task completed, so the freshness rule must see those files owned by a recorded task.",
-        "benefits": "The keystone tree carries the reviewed UI evidence and the canonical LF policy, and every commit after a completion has an owning ledger entry.",
-        "risks": "contract: ledger and three project config files, already committed; dependency: none; concurrency: none; state: no code or format change beyond the stamped date",
-        "mitigation": "Cite the already-committed files and the passing gate run, complete once, and commit the ledger alone"
-      },
-      "plan_digest": "08de8501646ef993714c12cf8ae028832db525e4fc4d848d27de0fa1e9b525d0",
-      "workspaces": [
-        {
-          "name": "keystone",
-          "path": "projects/keystone"
-        }
-      ]
-    },
-    {
-      "task_id": "keystone-project-hygiene-files-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[1/1] Verified - the hygiene files are committed in 123abbd and aikit check keystone passes 6/6 with hygiene, guidelines, secrets, test, lint and mechanics green on the clean tree",
-      "files_affected": [
-        ".aikit/project.json",
-        ".gitignore",
-        ".gitattributes"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794991686.6737022,
-      "timestamp_str": "2026-11-18 11:48:06",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "drift": "unchanged",
-          "candidate": 6.0,
-          "unit": "gates",
-          "metric": "check_gates_passed",
-          "baseline": 6.0,
-          "command": "python aikit.py check keystone",
-          "artifact": "stdout",
-          "qualified": "no"
-        }
-      ],
-      "checklists": "passed",
-      "workspaces": [
-        {
-          "name": "keystone",
-          "path": "projects/keystone"
-        }
-      ]
-    },
     {
       "task_id": "keystone-project-hygiene-files-v1",
       "phase": "completed",
@@ -599,6 +538,79 @@
         ],
         "forced": false
       }
+    },
+    {
+      "task_id": "keystone-camera-path-scrub-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: scrub camera paths on a console timeline - a range input mirroring the animation timeline that follows the preview time, sets its max from the previewed path duration, stops playback while dragging and previews the chosen time on release",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1795020928.1205769,
+      "timestamp_str": "2026-11-18 19:55:28",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "The animation panel has a timeline slider, but camera paths only accept a typed time, so reviewing a cutscene move means repeated typing while the authored duration is invisible.",
+        "benefits": "Authors drag through the move and see each pose in the viewport, looped and one-shot durations are explicit in the slider range, and playback, the time field and the slider stay in sync.",
+        "risks": "contract: console-only, no API or schema change; dependency: reuses preview_camera_path; concurrency: unchanged single tick loop; state: none",
+        "mitigation": "Mirror the proven animation scrub wiring, keep the slider read-only during playback, pin the control and sync handler in the static console test, smoke dragging in a browser, and keep the canonical hash and reference PNG unchanged"
+      },
+      "plan_digest": "3dbf3471e79bcf16f282f3d5ad139e3ab87219e36a8e2798bbef1f715f43ffc4",
+      "workspaces": [
+        {
+          "name": "keystone",
+          "path": "projects/keystone"
+        }
+      ]
+    },
+    {
+      "task_id": "keystone-camera-path-scrub-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/3] Implemented and verified - the camera path panel gains a Timeline range input (camera-path-scrub) whose max follows camera_path_preview.path.duration and whose value follows the preview time; dragging stops playback and writes the time field, release previews the chosen time through preview_camera_path, and playback moves the slider with the clock; syncCameraPathTimeline is called from renderCameraPathState; README, AI_GUIDE, CHANGELOG and ADR-270 updated; the static console test pins the slider id and sync handler; browser smoke previewed a two-key two-second path (max 2) and scrubbed to 1, previewing the midpoint pose 2.00, 1.50, 6.00; full pytest and ruff pass, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged",
+      "files_affected": [
+        "keystone/web/static/app.js",
+        "keystone/web/static/index.html",
+        "tests/test_web.py",
+        "README.md",
+        "docs/AI_GUIDE.md",
+        "CHANGELOG.md",
+        ".aikit/decisions.md",
+        ".aikit/codebase_map.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1795021602.0686774,
+      "timestamp_str": "2026-11-18 20:06:42",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "unit": "tests",
+          "artifact": "stdout",
+          "metric": "collected_tests",
+          "drift": "unchanged",
+          "candidate": 1467.0,
+          "baseline": 1467.0,
+          "command": "python -m pytest --collect-only -q",
+          "qualified": "no"
+        },
+        {
+          "unit": "bytes",
+          "artifact": "temp PNG",
+          "metric": "reference_png_bytes",
+          "drift": "unchanged",
+          "candidate": 4899.0,
+          "baseline": 4899.0,
+          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
+          "qualified": "no"
+        }
+      ],
+      "checklists": "passed",
+      "workspaces": [
+        {
+          "name": "keystone",
+          "path": "projects/keystone"
+        }
+      ]
     }
   ]
 }

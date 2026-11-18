@@ -225,6 +225,10 @@ changes that do not bump the release number yet.
   stops a one-shot path at its duration with the final pose applied, halts
   on any editor action, and refreshes the path readout without re-rendering
   the hierarchy or the JSON editor.
+- The console timeline scrubs camera paths: a range input follows the
+  preview time, takes its maximum from the previewed path duration, stops
+  playback while dragging and previews the chosen time on release. Playback
+  moves the slider with the clock.
 - `camera_path_route(path, frames=..., step=..., checkpoints=...)` builds a
   deterministic evidence capture route from an authored camera path: frame 1
   samples time 0, each later frame advances one step, looping paths wrap and

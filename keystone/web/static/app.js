@@ -56,6 +56,7 @@ const elements = {
   cameraPathNewName: document.getElementById("camera-path-new-name"),
   cameraPathNames: document.getElementById("camera-path-names"),
   cameraPathTime: document.getElementById("camera-path-time"),
+  cameraPathScrub: document.getElementById("camera-path-scrub"),
   cameraPathLoad: document.getElementById("camera-path-load"),
   cameraPathPreview: document.getElementById("camera-path-preview"),
   cameraPathSave: document.getElementById("camera-path-save"),
@@ -1005,7 +1006,21 @@ function renderHistory(history) {
   elements.historyState.textContent = `${undo} \u00b7 ${redo}`;
 }
 
+function syncCameraPathTimeline(editor) {
+  const preview = editor && editor.camera_path_preview;
+  const duration = Number(
+    preview && preview.path ? preview.path.duration : NaN,
+  );
+  const span = Number.isFinite(duration) && duration > 0 ? duration : 1;
+  elements.cameraPathScrub.max = String(span);
+  const time = Number(elements.cameraPathTime.value);
+  elements.cameraPathScrub.value = String(
+    Math.min(Math.max(Number.isFinite(time) ? time : 0, 0), span),
+  );
+}
+
 function renderCameraPathState(editor) {
+  syncCameraPathTimeline(editor);
   const cameraPathPreview = editor.camera_path_preview;
   const cameraPathKey = editor.camera_path_key;
   elements.cameraPathState.textContent = cameraPathKey
@@ -2755,6 +2770,9 @@ async function cameraPathTick() {
     time = cameraPathPlayDuration;
   }
   elements.cameraPathTime.value = String(Math.round(time * 1000) / 1000);
+  elements.cameraPathScrub.value = String(
+    Math.min(time, Number(elements.cameraPathScrub.max) || time),
+  );
   try {
     const editor = await api("/api/editor", {
       method: "POST",
@@ -3758,6 +3776,14 @@ elements.cameraPathKeyRemove.addEventListener("click", () =>
 elements.cameraPathPlay.addEventListener("click", () =>
   run(toggleCameraPathPlay),
 );
+elements.cameraPathScrub.addEventListener("input", () => {
+  stopCameraPathPlay();
+  elements.cameraPathTime.value = elements.cameraPathScrub.value;
+});
+elements.cameraPathScrub.addEventListener("change", () => {
+  stopCameraPathPlay();
+  run(previewCameraPath);
+});
 elements.blendSpacePreview.addEventListener("click", () =>
   run(previewBlendSpace),
 );
