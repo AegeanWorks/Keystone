@@ -3,8 +3,8 @@
   "active_task": {
     "task_id": "keystone-map-format-refresh-v1",
     "last_phase": "phase 4",
-    "active_phase": 4,
-    "status": "in_progress",
+    "active_phase": 5,
+    "status": "completed",
     "updated_at": 1795026401.6851692,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
@@ -14,26 +14,12 @@
         "name": "keystone",
         "path": "projects/keystone"
       }
-    ]
+    ],
+    "completed_at": 1795026440.5327206,
+    "completed_head": "fffed3ad4af77eda966751df5289a7e4e4a727b4",
+    "completed_tree": "ccf4e7417be80274e033ea2e97e118b62aa75e18"
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-camera-path-rename-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-camera-path-rename-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1795004146.0477114,
-      "timestamp_str": "2026-11-18 15:15:46",
-      "agent": "kilo:goal",
-      "head": "851322b649a6b3bd295ea3b695ec8a02d26ad51f",
-      "delivery": {
-        "roots": [
-          "."
-        ],
-        "forced": false
-      }
-    },
     {
       "task_id": "keystone-camera-path-playback-v1",
       "phase": "phase 2",
@@ -605,6 +591,23 @@
           "path": "projects/keystone"
         }
       ]
+    },
+    {
+      "task_id": "keystone-map-format-refresh-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-map-format-refresh-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1795026440.6119642,
+      "timestamp_str": "2026-11-18 21:27:20",
+      "agent": "kilo:goal",
+      "head": "fffed3ad4af77eda966751df5289a7e4e4a727b4",
+      "delivery": {
+        "roots": [
+          "."
+        ],
+        "forced": false
+      }
     }
   ]
 }
