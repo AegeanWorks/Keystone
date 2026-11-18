@@ -10,7 +10,7 @@
 - **Total Classes**: `364`
 - **Total Top-Level Functions**: `597`
 - **Total Class Methods**: `2307`
-- **Total Source Lines**: `56765`
+- **Total Source Lines**: `56766`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`210` module(s))
@@ -5203,7 +5203,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `6909` lines (`284043` bytes)
+**Size**: `6910` lines (`284091` bytes)
 
 **Classes:**
 - `class Health`
