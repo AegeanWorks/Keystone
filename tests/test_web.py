@@ -6437,6 +6437,7 @@ class WebServerTest(unittest.TestCase):
             "camera-path-restore",
             "camera-path-key-set",
             "camera-path-key-remove",
+            "camera-path-play",
             "camera-path-state",
             "blend-space-json",
             "blend-space-name",
@@ -6820,6 +6821,10 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("rename_camera_path", script)
         self.assertIn("duplicate_camera_path", script)
         self.assertIn("cameraPathNewName", script)
+        self.assertIn("toggleCameraPathPlay", script)
+        self.assertIn("cameraPathTick", script)
+        self.assertIn("stopCameraPathPlay", script)
+        self.assertIn("renderCameraPathState", script)
         self.assertIn("animation_preview", script)
         self.assertIn("playFrames", script)
         self.assertIn("set_node", script)

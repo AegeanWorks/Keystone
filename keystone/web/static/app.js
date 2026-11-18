@@ -65,6 +65,7 @@ const elements = {
   cameraPathRestore: document.getElementById("camera-path-restore"),
   cameraPathKeySet: document.getElementById("camera-path-key-set"),
   cameraPathKeyRemove: document.getElementById("camera-path-key-remove"),
+  cameraPathPlay: document.getElementById("camera-path-play"),
   cameraPathState: document.getElementById("camera-path-state"),
   blendSpaceJson: document.getElementById("blend-space-json"),
   blendSpaceName: document.getElementById("blend-space-name"),
@@ -236,6 +237,12 @@ let wasPlaying = false;
 let layoutTimer = null;
 let viewBookmarks = {};
 let viewBookmarkKey = "";
+let cameraPathPlayActive = false;
+let cameraPathPlayTimer = null;
+let cameraPathPlayBusy = false;
+let cameraPathPlayLast = 0;
+let cameraPathPlayDuration = 0;
+let cameraPathPlayLoop = false;
 let animationPlayActive = false;
 let animationPlayTimer = null;
 let animationPlayBusy = false;
@@ -998,6 +1005,23 @@ function renderHistory(history) {
   elements.historyState.textContent = `${undo} \u00b7 ${redo}`;
 }
 
+function renderCameraPathState(editor) {
+  const cameraPathPreview = editor.camera_path_preview;
+  const cameraPathKey = editor.camera_path_key;
+  elements.cameraPathState.textContent = cameraPathKey
+    ? `${cameraPathKey.action === "set_camera_path_key" ? "Set" : "Removed"} ` +
+      `key @ ${cameraPathKey.time}s · ${cameraKeyLabel(cameraPathKey.keys)}` +
+      `${cameraPathKey.replaced ? " · replaced" : ""}` +
+      `${cameraPathKey.removed ? ` · ${cameraPathKey.removed} removed` : ""}`
+    : cameraPathPreview
+      ? `Path ${cameraPathPreview.name || "inline"} @ ${cameraPathPreview.time}s · ` +
+        `${cameraKeyLabel(cameraPathPreview.path.keys.length)} · ` +
+        `pos ${cameraPathPreview.pose.position
+          .map((value) => value.toFixed(2))
+          .join(", ")}`
+      : "No camera path preview.";
+}
+
 function showEditor(editor) {
   editorState = editor;
   if (viewer) {
@@ -1082,20 +1106,7 @@ function showEditor(editor) {
     ? `Previewed ${statePreview.name} · ${statePreview.current} · ` +
       `${statePreview.frames} frames · ${statePreview.updated.length} nodes`
     : "No state machine preview.";
-  const cameraPathPreview = editor.camera_path_preview;
-  const cameraPathKey = editor.camera_path_key;
-  elements.cameraPathState.textContent = cameraPathKey
-    ? `${cameraPathKey.action === "set_camera_path_key" ? "Set" : "Removed"} ` +
-      `key @ ${cameraPathKey.time}s · ${cameraKeyLabel(cameraPathKey.keys)}` +
-      `${cameraPathKey.replaced ? " · replaced" : ""}` +
-      `${cameraPathKey.removed ? ` · ${cameraPathKey.removed} removed` : ""}`
-    : cameraPathPreview
-      ? `Path ${cameraPathPreview.name || "inline"} @ ${cameraPathPreview.time}s · ` +
-        `${cameraKeyLabel(cameraPathPreview.path.keys.length)} · ` +
-        `pos ${cameraPathPreview.pose.position
-          .map((value) => value.toFixed(2))
-          .join(", ")}`
-      : "No camera path preview.";
+  renderCameraPathState(editor);
   const blendPreview = editor.blend_space_preview;
   elements.blendSpaceState.textContent = blendPreview
     ? `Blend ${blendPreview.parameter} @ ${blendPreview.time}s · ` +
@@ -1217,6 +1228,7 @@ async function refreshEditor(display) {
 
 async function editorAction(payload, label) {
   stopAnimationPlay();
+  stopCameraPathPlay();
   setStatus(label, "busy");
   const editor = await api("/api/editor", {
     method: "POST",
@@ -2668,6 +2680,108 @@ async function removeCameraPathKey() {
   showCameraPathDocument(editor);
 }
 
+function stopCameraPathPlay() {
+  cameraPathPlayActive = false;
+  if (cameraPathPlayTimer !== null) {
+    window.clearTimeout(cameraPathPlayTimer);
+    cameraPathPlayTimer = null;
+  }
+  if (elements.cameraPathPlay) {
+    elements.cameraPathPlay.textContent = "Play path";
+  }
+}
+
+function cameraPathPlayRequest(time) {
+  const name = elements.cameraPathName.value.trim();
+  const request = { action: "preview_camera_path", time };
+  if (name) {
+    request.name = name;
+  } else {
+    request.path = readCameraPathJson();
+  }
+  return request;
+}
+
+async function toggleCameraPathPlay() {
+  if (cameraPathPlayActive) {
+    stopCameraPathPlay();
+    return;
+  }
+  if (!viewer) {
+    throw new Error("The scene view camera is not ready.");
+  }
+  let time = readCameraPathTime();
+  const editor = await api("/api/editor", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cameraPathPlayRequest(time)),
+  });
+  showEditor(editor);
+  const preview = editor.camera_path_preview;
+  if (!preview) {
+    throw new Error("The camera path preview did not return a pose.");
+  }
+  const duration = Number(preview.path.duration);
+  cameraPathPlayDuration = Number.isFinite(duration) ? duration : 0;
+  cameraPathPlayLoop = Boolean(preview.path.loop);
+  if (time >= cameraPathPlayDuration) {
+    time = 0;
+    elements.cameraPathTime.value = "0";
+  }
+  applyCameraPathPose(preview.pose);
+  cameraPathPlayActive = true;
+  cameraPathPlayLast = performance.now();
+  elements.cameraPathPlay.textContent = "Pause path";
+  cameraPathPlayTimer = window.setTimeout(cameraPathTick, 33);
+}
+
+async function cameraPathTick() {
+  cameraPathPlayTimer = null;
+  if (!cameraPathPlayActive) {
+    return;
+  }
+  if (cameraPathPlayBusy) {
+    cameraPathPlayTimer = window.setTimeout(cameraPathTick, 33);
+    return;
+  }
+  cameraPathPlayBusy = true;
+  const now = performance.now();
+  const elapsed = Math.min(0.2, Math.max(0, (now - cameraPathPlayLast) / 1000));
+  cameraPathPlayLast = now;
+  let time = Number(elements.cameraPathTime.value) + elapsed;
+  if (cameraPathPlayDuration > 0 && cameraPathPlayLoop) {
+    time = time % cameraPathPlayDuration;
+  } else if (cameraPathPlayDuration > 0 && time >= cameraPathPlayDuration) {
+    time = cameraPathPlayDuration;
+  }
+  elements.cameraPathTime.value = String(Math.round(time * 1000) / 1000);
+  try {
+    const editor = await api("/api/editor", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cameraPathPlayRequest(time)),
+    });
+    editorState = editor;
+    renderCameraPathState(editor);
+    const preview = editor.camera_path_preview;
+    if (preview) {
+      applyCameraPathPose(preview.pose);
+    }
+    if (!cameraPathPlayLoop && time >= cameraPathPlayDuration) {
+      stopCameraPathPlay();
+    }
+  } catch (error) {
+    stopCameraPathPlay();
+    setStatus(error.message, "error");
+    show({ ok: false, error: error.message });
+  } finally {
+    cameraPathPlayBusy = false;
+    if (cameraPathPlayActive) {
+      cameraPathPlayTimer = window.setTimeout(cameraPathTick, 33);
+    }
+  }
+}
+
 function readBlendSpaceJson() {
   let blendSpace;
   try {
@@ -3640,6 +3754,9 @@ elements.cameraPathKeySet.addEventListener("click", () =>
 );
 elements.cameraPathKeyRemove.addEventListener("click", () =>
   run(removeCameraPathKey),
+);
+elements.cameraPathPlay.addEventListener("click", () =>
+  run(toggleCameraPathPlay),
 );
 elements.blendSpacePreview.addEventListener("click", () =>
   run(previewBlendSpace),

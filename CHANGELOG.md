@@ -220,6 +220,11 @@ changes that do not bump the release number yet.
   answer 400 on a live target, 404 on a missing source, and refresh
   `camera_path_document` under the new name. The console adds a New name
   input with Rename and Duplicate buttons.
+- The console plays camera paths: a Play path/Pause path toggle samples
+  preview_camera_path on the animation preview loop, wraps a looping path,
+  stops a one-shot path at its duration with the final pose applied, halts
+  on any editor action, and refreshes the path readout without re-rendering
+  the hierarchy or the JSON editor.
 - `keystone.camera_shake` adds `CameraShake`, `ShakeOffset` and
   `shake_report`: trauma accumulation, linear decay, seeded sine noise and a
   deterministic position/yaw/pitch offset for game feel.
