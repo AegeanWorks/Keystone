@@ -12,6 +12,7 @@
   ],
   "commands": {
     "fast": "python -m pytest -q tests/test_web.py",
+    "fast_timeout": 240,
     "snapshot": ""
   },
   "style": {
