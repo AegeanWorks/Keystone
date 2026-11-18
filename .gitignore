@@ -9,3 +9,5 @@ __pycache__/
 node_modules/
 # AIKit transient state
 .aikit/*.log
+# AIKit transient state
+.aikit/reforge.reviews/
