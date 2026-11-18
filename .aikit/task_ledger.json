@@ -1,11 +1,11 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-camera-path-keys-v1",
+    "task_id": "keystone-map-refresh-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1794990464.2543838,
+    "updated_at": 1794991350.6304667,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
@@ -15,87 +15,16 @@
         "path": "projects/keystone"
       }
     ],
-    "completed_at": 1794990490.2209675,
-    "completed_head": "86e36c4d3daa31755fc25c7c8a0e1cc4314c7eaa",
-    "completed_tree": "604ddcdc835729a289e616b5d37af96e3751df47"
+    "forced_completion": {
+      "agent": "kilo:goal",
+      "reason": "The task's only deliverable is the already-committed codebase map refresh e659b56 (in projects/keystone); the workspace dirt listed here is foreign to this task: .agents/task_ledger.json, .agents/tree_manifest.json and .commandcode/ come from the kit's own concurrent sessions and speedlab/cli.py plus speedlab/ledger.py belong to AIKit speedlab work, none of which this ledger entry touched.",
+      "at": 1794991496.0840445
+    },
+    "completed_at": 1794991496.0840461,
+    "completed_head": "e659b56359110a6e7742a52813fd958085d3c04e",
+    "completed_tree": "e0ecc4fd248126336f58bd255de887a8e6914ba4"
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-camera-shaker-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/3] Implemented and verified - camera_shaker.py adds CameraShaker with add/update/pose and camera_shaker_report; pose samples once, adds yaw/pitch and world or camera-local position offsets, and builds a new PerspectiveCamera with the base lens so the base is never mutated; zero trauma returns the base pose exactly, added trauma moves position and angles while the base keeps its values, local mode maps through right/up/forward and world mode adds directly, decay to zero restores the base, pitch clamps via the camera, and validation covers types, local flag, negative dt and reports; exports, README summary, ARCHITECTURE camera row and tree, docs/TREE, CHANGELOG and ADR-259 updated; --describe reports capabilities.camera_shaker; 9 tests green (1381 collected), ruff clean, aikit check keystone 6/6 gates, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; checklists: passed",
-      "files_affected": [
-        "keystone/camera_shaker.py",
-        "tests/test_camera_shaker.py",
-        "keystone/__init__.py",
-        "keystone/plugin.py",
-        "README.md",
-        "docs/ARCHITECTURE.md",
-        "docs/TREE.md",
-        "CHANGELOG.md",
-        ".aikit/decisions.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794483604.4653702,
-      "timestamp_str": "2026-11-12 14:40:04",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "artifact": "stdout",
-          "candidate": 1381.0,
-          "metric": "collected_tests",
-          "command": "python -m pytest --collect-only -q",
-          "baseline": 1372.0,
-          "unit": "tests"
-        },
-        {
-          "artifact": "tests/test_camera_shaker.py",
-          "candidate": 0.0,
-          "metric": "zero_trauma_pose_delta",
-          "command": "python -m pytest tests/test_camera_shaker.py",
-          "baseline": 0.0,
-          "unit": "world"
-        },
-        {
-          "artifact": "temp PNG",
-          "candidate": 4899.0,
-          "metric": "reference_png_bytes",
-          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
-          "baseline": 4899.0,
-          "unit": "bytes"
-        }
-      ],
-      "checklists": "passed"
-    },
-    {
-      "task_id": "keystone-camera-shaker-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-camera-shaker-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794483622.7076552,
-      "timestamp_str": "2026-11-12 14:40:22",
-      "agent": "kilo:goal"
-    },
-    {
-      "task_id": "keystone-persistence-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan (impact-assessed): add VersionedStore and LoadResult implementing schema migrations, unsupported-schema refusal, quarantine, backup fallback, default factories, validation and an advisory lock with stale reclamation, plus a persistence capability",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794486163.0439215,
-      "timestamp_str": "2026-11-12 15:22:43",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "serialization had atomic writes and .bak only, so every game duplicated migration, quarantine, backup and locking policy; the report's F11 recorded this as risk.",
-        "benefits": "Games get one tested persistence contract with recovery flags, and reads never rewrite valid documents.",
-        "risks": "contract: new module, two exports and a capability; dependency: persistence imports serialization; concurrency: cross-process advisory lock with stale expiry; state: writes schema-3 documents and quarantine files.",
-        "mitigation": "Refuse unsupported schemas without touching files, quarantine before backup, validate before writing, lock with O_EXCL and stale reclaim, pin recovery paths with tests, and keep the canonical frame unchanged."
-      },
-      "plan_digest": "025d4de80ad659229d90fabc720d290350d5892e3aa2e6d50459294c4128f8a1"
-    },
     {
       "task_id": "keystone-persistence-v1",
       "phase": "phase 4",
@@ -611,6 +540,79 @@
           "."
         ],
         "forced": false
+      }
+    },
+    {
+      "task_id": "keystone-map-refresh-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/1] Record the delivered codebase map refresh - the map regenerated from the camera path key change (commit e659b56) is the documentation half of that delivery and needs its own ledger entry so the completed-task freshness rule sees no undocumented follow-up commit",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794991294.7963603,
+      "timestamp_str": "2026-11-18 11:41:34",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "The camera path key task completed at fa76fc8 and the regenerated codebase map landed one commit later, which the ledger freshness rule correctly reads as work with no owning task.",
+        "benefits": "The delivery record names every commit of the change set, so the knowledge map is accounted for and check reaches a clean exit.",
+        "risks": "contract: ledger bookkeeping only; dependency: none; concurrency: none; state: no code or format change",
+        "mitigation": "Cite the already-committed map and the knowledge-base check output, then complete and commit the ledger alone"
+      },
+      "plan_digest": "8d704bb9d1d30b26fbcef02ce6b21ef29c249f3cd6dbd3f91afe9eeae3358237",
+      "workspaces": [
+        {
+          "name": "keystone",
+          "path": "projects/keystone"
+        }
+      ]
+    },
+    {
+      "task_id": "keystone-map-refresh-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[1/1] Verified - update_knowledge_base --workspace projects/keystone regenerated the map (commit e659b56) and update_knowledge_base --check now passes inside aikit check keystone 6/6; no code files changed in this task",
+      "files_affected": [
+        ".aikit/codebase_map.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1794991350.6304667,
+      "timestamp_str": "2026-11-18 11:42:30",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "drift": "resolved",
+          "artifact": "stdout",
+          "candidate": 0.0,
+          "command": "python scripts/update_knowledge_base.py --workspace projects/keystone --check",
+          "baseline": 1.0,
+          "unit": "entries",
+          "metric": "codebase_map_stale_entries",
+          "qualified": "no"
+        }
+      ],
+      "checklists": "passed",
+      "workspaces": [
+        {
+          "name": "keystone",
+          "path": "projects/keystone"
+        }
+      ]
+    },
+    {
+      "task_id": "keystone-map-refresh-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-map-refresh-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794991496.3256748,
+      "timestamp_str": "2026-11-18 11:44:56",
+      "agent": "kilo:goal",
+      "head": "e659b56359110a6e7742a52813fd958085d3c04e",
+      "delivery": {
+        "roots": [
+          "."
+        ],
+        "forced": true
       }
     }
   ]
