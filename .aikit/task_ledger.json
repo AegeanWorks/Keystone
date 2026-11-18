@@ -2,10 +2,10 @@
   "version": 1,
   "active_task": {
     "task_id": "keystone-camera-path-keys-v1",
-    "last_phase": "phase 2",
-    "active_phase": 2,
-    "status": "in_progress",
-    "updated_at": 1794978211.5095696,
+    "last_phase": "phase 4",
+    "active_phase": 5,
+    "status": "completed",
+    "updated_at": 1794990464.2543838,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
@@ -15,42 +15,11 @@
         "path": "projects/keystone"
       }
     ],
-    "impact_assessment": {
-      "why": "Paths could be saved and previewed, but every key had to be typed as JSON with a quaternion, unlike animation clips that capture the current transform; and previewing a path marked the scene dirty even though it never touches it.",
-      "benefits": "Cutscene keys become one click from the viewport, loops and one-shot paths stay validated through the same document rules, and the dirty indicator stops lying after a preview.",
-      "risks": "contract: four engine exports, two editor actions, editor schema 65, one editor document key and a dirty-state classification; dependency: server reuses CameraPathLibrary and camera path documents; concurrency: unchanged session lock; state: no scene, snapshot or render format change",
-      "mitigation": "Keep insert/remove pure and unit-tested, validate times and poses through the existing helpers, pin the dirty-state regression and the action reports in tests, smoke the console panel in a browser, and keep the canonical hash and reference PNG unchanged"
-    }
+    "completed_at": 1794990490.2209675,
+    "completed_head": "86e36c4d3daa31755fc25c7c8a0e1cc4314c7eaa",
+    "completed_tree": "604ddcdc835729a289e616b5d37af96e3751df47"
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-camera-shake-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-camera-shake-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794479663.7821271,
-      "timestamp_str": "2026-11-12 13:34:23",
-      "agent": "kilo:goal"
-    },
-    {
-      "task_id": "keystone-camera-shaker-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan (impact-assessed): add CameraShaker and camera_shaker_report to compose a CameraShake offset onto an immutable base camera in world or camera-local space, with add/update/pose and a discovery flag",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794483576.6431456,
-      "timestamp_str": "2026-11-12 14:39:36",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "CameraShake sampled offsets but a game still had to apply them, choose a space, clamp pitch and restore the base pose; mutating the camera would corrupt input, collision and rig state.",
-        "benefits": "One pose call returns a shaken camera while the base camera stays untouched, in world or local axes, with a JSON report.",
-        "risks": "contract: new module, two exports and a capability; dependency: camera_shaker imports camera and camera_shake; concurrency: shaker state is caller-owned; state: no schema change.",
-        "mitigation": "Never mutate the base, construct a new camera with base lens settings, validate camera/shake/local/dt, pin zero-trauma equality, immutability, both spaces, decay and reports, and keep the canonical frame unchanged."
-      },
-      "plan_digest": "788e5c153abd46861ec29d271ad002006d1c362ab3545ce0b35a9b8d3cce4882"
-    },
     {
       "task_id": "keystone-camera-shaker-v1",
       "phase": "phase 4",
@@ -568,6 +537,81 @@
           "path": "projects/keystone"
         }
       ]
+    },
+    {
+      "task_id": "keystone-camera-path-keys-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Implemented and verified - CameraKey.from_view/from_camera invert the pose heading with camera pitch clamping, camera_key_from_dict parses one key and camera_path_from_dict reuses it, insert_camera_key/remove_camera_key are pure editors that sort keys, replace within 1e-6s at the existing time, keep loop shape and refuse unanchoring or emptying a path; editor schema 65 adds set_camera_path_key and remove_camera_path_key (scene camera or position with quaternion or yaw/pitch), both report camera_path_key and refresh camera_path_document, all three camera path library actions are scene-neutral so preview no longer marks the scene dirty; the console adds Set key from view and Remove key with a pluralized readout; README, AI_GUIDE, ARCHITECTURE, CHANGELOG, ADR-265 updated and the UI contract fast_timeout raised to 240s after the 120s proof timed out twice on a loaded machine while the suite itself passes in 68s; browser smoke confirmed 1 key with scene fov, 2 keys after t=2, a removal, and a preview readout at the sampled pose; full pytest 1454 tests and ruff pass, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged; ui begin/verify/finish --reviewed recorded",
+      "files_affected": [
+        "keystone/camera_path.py",
+        "keystone/__init__.py",
+        "keystone/schema.py",
+        "keystone/web/server.py",
+        "keystone/web/schema.py",
+        "keystone/web/static/app.js",
+        "keystone/web/static/index.html",
+        "tests/test_camera_path.py",
+        "tests/test_web.py",
+        "README.md",
+        "docs/AI_GUIDE.md",
+        "docs/ARCHITECTURE.md",
+        "CHANGELOG.md",
+        ".aikit/ui.json",
+        ".aikit/ui_history.json",
+        ".aikit/decisions.md",
+        ".aikit/codebase_map.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1794990464.2543838,
+      "timestamp_str": "2026-11-18 11:27:44",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "unit": "tests",
+          "metric": "collected_tests",
+          "command": "python -m pytest --collect-only -q",
+          "workload": "keystone full suite",
+          "artifact": "stdout",
+          "candidate": 1454.0,
+          "baseline": 1438.0,
+          "qualified": "no"
+        },
+        {
+          "unit": "bytes",
+          "metric": "reference_png_bytes",
+          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
+          "workload": "headless 96x64 single frame",
+          "artifact": "temp PNG",
+          "candidate": 4899.0,
+          "baseline": 4899.0,
+          "qualified": "no"
+        }
+      ],
+      "checklists": "passed",
+      "workspaces": [
+        {
+          "name": "keystone",
+          "path": "projects/keystone"
+        }
+      ]
+    },
+    {
+      "task_id": "keystone-camera-path-keys-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-camera-path-keys-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1794990490.3599021,
+      "timestamp_str": "2026-11-18 11:28:10",
+      "agent": "kilo:goal",
+      "head": "86e36c4d3daa31755fc25c7c8a0e1cc4314c7eaa",
+      "delivery": {
+        "roots": [
+          "."
+        ],
+        "forced": false
+      }
     }
   ]
 }
