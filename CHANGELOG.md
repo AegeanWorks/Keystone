@@ -215,6 +215,11 @@ changes that do not bump the release number yet.
   `camera_path_key` and refreshing `camera_path_document`; the console gains
   Set key from view and Remove key. `preview_camera_path` no longer marks the
   scene dirty.
+- Camera paths rename and duplicate through the editor: `rename_camera_path`
+  and `duplicate_camera_path` (editor schema 66) take `name` plus `new_name`,
+  answer 400 on a live target, 404 on a missing source, and refresh
+  `camera_path_document` under the new name. The console adds a New name
+  input with Rename and Duplicate buttons.
 - `keystone.camera_shake` adds `CameraShake`, `ShakeOffset` and
   `shake_report`: trauma accumulation, linear decay, seeded sine noise and a
   deterministic position/yaw/pitch offset for game feel.

@@ -53,11 +53,14 @@ const elements = {
   stateMachineState: document.getElementById("state-machine-state"),
   cameraPathJson: document.getElementById("camera-path-json"),
   cameraPathName: document.getElementById("camera-path-name"),
+  cameraPathNewName: document.getElementById("camera-path-new-name"),
   cameraPathNames: document.getElementById("camera-path-names"),
   cameraPathTime: document.getElementById("camera-path-time"),
   cameraPathLoad: document.getElementById("camera-path-load"),
   cameraPathPreview: document.getElementById("camera-path-preview"),
   cameraPathSave: document.getElementById("camera-path-save"),
+  cameraPathRename: document.getElementById("camera-path-rename"),
+  cameraPathDuplicate: document.getElementById("camera-path-duplicate"),
   cameraPathDelete: document.getElementById("camera-path-delete"),
   cameraPathRestore: document.getElementById("camera-path-restore"),
   cameraPathKeySet: document.getElementById("camera-path-key-set"),
@@ -2537,6 +2540,40 @@ async function previewCameraPath() {
   }
 }
 
+function readCameraPathNewName() {
+  const newName = elements.cameraPathNewName.value.trim();
+  if (!newName) {
+    throw new Error("Enter a new camera path name first.");
+  }
+  return newName;
+}
+
+async function renameCameraPath() {
+  const name = elements.cameraPathName.value.trim();
+  if (!name) {
+    throw new Error("Enter the camera path name to rename.");
+  }
+  const newName = readCameraPathNewName();
+  const editor = await editorAction(
+    { action: "rename_camera_path", name, new_name: newName },
+    `renaming camera path ${name}`,
+  );
+  showCameraPathDocument(editor);
+}
+
+async function duplicateCameraPath() {
+  const name = elements.cameraPathName.value.trim();
+  if (!name) {
+    throw new Error("Enter the camera path name to duplicate.");
+  }
+  const newName = readCameraPathNewName();
+  const editor = await editorAction(
+    { action: "duplicate_camera_path", name, new_name: newName },
+    `duplicating camera path ${name}`,
+  );
+  showCameraPathDocument(editor);
+}
+
 async function deleteCameraPath() {
   const name = elements.cameraPathName.value.trim();
   if (!name) {
@@ -3588,6 +3625,10 @@ elements.cameraPathPreview.addEventListener("click", () =>
   run(previewCameraPath),
 );
 elements.cameraPathSave.addEventListener("click", () => run(saveCameraPath));
+elements.cameraPathRename.addEventListener("click", () => run(renameCameraPath));
+elements.cameraPathDuplicate.addEventListener("click", () =>
+  run(duplicateCameraPath),
+);
 elements.cameraPathDelete.addEventListener("click", () =>
   run(deleteCameraPath),
 );

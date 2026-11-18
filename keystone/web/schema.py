@@ -337,6 +337,16 @@ EDITOR_EXAMPLES = {
         },
     },
     "load_camera_path": {"action": "load_camera_path", "name": "intro"},
+    "rename_camera_path": {
+        "action": "rename_camera_path",
+        "name": "intro",
+        "new_name": "opening",
+    },
+    "duplicate_camera_path": {
+        "action": "duplicate_camera_path",
+        "name": "intro",
+        "new_name": "intro-copy",
+    },
     "delete_camera_path": {"action": "delete_camera_path", "name": "intro"},
     "restore_camera_path": {
         "action": "restore_camera_path",
@@ -604,6 +614,8 @@ EDITOR_SCHEMA = {
         ],
         "save_camera_path": ["name", "path"],
         "load_camera_path": ["name"],
+        "rename_camera_path": ["name", "new_name"],
+        "duplicate_camera_path": ["name", "new_name"],
         "delete_camera_path": ["name"],
         "restore_camera_path": ["trash"],
         "preview_camera_path": ["name", "path", "time"],
@@ -791,6 +803,7 @@ EDITOR_SCHEMA = {
         "schema 63 adds the .kpath camera path library with save/delete/restore actions and a non-mutating preview_camera_path pose sample",
         "schema 64 adds load_camera_path, returning the saved path document for console JSON editing",
         "schema 65 adds set_camera_path_key/remove_camera_path_key, which author keys from the scene camera or an explicit position plus yaw/pitch pose",
+        "schema 66 adds rename_camera_path/duplicate_camera_path, returning the camera path document under its new name",
         "mesh and material are asset ids; create_node and assign_asset need the game to expose an AssetRegistry as assets",
     ],
 }

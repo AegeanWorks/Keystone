@@ -9,8 +9,8 @@
 - **Total Python Modules**: `210`
 - **Total Classes**: `364`
 - **Total Top-Level Functions**: `597`
-- **Total Class Methods**: `2307`
-- **Total Source Lines**: `56766`
+- **Total Class Methods**: `2308`
+- **Total Source Lines**: `56935`
 
 ## 🧭 Map Coverage
 - **Indexed**: python (`210` module(s))
@@ -1965,7 +1965,7 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `105` lines (`2364` bytes)
+**Size**: `107` lines (`2419` bytes)
 
 ---
 
@@ -2394,14 +2394,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `818` lines (`32690` bytes)
+**Size**: `831` lines (`33190` bytes)
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `3577` lines (`162436` bytes)
+**Size**: `3616` lines (`164415` bytes)
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -5203,7 +5203,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `6910` lines (`284091` bytes)
+**Size**: `7025` lines (`288910` bytes)
 
 **Classes:**
 - `class Health`
@@ -5315,6 +5315,7 @@
   - Method `.test_editor_state_machine_restore_collision_is_400()`
   - Method `.test_editor_camera_path_library_and_preview()`
   - Method `.test_editor_camera_path_validation_and_collision()`
+  - Method `.test_editor_camera_path_rename_and_duplicate()`
   - Method `.test_editor_camera_path_key_authoring()`
   - Method `.test_editor_camera_path_key_validation()`
   - Method `.test_editor_camera_path_actions_keep_the_scene_clean()`

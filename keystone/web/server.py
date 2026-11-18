@@ -167,6 +167,8 @@ SCENE_NEUTRAL_ACTIONS = frozenset(
         "restore_state_machine",
         "save_camera_path",
         "load_camera_path",
+        "rename_camera_path",
+        "duplicate_camera_path",
         "delete_camera_path",
         "restore_camera_path",
         "preview_camera_path",
@@ -305,7 +307,9 @@ def _action_fix(message: str) -> str:
     was met with "send a valid editor action with finite transform values".
     Each branch here names the thing the caller has to change.
     """
-    if "a new camera path needs its first key at time 0" in message:
+    if message.startswith("duplicate target must differ from the source"):
+        return "choose a new_name that differs from the camera path name"
+    if message.startswith("a new camera path needs its first key at time 0"):
         return "author the first camera path key at time 0 before adding later keys"
     if "a looping camera path key must fall before its duration" in message:
         return "pick a key time before the path duration or save a one-shot path"
@@ -2073,6 +2077,41 @@ class GameSession:
                         )
                     camera_path = camera_path_from_dict(data)
                     self.camera_path_library.save(name, camera_path)
+                elif action in ("rename_camera_path", "duplicate_camera_path"):
+                    if self.camera_path_library is None:
+                        raise ValueError(
+                            "no camera path library is configured"
+                        )
+                    name = payload.get("name")
+                    new_name = payload.get("new_name")
+                    if not isinstance(name, str) or not name.strip():
+                        raise ValueError(
+                            "camera path name must be a non-blank string"
+                        )
+                    if not isinstance(new_name, str) or not new_name.strip():
+                        raise ValueError(
+                            "camera path new_name must be a non-blank string"
+                        )
+                    try:
+                        if action == "rename_camera_path":
+                            entry = self.camera_path_library.rename(
+                                name, new_name
+                            )
+                        else:
+                            entry = self.camera_path_library.duplicate(
+                                name, new_name
+                            )
+                    except FileExistsError as exc:
+                        raise WebProblem(
+                            400,
+                            str(exc),
+                            "choose a camera path name that does not exist",
+                        ) from exc
+                    camera_path = self.camera_path_library.load(entry.name)
+                    self.last_camera_path_document = {
+                        "name": entry.name,
+                        "path": camera_path_to_dict(camera_path),
+                    }
                 elif action == "load_camera_path":
                     if self.camera_path_library is None:
                         raise ValueError(

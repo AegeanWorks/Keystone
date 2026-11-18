@@ -104,6 +104,7 @@
         <textarea id="camera-path-json" spellcheck="false" rows="5">{}</textarea>
         <div class="field-grid">
           <label>Camera path name <input id="camera-path-name" type="text" list="camera-path-names"></label>
+          <label>New name <input id="camera-path-new-name" type="text" placeholder="opening"></label>
           <label>Preview time <input id="camera-path-time" type="number" min="0" step="0.05" value="0"></label>
         </div>
         <datalist id="camera-path-names"></datalist>
@@ -111,6 +112,8 @@
           <button id="camera-path-load" type="button">Load path</button>
           <button id="camera-path-preview" type="button">Preview path</button>
           <button id="camera-path-save" type="button">Save path</button>
+          <button id="camera-path-rename" type="button">Rename path</button>
+          <button id="camera-path-duplicate" type="button">Duplicate path</button>
           <button id="camera-path-delete" type="button">Delete path</button>
           <button id="camera-path-restore" type="button">Restore path</button>
         </div>

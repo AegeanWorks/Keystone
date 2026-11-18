@@ -5224,6 +5224,113 @@ class WebServerTest(unittest.TestCase):
             self.assertEqual(caught.exception.status, 400)
             self.assertIn("--camera-path-dir", caught.exception.fix)
 
+    def test_editor_camera_path_rename_and_duplicate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path_dir = Path(directory) / "paths"
+            session = GameSession(CubeDemo(), camera_path_dir=path_dir)
+            library = CameraPathLibrary(path_dir)
+            document = _camera_path_document()
+            session.editor_action(
+                {"action": "save_camera_path", "name": "intro", "path": document}
+            )
+            renamed = session.editor_action(
+                {
+                    "action": "rename_camera_path",
+                    "name": "intro",
+                    "new_name": "opening",
+                }
+            )
+            self.assertEqual(renamed["camera_path_document"]["name"], "opening")
+            self.assertFalse(library.path_for("intro").exists())
+            self.assertTrue(library.path_for("opening").is_file())
+            self.assertEqual(
+                [item["name"] for item in renamed["camera_paths"]], ["opening"]
+            )
+            same = session.editor_action(
+                {
+                    "action": "rename_camera_path",
+                    "name": "opening",
+                    "new_name": "opening",
+                }
+            )
+            self.assertEqual(same["camera_path_document"]["name"], "opening")
+            copied = session.editor_action(
+                {
+                    "action": "duplicate_camera_path",
+                    "name": "opening",
+                    "new_name": "opening-copy",
+                }
+            )
+            self.assertEqual(
+                copied["camera_path_document"]["name"], "opening-copy"
+            )
+            self.assertEqual(
+                [item["name"] for item in copied["camera_paths"]],
+                ["opening-copy", "opening"],
+            )
+            self.assertEqual(library.load("opening-copy").keys[0], library.load("opening").keys[0])
+
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "rename_camera_path",
+                        "name": "opening",
+                        "new_name": "opening-copy",
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("does not exist", caught.exception.fix)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "duplicate_camera_path",
+                        "name": "opening",
+                        "new_name": "opening",
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("differs", caught.exception.fix)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "rename_camera_path",
+                        "name": "absent",
+                        "new_name": "other",
+                    }
+                )
+            self.assertEqual(caught.exception.status, 404)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "rename_camera_path",
+                        "name": "opening",
+                        "new_name": "  ",
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+            with self.assertRaises(WebProblem) as caught:
+                session.editor_action(
+                    {
+                        "action": "duplicate_camera_path",
+                        "name": "opening",
+                        "new_name": "../escape",
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertFalse((Path(directory) / "escape.kpath").exists())
+
+            standalone = GameSession(CubeDemo())
+            with self.assertRaises(WebProblem) as caught:
+                standalone.editor_action(
+                    {
+                        "action": "rename_camera_path",
+                        "name": "opening",
+                        "new_name": "other",
+                    }
+                )
+            self.assertEqual(caught.exception.status, 400)
+            self.assertIn("--camera-path-dir", caught.exception.fix)
+
     def test_editor_camera_path_key_authoring(self):
         with tempfile.TemporaryDirectory() as directory:
             path_dir = Path(directory) / "paths"
@@ -6323,6 +6430,9 @@ class WebServerTest(unittest.TestCase):
             "camera-path-load",
             "camera-path-preview",
             "camera-path-save",
+            "camera-path-new-name",
+            "camera-path-rename",
+            "camera-path-duplicate",
             "camera-path-delete",
             "camera-path-restore",
             "camera-path-key-set",
@@ -6705,6 +6815,11 @@ class WebServerTest(unittest.TestCase):
         self.assertIn("camera_path_key", script)
         self.assertIn("cameraPathViewPose", script)
         self.assertIn("cameraKeyLabel", script)
+        self.assertIn("renameCameraPath", script)
+        self.assertIn("duplicateCameraPath", script)
+        self.assertIn("rename_camera_path", script)
+        self.assertIn("duplicate_camera_path", script)
+        self.assertIn("cameraPathNewName", script)
         self.assertIn("animation_preview", script)
         self.assertIn("playFrames", script)
         self.assertIn("set_node", script)

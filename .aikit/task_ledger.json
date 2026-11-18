@@ -1,11 +1,11 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-readme-tree-v1",
+    "task_id": "keystone-camera-path-rename-v1",
     "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1794992360.8394792,
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1795002639.5354404,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
@@ -14,80 +14,9 @@
         "name": "keystone",
         "path": "projects/keystone"
       }
-    ],
-    "completed_at": 1794992367.9010358,
-    "completed_head": "30d9830e310fcb22a615340dcb987b45557afebd",
-    "completed_tree": "49ac7316471ae01cf3c260af796213eb5125ac7b"
+    ]
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-camera-path-assets-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/3] Implemented and verified - camera_path.py adds CAMERA_PATH_SCHEMA, camera_path_to_dict and camera_path_from_dict with strict schema, unknown-field, number, bool, finite, lens and loop/duration validation plus identity-rotation and 60-degree defaults; camera_path_library.py adds CameraPathEntry and CameraPathLibrary over .kpath files with atomic saves, safe names, load, rename, duplicate, trash delete, restore, per-entry error reporting and stable listing; exports, the camera_path_library discovery flag, README, FEATURES, ARCHITECTURE, TREE, CHANGELOG and ADR-262 updated; tests/test_camera_path_library.py pins 19 behaviours; full pytest, ruff, hygiene, guidelines, secrets and mechanics gates 6/6, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged",
-      "files_affected": [
-        "keystone/camera_path.py",
-        "keystone/camera_path_library.py",
-        "tests/test_camera_path_library.py",
-        "keystone/__init__.py",
-        "keystone/plugin.py",
-        "README.md",
-        "docs/FEATURES.md",
-        "docs/ARCHITECTURE.md",
-        "docs/TREE.md",
-        "CHANGELOG.md",
-        ".aikit/decisions.md",
-        ".aikit/codebase_map.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1794945840.6302073,
-      "timestamp_str": "2026-11-17 23:04:00",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "baseline": 1417.0,
-          "metric": "collected_tests",
-          "command": "python -m pytest --collect-only -q",
-          "unit": "tests",
-          "candidate": 1436.0,
-          "artifact": "stdout",
-          "qualified": "no"
-        },
-        {
-          "baseline": 4899.0,
-          "metric": "reference_png_bytes",
-          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
-          "unit": "bytes",
-          "candidate": 4899.0,
-          "artifact": "temp PNG",
-          "qualified": "no"
-        }
-      ],
-      "checklists": "passed",
-      "workspaces": [
-        {
-          "name": "keystone",
-          "path": "projects/keystone"
-        }
-      ]
-    },
-    {
-      "task_id": "keystone-camera-path-assets-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-camera-path-assets-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794945897.4561641,
-      "timestamp_str": "2026-11-17 23:04:57",
-      "agent": "kilo:goal",
-      "head": "7a1345e450c9b83def6f71d9a435da21b9ea4c72",
-      "delivery": {
-        "roots": [
-          "."
-        ],
-        "forced": false
-      }
-    },
     {
       "task_id": "keystone-camera-path-editor-v1",
       "phase": "phase 2",
@@ -583,6 +512,83 @@
         ],
         "forced": false
       }
+    },
+    {
+      "task_id": "keystone-camera-path-rename-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: expose the camera path library's existing rename and duplicate through the editor API - rename_camera_path and duplicate_camera_path actions (editor schema 66) taking name plus new_name, mapping collisions to 400 and missing entries to 404, refreshing camera_path_document under the new name, console Path name/New name inputs with Rename and Duplicate buttons, web schema examples and required fields, tests and docs",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1794993521.7946694,
+      "timestamp_str": "2026-11-18 12:18:41",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "CameraPathLibrary has supported rename and duplicate since it shipped, but the editor and console could not reach them while state machines expose both actions, so a copied cutscene route required saving a new JSON document by hand.",
+        "benefits": "Camera paths reach lifecycle parity with clips and state machines: an authored route can be renamed or forked from the console and API without touching files, and the panel keeps editing the new entry.",
+        "risks": "contract: two editor actions, editor schema 66, a new console input and two buttons; dependency: server reuses CameraPathLibrary rename/duplicate; concurrency: unchanged session lock; state: no scene, snapshot or render format change",
+        "mitigation": "Reuse the library's collision and traversal guards, pin success, collision, missing-entry and missing-library behaviour in web tests, keep one web schema example per action, smoke the panel in a browser, and verify the canonical hash and reference PNG unchanged"
+      },
+      "plan_digest": "87c7a17bff5d24ce2ab914ead2d4658c83ae36f01c5765f7e2083906336f7f3b",
+      "workspaces": [
+        {
+          "name": "keystone",
+          "path": "projects/keystone"
+        }
+      ]
+    },
+    {
+      "task_id": "keystone-camera-path-rename-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/3] Implemented and verified - editor schema 66 adds rename_camera_path and duplicate_camera_path (name plus new_name) delegating to CameraPathLibrary, mapping a live target to 400 with a choose-another-name fix, a missing source to 404, an identical duplicate to 400 with a differs fix while an unchanged rename is a no-op, and refreshing camera_path_document under the resulting name; the console adds a New name input and Rename/Duplicate buttons; web schema examples and required fields cover both actions; README, AI_GUIDE, ARCHITECTURE, CHANGELOG and ADR-266 updated; one new web test pins rename, duplicate, collision, identical duplicate, missing source, blank and traversal names and the missing-library fix; browser smoke renamed intro to opening and duplicated to opening-copy with the panel following the new document; full pytest and ruff pass, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged",
+      "files_affected": [
+        "keystone/schema.py",
+        "keystone/web/schema.py",
+        "keystone/web/server.py",
+        "keystone/web/static/app.js",
+        "keystone/web/static/index.html",
+        "tests/test_web.py",
+        "README.md",
+        "docs/AI_GUIDE.md",
+        "docs/ARCHITECTURE.md",
+        "CHANGELOG.md",
+        ".aikit/decisions.md",
+        ".aikit/codebase_map.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1795002639.5354404,
+      "timestamp_str": "2026-11-18 14:50:39",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "candidate": 1455.0,
+          "unit": "tests",
+          "metric": "collected_tests",
+          "baseline": 1454.0,
+          "artifact": "stdout",
+          "command": "python -m pytest --collect-only -q",
+          "drift": "+1",
+          "qualified": "no"
+        },
+        {
+          "candidate": 4899.0,
+          "unit": "bytes",
+          "metric": "reference_png_bytes",
+          "baseline": 4899.0,
+          "artifact": "temp PNG",
+          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
+          "drift": "unchanged",
+          "qualified": "no"
+        }
+      ],
+      "checklists": "passed",
+      "workspaces": [
+        {
+          "name": "keystone",
+          "path": "projects/keystone"
+        }
+      ]
     }
   ]
 }
