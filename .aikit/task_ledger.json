@@ -1,11 +1,11 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "keystone-canonical-hash-pin-v1",
+    "task_id": "keystone-map-format-refresh-v1",
     "last_phase": "phase 4",
-    "active_phase": 5,
-    "status": "completed",
-    "updated_at": 1795025949.5914562,
+    "active_phase": 4,
+    "status": "in_progress",
+    "updated_at": 1795026401.6851692,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
@@ -14,97 +14,9 @@
         "name": "keystone",
         "path": "projects/keystone"
       }
-    ],
-    "completed_at": 1795026019.4338734,
-    "completed_head": "5d873cb924dde2a3df4c37de5815a29fc5ef8300",
-    "completed_tree": "f555b095d788fcb189297028a854f2f8c20021c1"
+    ]
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-camera-path-rename-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/3] Implemented and verified - editor schema 66 adds rename_camera_path and duplicate_camera_path (name plus new_name) delegating to CameraPathLibrary, mapping a live target to 400 with a choose-another-name fix, a missing source to 404, an identical duplicate to 400 with a differs fix while an unchanged rename is a no-op, and refreshing camera_path_document under the resulting name; the console adds a New name input and Rename/Duplicate buttons; web schema examples and required fields cover both actions; README, AI_GUIDE, ARCHITECTURE, CHANGELOG and ADR-266 updated; one new web test pins rename, duplicate, collision, identical duplicate, missing source, blank and traversal names and the missing-library fix; browser smoke renamed intro to opening and duplicated to opening-copy with the panel following the new document; full pytest and ruff pass, canonical hash 772cac5232a0947b8f6d1914a5cf0cde and 4899-byte reference PNG unchanged",
-      "files_affected": [
-        "keystone/schema.py",
-        "keystone/web/schema.py",
-        "keystone/web/server.py",
-        "keystone/web/static/app.js",
-        "keystone/web/static/index.html",
-        "tests/test_web.py",
-        "README.md",
-        "docs/AI_GUIDE.md",
-        "docs/ARCHITECTURE.md",
-        "CHANGELOG.md",
-        ".aikit/decisions.md",
-        ".aikit/codebase_map.md"
-      ],
-      "status": "in_progress",
-      "timestamp": 1795002639.5354404,
-      "timestamp_str": "2026-11-18 14:50:39",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "candidate": 1455.0,
-          "unit": "tests",
-          "metric": "collected_tests",
-          "baseline": 1454.0,
-          "artifact": "stdout",
-          "command": "python -m pytest --collect-only -q",
-          "drift": "+1",
-          "qualified": "no"
-        },
-        {
-          "candidate": 4899.0,
-          "unit": "bytes",
-          "metric": "reference_png_bytes",
-          "baseline": 4899.0,
-          "artifact": "temp PNG",
-          "command": "python -m keystone --headless --frames 1 --size 96x64 --no-ui --out ref.png",
-          "drift": "unchanged",
-          "qualified": "no"
-        }
-      ],
-      "checklists": "passed",
-      "workspaces": [
-        {
-          "name": "keystone",
-          "path": "projects/keystone"
-        }
-      ]
-    },
-    {
-      "task_id": "keystone-camera-path-rename-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] UI review recorded - ui begin/verify/finish --reviewed closed the web surface as a no-change review of fc6734e after a live browser pass (rename intro to opening, duplicate to opening-copy), the review record is committed as 851322b, and the transient describe-capability socket timeout only appeared under concurrent load and passed on retry",
-      "files_affected": [
-        ".aikit/ui_history.json"
-      ],
-      "status": "in_progress",
-      "timestamp": 1795004145.3279815,
-      "timestamp_str": "2026-11-18 15:15:45",
-      "agent": "kilo:goal",
-      "measurements": [
-        {
-          "candidate": 0.0,
-          "command": "python aikit.py ui verify keystone --json",
-          "artifact": "stdout",
-          "metric": "ui_verify_findings",
-          "drift": "unchanged",
-          "baseline": 0.0,
-          "unit": "findings",
-          "qualified": "no"
-        }
-      ],
-      "checklists": "passed",
-      "workspaces": [
-        {
-          "name": "keystone",
-          "path": "projects/keystone"
-        }
-      ]
-    },
     {
       "task_id": "keystone-camera-path-rename-v1",
       "phase": "completed",
@@ -637,6 +549,62 @@
         ],
         "forced": false
       }
+    },
+    {
+      "task_id": "keystone-map-format-refresh-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/1] Regenerate the codebase map for the current knowledge-base generator - the generator now writes line counts without byte counts, so the committed map stopped matching its own output and the guidelines gate failed with a stale-map error after an otherwise green delivery",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1795026400.5712333,
+      "timestamp_str": "2026-11-18 21:26:40",
+      "agent": "kilo:goal",
+      "impact_assessment": {
+        "why": "The shared kit updated scripts/update_knowledge_base.py to omit byte counts; keystone's committed map was produced by the previous format, so the freshness check failed even though no keystone source drifted.",
+        "benefits": "The map matches the current generator, the guidelines gate passes again, and the format change is recorded against keystone rather than silently carried as uncommitted state.",
+        "risks": "contract: generated map only; dependency: the kit generator format; concurrency: another session owns that generator; state: no source or config change",
+        "mitigation": "Regenerate with the current script, verify update_knowledge_base --check passes, commit the map alone and complete this task at that commit"
+      },
+      "plan_digest": "1ba27d081cc2a6f12d2f6daa667eb6e2f0b21195c311af3e09cc8360322b6a63",
+      "workspaces": [
+        {
+          "name": "keystone",
+          "path": "projects/keystone"
+        }
+      ]
+    },
+    {
+      "task_id": "keystone-map-format-refresh-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[1/1] Verified - the map regenerated with the current kit generator, update_knowledge_base --workspace projects/keystone --check exits 0, and the only change is the generated map format",
+      "files_affected": [
+        ".aikit/codebase_map.md"
+      ],
+      "status": "in_progress",
+      "timestamp": 1795026401.6851692,
+      "timestamp_str": "2026-11-18 21:26:41",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "drift": "resolved",
+          "artifact": "stdout",
+          "unit": "entries",
+          "candidate": 0.0,
+          "command": "python scripts/update_knowledge_base.py --workspace projects/keystone --check",
+          "baseline": 1.0,
+          "metric": "codebase_map_format_drift",
+          "qualified": "no"
+        }
+      ],
+      "checklists": "passed",
+      "workspaces": [
+        {
+          "name": "keystone",
+          "path": "projects/keystone"
+        }
+      ]
     }
   ]
 }

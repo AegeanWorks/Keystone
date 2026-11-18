@@ -25,7 +25,7 @@
 ### [`keystone/__init__.py`](keystone/__init__.py)
 > *Keystone: a game-agnostic 3D engine core.*
 
-**Size**: `343` lines (`7795` bytes)
+**Size**: `343` lines
 
 **Functions:**
 - `def __getattr__(name)`
@@ -35,7 +35,7 @@
 ### [`keystone/__main__.py`](keystone/__main__.py)
 > *Command-line entry point for the game-agnostic Keystone engine.*
 
-**Size**: `753` lines (`40042` bytes)
+**Size**: `753` lines
 
 **Functions:**
 - `def _size(text)`
@@ -53,14 +53,14 @@
 ### [`keystone/_version.py`](keystone/_version.py)
 > *The single source of truth for the engine version.*
 
-**Size**: `10` lines (`324` bytes)
+**Size**: `10` lines
 
 ---
 
 ### [`keystone/agents.py`](keystone/agents.py)
 > *AI observation/action adapters: seen, used, audited, verified and analyzed by AI.*
 
-**Size**: `177` lines (`7599` bytes)
+**Size**: `177` lines
 
 **Classes:**
 - `class AuditTrail` - *Append-only, hash-chained audit log for AI-driven runs.*
@@ -78,7 +78,7 @@
 ### [`keystone/analysis.py`](keystone/analysis.py)
 > *Machine-readable frame reports for AI and headless UI analysis.*
 
-**Size**: `667` lines (`27544` bytes)
+**Size**: `667` lines
 
 **Functions:**
 - `def _enabled(value)`
@@ -109,7 +109,7 @@
 ### [`keystone/animation.py`](keystone/animation.py)
 > *Deterministic, game-agnostic animation: keyframe clips, sampling and control.*
 
-**Size**: `573` lines (`25703` bytes)
+**Size**: `573` lines
 
 **Classes:**
 - `class Track` - *One keyframed channel: sorted times with Vec3 or Quat values.*
@@ -150,7 +150,7 @@
 ### [`keystone/animation_blend.py`](keystone/animation_blend.py)
 > *Deterministic one-dimensional animation blend spaces.*
 
-**Size**: `305` lines (`11955` bytes)
+**Size**: `305` lines
 
 **Classes:**
 - `class BlendSample` - *One clip anchored at a scalar threshold.*
@@ -189,7 +189,7 @@
 ### [`keystone/animation_library.py`](keystone/animation_library.py)
 > *File-backed animation clip libraries for editors, tools and AI clients.*
 
-**Size**: `132` lines (`4952` bytes)
+**Size**: `132` lines
 
 **Classes:**
 - `class AnimationEntry` - *One library file and its clip summary, or why it could not load.*
@@ -210,7 +210,7 @@
 ### [`keystone/animation_state.py`](keystone/animation_state.py)
 > *Deterministic parameter-driven animation state machines.*
 
-**Size**: `449` lines (`17408` bytes)
+**Size**: `449` lines
 
 **Classes:**
 - `class AnimationState` - *One named clip, 1D blend space or 2D blend space with motion settings.*
@@ -246,7 +246,7 @@
 ### [`keystone/app.py`](keystone/app.py)
 > *Game-agnostic engine runtime: window, fixed step, input, render and capture.*
 
-**Size**: `356` lines (`14308` bytes)
+**Size**: `356` lines
 
 **Classes:**
 - `class Engine` - *Owns the runtime around one external GameModule.*
@@ -270,7 +270,7 @@
 ### [`keystone/asset_io.py`](keystone/asset_io.py)
 > *Disk-backed asset sources, default loaders and hot-reload reporting.*
 
-**Size**: `184` lines (`6438` bytes)
+**Size**: `184` lines
 
 **Classes:**
 - `class AssetSource` - *One file-backed asset: where it came from, how to load it and its last stamp.*
@@ -294,7 +294,7 @@
 ### [`keystone/assets.py`](keystone/assets.py)
 > *Game-agnostic asset registry with stable ids, content hashes and dependencies.*
 
-**Size**: `453` lines (`17602` bytes)
+**Size**: `453` lines
 
 **Classes:**
 - `class AssetRecord` - *One registered asset: a stable id, kind, immutable payload and content digest.*
@@ -335,7 +335,7 @@
 ### [`keystone/audio.py`](keystone/audio.py)
 > *Game-agnostic audio core: synth clips, bus mixer and WAV I/O.*
 
-**Size**: `290` lines (`12593` bytes)
+**Size**: `290` lines
 
 **Classes:**
 - `class AudioClip` - *Immutable mono PCM clip in [-1, 1] with a fixed sample rate.*
@@ -368,7 +368,7 @@
 ### [`keystone/audio_spatial.py`](keystone/audio_spatial.py)
 > *Deterministic 3D audio attenuation and mixdown.*
 
-**Size**: `163` lines (`6333` bytes)
+**Size**: `163` lines
 
 **Classes:**
 - `class SoundSource` - *One positional mono source with a linear distance range.*
@@ -388,7 +388,7 @@
 ### [`keystone/batch.py`](keystone/batch.py)
 > *Static batch planner: group draw nodes to cut draw calls without new deps.*
 
-**Size**: `176` lines (`7658` bytes)
+**Size**: `176` lines
 
 **Functions:**
 - `def _skinned(mesh)` - *Whether a mesh deforms at render time and must never bake or merge.*
@@ -400,7 +400,7 @@
 ### [`keystone/broadphase.py`](keystone/broadphase.py)
 > *Deterministic spatial-grid broadphase for nearby AABB candidates.*
 
-**Size**: `143` lines (`5721` bytes)
+**Size**: `143` lines
 
 **Classes:**
 - `class SpatialGrid` - *A uniform grid of AABB proxies with exact overlap filtering.*
@@ -423,7 +423,7 @@
 ### [`keystone/camera.py`](keystone/camera.py)
 > *Perspective camera with yaw/pitch orientation and fly-style movement.*
 
-**Size**: `80` lines (`2815` bytes)
+**Size**: `80` lines
 
 **Classes:**
 - `class PerspectiveCamera` - *A right-handed camera looking down -Z when yaw and pitch are zero.*
@@ -444,7 +444,7 @@
 ### [`keystone/camera_path.py`](keystone/camera_path.py)
 > *Deterministic camera paths: timed keys sampled into camera poses.*
 
-**Size**: `678` lines (`25336` bytes)
+**Size**: `678` lines
 
 **Classes:**
 - `class CameraKey` - *One authored camera pose at a path time in seconds.*
@@ -495,7 +495,7 @@
 ### [`keystone/camera_path_library.py`](keystone/camera_path_library.py)
 > *File-backed camera path libraries for editors, tools and AI clients.*
 
-**Size**: `178` lines (`6886` bytes)
+**Size**: `178` lines
 
 **Classes:**
 - `class CameraPathEntry` - *One library file and its path summary, or why it could not load.*
@@ -518,7 +518,7 @@
 ### [`keystone/camera_rig.py`](keystone/camera_rig.py)
 > *Camera-attached scene content: a rig whose root follows the camera pose.*
 
-**Size**: `100` lines (`3973` bytes)
+**Size**: `100` lines
 
 **Classes:**
 - `class CameraRig` - *A root node that follows one perspective camera, plus camera-space parts.*
@@ -532,7 +532,7 @@
 ### [`keystone/camera_shake.py`](keystone/camera_shake.py)
 > *Deterministic trauma-based camera shake.*
 
-**Size**: `141` lines (`5356` bytes)
+**Size**: `141` lines
 
 **Classes:**
 - `class ShakeOffset` - *One sampled shake offset: world-ish translation plus yaw and pitch.*
@@ -554,7 +554,7 @@
 ### [`keystone/camera_shaker.py`](keystone/camera_shaker.py)
 > *Compose deterministic camera shake with a base camera pose.*
 
-**Size**: `90` lines (`3249` bytes)
+**Size**: `90` lines
 
 **Classes:**
 - `class CameraShaker` - *Apply a `CameraShake` offset on top of an immutable base camera pose.*
@@ -571,7 +571,7 @@
 ### [`keystone/character.py`](keystone/character.py)
 > *Game-agnostic AABB character movement with gravity and collision response.*
 
-**Size**: `216` lines (`8500` bytes)
+**Size**: `216` lines
 
 **Classes:**
 - `class CharacterBody` - *An axis-aligned character body with velocity and ground state.*
@@ -595,7 +595,7 @@
 ### [`keystone/clock.py`](keystone/clock.py)
 > *Fixed-step clock with a bounded catch-up budget.*
 
-**Size**: `42` lines (`1501` bytes)
+**Size**: `42` lines
 
 **Classes:**
 - `class FixedStepClock` - *Accumulates wall time and releases whole deterministic simulation steps.*
@@ -608,7 +608,7 @@
 ### [`keystone/component_codec.py`](keystone/component_codec.py)
 > *Shared JSON codec for typed scene components.*
 
-**Size**: `141` lines (`5498` bytes)
+**Size**: `141` lines
 
 **Functions:**
 - `def validate_component_types(component_types)` - *Copy and validate a component name-to-type map.*
@@ -622,7 +622,7 @@
 ### [`keystone/content.py`](keystone/content.py)
 > *Content digests for mesh and material payloads.*
 
-**Size**: `105` lines (`3912` bytes)
+**Size**: `105` lines
 
 **Functions:**
 - `def _cached(payload, compute)`
@@ -636,7 +636,7 @@
 ### [`keystone/culling.py`](keystone/culling.py)
 > *Deterministic CPU view-frustum culling for the core forward renderer.*
 
-**Size**: `146` lines (`5629` bytes)
+**Size**: `146` lines
 
 **Functions:**
 - `def culling_enabled(scene)` - *Return whether frustum culling is requested for this scene.*
@@ -652,7 +652,7 @@
 ### [`keystone/evidence.py`](keystone/evidence.py)
 > *Deterministic capture routes and evidence diffs.*
 
-**Size**: `285` lines (`11154` bytes)
+**Size**: `285` lines
 
 **Classes:**
 - `class Checkpoint` - *One frame to capture, under a label that survives report diffs.*
@@ -676,7 +676,7 @@
 ### [`keystone/export.py`](keystone/export.py)
 > *Deterministic runnable project bundles for Keystone games.*
 
-**Size**: `224` lines (`6740` bytes)
+**Size**: `224` lines
 
 **Functions:**
 - `def _within(path, root)`
@@ -692,7 +692,7 @@
 ### [`keystone/geometry.py`](keystone/geometry.py)
 > *Indexed triangle mesh data and surface material, independent of any GPU API.*
 
-**Size**: `180` lines (`8928` bytes)
+**Size**: `180` lines
 
 **Classes:**
 - `class Material` - *Blinn-Phong surface parameters with PBR extensions used by the renderer.*
@@ -715,14 +715,14 @@
 ### [`keystone/gltf/__init__.py`](keystone/gltf/__init__.py)
 > *Dependency-free glTF 2.0 import for Keystone scenes.*
 
-**Size**: `5` lines (`153` bytes)
+**Size**: `5` lines
 
 ---
 
 ### [`keystone/gltf/io.py`](keystone/gltf/io.py)
 > *glTF source reading, buffers and typed accessor decoding.*
 
-**Size**: `212` lines (`8593` bytes)
+**Size**: `212` lines
 
 **Functions:**
 - `def _decode_glb(data)`
@@ -737,7 +737,7 @@
 ### [`keystone/gltf/loader.py`](keystone/gltf/loader.py)
 > *Top-level glTF import orchestration.*
 
-**Size**: `81` lines (`3010` bytes)
+**Size**: `81` lines
 
 **Classes:**
 - `class GltfImport` - *The result of importing one glTF document.*
@@ -750,7 +750,7 @@
 ### [`keystone/gltf/materials.py`](keystone/gltf/materials.py)
 > *glTF material conversion.*
 
-**Size**: `58` lines (`2455` bytes)
+**Size**: `58` lines
 
 **Functions:**
 - `def load_materials(document, textures)`
@@ -760,7 +760,7 @@
 ### [`keystone/gltf/meshes.py`](keystone/gltf/meshes.py)
 > *glTF mesh and primitive decoding.*
 
-**Size**: `227` lines (`11425` bytes)
+**Size**: `227` lines
 
 **Functions:**
 - `def _as_vec3(value)`
@@ -775,7 +775,7 @@
 ### [`keystone/gltf/scene.py`](keystone/gltf/scene.py)
 > *glTF node, transform and scene construction.*
 
-**Size**: `204` lines (`8089` bytes)
+**Size**: `204` lines
 
 **Functions:**
 - `def _matrix_to_transform(matrix)`
@@ -789,7 +789,7 @@
 ### [`keystone/gltf/skins.py`](keystone/gltf/skins.py)
 > *glTF skin parsing: joint nodes and inverse bind matrices.*
 
-**Size**: `69` lines (`3142` bytes)
+**Size**: `69` lines
 
 **Functions:**
 - `def load_skins(document, buffers, buffer_views, node_count)` - *Parse the glTF skins array into joint indices and inverse bind matrices.*
@@ -800,7 +800,7 @@
 ### [`keystone/gltf/textures.py`](keystone/gltf/textures.py)
 > *glTF image and texture decoding.*
 
-**Size**: `99` lines (`3946` bytes)
+**Size**: `99` lines
 
 **Functions:**
 - `def _image_bytes(image, buffers, buffer_views, base_dir)`
@@ -813,7 +813,7 @@
 ### [`keystone/gltf_import.py`](keystone/gltf_import.py)
 > *Import glTF/GLB scenes into the prefab library and asset registry.*
 
-**Size**: `55` lines (`2220` bytes)
+**Size**: `55` lines
 
 **Functions:**
 - `def is_gltf_asset(path)` - *Return True for a glTF JSON or binary GLB path.*
@@ -824,14 +824,14 @@
 ### [`keystone/gpu/__init__.py`](keystone/gpu/__init__.py)
 > *OpenGL 3.3 adapter: context, shader, mesh buffers and renderer.*
 
-**Size**: `1` lines (`70` bytes)
+**Size**: `1` lines
 
 ---
 
 ### [`keystone/gpu/bloom.py`](keystone/gpu/bloom.py)
 > *Deterministic emissive-aware bloom glow (luminance threshold, in-shader, no FBO).*
 
-**Size**: `92` lines (`3146` bytes)
+**Size**: `92` lines
 
 **Functions:**
 - `def bloom_factor(luma, threshold, knee)` - *Return the deterministic smoothstep glow weight for one luminance.*
@@ -844,7 +844,7 @@
 ### [`keystone/gpu/bloom_fbo.py`](keystone/gpu/bloom_fbo.py)
 > *Deterministic RGBA8 color framebuffers for the bloom diffusion chain.*
 
-**Size**: `89` lines (`3778` bytes)
+**Size**: `89` lines
 
 **Classes:**
 - `class BloomFbo` - *One RGBA8 color FBO owned by the renderer (one GL context).*
@@ -860,7 +860,7 @@
 ### [`keystone/gpu/context.py`](keystone/gpu/context.py)
 > *GLFW window and OpenGL 3.3 context lifecycle with deterministic teardown.*
 
-**Size**: `166` lines (`5578` bytes)
+**Size**: `166` lines
 
 **Classes:**
 - `class GLContext` - *A hidden or visible GLFW window owning one OpenGL 3.3 core context.*
@@ -891,7 +891,7 @@
 ### [`keystone/gpu/instancing.py`](keystone/gpu/instancing.py)
 > *Deterministic grouping for hardware instancing.*
 
-**Size**: `135` lines (`5222` bytes)
+**Size**: `135` lines
 
 **Functions:**
 - `def _matches_layer(node_layer, layer, exclude_layer)` - *Whether a node layer passes the optional layer filters.*
@@ -904,7 +904,7 @@
 ### [`keystone/gpu/mesh_buffer.py`](keystone/gpu/mesh_buffer.py)
 > *GPU mesh upload and indexed drawing for the Keystone renderer.*
 
-**Size**: `116` lines (`4868` bytes)
+**Size**: `116` lines
 
 **Classes:**
 - `class GpuMesh` - *VAO/VBO/EBO triple owning one immutable MeshData upload.*
@@ -918,7 +918,7 @@
 ### [`keystone/gpu/post.py`](keystone/gpu/post.py)
 > *Deterministic post color-grade (exposure + vignette, in-shader, no FBO).*
 
-**Size**: `42` lines (`1264` bytes)
+**Size**: `42` lines
 
 **Functions:**
 - `def vignette_factor(nx, ny, strength)` - *Return the deterministic vignette multiplier for normalized coords 0..1.*
@@ -929,7 +929,7 @@
 ### [`keystone/gpu/renderer.py`](keystone/gpu/renderer.py)
 > *Blinn-Phong forward renderer with fog, shadows and screenshot readback.*
 
-**Size**: `1436` lines (`57128` bytes)
+**Size**: `1436` lines
 
 **Classes:**
 - `class Renderer` - *Owns the shader and per-mesh GPU buffers for one OpenGL context.*
@@ -978,7 +978,7 @@
 ### [`keystone/gpu/shader.py`](keystone/gpu/shader.py)
 > *GLSL program compilation, uniform upload and cleanup.*
 
-**Size**: `106` lines (`4298` bytes)
+**Size**: `106` lines
 
 **Classes:**
 - `class ShaderProgram` - *A linked vertex/fragment program with cached uniform locations.*
@@ -1002,7 +1002,7 @@
 ### [`keystone/gpu/shadow.py`](keystone/gpu/shadow.py)
 > *Deterministic directional shadow mapping (fixed 1024 depth map, 3x3 PCF).*
 
-**Size**: `154` lines (`5394` bytes)
+**Size**: `154` lines
 
 **Classes:**
 - `class ShadowMap` - *Fixed-size depth FBO owned by the renderer (one GL context).*
@@ -1024,7 +1024,7 @@
 ### [`keystone/gpu/skinned_buffer.py`](keystone/gpu/skinned_buffer.py)
 > *GPU upload for skinned meshes: base stream plus joints and weights.*
 
-**Size**: `74` lines (`3012` bytes)
+**Size**: `74` lines
 
 **Classes:**
 - `class SkinnedGpuMesh` - *VAO/VBO/EBO triple owning one immutable skinned mesh upload.*
@@ -1037,7 +1037,7 @@
 ### [`keystone/gpu/sprites.py`](keystone/gpu/sprites.py)
 > *Deterministic GPU point-sprite math: size attenuation and soft alpha.*
 
-**Size**: `74` lines (`2667` bytes)
+**Size**: `74` lines
 
 **Functions:**
 - `def sprite_scale(distance, size)` - *Return the deterministic pixel size for a particle.*
@@ -1050,7 +1050,7 @@
 ### [`keystone/gpu/texture_buffer.py`](keystone/gpu/texture_buffer.py)
 > *GPU upload and lifecycle for immutable TextureData.*
 
-**Size**: `53` lines (`1835` bytes)
+**Size**: `53` lines
 
 **Classes:**
 - `class GpuTexture` - *One OpenGL 2D texture with mipmaps and repeat wrapping.*
@@ -1063,7 +1063,7 @@
 ### [`keystone/gpu/ui_renderer.py`](keystone/gpu/ui_renderer.py)
 > *Screen-space OpenGL renderer for the human UI canvas.*
 
-**Size**: `219` lines (`8083` bytes)
+**Size**: `219` lines
 
 **Classes:**
 - `class UiRenderer` - *Uploads one canvas per frame and draws it over the 3D scene.*
@@ -1079,7 +1079,7 @@
 ### [`keystone/headless.py`](keystone/headless.py)
 > *Simulation without a window: JSON action scripts and deterministic traces.*
 
-**Size**: `77` lines (`2723` bytes)
+**Size**: `77` lines
 
 **Functions:**
 - `def load_actions(path)`
@@ -1090,7 +1090,7 @@
 ### [`keystone/history.py`](keystone/history.py)
 > *Bounded undo/redo history for engine and game state.*
 
-**Size**: `86` lines (`2813` bytes)
+**Size**: `86` lines
 
 **Classes:**
 - `class History` - *A small, bounded undo/redo stack.*
@@ -1112,7 +1112,7 @@
 ### [`keystone/input.py`](keystone/input.py)
 > *Generic input mapping: named actions, axes and pointer look.*
 
-**Size**: `415` lines (`17468` bytes)
+**Size**: `415` lines
 
 **Classes:**
 - `class ActionState` - *One sampled input frame; games translate names into their own rules.*
@@ -1147,7 +1147,7 @@
 ### [`keystone/library_trash.py`](keystone/library_trash.py)
 > *Soft-delete helpers for file-backed scene and prefab libraries.*
 
-**Size**: `82` lines (`2633` bytes)
+**Size**: `82` lines
 
 **Functions:**
 - `def _trash_root(directory)`
@@ -1161,7 +1161,7 @@
 ### [`keystone/lifecycle.py`](keystone/lifecycle.py)
 > *Deterministic start/update/stop lifecycle for scene components.*
 
-**Size**: `177` lines (`6323` bytes)
+**Size**: `177` lines
 
 **Classes:**
 - `class LifecycleContext` - *Arguments passed to one component lifecycle hook.*
@@ -1184,7 +1184,7 @@
 ### [`keystone/material_graph.py`](keystone/material_graph.py)
 > *Declarative, deterministic material graphs that evaluate to a Material.*
 
-**Size**: `374` lines (`15883` bytes)
+**Size**: `374` lines
 
 **Classes:**
 - `class MaterialGraphNode` - *One node in a material graph: a kind, parameters and input node ids.*
@@ -1209,7 +1209,7 @@
 ### [`keystone/material_library.py`](keystone/material_library.py)
 > *File-backed material libraries for editors, tools and AI clients.*
 
-**Size**: `296` lines (`11172` bytes)
+**Size**: `296` lines
 
 **Classes:**
 - `class MaterialEntry` - *One library file and its material summary, or why it could not load.*
@@ -1238,7 +1238,7 @@
 ### [`keystone/math3d.py`](keystone/math3d.py)
 > *Column-major 3D math primitives shared by the scene, camera and GPU layers.*
 
-**Size**: `377` lines (`13326` bytes)
+**Size**: `377` lines
 
 **Classes:**
 - `class Vec3` - *Immutable 3-component vector with the usual right-handed operations.*
@@ -1289,7 +1289,7 @@
 ### [`keystone/mesh_builder.py`](keystone/mesh_builder.py)
 > *Compose boxes and quads into a single indexed MeshData.*
 
-**Size**: `189` lines (`8052` bytes)
+**Size**: `189` lines
 
 **Classes:**
 - `class MeshBuilder` - *Accumulates flat-shaded quads and boxes, then builds one mesh.*
@@ -1308,7 +1308,7 @@
 ### [`keystone/nav_agent.py`](keystone/nav_agent.py)
 > *A reusable agent that walks a nav route with collision and local avoidance.*
 
-**Size**: `225` lines (`8993` bytes)
+**Size**: `225` lines
 
 **Classes:**
 - `class NavAgent` - *One character that walks a `NavGrid` route with a controller.*
@@ -1331,7 +1331,7 @@
 ### [`keystone/nav_authoring.py`](keystone/nav_authoring.py)
 > *Author nav grids from collision boxes or JSON documents.*
 
-**Size**: `153` lines (`5785` bytes)
+**Size**: `153` lines
 
 **Functions:**
 - `def _finite(value, label)`
@@ -1346,7 +1346,7 @@
 ### [`keystone/navigation.py`](keystone/navigation.py)
 > *Waypoint following that turns a path route into movement.*
 
-**Size**: `162` lines (`5929` bytes)
+**Size**: `162` lines
 
 **Classes:**
 - `class PathFollower` - *Follow a world-space waypoint route with a fixed speed.*
@@ -1369,7 +1369,7 @@
 ### [`keystone/obj_loader.py`](keystone/obj_loader.py)
 > *Streaming Wavefront OBJ loader producing indexed triangle meshes.*
 
-**Size**: `137` lines (`5953` bytes)
+**Size**: `137` lines
 
 **Functions:**
 - `def load_obj(path)` - *Read an OBJ file line by line so file size is never loaded whole.*
@@ -1384,7 +1384,7 @@
 ### [`keystone/particles.py`](keystone/particles.py)
 > *Deterministic, game-agnostic CPU particles: emitters, systems and reports.*
 
-**Size**: `477` lines (`19806` bytes)
+**Size**: `477` lines
 
 **Classes:**
 - `class Particle` - *One live particle: position, velocity, age, lifetime and size.*
@@ -1418,7 +1418,7 @@
 ### [`keystone/pathfinding.py`](keystone/pathfinding.py)
 > *Deterministic A* pathfinding over a bounded 4- or 8-connected grid.*
 
-**Size**: `359` lines (`13210` bytes)
+**Size**: `359` lines
 
 **Classes:**
 - `class NavGrid` - *A bounded grid with immutable blocked cells.*
@@ -1447,7 +1447,7 @@
 ### [`keystone/persistence.py`](keystone/persistence.py)
 > *A versioned JSON store with migrations, quarantine and backup fallback.*
 
-**Size**: `218` lines (`8895` bytes)
+**Size**: `218` lines
 
 **Classes:**
 - `class LoadResult` - *The loaded state plus how it was obtained.*
@@ -1470,7 +1470,7 @@
 ### [`keystone/physics.py`](keystone/physics.py)
 > *Generic collision primitives and ray queries for the engine core.*
 
-**Size**: `183` lines (`7120` bytes)
+**Size**: `183` lines
 
 **Classes:**
 - `class Ray`
@@ -1498,7 +1498,7 @@
 ### [`keystone/picking.py`](keystone/picking.py)
 > *Scene picking: ray queries over visible world meshes.*
 
-**Size**: `247` lines (`8215` bytes)
+**Size**: `247` lines
 
 **Classes:**
 - `class SceneHit` - *One scene ray hit: the node, the world distance and the contact point.*
@@ -1518,7 +1518,7 @@
 ### [`keystone/playtest.py`](keystone/playtest.py)
 > *Seeded bot playtesting: transcripts, diffing, policies and fairness checks.*
 
-**Size**: `711` lines (`30082` bytes)
+**Size**: `711` lines
 
 **Classes:**
 - `class BotPolicy` - *One seeded decision step over the five-operation game contract.*
@@ -1557,7 +1557,7 @@
 ### [`keystone/plugin.py`](keystone/plugin.py)
 > *Game-agnostic module contract and loader.*
 
-**Size**: `160` lines (`6035` bytes)
+**Size**: `160` lines
 
 **Classes:**
 - `class GameModule` - *The five operations an external game exposes to the engine.*
@@ -1576,7 +1576,7 @@
 ### [`keystone/png.py`](keystone/png.py)
 > *Minimal dependency-free PNG writer for headless frame captures.*
 
-**Size**: `132` lines (`4974` bytes)
+**Size**: `132` lines
 
 **Functions:**
 - `def _chunk(kind, payload)`
@@ -1590,7 +1590,7 @@
 ### [`keystone/prefab.py`](keystone/prefab.py)
 > *Deterministic prefabs: capture, persist and instantiate reusable subtrees.*
 
-**Size**: `513` lines (`20828` bytes)
+**Size**: `513` lines
 
 **Classes:**
 - `class Prefab` - *An immutable-name, detached template of one or more scene subtrees.*
@@ -1623,7 +1623,7 @@
 ### [`keystone/prefab_library.py`](keystone/prefab_library.py)
 > *File-backed prefab libraries for editors, tools and AI clients.*
 
-**Size**: `186` lines (`7291` bytes)
+**Size**: `186` lines
 
 **Classes:**
 - `class PrefabEntry` - *One library file and its loaded summary, or why it could not load.*
@@ -1650,7 +1650,7 @@
 ### [`keystone/primitives.py`](keystone/primitives.py)
 > *Procedural primitives: cube, plane, cone, cylinder and UV sphere.*
 
-**Size**: `170` lines (`7205` bytes)
+**Size**: `170` lines
 
 **Functions:**
 - `def _append_quad(positions, normals, uvs, indices, corners, normal)`
@@ -1665,7 +1665,7 @@
 ### [`keystone/project.py`](keystone/project.py)
 > *Project manifests and one-command scaffolding for external Keystone games.*
 
-**Size**: `823` lines (`30878` bytes)
+**Size**: `823` lines
 
 **Classes:**
 - `class ProjectManifest` - *Versioned, JSON-safe project metadata.*
@@ -1703,7 +1703,7 @@
 ### [`keystone/replay.py`](keystone/replay.py)
 > *Deterministic action logs and stable state hashes.*
 
-**Size**: `164` lines (`5924` bytes)
+**Size**: `164` lines
 
 **Classes:**
 - `class CommandLog`
@@ -1726,7 +1726,7 @@
 ### [`keystone/rng.py`](keystone/rng.py)
 > *Deterministic random streams for replays, saves and AI-authored games.*
 
-**Size**: `162` lines (`6643` bytes)
+**Size**: `162` lines
 
 **Classes:**
 - `class RandomStreamState` - *A JSON-safe snapshot of a stream's seed and current state.*
@@ -1753,7 +1753,7 @@
 ### [`keystone/root_motion.py`](keystone/root_motion.py)
 > *Root motion: extract a root node's delta and bake a pose in place.*
 
-**Size**: `281` lines (`11162` bytes)
+**Size**: `281` lines
 
 **Classes:**
 - `class RootMotion` - *A root delta between two clip times: world-space position and rotation.*
@@ -1779,7 +1779,7 @@
 ### [`keystone/root_motion_body.py`](keystone/root_motion_body.py)
 > *Drive a character body from a root-motion clip.*
 
-**Size**: `125` lines (`4206` bytes)
+**Size**: `125` lines
 
 **Classes:**
 - `class RootMotionBody` - *A controller body advanced by one clip's root motion.*
@@ -1799,7 +1799,7 @@
 ### [`keystone/root_motion_presenter.py`](keystone/root_motion_presenter.py)
 > *Present a root-motion body on scene nodes.*
 
-**Size**: `83` lines (`3151` bytes)
+**Size**: `83` lines
 
 **Classes:**
 - `class RootMotionPresenter` - *Sync one scene container to a root-motion body and apply its pose.*
@@ -1815,7 +1815,7 @@
 ### [`keystone/samples.py`](keystone/samples.py)
 > *A minimal game-agnostic sample used to smoke-test the engine.*
 
-**Size**: `157` lines (`6094` bytes)
+**Size**: `157` lines
 
 **Classes:**
 - `class CubeDemo` - *A rotating cube scene; contains no combat, puzzles or genre rules.*
@@ -1831,7 +1831,7 @@
 ### [`keystone/scene.py`](keystone/scene.py)
 > *Scene graph: hierarchical transforms, identity, components, camera and light.*
 
-**Size**: `602` lines (`24099` bytes)
+**Size**: `602` lines
 
 **Classes:**
 - `class Transform` - *Translation, rotation and non-uniform scale composed as T * R * S.*
@@ -1899,7 +1899,7 @@
 ### [`keystone/scene_diff.py`](keystone/scene_diff.py)
 > *Structured diffs between versioned scene snapshot documents.*
 
-**Size**: `93` lines (`3451` bytes)
+**Size**: `93` lines
 
 **Functions:**
 - `def _node_map(document)`
@@ -1911,7 +1911,7 @@
 ### [`keystone/scene_library.py`](keystone/scene_library.py)
 > *File-backed scene libraries for editors, tools and AI clients.*
 
-**Size**: `232` lines (`9342` bytes)
+**Size**: `232` lines
 
 **Classes:**
 - `class SceneEntry` - *One library file and its loaded summary, or why it could not load.*
@@ -1942,7 +1942,7 @@
 ### [`keystone/scene_snapshot.py`](keystone/scene_snapshot.py)
 > *Versioned, asset-aware snapshots of a Keystone scene.*
 
-**Size**: `526` lines (`21997` bytes)
+**Size**: `526` lines
 
 **Functions:**
 - `def _vec3_to_list(value)` - *Serialize a vector as floats.*
@@ -1967,14 +1967,14 @@
 ### [`keystone/schema.py`](keystone/schema.py)
 > *Core-facing schema versions shared with optional adapters.*
 
-**Size**: `107` lines (`2419` bytes)
+**Size**: `107` lines
 
 ---
 
 ### [`keystone/serialization.py`](keystone/serialization.py)
 > *Atomic JSON persistence for engine and game state.*
 
-**Size**: `72` lines (`2197` bytes)
+**Size**: `72` lines
 
 **Functions:**
 - `def _temporary_path(target)`
@@ -1989,7 +1989,7 @@
 ### [`keystone/skin.py`](keystone/skin.py)
 > *Deterministic linear-blend skinning: bone palettes and CPU reference math.*
 
-**Size**: `122` lines (`4823` bytes)
+**Size**: `122` lines
 
 **Functions:**
 - `def bone_matrices(scene, mesh)` - *Return world-space bone palettes (joint world matrix times inverse bind).*
@@ -2002,7 +2002,7 @@
 ### [`keystone/state_machine_library.py`](keystone/state_machine_library.py)
 > *File-backed animation state machine libraries for editors and AI clients.*
 
-**Size**: `181` lines (`6719` bytes)
+**Size**: `181` lines
 
 **Classes:**
 - `class StateMachineEntry` - *One library file and its state summary, or why it could not load.*
@@ -2025,7 +2025,7 @@
 ### [`keystone/steering.py`](keystone/steering.py)
 > *Deterministic local steering for moving agents.*
 
-**Size**: `196` lines (`7116` bytes)
+**Size**: `196` lines
 
 **Classes:**
 - `class Agent` - *One steering body: a position, an optional velocity, a radius and a speed.*
@@ -2046,7 +2046,7 @@
 ### [`keystone/testing.py`](keystone/testing.py)
 > *Deterministic scenario helpers for AI and CI tests.*
 
-**Size**: `176` lines (`5792` bytes)
+**Size**: `176` lines
 
 **Functions:**
 - `def run_script(game, actions, frames, step, trace, scene_loader)`
@@ -2062,7 +2062,7 @@
 ### [`keystone/texture.py`](keystone/texture.py)
 > *Immutable RGBA texture data and dependency-free texture sources.*
 
-**Size**: `250` lines (`9364` bytes)
+**Size**: `250` lines
 
 **Classes:**
 - `class TextureData` - *Top-down RGBA8 pixels with a stable name for reports and debugging.*
@@ -2087,7 +2087,7 @@
 ### [`keystone/tilemap.py`](keystone/tilemap.py)
 > *Grid tile maps: collision boxes, a merged level mesh and JSON documents.*
 
-**Size**: `268` lines (`10493` bytes)
+**Size**: `268` lines
 
 **Classes:**
 - `class TileMap` - *An immutable grid of free and solid cells with one wall height.*
@@ -2114,7 +2114,7 @@
 ### [`keystone/triggers.py`](keystone/triggers.py)
 > *Game-agnostic trigger volumes with enter/exit tracking.*
 
-**Size**: `49` lines (`1458` bytes)
+**Size**: `49` lines
 
 **Classes:**
 - `class TriggerVolume` - *A named AABB that reports when a body enters or leaves it.*
@@ -2130,14 +2130,14 @@
 ### [`keystone/ui/__init__.py`](keystone/ui/__init__.py)
 > *Dependency-free human UI: bitmap font, canvas and HUD overlay.*
 
-**Size**: `7` lines (`287` bytes)
+**Size**: `7` lines
 
 ---
 
 ### [`keystone/ui/canvas.py`](keystone/ui/canvas.py)
 > *Screen-space 2D canvas built from clipped color quads and bitmap text.*
 
-**Size**: `338` lines (`12566` bytes)
+**Size**: `338` lines
 
 **Classes:**
 - `class TextElement` - *One text draw call recorded for AI/UI reports.*
@@ -2167,7 +2167,7 @@
 ### [`keystone/ui/font.py`](keystone/ui/font.py)
 > *Embedded 5x7 bitmap font for the dependency-free human overlay.*
 
-**Size**: `132` lines (`6660` bytes)
+**Size**: `132` lines
 
 **Functions:**
 - `def glyph(character)` - *Return the 7x5 rows for one character; lowercase maps to uppercase.*
@@ -2181,7 +2181,7 @@
 ### [`keystone/ui/menu.py`](keystone/ui/menu.py)
 > *Game-agnostic pause menu state: items, selection and activation.*
 
-**Size**: `41` lines (`1176` bytes)
+**Size**: `41` lines
 
 **Classes:**
 - `class MenuItem` - *One labelled action the human can choose.*
@@ -2195,7 +2195,7 @@
 ### [`keystone/ui/overlay.py`](keystone/ui/overlay.py)
 > *Game-agnostic human overlay: HUD, controls help and pause menu.*
 
-**Size**: `177` lines (`7559` bytes)
+**Size**: `177` lines
 
 **Classes:**
 - `class HudState` - *Presentation-only snapshot the overlay needs for one frame.*
@@ -2211,7 +2211,7 @@
 ### [`keystone/ui/report.py`](keystone/ui/report.py)
 > *Serialize a rendered UI canvas into machine-readable report metadata.*
 
-**Size**: `38` lines (`1208` bytes)
+**Size**: `38` lines
 
 **Functions:**
 - `def describe_canvas(canvas, paused, visible)` - *Return stable top-left pixel metadata for labels and buttons.*
@@ -2221,7 +2221,7 @@
 ### [`keystone/ui/widgets.py`](keystone/ui/widgets.py)
 > *Small immediate-mode UI widgets: panels, buttons and HUD layout rows.*
 
-**Size**: `153` lines (`5052` bytes)
+**Size**: `153` lines
 
 **Functions:**
 - `def _row_right(canvas, x, width)` - *Right edge of a row, clamped to the canvas.*
@@ -2237,7 +2237,7 @@
 ### [`keystone/web/__init__.py`](keystone/web/__init__.py)
 > *Local web console and JSON API for Keystone.*
 
-**Size**: `19` lines (`673` bytes)
+**Size**: `19` lines
 
 **Functions:**
 - `def __getattr__(name)`
@@ -2247,7 +2247,7 @@
 ### [`keystone/web/editor.py`](keystone/web/editor.py)
 > *Scene-editor helpers for the local web console.*
 
-**Size**: `3338` lines (`119131` bytes)
+**Size**: `3338` lines
 
 **Classes:**
 - `class _HistoryEntry`
@@ -2382,7 +2382,7 @@
 ### [`keystone/web/scene.py`](keystone/web/scene.py)
 > *Export a game-agnostic scene as a JSON document for the browser viewer.*
 
-**Size**: `169` lines (`6164` bytes)
+**Size**: `169` lines
 
 **Functions:**
 - `def _enabled(value)`
@@ -2396,14 +2396,14 @@
 ### [`keystone/web/schema.py`](keystone/web/schema.py)
 > *Versioned schemas shared by the web API, AI clients and the browser viewer.*
 
-**Size**: `831` lines (`33190` bytes)
+**Size**: `831` lines
 
 ---
 
 ### [`keystone/web/server.py`](keystone/web/server.py)
 > *A localhost JSON API and static web console for the game-agnostic engine.*
 
-**Size**: `3616` lines (`164415` bytes)
+**Size**: `3616` lines
 
 **Classes:**
 - `class WebProblem` - *One client-facing error with an actionable fix.*
@@ -2479,7 +2479,7 @@
 ### [`tests/support_maze_game.py`](tests/support_maze_game.py)
 > *Deterministic grid stub used to prove the bot playtester end to end.*
 
-**Size**: `230` lines (`7021` bytes)
+**Size**: `230` lines
 
 **Classes:**
 - `class MazeGame` - *A deterministic grid chase: reach the goal cell before the clock.*
@@ -2510,7 +2510,7 @@
 ### [`tests/support_policy.py`](tests/support_policy.py)
 > *A tiny external policy used to prove --policy accepts module factories.*
 
-**Size**: `20` lines (`518` bytes)
+**Size**: `20` lines
 
 **Classes:**
 - `class SupportPolicy` - *A named random policy registered from outside the engine.*
@@ -2523,7 +2523,7 @@
 ### [`tests/test_agents.py`](tests/test_agents.py)
 > *Tests for AI observation/action adapters, audit trail and input bindings.*
 
-**Size**: `109` lines (`4287` bytes)
+**Size**: `109` lines
 
 **Classes:**
 - `class AgentsTest`
@@ -2540,7 +2540,7 @@
 ### [`tests/test_analysis.py`](tests/test_analysis.py)
 > *Tests for the machine-readable frame report.*
 
-**Size**: `345` lines (`14832` bytes)
+**Size**: `345` lines
 
 **Classes:**
 - `class Health`
@@ -2573,7 +2573,7 @@
 ### [`tests/test_animation.py`](tests/test_animation.py)
 > *Tests for deterministic animation clips, controllers and pose application.*
 
-**Size**: `355` lines (`14716` bytes)
+**Size**: `355` lines
 
 **Classes:**
 - `class TrackTest`
@@ -2618,7 +2618,7 @@
 ### [`tests/test_animation_binding.py`](tests/test_animation_binding.py)
 > *Tests for retargeting a clip onto another node id.*
 
-**Size**: `107` lines (`4359` bytes)
+**Size**: `107` lines
 
 **Classes:**
 - `class ClipBindingTest`
@@ -2642,7 +2642,7 @@
 ### [`tests/test_animation_blend.py`](tests/test_animation_blend.py)
 > *Unit tests for deterministic 1D animation blend spaces.*
 
-**Size**: `116` lines (`4050` bytes)
+**Size**: `116` lines
 
 **Classes:**
 - `class BlendSpaceTest`
@@ -2659,7 +2659,7 @@
 ### [`tests/test_animation_blend2d.py`](tests/test_animation_blend2d.py)
 > *Tests for deterministic 2D (bilinear grid) animation blend spaces.*
 
-**Size**: `163` lines (`6947` bytes)
+**Size**: `163` lines
 
 **Classes:**
 - `class BlendSpace2DTest`
@@ -2690,7 +2690,7 @@
 ### [`tests/test_animation_library.py`](tests/test_animation_library.py)
 > *Tests for file-backed animation clip libraries.*
 
-**Size**: `44` lines (`1715` bytes)
+**Size**: `44` lines
 
 **Classes:**
 - `class AnimationLibraryTest`
@@ -2702,7 +2702,7 @@
 ### [`tests/test_animation_state.py`](tests/test_animation_state.py)
 > *Tests for deterministic parameter-driven animation state machines.*
 
-**Size**: `487` lines (`17021` bytes)
+**Size**: `487` lines
 
 **Classes:**
 - `class AnimationStateMachineTest`
@@ -2731,7 +2731,7 @@
 ### [`tests/test_animation_state_blend2d.py`](tests/test_animation_state_blend2d.py)
 > *Tests for animation states that drive a 2D blend space.*
 
-**Size**: `162` lines (`6070` bytes)
+**Size**: `162` lines
 
 **Classes:**
 - `class StateBlend2DTest`
@@ -2754,7 +2754,7 @@
 ### [`tests/test_app.py`](tests/test_app.py)
 > *Tests for the game-agnostic engine loop and CLI.*
 
-**Size**: `658` lines (`26326` bytes)
+**Size**: `658` lines
 
 **Classes:**
 - `class HudCube`
@@ -2842,7 +2842,7 @@
 ### [`tests/test_assets.py`](tests/test_assets.py)
 > *Unit tests for the asset registry: identity, digests and dependencies.*
 
-**Size**: `696` lines (`30804` bytes)
+**Size**: `696` lines
 
 **Classes:**
 - `class PrefabHealth`
@@ -2891,7 +2891,7 @@
 ### [`tests/test_audio.py`](tests/test_audio.py)
 > *Tests for the game-agnostic audio core.*
 
-**Size**: `221` lines (`9035` bytes)
+**Size**: `221` lines
 
 **Classes:**
 - `class AudioTest`
@@ -2920,7 +2920,7 @@
 ### [`tests/test_audio_spatial.py`](tests/test_audio_spatial.py)
 > *Tests for deterministic distance attenuation and spatial mixdown.*
 
-**Size**: `205` lines (`8529` bytes)
+**Size**: `205` lines
 
 **Classes:**
 - `class DistanceGainTest`
@@ -2959,7 +2959,7 @@
 ### [`tests/test_batch.py`](tests/test_batch.py)
 > *Tests for the static batch planner and inspector endpoint.*
 
-**Size**: `114` lines (`4824` bytes)
+**Size**: `114` lines
 
 **Classes:**
 - `class BatchTest`
@@ -2977,7 +2977,7 @@
 ### [`tests/test_bloom.py`](tests/test_bloom.py)
 > *Tests for the deterministic bloom glow (in-shader luminance threshold).*
 
-**Size**: `200` lines (`7865` bytes)
+**Size**: `200` lines
 
 **Classes:**
 - `class BloomMathTest`
@@ -3005,7 +3005,7 @@
 ### [`tests/test_boundary.py`](tests/test_boundary.py)
 > *Boundary test: the engine core contains no game rules or imports.*
 
-**Size**: `65` lines (`2391` bytes)
+**Size**: `65` lines
 
 **Classes:**
 - `class CoreBoundaryTest`
@@ -3018,7 +3018,7 @@
 ### [`tests/test_broadphase.py`](tests/test_broadphase.py)
 > *Tests for the deterministic spatial-grid broadphase.*
 
-**Size**: `78` lines (`3362` bytes)
+**Size**: `78` lines
 
 **Classes:**
 - `class SpatialGridTest`
@@ -3035,7 +3035,7 @@
 ### [`tests/test_camera_path.py`](tests/test_camera_path.py)
 > *Tests for deterministic camera paths.*
 
-**Size**: `588` lines (`24993` bytes)
+**Size**: `588` lines
 
 **Classes:**
 - `class CameraPathTest`
@@ -3090,7 +3090,7 @@
 ### [`tests/test_camera_path_library.py`](tests/test_camera_path_library.py)
 > *Tests for camera path documents and file-backed .kpath libraries.*
 
-**Size**: `319` lines (`13768` bytes)
+**Size**: `319` lines
 
 **Classes:**
 - `class CameraPathDocumentTest`
@@ -3123,7 +3123,7 @@
 ### [`tests/test_camera_rig.py`](tests/test_camera_rig.py)
 > *Tests for camera-attached rigs and the reserved overlay layer.*
 
-**Size**: `127` lines (`5017` bytes)
+**Size**: `127` lines
 
 **Classes:**
 - `class CameraRigTest`
@@ -3147,7 +3147,7 @@
 ### [`tests/test_camera_shake.py`](tests/test_camera_shake.py)
 > *Tests for deterministic camera shake.*
 
-**Size**: `112` lines (`4003` bytes)
+**Size**: `112` lines
 
 **Classes:**
 - `class CameraShakeTest`
@@ -3169,7 +3169,7 @@
 ### [`tests/test_camera_shaker.py`](tests/test_camera_shaker.py)
 > *Tests for composing camera shake with a base camera pose.*
 
-**Size**: `100` lines (`4401` bytes)
+**Size**: `100` lines
 
 **Classes:**
 - `class CameraShakerTest`
@@ -3188,7 +3188,7 @@
 ### [`tests/test_character.py`](tests/test_character.py)
 > *Tests for the AABB character controller.*
 
-**Size**: `177` lines (`8541` bytes)
+**Size**: `177` lines
 
 **Classes:**
 - `class CharacterControllerTest`
@@ -3214,7 +3214,7 @@
 ### [`tests/test_cli_failure_advice.py`](tests/test_cli_failure_advice.py)
 > *A CLI failure must name the action that actually failed.*
 
-**Size**: `157` lines (`6995` bytes)
+**Size**: `157` lines
 
 **Classes:**
 - `class CliFailureAdviceTest`
@@ -3235,7 +3235,7 @@
 ### [`tests/test_clock.py`](tests/test_clock.py)
 > *Tests for the fixed-step clock.*
 
-**Size**: `44` lines (`1425` bytes)
+**Size**: `44` lines
 
 **Classes:**
 - `class FixedStepClockTest`
@@ -3250,7 +3250,7 @@
 ### [`tests/test_component_codec.py`](tests/test_component_codec.py)
 > *Tests for the shared typed-component JSON codec.*
 
-**Size**: `113` lines (`4116` bytes)
+**Size**: `113` lines
 
 **Classes:**
 - `class Health`
@@ -3271,7 +3271,7 @@
 ### [`tests/test_content.py`](tests/test_content.py)
 > *Tests for the content digests shared by batching and the asset registry.*
 
-**Size**: `70` lines (`2684` bytes)
+**Size**: `70` lines
 
 **Classes:**
 - `class MeshDigestTest`
@@ -3290,7 +3290,7 @@
 ### [`tests/test_culling.py`](tests/test_culling.py)
 > *Tests for deterministic CPU view-frustum culling (color pass only).*
 
-**Size**: `223` lines (`8851` bytes)
+**Size**: `223` lines
 
 **Classes:**
 - `class CullingMathTest`
@@ -3326,7 +3326,7 @@
 ### [`tests/test_evidence.py`](tests/test_evidence.py)
 > *Tests for deterministic capture routes and evidence diffs.*
 
-**Size**: `291` lines (`12175` bytes)
+**Size**: `291` lines
 
 **Classes:**
 - `class RouteValidationTest`
@@ -3363,7 +3363,7 @@
 ### [`tests/test_export.py`](tests/test_export.py)
 > *Tests for deterministic project export bundles.*
 
-**Size**: `148` lines (`6207` bytes)
+**Size**: `148` lines
 
 **Classes:**
 - `class ProjectExportTest`
@@ -3377,7 +3377,7 @@
 ### [`tests/test_feature_composition.py`](tests/test_feature_composition.py)
 > *Composition tests across the features added in this delivery batch.*
 
-**Size**: `110` lines (`4426` bytes)
+**Size**: `110` lines
 
 **Classes:**
 - `class CameraRigRouteTest`
@@ -3395,7 +3395,7 @@
 ### [`tests/test_geometry.py`](tests/test_geometry.py)
 > *Unit tests for indexed meshes, built-in primitives and the OBJ loader.*
 
-**Size**: `288` lines (`10779` bytes)
+**Size**: `288` lines
 
 **Classes:**
 - `class MeshDataTest`
@@ -3444,7 +3444,7 @@
 ### [`tests/test_gltf.py`](tests/test_gltf.py)
 > *Unit tests for dependency-free glTF 2.0 import.*
 
-**Size**: `308` lines (`13686` bytes)
+**Size**: `308` lines
 
 **Classes:**
 - `class GltfImportTest`
@@ -3484,7 +3484,7 @@
 ### [`tests/test_gltf_import.py`](tests/test_gltf_import.py)
 > *Tests for glTF/GLB prefab import and project attachment.*
 
-**Size**: `281` lines (`11640` bytes)
+**Size**: `281` lines
 
 **Classes:**
 - `class GltfPrefabImportTest`
@@ -3506,7 +3506,7 @@
 ### [`tests/test_headless.py`](tests/test_headless.py)
 > *Tests for no-OpenGL simulation and action scripts.*
 
-**Size**: `198` lines (`7112` bytes)
+**Size**: `198` lines
 
 **Classes:**
 - `class HeadlessTest`
@@ -3529,7 +3529,7 @@
 ### [`tests/test_history.py`](tests/test_history.py)
 > *Unit tests for bounded undo/redo history.*
 
-**Size**: `81` lines (`2599` bytes)
+**Size**: `81` lines
 
 **Classes:**
 - `class HistoryTest`
@@ -3546,7 +3546,7 @@
 ### [`tests/test_input.py`](tests/test_input.py)
 > *Tests for input sampling and action state.*
 
-**Size**: `252` lines (`10447` bytes)
+**Size**: `252` lines
 
 **Classes:**
 - `class FakeContext`
@@ -3583,7 +3583,7 @@
 ### [`tests/test_input_keys.py`](tests/test_input_keys.py)
 > *Tests for the real GL key table exposed to InputMap consumers.*
 
-**Size**: `22` lines (`691` bytes)
+**Size**: `22` lines
 
 **Classes:**
 - `class KeyTableTest`
@@ -3596,7 +3596,7 @@
 ### [`tests/test_instancing.py`](tests/test_instancing.py)
 > *Game-agnostic tests for hardware-instancing grouping.*
 
-**Size**: `121` lines (`4854` bytes)
+**Size**: `121` lines
 
 **Classes:**
 - `class PlanInstancedTest`
@@ -3617,7 +3617,7 @@
 ### [`tests/test_library_trash.py`](tests/test_library_trash.py)
 > *Tests for recoverable library deletes (soft delete and restore).*
 
-**Size**: `166` lines (`6909` bytes)
+**Size**: `166` lines
 
 **Classes:**
 - `class LibraryTrashTest`
@@ -3640,7 +3640,7 @@
 ### [`tests/test_lifecycle.py`](tests/test_lifecycle.py)
 > *Tests for deterministic component start/update/stop lifecycle hooks.*
 
-**Size**: `203` lines (`6438` bytes)
+**Size**: `203` lines
 
 **Classes:**
 - `class Alpha`
@@ -3664,7 +3664,7 @@
 ### [`tests/test_material_graph.py`](tests/test_material_graph.py)
 > *Unit tests for declarative material graphs.*
 
-**Size**: `185` lines (`6980` bytes)
+**Size**: `185` lines
 
 **Classes:**
 - `class MaterialGraphCoreTest`
@@ -3691,7 +3691,7 @@
 ### [`tests/test_material_library.py`](tests/test_material_library.py)
 > *Tests for file-backed material libraries.*
 
-**Size**: `69` lines (`2708` bytes)
+**Size**: `69` lines
 
 **Classes:**
 - `class MaterialLibraryTest`
@@ -3704,7 +3704,7 @@
 ### [`tests/test_math3d.py`](tests/test_math3d.py)
 > *Unit tests for the Keystone 3D math core.*
 
-**Size**: `147` lines (`5842` bytes)
+**Size**: `147` lines
 
 **Classes:**
 - `class Vec3Test`
@@ -3738,7 +3738,7 @@
 ### [`tests/test_merge_skin.py`](tests/test_merge_skin.py)
 > *Tests for skin-aware batch merging: identical rigs merge into one draw.*
 
-**Size**: `200` lines (`8326` bytes)
+**Size**: `200` lines
 
 **Classes:**
 - `class SkinMergeTest`
@@ -3769,7 +3769,7 @@
 ### [`tests/test_nav_agent.py`](tests/test_nav_agent.py)
 > *Tests for the reusable nav agent.*
 
-**Size**: `169` lines (`6855` bytes)
+**Size**: `169` lines
 
 **Classes:**
 - `class NavAgentPlanTest`
@@ -3797,7 +3797,7 @@
 ### [`tests/test_nav_authoring.py`](tests/test_nav_authoring.py)
 > *Tests for nav-grid documents and authoring grids from collision boxes.*
 
-**Size**: `140` lines (`5915` bytes)
+**Size**: `140` lines
 
 **Classes:**
 - `class NavGridDocumentTest`
@@ -3828,7 +3828,7 @@
 ### [`tests/test_navigation.py`](tests/test_navigation.py)
 > *Tests for waypoint following and grid-to-world route conversion.*
 
-**Size**: `156` lines (`6753` bytes)
+**Size**: `156` lines
 
 **Classes:**
 - `class GridPointsTest`
@@ -3857,7 +3857,7 @@
 ### [`tests/test_overlap.py`](tests/test_overlap.py)
 > *Tests for scene overlap queries.*
 
-**Size**: `125` lines (`5182` bytes)
+**Size**: `125` lines
 
 **Classes:**
 - `class OverlapSceneTest`
@@ -3883,7 +3883,7 @@
 ### [`tests/test_overlay.py`](tests/test_overlay.py)
 > *Tests for camera-relative overlay drawing and metric separation.*
 
-**Size**: `132` lines (`4999` bytes)
+**Size**: `132` lines
 
 **Classes:**
 - `class OverlayMetricTest`
@@ -3905,7 +3905,7 @@
 ### [`tests/test_particles.py`](tests/test_particles.py)
 > *Tests for the deterministic particle core.*
 
-**Size**: `472` lines (`19071` bytes)
+**Size**: `472` lines
 
 **Classes:**
 - `class EmitterTest`
@@ -3954,7 +3954,7 @@
 ### [`tests/test_path_smoothing.py`](tests/test_path_smoothing.py)
 > *Tests for grid line-of-sight checks and path smoothing.*
 
-**Size**: `105` lines (`4254` bytes)
+**Size**: `105` lines
 
 **Classes:**
 - `class LineOfSightTest`
@@ -3984,7 +3984,7 @@
 ### [`tests/test_pathfinding.py`](tests/test_pathfinding.py)
 > *Tests for deterministic grid pathfinding.*
 
-**Size**: `150` lines (`6115` bytes)
+**Size**: `150` lines
 
 **Classes:**
 - `class NavGridTest`
@@ -4016,7 +4016,7 @@
 ### [`tests/test_pbr.py`](tests/test_pbr.py)
 > *Tests for PBR material extensions: validation, glTF, graphs and reports.*
 
-**Size**: `82` lines (`3272` bytes)
+**Size**: `82` lines
 
 **Classes:**
 - `class PbrMaterialTest`
@@ -4031,7 +4031,7 @@
 ### [`tests/test_persistence.py`](tests/test_persistence.py)
 > *Tests for the versioned persistence store.*
 
-**Size**: `173` lines (`7451` bytes)
+**Size**: `173` lines
 
 **Classes:**
 - `class VersionedStoreTest`
@@ -4061,7 +4061,7 @@
 ### [`tests/test_physics.py`](tests/test_physics.py)
 > *Tests for generic ray and collision primitives.*
 
-**Size**: `110` lines (`4681` bytes)
+**Size**: `110` lines
 
 **Classes:**
 - `class PhysicsTest`
@@ -4083,7 +4083,7 @@
 ### [`tests/test_picking.py`](tests/test_picking.py)
 > *Tests for scene picking and ray queries.*
 
-**Size**: `152` lines (`5996` bytes)
+**Size**: `152` lines
 
 **Classes:**
 - `class RaycastSceneTest`
@@ -4111,7 +4111,7 @@
 ### [`tests/test_playtest.py`](tests/test_playtest.py)
 > *Tests for the seeded bot playtester: transcripts, diffs, policies and fairness.*
 
-**Size**: `552` lines (`22469` bytes)
+**Size**: `552` lines
 
 **Classes:**
 - `class TranscriptTest`
@@ -4171,7 +4171,7 @@
 ### [`tests/test_plugin.py`](tests/test_plugin.py)
 > *Tests for the GameModule contract and loader.*
 
-**Size**: `119` lines (`4615` bytes)
+**Size**: `119` lines
 
 **Classes:**
 - `class PluginTest`
@@ -4199,7 +4199,7 @@
 ### [`tests/test_png.py`](tests/test_png.py)
 > *Unit tests for the stdlib PNG writer used by headless screenshots.*
 
-**Size**: `119` lines (`4632` bytes)
+**Size**: `119` lines
 
 **Classes:**
 - `class PngTest`
@@ -4220,7 +4220,7 @@
 ### [`tests/test_post.py`](tests/test_post.py)
 > *Tests for the deterministic post color-grade (in-shader exposure + vignette).*
 
-**Size**: `407` lines (`16437` bytes)
+**Size**: `407` lines
 
 **Classes:**
 - `class PostMathTest`
@@ -4273,7 +4273,7 @@
 ### [`tests/test_prefab.py`](tests/test_prefab.py)
 > *Tests for deterministic prefab capture, persistence and instantiation.*
 
-**Size**: `353` lines (`14748` bytes)
+**Size**: `353` lines
 
 **Classes:**
 - `class Health`
@@ -4305,7 +4305,7 @@
 ### [`tests/test_prefab_library.py`](tests/test_prefab_library.py)
 > *Tests for file-backed prefab libraries.*
 
-**Size**: `188` lines (`8311` bytes)
+**Size**: `188` lines
 
 **Classes:**
 - `class Health`
@@ -4324,7 +4324,7 @@
 ### [`tests/test_project.py`](tests/test_project.py)
 > *Tests for project manifests, scaffolding and the --project CLI path.*
 
-**Size**: `612` lines (`26077` bytes)
+**Size**: `612` lines
 
 **Classes:**
 - `class ProjectManifestTest`
@@ -4360,7 +4360,7 @@
 ### [`tests/test_projected_bbox.py`](tests/test_projected_bbox.py)
 > *Direct tests for the projected-bbox clipping helper.*
 
-**Size**: `81` lines (`3388` bytes)
+**Size**: `81` lines
 
 **Classes:**
 - `class ProjectedBBoxTest` - *The bbox must describe on-screen extent, including near-plane crossings.*
@@ -4379,7 +4379,7 @@
 ### [`tests/test_renderer.py`](tests/test_renderer.py)
 > *Headless OpenGL integration tests for the Keystone renderer.*
 
-**Size**: `243` lines (`9291` bytes)
+**Size**: `243` lines
 
 **Classes:**
 - `class RendererIntegrationTest`
@@ -4407,7 +4407,7 @@
 ### [`tests/test_replay.py`](tests/test_replay.py)
 > *Tests for deterministic action logs and stable hashes.*
 
-**Size**: `110` lines (`4338` bytes)
+**Size**: `110` lines
 
 **Classes:**
 - `class ReplayTest`
@@ -4427,7 +4427,7 @@
 ### [`tests/test_rng.py`](tests/test_rng.py)
 > *Tests for the deterministic SplitMix64 random stream.*
 
-**Size**: `147` lines (`6193` bytes)
+**Size**: `147` lines
 
 **Classes:**
 - `class SplitMixVectorTest`
@@ -4454,7 +4454,7 @@
 ### [`tests/test_root_motion.py`](tests/test_root_motion.py)
 > *Tests for root-motion extraction and in-place pose baking.*
 
-**Size**: `136` lines (`5663` bytes)
+**Size**: `136` lines
 
 **Classes:**
 - `class ExtractRootMotionTest`
@@ -4483,7 +4483,7 @@
 ### [`tests/test_root_motion_body.py`](tests/test_root_motion_body.py)
 > *Tests for driving a character body from a root-motion clip.*
 
-**Size**: `145` lines (`5321` bytes)
+**Size**: `145` lines
 
 **Classes:**
 - `class RootMotionBodyTest`
@@ -4509,7 +4509,7 @@
 ### [`tests/test_root_motion_player.py`](tests/test_root_motion_player.py)
 > *Tests for the root-motion player.*
 
-**Size**: `139` lines (`5427` bytes)
+**Size**: `139` lines
 
 **Classes:**
 - `class RootMotionPlayerTest`
@@ -4534,7 +4534,7 @@
 ### [`tests/test_root_motion_presenter.py`](tests/test_root_motion_presenter.py)
 > *Tests for presenting a root-motion body on scene nodes.*
 
-**Size**: `146` lines (`5559` bytes)
+**Size**: `146` lines
 
 **Classes:**
 - `class RootMotionPresenterTest`
@@ -4559,7 +4559,7 @@
 ### [`tests/test_round_trip_stability.py`](tests/test_round_trip_stability.py)
 > *Regression: a document must not change after one load/save cycle.*
 
-**Size**: `80` lines (`2851` bytes)
+**Size**: `80` lines
 
 **Classes:**
 - `class Health`
@@ -4577,7 +4577,7 @@
 ### [`tests/test_samples.py`](tests/test_samples.py)
 > *Tests for the engine's sample game.*
 
-**Size**: `63` lines (`2064` bytes)
+**Size**: `63` lines
 
 **Classes:**
 - `class SampleTest`
@@ -4592,7 +4592,7 @@
 ### [`tests/test_scene.py`](tests/test_scene.py)
 > *Unit tests for the Keystone scene graph and perspective camera.*
 
-**Size**: `360` lines (`13989` bytes)
+**Size**: `360` lines
 
 **Classes:**
 - `class Health`
@@ -4650,7 +4650,7 @@
 ### [`tests/test_scene_boxes.py`](tests/test_scene_boxes.py)
 > *Tests for deriving collision boxes from scene geometry.*
 
-**Size**: `87` lines (`3554` bytes)
+**Size**: `87` lines
 
 **Classes:**
 - `class SceneBoxesTest`
@@ -4672,7 +4672,7 @@
 ### [`tests/test_scene_diff.py`](tests/test_scene_diff.py)
 > *Tests for structured scene snapshot diffs.*
 
-**Size**: `103` lines (`3848` bytes)
+**Size**: `103` lines
 
 **Classes:**
 - `class SceneDiffTest`
@@ -4687,7 +4687,7 @@
 ### [`tests/test_scene_library.py`](tests/test_scene_library.py)
 > *Tests for file-backed scene libraries.*
 
-**Size**: `210` lines (`9125` bytes)
+**Size**: `210` lines
 
 **Classes:**
 - `class Health`
@@ -4707,7 +4707,7 @@
 ### [`tests/test_scene_snapshot.py`](tests/test_scene_snapshot.py)
 > *Unit tests for versioned scene snapshots.*
 
-**Size**: `392` lines (`16006` bytes)
+**Size**: `392` lines
 
 **Classes:**
 - `class Health`
@@ -4743,7 +4743,7 @@
 ### [`tests/test_serialization.py`](tests/test_serialization.py)
 > *Tests for atomic JSON persistence.*
 
-**Size**: `63` lines (`2549` bytes)
+**Size**: `63` lines
 
 **Classes:**
 - `class SerializationTest`
@@ -4758,7 +4758,7 @@
 ### [`tests/test_shadows.py`](tests/test_shadows.py)
 > *Tests for deterministic directional shadow mapping (fixed 1024 map, PCF).*
 
-**Size**: `125` lines (`5272` bytes)
+**Size**: `125` lines
 
 **Classes:**
 - `class ShadowMathTest`
@@ -4782,7 +4782,7 @@
 ### [`tests/test_skinning.py`](tests/test_skinning.py)
 > *Tests for deterministic linear-blend skinning (max 4 influences).*
 
-**Size**: `365` lines (`15042` bytes)
+**Size**: `365` lines
 
 **Classes:**
 - `class SkinValidationTest`
@@ -4822,7 +4822,7 @@
 ### [`tests/test_sprite_nodes.py`](tests/test_sprite_nodes.py)
 > *Tests for placed sprite nodes: model, round trip and rendering.*
 
-**Size**: `342` lines (`14157` bytes)
+**Size**: `342` lines
 
 **Classes:**
 - `class SpriteModelTest`
@@ -4867,7 +4867,7 @@
 ### [`tests/test_sprites.py`](tests/test_sprites.py)
 > *Tests for deterministic GPU point-sprite particle rendering.*
 
-**Size**: `158` lines (`6884` bytes)
+**Size**: `158` lines
 
 **Classes:**
 - `class SpriteMathTest`
@@ -4894,7 +4894,7 @@
 ### [`tests/test_srgb.py`](tests/test_srgb.py)
 > *Tests for the deterministic sRGB-correct linear pipeline (in-shader, pow 2.2).*
 
-**Size**: `78` lines (`3292` bytes)
+**Size**: `78` lines
 
 **Classes:**
 - `class SrgbContractsTest`
@@ -4911,7 +4911,7 @@
 ### [`tests/test_state_machine_library.py`](tests/test_state_machine_library.py)
 > *Tests for file-backed animation state machine libraries.*
 
-**Size**: `139` lines (`5002` bytes)
+**Size**: `139` lines
 
 **Classes:**
 - `class StateMachineLibraryTest`
@@ -4927,7 +4927,7 @@
 ### [`tests/test_steering.py`](tests/test_steering.py)
 > *Tests for deterministic seek/arrive/separation steering.*
 
-**Size**: `158` lines (`6792` bytes)
+**Size**: `158` lines
 
 **Classes:**
 - `class SeekTest`
@@ -4962,7 +4962,7 @@
 ### [`tests/test_swarm_fixes.py`](tests/test_swarm_fixes.py)
 > *Swarm regression pins: one failing-first test per verified Stage-3 fix.*
 
-**Size**: `103` lines (`3573` bytes)
+**Size**: `103` lines
 
 **Classes:**
 - `class SwarmFixesTest`
@@ -4980,7 +4980,7 @@
 ### [`tests/test_testing.py`](tests/test_testing.py)
 > *Tests for deterministic AI/CI scenario helpers.*
 
-**Size**: `103` lines (`3682` bytes)
+**Size**: `103` lines
 
 **Classes:**
 - `class SceneBudgetTest`
@@ -5002,7 +5002,7 @@
 ### [`tests/test_texture.py`](tests/test_texture.py)
 > *Tests for immutable texture data and texture sources.*
 
-**Size**: `153` lines (`6120` bytes)
+**Size**: `153` lines
 
 **Classes:**
 - `class PatternCostTest` - *The presets must stay cheap: a per-pixel Python loop scaled badly.*
@@ -5025,7 +5025,7 @@
 ### [`tests/test_tilemap.py`](tests/test_tilemap.py)
 > *Tests for tile maps: collision boxes, merged mesh and documents.*
 
-**Size**: `139` lines (`5854` bytes)
+**Size**: `139` lines
 
 **Classes:**
 - `class TileMapTest`
@@ -5049,7 +5049,7 @@
 ### [`tests/test_triggers.py`](tests/test_triggers.py)
 > *Tests for trigger volumes and enter/exit tracking.*
 
-**Size**: `48` lines (`2043` bytes)
+**Size**: `48` lines
 
 **Classes:**
 - `class TriggerTest`
@@ -5062,7 +5062,7 @@
 ### [`tests/test_ui.py`](tests/test_ui.py)
 > *Tests for the dependency-free human UI primitives and overlay.*
 
-**Size**: `213` lines (`8829` bytes)
+**Size**: `213` lines
 
 **Classes:**
 - `class FontTest`
@@ -5100,7 +5100,7 @@
 ### [`tests/test_ui_images.py`](tests/test_ui_images.py)
 > *Tests for textured HUD images on the canvas and UI renderer.*
 
-**Size**: `131` lines (`5084` bytes)
+**Size**: `131` lines
 
 **Classes:**
 - `class CanvasImageTest`
@@ -5127,7 +5127,7 @@
 ### [`tests/test_ui_shapes.py`](tests/test_ui_shapes.py)
 > *Tests for line and frame drawing on the UI canvas.*
 
-**Size**: `100` lines (`3626` bytes)
+**Size**: `100` lines
 
 **Classes:**
 - `class CanvasLineTest`
@@ -5150,7 +5150,7 @@
 ### [`tests/test_ui_text.py`](tests/test_ui_text.py)
 > *Tests for word wrapping and multi-line paragraph drawing.*
 
-**Size**: `100` lines (`4057` bytes)
+**Size**: `100` lines
 
 **Classes:**
 - `class WrapTextTest`
@@ -5176,7 +5176,7 @@
 ### [`tests/test_ui_widgets.py`](tests/test_ui_widgets.py)
 > *Tests for the HUD layout widgets and right-edge safety.*
 
-**Size**: `159` lines (`6008` bytes)
+**Size**: `159` lines
 
 **Classes:**
 - `class LabelRowTest`
@@ -5208,7 +5208,7 @@
 ### [`tests/test_version.py`](tests/test_version.py)
 > *Tests that the version is stated in exactly one place and does not drift.*
 
-**Size**: `57` lines (`2019` bytes)
+**Size**: `57` lines
 
 **Classes:**
 - `class VersionTest`
@@ -5222,7 +5222,7 @@
 ### [`tests/test_web.py`](tests/test_web.py)
 > *Tests for scene export, the local JSON API and the browser console assets.*
 
-**Size**: `7033` lines (`289289` bytes)
+**Size**: `7033` lines
 
 **Classes:**
 - `class Health`
