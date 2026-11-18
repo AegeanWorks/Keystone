@@ -117,5 +117,26 @@
     "final_snapshot_entries": 0,
     "surface_digest": "cfbffe0faf58ce72b91edc968ca2e9ad090cb927061805ac65ba8e8842706360",
     "baseline_digest": "cfbffe0faf58ce72b91edc968ca2e9ad090cb927061805ac65ba8e8842706360"
+  },
+  {
+    "schema": 1,
+    "surface": "web",
+    "mode": "visual",
+    "visual_change": true,
+    "changed_paths": [],
+    "no_visual_reason": "",
+    "no_change_reason": "Camera path playback was reviewed live in a browser at 127.0.0.1:56133: a two-key two-second path played from 0 to 2 with the end pose at 4.00, 1.50, 4.00, Pause froze the clock at 0.672, and the button returned to Play path when the one-shot duration was reached; the change is committed as 1630f6a before this task opened.",
+    "baseline_commit": "1630f6a093d17f643b18c6b8953c0ce54d81f58b",
+    "contract_hash": "ea5b2f48986c4bd68c0a2da75659c6d8030ef7dc31574c8b7ab67394fb7789d6",
+    "started_at": 1795011056.2076287,
+    "finished_at": 1795011239.414074,
+    "strikes": 0,
+    "reviewer": "kilo:goal",
+    "allowed_removals": [],
+    "allowed_tests": [],
+    "final_snapshot_digest": "",
+    "final_snapshot_entries": 0,
+    "surface_digest": "2582ffa061c2cba91911b61d1be1f3ce50c28118a15c7ac650a6db3a240729cd",
+    "baseline_digest": "2582ffa061c2cba91911b61d1be1f3ce50c28118a15c7ac650a6db3a240729cd"
   }
 ]
