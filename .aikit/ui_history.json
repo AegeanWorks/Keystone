@@ -75,5 +75,26 @@
     "final_snapshot_entries": 0,
     "surface_digest": "8cdf46d8fc7006426e87dfecdf25ce6053d14c9c19cb5cbc1e41393c4f514219",
     "baseline_digest": "8cdf46d8fc7006426e87dfecdf25ce6053d14c9c19cb5cbc1e41393c4f514219"
+  },
+  {
+    "schema": 1,
+    "surface": "web",
+    "mode": "visual",
+    "visual_change": true,
+    "changed_paths": [],
+    "no_visual_reason": "",
+    "no_change_reason": "Camera path key authoring was reviewed live in a browser at 127.0.0.1: Set key from view wrote intro.kpath and captured the scene lens (fov 55), a second key at t=2 produced 2 keys, Remove key deleted one with a removed count, and preview moved the readout to the sampled pose; the change is committed as 26427ce before this task opened.",
+    "baseline_commit": "6d2d7fbac016b8bc6a2156e253a83009bbde9b30",
+    "contract_hash": "ea5b2f48986c4bd68c0a2da75659c6d8030ef7dc31574c8b7ab67394fb7789d6",
+    "started_at": 1794990255.7575424,
+    "finished_at": 1794990418.3593829,
+    "strikes": 0,
+    "reviewer": "kilo:goal",
+    "allowed_removals": [],
+    "allowed_tests": [],
+    "final_snapshot_digest": "",
+    "final_snapshot_entries": 0,
+    "surface_digest": "23d5cf2330bd04d061a33ea898877f4685ae9f053b248315e3aa18a120145da9",
+    "baseline_digest": "23d5cf2330bd04d061a33ea898877f4685ae9f053b248315e3aa18a120145da9"
   }
 ]
