@@ -3,9 +3,9 @@
   "active_task": {
     "task_id": "keystone-camera-path-scrub-v1",
     "last_phase": "phase 4",
-    "active_phase": 4,
-    "status": "in_progress",
-    "updated_at": 1795021602.0686774,
+    "active_phase": 5,
+    "status": "completed",
+    "updated_at": 1795021876.2552288,
     "owner": "kilo:goal",
     "started_by": "kilo:goal",
     "continuations": [],
@@ -14,50 +14,12 @@
         "name": "keystone",
         "path": "projects/keystone"
       }
-    ]
+    ],
+    "completed_at": 1795021876.8344202,
+    "completed_head": "cfb68c3f7df504e949d55b3b3e82b6c67ecac488",
+    "completed_tree": "856b755a8576fb42ff28c8110c81f778fadc487f"
   },
   "checkpoints": [
-    {
-      "task_id": "keystone-project-hygiene-files-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'keystone-project-hygiene-files-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1794991689.898436,
-      "timestamp_str": "2026-11-18 11:48:09",
-      "agent": "kilo:goal",
-      "head": "a1c01f44e1052b979abdeb350d43f316d1d3ef66",
-      "delivery": {
-        "roots": [
-          "."
-        ],
-        "forced": false
-      }
-    },
-    {
-      "task_id": "keystone-readme-tree-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/1] Close the README tree gap - list the tracked .gitattributes line in the root tree so the PRINCIPLE-005 drift check stops failing, committed as 30d9830",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1794992354.7216458,
-      "timestamp_str": "2026-11-18 11:59:14",
-      "agent": "kilo:goal",
-      "impact_assessment": {
-        "why": "Adding .gitattributes made the README tree drift; the cold-start gate requires every tracked root file to be listed.",
-        "benefits": "The README tree matches the checkout and a clean check reaches exit 0.",
-        "risks": "contract: one README line; dependency: none; concurrency: none; state: none",
-        "mitigation": "Run the guidelines gate after the edit and cite the passing run"
-      },
-      "plan_digest": "75366e19b7da7cfbc648d5c2aa3bb255eebab13f50d1c8cdaf1d7533b852b700",
-      "workspaces": [
-        {
-          "name": "keystone",
-          "path": "projects/keystone"
-        }
-      ]
-    },
     {
       "task_id": "keystone-readme-tree-v1",
       "phase": "phase 4",
@@ -611,6 +573,55 @@
           "path": "projects/keystone"
         }
       ]
+    },
+    {
+      "task_id": "keystone-camera-path-scrub-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] UI review recorded - ui begin/verify/finish --reviewed closed the web surface as a no-change review of be91ef5 after a live browser pass (slider max 2, scrub to 1 previews the midpoint, time field and readout follow), and the review record is committed as cfb68c3",
+      "files_affected": [
+        ".aikit/ui_history.json"
+      ],
+      "status": "in_progress",
+      "timestamp": 1795021876.2552288,
+      "timestamp_str": "2026-11-18 20:11:16",
+      "agent": "kilo:goal",
+      "measurements": [
+        {
+          "unit": "findings",
+          "command": "python aikit.py ui verify keystone --json",
+          "drift": "unchanged",
+          "baseline": 0.0,
+          "metric": "ui_verify_findings",
+          "artifact": "stdout",
+          "candidate": 0.0,
+          "qualified": "no"
+        }
+      ],
+      "checklists": "passed",
+      "workspaces": [
+        {
+          "name": "keystone",
+          "path": "projects/keystone"
+        }
+      ]
+    },
+    {
+      "task_id": "keystone-camera-path-scrub-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'keystone-camera-path-scrub-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1795021876.9741495,
+      "timestamp_str": "2026-11-18 20:11:16",
+      "agent": "kilo:goal",
+      "head": "cfb68c3f7df504e949d55b3b3e82b6c67ecac488",
+      "delivery": {
+        "roots": [
+          "."
+        ],
+        "forced": false
+      }
     }
   ]
 }
